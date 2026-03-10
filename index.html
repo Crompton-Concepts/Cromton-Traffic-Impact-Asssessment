@@ -5797,14 +5797,14 @@
     const logoDownloadUrl = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/logo.jpeg';
     const guideSteps = [
       'Keep this app page open.',
-      'Click "Copy Commands" below.',
+      'Click <strong>Copy Commands</strong> below.',
+      'If Python is not installed, click <strong>Download Python</strong> and install it first.',
       'Open Command Prompt (Windows: press Win key, type "cmd", press Enter).',
-      `Create a local folder for the Python service (example: <code>${serviceFolderHint}</code>).`,
-      `Download <code>report_service.py</code> from <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a>.`,
-      `Save <code>report_service.py</code> inside <code>${serviceFolderHint}</code> (or your chosen folder).`,
+      `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and check/download <code>report_service.py</code>.`,
+      `If <code>report_service.py</code> is still missing, click <strong>Download Report-Service</strong> or use the raw link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a>.`,
       `Optional: Download <code>logo.jpeg</code> from <a href="${logoDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a> and save it in the same folder for branding.`,
-      'In Command Prompt, run the copied commands line by line.',
-      'If you see "Could not import module report_service", run the import-check command from the copied list and fix file name/path issues.',
+      'Confirm the import-check command prints <code>import ok</code>.',
+      'If you see "Could not import module report_service", re-run the download/check commands and confirm the file name is exactly <code>report_service.py</code>.',
       'Keep that Command Prompt window running (do not close it).',
       'Return to this app (GitHub link) and click "Python Report" again.'
     ];
