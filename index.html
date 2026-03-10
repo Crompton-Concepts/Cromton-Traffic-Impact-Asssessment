@@ -14074,6 +14074,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const p = (profile && profile[periodKey]) || {};
       return `${fmtInt(p.lv)}<\/td><td>${fmtInt(p.hv)}<\/td><td>${fmtInt(p.rt)}`;
     };
+
+    // Force grouped table totals to reconcile with directional VADT values.
+    const d1BaseTotalDisplay = Math.max(0, Number(d1DailyBase) || 0);
+    const d2BaseTotalDisplay = Math.max(0, Number(d2DailyBase) || 0);
+    const d1OpenTotalDisplay = Math.max(0, Number(d1Daily) || 0);
+    const d2OpenTotalDisplay = Math.max(0, Number(d2Daily) || 0);
     
     const groupedBodyD2 = document.getElementById('groupedBodyD2');
     if (groupedBodyD2) {
@@ -14091,7 +14097,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ${periodLvHvRtMarkup(d2BaseMetrics, 'OP', d2HvPct, d2RtPct)}
           ${periodLvHvRtMarkup(d2BaseMetrics, 'PM', d2HvPct, d2RtPct)}
           ${periodLvHvRtMarkup(d2BaseMetrics, 'EV', d2HvPct, d2RtPct)}
-          <td><strong>${fmtInt(rowTotal(d2BaseMetrics))}</strong></td>
+          <td><strong>${fmtInt(d2BaseTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">${openingYearLabel}</td>
@@ -14099,7 +14105,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ${periodLvHvRtMarkup(d2Profile, 'OP', d2HvPct, d2RtPct)}
           ${periodLvHvRtMarkup(d2Profile, 'PM', d2HvPct, d2RtPct)}
           ${periodLvHvRtMarkup(d2Profile, 'EV', d2HvPct, d2RtPct)}
-          <td><strong>${fmtInt(rowTotal(d2Profile))}</strong></td>
+          <td><strong>${fmtInt(d2OpenTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">Hrly Avg / lane</td>
@@ -14129,7 +14135,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ${periodLvHvRtMarkup(d1BaseMetrics, 'OP', d1HvPct, d1RtPct)}
           ${periodLvHvRtMarkup(d1BaseMetrics, 'PM', d1HvPct, d1RtPct)}
           ${periodLvHvRtMarkup(d1BaseMetrics, 'EV', d1HvPct, d1RtPct)}
-          <td><strong>${fmtInt(rowTotal(d1BaseMetrics))}</strong></td>
+          <td><strong>${fmtInt(d1BaseTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">${openingYearLabel}</td>
@@ -14137,7 +14143,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ${periodLvHvRtMarkup(d1Profile, 'OP', d1HvPct, d1RtPct)}
           ${periodLvHvRtMarkup(d1Profile, 'PM', d1HvPct, d1RtPct)}
           ${periodLvHvRtMarkup(d1Profile, 'EV', d1HvPct, d1RtPct)}
-          <td><strong>${fmtInt(rowTotal(d1Profile))}</strong></td>
+          <td><strong>${fmtInt(d1OpenTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">Hrly Avg / lane</td>
