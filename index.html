@@ -8525,19 +8525,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const data = await fetchOverpassJson(query, { cacheKey, ttlMs: OVERPASS_CACHE_TTL_MS });
       const uniqueRoads = new Set();
 
-      // Extract unique road names from the OSM tags
+      // Extract unique road names + maxspeed from the OSM tags
+      const roadSpeedMap = new Map();
       if (data && data.elements) {
         data.elements.forEach(el => {
           if (el.tags && el.tags.name) {
-            // Standardize casing (e.g., "brisbane road" -> "Brisbane Road")
-            uniqueRoads.add(el.tags.name.trim());
+            const rname = el.tags.name.trim();
+            const rspeed = el.tags.maxspeed ? String(el.tags.maxspeed).trim() : null;
+            if (!roadSpeedMap.has(rname)) {
+              roadSpeedMap.set(rname, rspeed);
+            } else if (!roadSpeedMap.get(rname) && rspeed) {
+              roadSpeedMap.set(rname, rspeed);
+            }
           }
         });
       }
-
-      // Return sorted array with local fallback merged in (helps when OSM misses minor roads).
-      const combined = new Set([...Array.from(uniqueRoads), ...localFallbackRoads]);
-      return Array.from(combined).sort((a, b) => a.localeCompare(b));
+      localFallbackRoads.forEach(n => { if (!roadSpeedMap.has(n)) roadSpeedMap.set(n, null); });
+      return Array.from(roadSpeedMap.entries())
+        .map(([name, speed]) => ({ name, speed }))
+        .sort((a, b) => a.name.localeCompare(b.name));
 
     } catch (error) {
       const errMsg = String(error && error.message ? error.message : error || '');
@@ -14696,6 +14702,35 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (hourlyVcrBody) hourlyVcrBody.innerHTML = '';
       if (hourlyVcrBodyD1) hourlyVcrBodyD1.innerHTML = '';
       if (hourlyVcrBodyD2) hourlyVcrBodyD2.innerHTML = '';
+
+      // Update D1/D2 hourly VCR table theads dynamically to show all lane closure scenarios
+      const isSLRFMode = d1Metrics.lanes === 1 && d2Metrics.lanes === 1;
+      const d1VcrThead = document.querySelector('#hourlyVcrTableD1 thead tr');
+      if (d1VcrThead) {
+        let d1ThHtml = '<th>Hour</th><th>Base VCR (LOS)</th>';
+        if (isSLRFMode) {
+          d1ThHtml += '<th>1 Lane Closure (Single Lane Reversible Flow)</th>';
+        } else {
+          d1CloseScenarios.forEach(sc => {
+            const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
+            d1ThHtml += `<th>${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed</th>`;
+          });
+        }
+        d1VcrThead.innerHTML = d1ThHtml;
+      }
+      const d2VcrThead = document.querySelector('#hourlyVcrTableD2 thead tr');
+      if (d2VcrThead) {
+        let d2ThHtml = '<th>Hour</th><th>Base VCR (LOS)</th>';
+        if (isSLRFMode) {
+          d2ThHtml += '<th>1 Lane Closure (Single Lane Reversible Flow)</th>';
+        } else {
+          d2CloseScenarios.forEach(sc => {
+            const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
+            d2ThHtml += `<th>${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed</th>`;
+          });
+        }
+        d2VcrThead.innerHTML = d2ThHtml;
+      }
       for (let hour = 0; hour < 24; hour += 1) {
         const d1PerLane = (d1HourlyProfile[hour] && Number(d1HourlyProfile[hour].perLane)) || 0;
         const d2PerLane = (d2HourlyProfile[hour] && Number(d2HourlyProfile[hour].perLane)) || 0;
@@ -14756,27 +14791,61 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         if (hourlyVcrBodyD1) {
           const trD1 = document.createElement('tr');
-          trD1.innerHTML = `
-            <td class="rowhead" data-label="Hour">${hourLabel}</td>
-            <td class="hourly-vcr-cell" data-label="Base VCR (LOS)"></td>
-            <td class="hourly-vcr-cell" data-label="Work VCR (LOS)"></td>
-          `;
+          let d1RowHtml = `<td class="rowhead" data-label="Hour">${hourLabel}</td><td class="hourly-vcr-cell" data-label="Base VCR (LOS)"></td>`;
+          if (isSLRFMode) {
+            d1RowHtml += `<td class="hourly-vcr-cell" data-label="1 Lane Closure (Single Lane Reversible Flow)"></td>`;
+          } else {
+            d1CloseScenarios.forEach(sc => {
+              const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
+              d1RowHtml += `<td class="hourly-vcr-cell" data-label="${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed"></td>`;
+            });
+          }
+          trD1.innerHTML = d1RowHtml;
           const d1Cells = trD1.querySelectorAll('.hourly-vcr-cell');
           setHourlyVcrLosCell(d1Cells[0], d1BaseVcr, f1Base);
-          setHourlyVcrLosCell(d1Cells[1], d1WorkVcr, f1Work);
+          if (isSLRFMode) {
+            setHourlyVcrLosCell(d1Cells[1], d1WorkVcr, f1Work);
+          } else {
+            d1CloseScenarios.forEach((sc, idx) => {
+              const scenVcr = dv1 > 0 ? (d1PerLane * d1Metrics.lanes / sc.openLanes) / dv1 : null;
+              const scenFormula = `${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed: (D1 Vol/hr × ${d1Metrics.lanes}/${sc.openLanes}) / DV1`;
+              setHourlyVcrLosCell(d1Cells[1 + idx], scenVcr, scenFormula);
+              if (sc.closureCount === selectedClosureCount && d1Cells[1 + idx]) {
+                d1Cells[1 + idx].style.outline = '2px solid #1565C0';
+                d1Cells[1 + idx].style.fontWeight = '700';
+              }
+            });
+          }
           hourlyVcrBodyD1.appendChild(trD1);
         }
 
         if (hourlyVcrBodyD2) {
           const trD2 = document.createElement('tr');
-          trD2.innerHTML = `
-            <td class="rowhead" data-label="Hour">${hourLabel}</td>
-            <td class="hourly-vcr-cell" data-label="Base VCR (LOS)"></td>
-            <td class="hourly-vcr-cell" data-label="Work VCR (LOS)"></td>
-          `;
+          let d2RowHtml = `<td class="rowhead" data-label="Hour">${hourLabel}</td><td class="hourly-vcr-cell" data-label="Base VCR (LOS)"></td>`;
+          if (isSLRFMode) {
+            d2RowHtml += `<td class="hourly-vcr-cell" data-label="1 Lane Closure (Single Lane Reversible Flow)"></td>`;
+          } else {
+            d2CloseScenarios.forEach(sc => {
+              const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
+              d2RowHtml += `<td class="hourly-vcr-cell" data-label="${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed"></td>`;
+            });
+          }
+          trD2.innerHTML = d2RowHtml;
           const d2Cells = trD2.querySelectorAll('.hourly-vcr-cell');
           setHourlyVcrLosCell(d2Cells[0], d2BaseVcr, f2Base);
-          setHourlyVcrLosCell(d2Cells[1], d2WorkVcr, f2Work);
+          if (isSLRFMode) {
+            setHourlyVcrLosCell(d2Cells[1], d2WorkVcr, f2Work);
+          } else {
+            d2CloseScenarios.forEach((sc, idx) => {
+              const scenVcr = dv2 > 0 ? (d2PerLane * d2Metrics.lanes / sc.openLanes) / dv2 : null;
+              const scenFormula = `${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed: (D2 Vol/hr × ${d2Metrics.lanes}/${sc.openLanes}) / DV2`;
+              setHourlyVcrLosCell(d2Cells[1 + idx], scenVcr, scenFormula);
+              if (sc.closureCount === selectedClosureCount && d2Cells[1 + idx]) {
+                d2Cells[1 + idx].style.outline = '2px solid #1565C0';
+                d2Cells[1 + idx].style.fontWeight = '700';
+              }
+            });
+          }
           hourlyVcrBodyD2.appendChild(trD2);
         }
       }
@@ -15982,6 +16051,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lanes: Math.max(1, Number(existing.lanes) || 2),
       speedLimitKmh: existing.speedLimitKmh != null ? Math.max(10, Math.min(130, Number(existing.speedLimitKmh) || 60)) : 60,
       tripGenVpd: (existing && typeof existing.tripGenVpd === 'object' && existing.tripGenVpd) ? existing.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 },
+      tripGenCalcState: (existing && typeof existing.tripGenCalcState === 'object' && existing.tripGenCalcState) ? existing.tripGenCalcState : { landUse: 'custom', qty: '', rate: '', amPct: '10.0', pmPct: '10.0' },
+      tripGenCalcLastResult: existing.tripGenCalcLastResult || '',
       refPercents: (existing && typeof existing.refPercents === 'object' && existing.refPercents) ? existing.refPercents : {},
       refEnabled: (existing && typeof existing.refEnabled === 'object' && existing.refEnabled) ? existing.refEnabled : {},
       estimateMeta: existing.estimateMeta || null
@@ -16175,37 +16246,63 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Add Manual Trip Generation section
       const tripGenWrap = document.createElement('div');
       tripGenWrap.style.cssText = 'grid-column: 1 / -1; margin-top: 8px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px;';
-      const tripGenTitle = document.createElement('div');
-      tripGenTitle.style.cssText = 'font-size: 0.76em; color: #6a1b9a; font-weight: 700; margin-bottom: 8px;';
-      tripGenTitle.innerHTML = '🚗 Manual Trip Generation by Direction (VPD added to Base VPD)';
-      tripGenWrap.appendChild(tripGenTitle);
 
-      const tripGenGrid = document.createElement('div');
-      tripGenGrid.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;';
-      const directions = ['EAST', 'WEST', 'NORTH', 'SOUTH'];
-      const dirEmojis = { EAST: '➡️', WEST: '⬅️', NORTH: '⬆️', SOUTH: '⬇️' };
+      const calcState = (inputData && inputData.tripGenCalcState) ? inputData.tripGenCalcState : {};
+      const tgLandUse = calcState.landUse || 'custom';
+      const tgQty = calcState.qty != null ? calcState.qty : '';
+      const tgRate = calcState.rate != null ? calcState.rate : '';
+      const tgAmPct = calcState.amPct != null ? calcState.amPct : '10.0';
+      const tgPmPct = calcState.pmPct != null ? calcState.pmPct : '10.0';
+      const tgScenarios = window.tripGenerationScenarios || {};
+      const tgScenarioOptions = Object.entries(tgScenarios).map(([val, sc]) => {
+        const lbl = (sc && sc.description) ? sc.description : val;
+        return `<option value="${val}"${tgLandUse === val ? ' selected' : ''}>${lbl}</option>`;
+      }).join('');
+      const safeKeyAttr = key.replace(/"/g, '&quot;');
+      const safeKeyId = key.replace(/[^a-z0-9]/gi, '_');
       const tripGenData = (inputData && inputData.tripGenVpd) || { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 };
-      
-      directions.forEach(dir => {
-        const dirDiv = document.createElement('div');
-        dirDiv.style.cssText = 'background: #fff; border: 1px solid #ce93d8; border-radius: 4px; padding: 6px;';
-        const dirLabel = document.createElement('label');
-        dirLabel.style.cssText = 'display: block; font-size: 0.73em; color: #6a1b9a; font-weight: 600; margin-bottom: 3px;';
-        dirLabel.textContent = `${dirEmojis[dir]} ${dir}`;
-        const dirInput = document.createElement('input');
-        dirInput.type = 'number';
-        dirInput.min = '0';
-        dirInput.step = '5';
-        dirInput.value = Math.max(0, Number(tripGenData[dir]) || 0);
-        dirInput.dataset.detourManualKey = key;
-        dirInput.dataset.detourManualField = `tripGen_${dir}`;
-        dirInput.style.cssText = 'width: 100%; border: 1px solid #ce93d8; padding: 4px; border-radius: 3px; font-size: 0.8em; background: #fff;';
-        dirDiv.appendChild(dirLabel);
-        dirDiv.appendChild(dirInput);
-        tripGenGrid.appendChild(dirDiv);
-      });
-      
-      tripGenWrap.appendChild(tripGenGrid);
+      const eslBase = 'border:1px solid #ce93d8; border-radius:3px; padding:4px; font-size:0.8em; background:#fff; width:100%;';
+      const labelCss = 'display:block; font-size:0.73em; color:#6a1b9a; font-weight:600; margin-bottom:2px; text-transform:uppercase; letter-spacing:0.03em;';
+      const dirInputsHtml = ['EAST', 'WEST', 'NORTH', 'SOUTH'].map(dir => {
+        const dEmoji = { EAST: '➡️', WEST: '⬅️', NORTH: '⬆️', SOUTH: '⬇️' }[dir];
+        const dVal = Math.max(0, Number(tripGenData[dir]) || 0);
+        return `<div style="background:#fff; border:1px solid #ce93d8; border-radius:4px; padding:6px;">
+          <label style="${labelCss}">${dEmoji} ${dir}</label>
+          <input type="number" min="0" step="5" value="${dVal}" data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="tripGen_${dir}" style="${eslBase}" />
+        </div>`;
+      }).join('');
+      const lastResult = (inputData && inputData.tripGenCalcLastResult) ? inputData.tripGenCalcLastResult : '';
+      tripGenWrap.innerHTML = `
+        <div style="font-size:0.76em; font-weight:700; color:#6a1b9a; margin-bottom:8px;">🚗 Trip Generation (VPD added to Base VPD)</div>
+        <div style="margin-bottom:6px;">
+          <label style="${labelCss}">Land Use Scenario</label>
+          <select data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="tripGenCalc_landUse" style="${eslBase}">${tgScenarioOptions}</select>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+          <div>
+            <label style="${labelCss}">Quantity</label>
+            <input type="number" min="0" value="${tgQty}" placeholder="e.g., 100" data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="tripGenCalc_qty" style="${eslBase}" />
+          </div>
+          <div>
+            <label style="${labelCss}">Daily Trip Rate (Per Unit)</label>
+            <input type="number" min="0" step="0.1" value="${tgRate}" placeholder="e.g., 8.6" data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="tripGenCalc_rate" style="${eslBase}" />
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+          <div>
+            <label style="${labelCss}">AM Peak %</label>
+            <input type="number" min="0" step="0.1" value="${tgAmPct}" data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="tripGenCalc_amPct" style="${eslBase}" />
+          </div>
+          <div>
+            <label style="${labelCss}">PM Peak %</label>
+            <input type="number" min="0" step="0.1" value="${tgPmPct}" data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="tripGenCalc_pmPct" style="${eslBase}" />
+          </div>
+        </div>
+        <button type="button" data-detour-calc-key="${safeKeyAttr}" onclick="calculateDetourRoadTripGen(this)" style="width:100%; padding:8px; background:linear-gradient(135deg,#2a4045 0%,#1a2c2f 100%); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.82em; margin-bottom:6px;">📊 Calculate VADT &amp; Peak Hours</button>
+        <div id="detourTripGenCalcResult_${safeKeyId}" style="${lastResult ? '' : 'display:none;'} background:#f0f7f8; border:1px solid #84cad8; border-radius:4px; padding:8px; font-size:0.8em; margin-bottom:6px; color:#1f5e63;">${lastResult}</div>
+        <div style="font-size:0.73em; color:#6a1b9a; font-weight:600; margin-bottom:4px;">🧭 Distribution by Direction (auto-filled · editable):</div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">${dirInputsHtml}</div>
+      `;
       row.appendChild(tripGenWrap);
 
       if (refArray.length) {
@@ -16332,6 +16429,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (!existing.tripGenVpd) existing.tripGenVpd = { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 };
           value = Math.max(0, Math.round(value));
           existing.tripGenVpd[dir] = value;
+        } else if (field.startsWith('tripGenCalc_')) {
+          const subField = field.substring(12);
+          if (!existing.tripGenCalcState) existing.tripGenCalcState = {};
+          existing.tripGenCalcState[subField] = Number.isFinite(value) ? value : 0;
+          window.detourManualRoadInputs[key] = existing;
+          return; // don't re-run overlay for calc state changes only
         } else if (field === 'baseVpd') {
           value = Math.max(0, Math.round(value));
           existing.baseVpdManual = value > 0;
@@ -16344,6 +16447,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       };
       inputEl.addEventListener('input', syncInput);
       inputEl.addEventListener('change', syncInput);
+    });
+
+    // Sync select elements (land use scenario dropdown) for per-road trip gen calculator
+    bodyEl.querySelectorAll('select[data-detour-manual-key]').forEach((selectEl) => {
+      selectEl.addEventListener('change', () => {
+        const sKey = String(selectEl.dataset.detourManualKey || '').trim();
+        const sField = String(selectEl.dataset.detourManualField || '').trim();
+        if (!sKey || !sField) return;
+        const sExisting = window.detourManualRoadInputs[sKey] || { baseVpd: 0, lanes: 2 };
+        if (sField.startsWith('tripGenCalc_')) {
+          const subField = sField.substring(12);
+          if (!sExisting.tripGenCalcState) sExisting.tripGenCalcState = {};
+          sExisting.tripGenCalcState[subField] = selectEl.value;
+          // Auto-populate rate/amPct/pmPct when scenario selected
+          if (subField === 'landUse' && selectEl.value !== 'custom') {
+            const sc = window.tripGenerationScenarios && window.tripGenerationScenarios[selectEl.value];
+            if (sc) {
+              sExisting.tripGenCalcState.rate = sc.rate;
+              sExisting.tripGenCalcState.amPct = parseFloat((sc.peakAM * 100).toFixed(1));
+              sExisting.tripGenCalcState.pmPct = parseFloat((sc.peakPM * 100).toFixed(1));
+              const allInputs = Array.from(bodyEl.querySelectorAll('input[data-detour-manual-key]'));
+              const rateEl = allInputs.find(el => el.dataset.detourManualKey === sKey && el.dataset.detourManualField === 'tripGenCalc_rate');
+              const amEl = allInputs.find(el => el.dataset.detourManualKey === sKey && el.dataset.detourManualField === 'tripGenCalc_amPct');
+              const pmEl = allInputs.find(el => el.dataset.detourManualKey === sKey && el.dataset.detourManualField === 'tripGenCalc_pmPct');
+              if (rateEl) rateEl.value = sc.rate;
+              if (amEl) amEl.value = (sc.peakAM * 100).toFixed(1);
+              if (pmEl) pmEl.value = (sc.peakPM * 100).toFixed(1);
+            }
+          }
+        }
+        window.detourManualRoadInputs[sKey] = sExisting;
+      });
     });
 
     const updateDetourBaseVpdDisplay = (roadName, manualKey, options = {}) => {
@@ -16686,10 +16821,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     const selected = new Set(Array.isArray(window.selectedTrafficDetourRoadNames) ? window.selectedTrafficDetourRoadNames : []);
-    roads.forEach(road => {
+    roads.forEach(roadItem => {
+      const road = typeof roadItem === 'string' ? roadItem : roadItem.name;
+      const roadSpeed = (typeof roadItem === 'object' && roadItem.speed) ? ` (${roadItem.speed})` : '';
       const chip = document.createElement('span');
       const isSelected = selected.has(road);
-      chip.textContent = road;
+      chip.textContent = road + roadSpeed;
       chip.style.cssText = `background: ${isSelected ? '#e1bee7' : 'white'}; padding: 3px 10px; border-radius: 12px; border: 1px solid ${isSelected ? '#ba68c8' : '#e1bee7'}; cursor: pointer; user-select: none;`;
       chip.title = 'Click to add/remove this traffic detour street';
       chip.dataset.roadChip = 'detour';
@@ -16719,10 +16856,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     const selected = new Set(Array.isArray(window.selectedPedDetourRoadNames) ? window.selectedPedDetourRoadNames : []);
-    roads.forEach(road => {
+    roads.forEach(roadItem => {
+      const road = typeof roadItem === 'string' ? roadItem : roadItem.name;
+      const roadSpeed = (typeof roadItem === 'object' && roadItem.speed) ? ` (${roadItem.speed})` : '';
       const chip = document.createElement('span');
       const isSelected = selected.has(road);
-      chip.textContent = road;
+      chip.textContent = road + roadSpeed;
       chip.style.cssText = `background: ${isSelected ? '#b2dfdb' : 'white'}; padding: 3px 10px; border-radius: 12px; border: 1px solid ${isSelected ? '#26a69a' : '#80cbc4'}; cursor: pointer; user-select: none;`;
       chip.title = 'Click to use this pedestrian detour street';
       chip.dataset.roadChip = 'ped';
@@ -17446,6 +17585,65 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     summaryEl.appendChild(container);
   }
 
+  // Per-road trip generation calculator for detour manual VPD panel
+  function calculateDetourRoadTripGen(btn) {
+    const key = String(btn && btn.dataset && btn.dataset.detourCalcKey || '').trim();
+    if (!key) return;
+    const data = window.detourManualRoadInputs[key] || {};
+    const calcState = data.tripGenCalcState || {};
+    const landUse = calcState.landUse || 'custom';
+    const qty = Number(calcState.qty) || 0;
+    const rate = Number(calcState.rate) || 0;
+    const scenarioData = (window.tripGenerationScenarios && window.tripGenerationScenarios[landUse]) || (window.tripGenerationScenarios && window.tripGenerationScenarios.custom) || { peakAM: 0.10, peakPM: 0.10, inbound: 0.5, outbound: 0.5, description: 'Custom', unit: 'units' };
+    const safeKeyId = key.replace(/[^a-z0-9]/gi, '_');
+    const resultEl = document.getElementById('detourTripGenCalcResult_' + safeKeyId);
+    if (landUse === 'custom' && (!qty || !rate)) {
+      if (resultEl) {
+        resultEl.innerHTML = '<div style="background:#fff3cd; border:1px solid #ffc107; border-radius:4px; padding:8px; color:#856404; text-align:center;"><strong>⚠️ Please enter values</strong><br><span style="font-size:0.9em;">' + (!qty ? 'Enter quantity' : '') + (!qty && !rate ? ' &amp; ' : '') + (!rate ? 'Enter daily trip rate per unit' : '') + '</span></div>';
+        resultEl.style.display = 'block';
+      }
+      return;
+    }
+    const vadt = Math.round(qty * rate);
+    const amPct = Number(calcState.amPct) || (scenarioData.peakAM * 100);
+    const pmPct = Number(calcState.pmPct) || (scenarioData.peakPM * 100);
+    const peakAM = Math.round(vadt * (amPct / 100));
+    const peakPM = Math.round(vadt * (pmPct / 100));
+    const inboundPct = Number(scenarioData.inbound) || 0.5;
+    const outboundPct = Number(scenarioData.outbound) || 0.5;
+    const peakAM_In = Math.round(peakAM * inboundPct);
+    const peakAM_Out = peakAM - peakAM_In;
+    const peakPM_In = Math.round(peakPM * outboundPct);
+    const peakPM_Out = peakPM - peakPM_In;
+    // Distribute VADT to direction inputs (50/50 E/W by default)
+    const eastVpd = Math.round(vadt / 2);
+    const westVpd = vadt - eastVpd;
+    data.tripGenVpd = { EAST: eastVpd, WEST: westVpd, NORTH: 0, SOUTH: 0 };
+    const resultHtml = `<div style="font-weight:700; color:#0d7377; margin-bottom:6px; font-size:0.88em;">📊 Generated VADT: <strong>${vadt.toLocaleString()}</strong> vpd <span style="color:#555; font-weight:normal;">(${qty} × ${rate})</span></div>
+      <table style="width:100%; font-size:0.82em; border-collapse:collapse;">
+        <thead><tr style="background:#d5e8e9;"><th style="padding:3px 5px; text-align:left;">Period</th><th style="padding:3px 5px; text-align:right;">Total</th><th style="padding:3px 5px; text-align:right;">Inbound</th><th style="padding:3px 5px; text-align:right;">Outbound</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:3px 5px;">AM Peak (${amPct.toFixed(1)}%)</td><td style="padding:3px 5px; text-align:right;">${peakAM}</td><td style="padding:3px 5px; text-align:right;">${peakAM_In}</td><td style="padding:3px 5px; text-align:right;">${peakAM_Out}</td></tr>
+          <tr style="background:#f8f9fa;"><td style="padding:3px 5px;">PM Peak (${pmPct.toFixed(1)}%)</td><td style="padding:3px 5px; text-align:right;">${peakPM}</td><td style="padding:3px 5px; text-align:right;">${peakPM_In}</td><td style="padding:3px 5px; text-align:right;">${peakPM_Out}</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:5px; font-size:0.78em; color:#6a1b9a;">↕️ Auto-distributed: ➡️ EAST ${eastVpd} + ⬅️ WEST ${westVpd} vpd — adjust below as needed</div>`;
+    data.tripGenCalcLastResult = resultHtml;
+    window.detourManualRoadInputs[key] = data;
+    if (resultEl) { resultEl.innerHTML = resultHtml; resultEl.style.display = 'block'; }
+    // Update the direction input DOM elements in the panel
+    const panel = document.getElementById('detourManualVpdBody');
+    if (panel) {
+      ['EAST', 'WEST', 'NORTH', 'SOUTH'].forEach(dir => {
+        const allInputs = Array.from(panel.querySelectorAll('input[data-detour-manual-field="tripGen_' + dir + '"]'));
+        const el = allInputs.find(inp => inp.dataset.detourManualKey === key);
+        if (el) el.value = data.tripGenVpd[dir];
+      });
+    }
+    calculateDetourOverlay();
+  }
+  window.calculateDetourRoadTripGen = calculateDetourRoadTripGen;
+
   function calculateDetourOverlay() {
     syncPedestrianDetourFromTraffic({ skipRecalc: true });
     updateDetourClosureUi();
@@ -17804,9 +18002,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const pmStartHr = pmPeak.startHour;
         const pmEndHr = pmPeak.endHour;
         periods = [
-          { key: `AM Peak (${amStartHr}-${amEndHr})`, hours: [amStartHr, amEndHr] },
+          { key: `AM Peak (${amStartHr}–${amStartHr + 2})`, hours: [amStartHr, amEndHr] },
           { key: 'OP (9-16)', hours: [9, 10, 11, 12, 13, 14, 15] },
-          { key: `PM Peak (${pmStartHr}-${pmEndHr})`, hours: [pmStartHr, pmEndHr] },
+          { key: `PM Peak (${pmStartHr}–${pmStartHr + 2})`, hours: [pmStartHr, pmEndHr] },
           { key: 'EV (18-7)', hours: [18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6] }
         ];
       }
@@ -17816,6 +18014,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const tbody = document.getElementById('detourDetailedBody');
     tbody.innerHTML = '';
+    const detourThead = document.querySelector('#detourDetailedTable thead tr');
+    if (detourThead) {
+      detourThead.innerHTML = `<th style="background:#6a1b9a;">Metric</th>${periods.map(p => `<th style="background:#6a1b9a;">${p.key}</th>`).join('')}`;
+    }
     let maxNewVcr = 0;
     let peakDivertedVol = 0;
     let peakRoadDemandPerLane = 0;
@@ -19843,11 +20045,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const roads = await getAllRoadsFromMap(lat, lon, radiusMeters);
     if (roads.length > 0) {
-      nearbyRoadsList.innerHTML = roads.map(r =>
-        `<span style="background: white; padding: 3px 10px; border-radius: 12px; border: 1px solid #e1bee7; cursor: pointer;"
-               title="Click to copy"
-               onclick="navigator.clipboard.writeText('${r}'); this.style.background='#e1bee7'; setTimeout(()=>this.style.background='white', 300);">${r}</span>`
-      ).join('');
+      nearbyRoadsList.innerHTML = roads.map(r => {
+        const rname = typeof r === 'string' ? r : r.name;
+        const rspeed = (typeof r === 'object' && r.speed) ? ` (${r.speed})` : '';
+        const safeR = rname.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return `<span style="background: white; padding: 3px 10px; border-radius: 12px; border: 1px solid #e1bee7; cursor: pointer;"
+               title="Click to copy road name"
+               onclick="navigator.clipboard.writeText('${safeR}'); this.style.background='#e1bee7'; setTimeout(()=>this.style.background='white', 300);">${rname}${rspeed}</span>`;
+      }).join('');
     } else {
       nearbyRoadsList.innerHTML = '<span style="color: #c30000;">No named roads found in map radius.</span>';
     }
