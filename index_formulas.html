@@ -16050,6 +16050,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       baseVpdManual: !!existing.baseVpdManual,
       lanes: Math.max(1, Number(existing.lanes) || 2),
       speedLimitKmh: existing.speedLimitKmh != null ? Math.max(10, Math.min(130, Number(existing.speedLimitKmh) || 60)) : 60,
+      vpdMethod: existing.vpdMethod || 'datapoints',
       tripGenVpd: (existing && typeof existing.tripGenVpd === 'object' && existing.tripGenVpd) ? existing.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 },
       tripGenCalcState: (existing && typeof existing.tripGenCalcState === 'object' && existing.tripGenCalcState) ? existing.tripGenCalcState : { landUse: 'custom', qty: '', rate: '', amPct: '10.0', pmPct: '10.0' },
       tripGenCalcLastResult: existing.tripGenCalcLastResult || '',
@@ -16220,16 +16221,27 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const estimateMeta = inputData.estimateMeta || {};
       const refArray = Array.isArray(estimateMeta.refs) ? estimateMeta.refs : [];
       const hasEstimate = baseEstimate > 0;
+      const vpdMethod = (inputData && inputData.vpdMethod) || 'datapoints';
+      const safeKeyAttr = key.replace(/"/g, '&quot;');
+      const safeKeyId = key.replace(/[^a-z0-9]/gi, '_');
 
       const row = document.createElement('div');
-      row.style.cssText = `display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr 0.7fr; gap: 8px; align-items: end; background: ${hasEstimate ? '#fff' : '#fff5f5'}; border: 1px solid ${hasEstimate ? '#e1bee7' : '#ef9a9a'}; border-radius: 6px; padding: 8px;`;
+      row.style.cssText = 'display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr 0.7fr; gap: 8px; align-items: end; background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;';
       row.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #e1bee7; margin-bottom: 2px; flex-wrap: wrap;">
+          <span style="font-size: 0.75em; font-weight: 700; color: #4a148c; white-space: nowrap;">⚙️ Base VPD Method:</span>
+          <button type="button" data-detour-method-btn="${safeKeyAttr}" data-detour-method-val="datapoints"
+            style="padding: 4px 14px; font-size: 0.76em; border-radius: 12px; border: 2px solid ${vpdMethod === 'datapoints' ? '#6a1b9a' : '#ce93d8'}; background: ${vpdMethod === 'datapoints' ? '#6a1b9a' : '#f9f0ff'}; color: ${vpdMethod === 'datapoints' ? '#fff' : '#6a1b9a'}; cursor: pointer; font-weight: 600;">📡 Nearby Datapoints</button>
+          <button type="button" data-detour-method-btn="${safeKeyAttr}" data-detour-method-val="tripgen"
+            style="padding: 4px 14px; font-size: 0.76em; border-radius: 12px; border: 2px solid ${vpdMethod === 'tripgen' ? '#2a4045' : '#ce93d8'}; background: ${vpdMethod === 'tripgen' ? '#2a4045' : '#f9f0ff'}; color: ${vpdMethod === 'tripgen' ? '#fff' : '#4a148c'}; cursor: pointer; font-weight: 600;">🚗 Trip Generation</button>
+          <span style="font-size: 0.72em; color: #8e24aa; margin-left: 4px;">${vpdMethod === 'tripgen' ? '— Using calculated VADT as Base VPD' : '— Using nearby reference counters as Base VPD'}</span>
+        </div>
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Road</label>
           <input type="text" value="${roadName.replace(/"/g, '&quot;')}" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%;" />
           <div style="font-size: 0.72em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">${hasEstimate ? `${String(estimateMeta.source || 'Estimated')} • ${Number(estimateMeta.refsCount) || 0} refs • ${String(estimateMeta.areaType || 'Mixed')} (${Number(estimateMeta.areaFactorPercent) || 100}%)` : 'No reference counters within 5 km to estimate Base VPD.'}</div>
         </div>
-        <div>
+        <div data-datapoints-section="${safeKeyAttr}" style="${vpdMethod === 'tripgen' ? 'display:none;' : ''}">
           <label style="color: ${hasEstimate ? '#6a1b9a' : '#c62828'}; font-size: 0.75em;">Estimated Base VPD (Editable)</label>
           <input type="number" class="detour-base-vpd-display" data-detour-base-key="${key}" data-detour-manual-key="${key}" data-detour-manual-field="baseVpd" value="${baseEstimate}" min="0" step="1" style="border: 1px solid ${hasEstimate ? '#ce93d8' : '#e53935'}; background: #fff; width: 100%;" />
         </div>
@@ -16246,6 +16258,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Add Manual Trip Generation section
       const tripGenWrap = document.createElement('div');
       tripGenWrap.style.cssText = 'grid-column: 1 / -1; margin-top: 8px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px;';
+      tripGenWrap.style.display = vpdMethod === 'tripgen' ? 'block' : 'none';
 
       const calcState = (inputData && inputData.tripGenCalcState) ? inputData.tripGenCalcState : {};
       const tgLandUse = calcState.landUse || 'custom';
@@ -16258,8 +16271,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const lbl = (sc && sc.description) ? sc.description : val;
         return `<option value="${val}"${tgLandUse === val ? ' selected' : ''}>${lbl}</option>`;
       }).join('');
-      const safeKeyAttr = key.replace(/"/g, '&quot;');
-      const safeKeyId = key.replace(/[^a-z0-9]/gi, '_');
       const tripGenData = (inputData && inputData.tripGenVpd) || { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 };
       const eslBase = 'border:1px solid #ce93d8; border-radius:3px; padding:4px; font-size:0.8em; background:#fff; width:100%;';
       const labelCss = 'display:block; font-size:0.73em; color:#6a1b9a; font-weight:600; margin-bottom:2px; text-transform:uppercase; letter-spacing:0.03em;';
@@ -16407,11 +16418,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         `;
         refsWrap.appendChild(recalcWrap);
 
+        refsWrap.style.display = vpdMethod === 'datapoints' ? 'block' : 'none';
         row.appendChild(refsWrap);
         updateDetourRefWeightTotalBadge(key, row);
       }
 
       bodyEl.appendChild(row);
+    });
+
+    // Method toggle button handler
+    bodyEl.querySelectorAll('[data-detour-method-btn]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const bKey = String(btn.dataset.detourMethodBtn || '').trim();
+        const method = String(btn.dataset.detourMethodVal || 'datapoints').trim();
+        const bExisting = window.detourManualRoadInputs[bKey] || {};
+        bExisting.vpdMethod = method;
+        window.detourManualRoadInputs[bKey] = bExisting;
+        const roads = Array.isArray(window.detourManualPanelRoads) ? window.detourManualPanelRoads : [];
+        renderDetourManualVpdPanel(roads);
+        calculateDetourOverlay();
+      });
     });
 
     bodyEl.querySelectorAll('input[data-detour-manual-key]').forEach((inputEl) => {
@@ -17846,7 +17872,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const baseBefore = manualBaseVpd > 0 ? manualBaseVpd : counterBaseVpd;
           const tripGenVpd = (manualInput && typeof manualInput.tripGenVpd === 'object' && manualInput.tripGenVpd) ? manualInput.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 };
           const totalTripGenVpd = (Number(tripGenVpd.EAST) || 0) + (Number(tripGenVpd.WEST) || 0) + (Number(tripGenVpd.NORTH) || 0) + (Number(tripGenVpd.SOUTH) || 0);
-          const baseVpd = baseBefore + totalTripGenVpd;
+          const vpdMethodUsed = (manualInput && manualInput.vpdMethod) || 'datapoints';
+          const baseVpd = vpdMethodUsed === 'tripgen' ? (totalTripGenVpd > 0 ? totalTripGenVpd : baseBefore) : baseBefore;
 
           const sourceD1Profile = getDirectionalProfile(matchedSite, 'GAZETTAL', counterBaseVpd / 2);
           const sourceD2Profile = getDirectionalProfile(matchedSite, 'AGAINST GAZETTAL', counterBaseVpd / 2);
@@ -17876,7 +17903,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
 
         const manualInput = getDetourManualRoadInput(roadName);
-        const baseVpd = Math.max(0, Number(manualInput && manualInput.baseVpd) || 0);
+        const vpdMethodNoSite = (manualInput && manualInput.vpdMethod) || 'datapoints';
+        const _tgVpd = (manualInput && typeof manualInput.tripGenVpd === 'object' && manualInput.tripGenVpd) ? manualInput.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 };
+        const _totalTgVpd = (Number(_tgVpd.EAST) || 0) + (Number(_tgVpd.WEST) || 0) + (Number(_tgVpd.NORTH) || 0) + (Number(_tgVpd.SOUTH) || 0);
+        const baseVpd = vpdMethodNoSite === 'tripgen'
+          ? (_totalTgVpd > 0 ? _totalTgVpd : Math.max(0, Number(manualInput && manualInput.baseVpd) || 0))
+          : Math.max(0, Number(manualInput && manualInput.baseVpd) || 0);
         const lanes = Math.max(1, Number(manualInput && manualInput.lanes) || 2);
         if (baseVpd <= 0) {
           roadsWithNoEstimate.push(roadName);
