@@ -5003,6 +5003,67 @@
     loadingHintIndex = 0;
   }
 
+  const QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS = 5000;
+  let quickTiaSearchOverlayOwnsVisibility = false;
+  let quickTiaSearchOverlaySnapshot = null;
+
+  function showQuickAddressSearchOverlay(queryText = '') {
+    const overlay = document.getElementById('appLoadingOverlay');
+    if (!overlay) return;
+
+    const titleEl = document.getElementById('loadingText');
+    const detailEl = document.getElementById('loadingDetailText');
+    const fillEl = document.getElementById('loadingProgressFill');
+    const valueEl = document.getElementById('loadingProgressValue');
+
+    quickTiaSearchOverlaySnapshot = {
+      title: titleEl ? titleEl.textContent : '',
+      detail: detailEl ? detailEl.textContent : '',
+      width: fillEl ? fillEl.style.width : '',
+      value: valueEl ? valueEl.textContent : ''
+    };
+
+    quickTiaSearchOverlayOwnsVisibility = overlay.classList.contains('hidden');
+    overlay.classList.remove('hidden');
+    startLoadingHints();
+
+    const trimmed = String(queryText || '').trim();
+    setLoadingState(
+      'Searching address and matching roads...',
+      trimmed ? `Checking map and traffic references near: ${trimmed}` : 'Checking map and traffic references near the entered address.',
+      18
+    );
+  }
+
+  function updateQuickAddressSearchOverlay(mainText, detailText, progressPercent) {
+    setLoadingState(mainText, detailText, progressPercent);
+  }
+
+  function hideQuickAddressSearchOverlay() {
+    const overlay = document.getElementById('appLoadingOverlay');
+    if (!overlay) return;
+
+    const titleEl = document.getElementById('loadingText');
+    const detailEl = document.getElementById('loadingDetailText');
+    const fillEl = document.getElementById('loadingProgressFill');
+    const valueEl = document.getElementById('loadingProgressValue');
+
+    if (quickTiaSearchOverlaySnapshot) {
+      if (titleEl) titleEl.textContent = quickTiaSearchOverlaySnapshot.title || 'Preparing your traffic workspace...';
+      if (detailEl) detailEl.textContent = quickTiaSearchOverlaySnapshot.detail || 'Connecting to data sources and validating map tools.';
+      if (fillEl && typeof quickTiaSearchOverlaySnapshot.width === 'string') fillEl.style.width = quickTiaSearchOverlaySnapshot.width || '12%';
+      if (valueEl) valueEl.textContent = quickTiaSearchOverlaySnapshot.value || '12%';
+    }
+
+    if (quickTiaSearchOverlayOwnsVisibility) {
+      overlay.classList.add('hidden');
+      stopLoadingHints();
+    }
+
+    quickTiaSearchOverlayOwnsVisibility = false;
+    quickTiaSearchOverlaySnapshot = null;
+  }
+
   // ===== EDITABLE REPORT GENERATION LOGIC =====
   function buildSectionDataSummary(card, options = {}) {
     const shortMode = !!(options && options.short);
@@ -20122,7 +20183,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const hasAnyWithinPreferredMax = analyzed.some((item) => item.distanceKm <= PREFERRED_MAX_RADIUS_KM);
     let maxRadiusToSearchKm = PREFERRED_MAX_RADIUS_KM;
 
-    // Only expand beyond 5km when absolutely no datapoint exists inside 5km.
+    // Expand beyond 5km only when nothing is available within 5km.
     if (!hasAnyWithinPreferredMax && Number.isFinite(nearestDistanceKm)) {
       maxRadiusToSearchKm = Math.max(
         PREFERRED_MAX_RADIUS_KM,
@@ -20277,6 +20338,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!Number.isFinite(cLat) || !Number.isFinite(cLon)) return result;
 
     const candidateRoad = String(candidate && (candidate.roadName || candidate.road_name || candidate.Description || candidate.description) || '').trim();
+    const candidateDistanceMeters = haversineDistance(Number(userLat), Number(userLon), cLat, cLon);
     const [targetEls, candidateEls] = await Promise.all([
       fetchOsmRoadElementsNear(userLat, userLon, 260),
       fetchOsmRoadElementsNear(cLat, cLon, 180)
@@ -20303,18 +20365,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     result.isElevatedOrTunnel = isElevatedOrTunnelRoad(tags);
     result.isControlledAccess = isControlledAccessHighway(tags);
 
-    const noLikelyIngress = result.isElevatedOrTunnel
-      && result.isControlledAccess
-      && hasLocalRoadNearTarget
-      && !roadTouchesTargetArea
-      && !sameAsSearchRoad;
+    const highwayTag = String(tags.highway || '').toLowerCase();
+    const isThroughCorridorClass = /^(motorway|motorway_link|trunk|trunk_link|primary|primary_link)$/.test(highwayTag);
+    const likelyDisconnectedRoad = !roadTouchesTargetArea && !sameAsSearchRoad;
 
-    if (noLikelyIngress) {
+    const disconnectedControlledAccess = likelyDisconnectedRoad
+      && result.isControlledAccess
+      && (result.isElevatedOrTunnel || hasLocalRoadNearTarget);
+
+    const disconnectedThroughCorridor = likelyDisconnectedRoad
+      && hasLocalRoadNearTarget
+      && isThroughCorridorClass
+      && candidateDistanceMeters >= 450;
+
+    if (disconnectedControlledAccess || disconnectedThroughCorridor) {
       const structureHint = String(tags.tunnel || '').toLowerCase() === 'yes'
         ? 'tunnel motorway segment'
         : 'elevated motorway segment';
       result.exclude = true;
-      result.reason = `${matchedRoadName || 'This reference'} appears to be on a ${structureHint} without clear local ingress to the searched address roads.`;
+      if (disconnectedControlledAccess) {
+        result.reason = `Road not connected to searched address network: ${matchedRoadName || 'this reference'} appears to be on a ${structureHint} without clear local ingress to the searched roads.`;
+      } else {
+        result.reason = `Road not connected to searched address network: ${matchedRoadName || 'this reference'} appears to be on a separated ${highwayTag || 'major'} corridor and is not connected to the searched local road set.`;
+      }
     }
 
     return result;
@@ -20330,7 +20403,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return {
         matchResult: base,
         excludedRefs: [],
-        summary: ''
+        summary: '',
+        connectedWithin5Count: 0,
+        connectedBeyond5Count: 0
       };
     }
 
@@ -20346,16 +20421,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const excludedMap = new Map();
     const excludedRefs = [];
+    let connectedWithin5Count = 0;
+    let connectedBeyond5Count = 0;
     decisions.forEach((d) => {
-      if (!d || !d.access || !d.access.exclude) return;
-      if (!d.key) return;
-      excludedMap.set(d.key, d.access);
-      excludedRefs.push({
-        siteId: d.entry.id,
-        road: String(d.entry.roadName || d.entry.Description || d.entry.description || ''),
-        distanceMeters: Number(d.entry.distanceMeters) || Math.round((Number(d.entry.distanceKm) || 0) * 1000),
-        reason: String(d.access.reason || 'Reference excluded by elevated/tunnel accessibility logic.')
-      });
+      if (!d) return;
+      const distanceMeters = Number(d.entry && d.entry.distanceMeters) || Math.round((Number(d.entry && d.entry.distanceKm) || 0) * 1000);
+      if (d.access && d.access.exclude) {
+        if (d.key) excludedMap.set(d.key, d.access);
+        excludedRefs.push({
+          siteId: d.entry.id,
+          road: String(d.entry.roadName || d.entry.Description || d.entry.description || ''),
+          distanceMeters,
+          reason: String(d.access.reason || 'Reference excluded by elevated/tunnel accessibility logic.')
+        });
+        return;
+      }
+
+      if (distanceMeters <= QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS) connectedWithin5Count += 1;
+      else connectedBeyond5Count += 1;
     });
 
     const filterEntries = (list) => list.filter((entry) => {
@@ -20375,7 +20458,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const point = exactFiltered[0] || nearbyFiltered[0] || null;
     const payload = point ? buildSafeSimulationPayload(point) : null;
     const summary = excludedRefs.length
-      ? `${excludedRefs.length} elevated/tunnel controlled-access reference point(s) excluded due to low likelihood of traffic ingress to the searched address.`
+      ? `${excludedRefs.length} reference point(s) excluded: road not connected to searched address network.`
       : '';
 
     return {
@@ -20388,7 +20471,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         nearbyMatches: nearbyFiltered
       },
       excludedRefs,
-      summary
+      summary,
+      connectedWithin5Count,
+      connectedBeyond5Count
     };
   }
 
@@ -20477,6 +20562,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (!searchInput) return alert('Please enter a road name or location');
       const searchRoadName = extractSearchRoadName(searchInput) || searchInput;
       rememberQuickTiaAddress(searchInput);
+      showQuickAddressSearchOverlay(searchInput);
 
       const searchBtn = document.getElementById('quickTiaSearchBtn') || document.querySelector('button[onclick="performQuickTIASearch()"]');
       let originalBtnText = null;
@@ -20490,6 +20576,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       document.getElementById('quickTiaSearchAddress').textContent = searchInput;
       const geoSourceEl = document.getElementById('quickTiaGeoSource');
       if (geoSourceEl) geoSourceEl.textContent = 'Searching...';
+      updateQuickAddressSearchOverlay('Searching address on map...', 'Resolving location and road context from map services.', 28);
 
       // 1. Geocode
       let location = await geocodeAddress(searchInput);
@@ -20517,6 +20604,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return;
     }
 
+    updateQuickAddressSearchOverlay('Address found. Matching reference roads...', 'Checking connected datapoint roads within maximum 5.0 km.', 56);
     if (geoSourceEl) geoSourceEl.textContent = location.provider;
     const resolvedAddressForReport = String(location.displayName || searchInput || '').trim();
     window.lastQuickTiaResolvedAddress = resolvedAddressForReport;
@@ -20569,19 +20657,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const matchResult = accessAwareResult.matchResult;
     const excludedRefs = Array.isArray(accessAwareResult.excludedRefs) ? accessAwareResult.excludedRefs : [];
     const exclusionSummary = String(accessAwareResult.summary || '').trim();
+    const connectedWithin5Count = Math.max(0, Number(accessAwareResult.connectedWithin5Count) || 0);
+    const connectedBeyond5Count = Math.max(0, Number(accessAwareResult.connectedBeyond5Count) || 0);
 
     const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.5';
-
-    if (excludedRefs.length && exclusionSummary) {
-      document.getElementById('quickTiaError').innerHTML = `<strong>Note:</strong> ${exclusionSummary}<br><span style="font-size:0.9em;">Alternative reachable references are listed below.</span>`;
-      document.getElementById('quickTiaError').style.display = 'block';
-    }
+    updateQuickAddressSearchOverlay('Validating road connectivity...', 'Removing references not connected to the searched address road network.', 78);
 
     if (matchResult.type === 'NO_MATCH') {
-      const extraLine = excludedRefs.length
-        ? '<br><span style="font-size:0.9em;">Nearby references were detected but excluded as elevated/tunnel controlled-access links with low local ingress relevance.</span>'
+      const noConnectedMsg = '<strong>⚠ No connected datapoint found within 5km.</strong><br><span style="font-size:0.9em;">Use manual trip generation method.</span>';
+      const disconnectedExtra = excludedRefs.length
+        ? '<br><span style="font-size:0.9em;">Nearby datapoints were rejected because their roads are not connected to the searched address road network.</span>'
         : '';
-      document.getElementById('quickTiaError').innerHTML = `<strong>⚠ Address found, but no nearby counters within ${radiusLabel}km.</strong><br><span style="font-size:0.9em;">Try a closer road segment or broaden the address context.</span>${extraLine}`;
+      document.getElementById('quickTiaError').innerHTML = `${noConnectedMsg}${disconnectedExtra}`;
       document.getElementById('quickTiaError').style.display = 'block';
     } else {
       const simulationData = LoganTrafficEngine.executeSimulation(matchResult.payload);
@@ -20605,7 +20692,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       displayQuickTiaMultipleRefs(searchInput, nearbyArray, location.lat, location.lon, false, { excludedRefs, exclusionSummary });
       showNotification(`⚠ No fuzzy road-name matches. Using nearest counters within ${radiusLabel}km.`);
       }
+
+      const selectedForDistanceCheck = [
+        ...(Array.isArray(matchResult.exactMatches) ? matchResult.exactMatches.slice(0, 3) : []),
+        ...(Array.isArray(matchResult.nearbyMatches) ? matchResult.nearbyMatches.slice(0, 5) : [])
+      ];
+      const hasSelectedBeyond5Km = selectedForDistanceCheck.some((item) => {
+        const meters = Number(item && item.distanceMeters);
+        return Number.isFinite(meters) && meters > QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS;
+      });
+
+      if (hasSelectedBeyond5Km || (connectedWithin5Count === 0 && connectedBeyond5Count > 0)) {
+        document.getElementById('quickTiaError').innerHTML = '<strong>⚠ Datapoint location is more than 5km from the searched address.</strong><br><span style="font-size:0.9em;">Use with caution, or use manual trip generation method.</span>';
+        document.getElementById('quickTiaError').style.display = 'block';
+      } else {
+        document.getElementById('quickTiaError').style.display = 'none';
+      }
     }
+
+      updateQuickAddressSearchOverlay('Search complete', 'Connected reference points are ready for review.', 100);
 
       if (searchBtn) { searchBtn.innerHTML = originalBtnText; searchBtn.disabled = false; }
     } catch (err) {
@@ -20614,6 +20719,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (errEl) { errEl.innerHTML = `<strong>❌ Error:</strong> ${String(err && err.message ? err.message : err)}`; errEl.style.display = 'block'; }
       // try to restore button state if possible
       try { const b = document.getElementById('quickTiaSearchBtn'); if (b) { b.innerHTML = '🔍 Search'; b.disabled = false; } } catch (_) {}
+    } finally {
+      setTimeout(() => {
+        hideQuickAddressSearchOverlay();
+      }, 250);
     }
   }
 
@@ -20981,8 +21090,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (excludedRefs.length) {
       const excludedWrap = document.createElement('div');
       excludedWrap.style.cssText = 'margin-top:10px; padding:10px; border:1px solid #ffccbc; border-radius:6px; background:#fff3e0;';
-      const summaryText = exclusionSummary || `${excludedRefs.length} reference point(s) excluded by elevated/tunnel accessibility checks.`;
-      excludedWrap.innerHTML = `<div style="font-weight:700; color:#bf360c; margin-bottom:6px;">Excluded Reference Points</div><div style="font-size:0.84em; color:#5d4037; margin-bottom:6px;">${summaryText}</div>`;
+      const summaryText = exclusionSummary || `${excludedRefs.length} reference point(s) excluded: road not connected to searched address network.`;
+      excludedWrap.innerHTML = `<div style="font-weight:700; color:#bf360c; margin-bottom:6px;">Excluded Reference Points (Road Not Connected)</div><div style="font-size:0.84em; color:#5d4037; margin-bottom:6px;">${summaryText}</div>`;
 
       const list = document.createElement('div');
       list.style.cssText = 'display:grid; gap:6px;';
