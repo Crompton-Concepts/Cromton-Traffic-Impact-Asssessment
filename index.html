@@ -8600,8 +8600,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const safeTags = tags || {};
     const raw = String(safeTags.oneway || '').trim().toLowerCase();
     const junction = String(safeTags.junction || '').trim().toLowerCase();
+    const rawCompact = raw.replace(/\s+/g, '');
 
-    if (raw === 'yes' || raw === '1' || raw === 'true' || raw === 'reversible' || raw === 'alternating') {
+    if (
+      raw === 'yes' || raw === '1' || raw === 'true' || raw === 'reversible' || raw === 'alternating'
+      || rawCompact.includes('oneway') || rawCompact.includes('yes')
+    ) {
       return { isOneWay: true, rawTag: raw || 'yes' };
     }
     if (raw === '-1' || raw === 'reverse') {
@@ -8622,14 +8626,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const safeLon = Number(lon);
     if (!Number.isFinite(safeLat) || !Number.isFinite(safeLon)) return null;
 
+    const preferredRoadParsed = extractSearchRoadName(preferredRoadName || '') || String(preferredRoadName || '');
+    const preferredRoadStd = standardizeRoadName(preferredRoadParsed);
+
     const cache = window.__osmOneWayCache || (window.__osmOneWayCache = new Map());
-    const cacheKey = `${safeLat.toFixed(5)},${safeLon.toFixed(5)}|${standardizeRoadName(preferredRoadName || '')}`;
+    const cacheKey = `${safeLat.toFixed(5)},${safeLon.toFixed(5)}|${preferredRoadStd}`;
     if (cache.has(cacheKey)) return cache.get(cacheKey);
 
-    const overpassCacheKey = `oneway:${safeLat.toFixed(5)},${safeLon.toFixed(5)}:${standardizeRoadName(preferredRoadName || '')}`;
+    const overpassCacheKey = `oneway:${safeLat.toFixed(5)},${safeLon.toFixed(5)}:${preferredRoadStd}`;
 
     try {
-      const prefRoad = standardizeRoadName(preferredRoadName || '');
+      const prefRoad = preferredRoadStd;
       let best = null;
       const radii = [80, 180, 300];
 
@@ -8673,7 +8680,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       // Avoid false positives from nearby side streets when the user searched a named road.
       const result = (prefRoad && best && !best.sameRoad) ? null : (best || null);
-      cache.set(cacheKey, result);
+      if (result) {
+        cache.set(cacheKey, result);
+      } else {
+        cache.delete(cacheKey);
+      }
       return result;
     } catch (_err) {
       return null;
@@ -20332,7 +20343,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       notify: false,
       autoApplyMode: true,
       confirmMode: false,
-      skipDetection: true
+      skipDetection: false
     });
     const isOneWayConfirmed = !!(oneWayResult && oneWayResult.appliedMode === 'ONE-WAY');
     const detectionForUi = (oneWayResult && oneWayResult.detection && oneWayResult.detection.isOneWay) ? oneWayResult.detection : null;
@@ -20785,20 +20796,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const isOneWay = String((document.getElementById('roadOperationMode') && document.getElementById('roadOperationMode').value) || '').toUpperCase() === 'ONE-WAY';
     const oneWayPercentInput = document.getElementById('quickTiaOneWayPercent');
-    const oneWayDirectionInput = document.getElementById('quickTiaOneWayDirection');
     const oneWayPercent = Math.max(1, Math.min(100, Number(oneWayPercentInput && oneWayPercentInput.value) || 100));
-    const oneWayDirection = String((oneWayDirectionInput && oneWayDirectionInput.value) || 'D1').toUpperCase() === 'D2' ? 'D2' : 'D1';
+    const oneWayDirection = 'D1';
 
     if (isOneWay) {
       const oneWayAadt = Math.round(finalAvgVADT * (oneWayPercent / 100));
       finalAvgVADT = oneWayAadt;
-      if (oneWayDirection === 'D2') {
-        finalAvgD1 = 0;
-        finalAvgD2 = oneWayAadt;
-      } else {
-        finalAvgD1 = oneWayAadt;
-        finalAvgD2 = 0;
-      }
+      finalAvgD1 = oneWayAadt;
+      finalAvgD2 = 0;
     }
 
     window.selectedTiaData.avgVADT = finalAvgVADT;
@@ -20824,8 +20829,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setFormulaBelow('quickTiaCalcAvgVADT', `Weighted Avg VADT = sum(weight_i * VADT_i) = ${weightedAvgVADT.toLocaleString()}`);
     if (isOneWay) {
       setFormulaBelow('quickTiaCalcAdjVADT', `One-way AADT = (Weighted Avg * area factor) * selected one-way % = (${weightedAvgVADT.toLocaleString()} * ${(areaTypeFactorPercent / 100).toFixed(2)}) * ${(oneWayPercent / 100).toFixed(2)} = ${finalAvgVADT.toLocaleString()}`);
-      setFormulaBelow('quickTiaCalcD1', `Calculated D1 (one-way) = ${oneWayDirection === 'D1' ? finalAvgD1.toLocaleString() : '0'} (${oneWayDirection === 'D1' ? 'active direction' : 'inactive direction'})`);
-      setFormulaBelow('quickTiaCalcD2', `Calculated D2 (one-way) = ${oneWayDirection === 'D2' ? finalAvgD2.toLocaleString() : '0'} (${oneWayDirection === 'D2' ? 'active direction' : 'inactive direction'})`);
+      setFormulaBelow('quickTiaCalcD1', `Calculated D1 (one-way) = ${finalAvgD1.toLocaleString()} (one-way flow always mapped to Direction 1)`);
+      setFormulaBelow('quickTiaCalcD2', `Calculated D2 (one-way) = ${finalAvgD2.toLocaleString()} (Direction 2 disabled in one-way mode)`);
     } else {
       setFormulaBelow('quickTiaCalcAdjVADT', `Adjusted AADT = Weighted Avg * area factor = ${weightedAvgVADT.toLocaleString()} * ${(areaTypeFactorPercent / 100).toFixed(2)} = ${finalAvgVADT.toLocaleString()}`);
       setFormulaBelow('quickTiaCalcD1', `Calculated D1 = Weighted D1 * area factor = ${weightedAvgD1.toLocaleString()} * ${(areaTypeFactorPercent / 100).toFixed(2)} = ${finalAvgD1.toLocaleString()}`);
