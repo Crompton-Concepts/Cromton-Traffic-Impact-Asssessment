@@ -46,11 +46,14 @@
       z-index: 9999;
       padding: 24px;
       backdrop-filter: blur(5px);
+      overflow: hidden;
     }
     .loading-overlay.hidden {
       display: none;
     }
     .loading-card {
+      position: relative;
+      z-index: 2;
       width: min(92vw, 540px);
       border-radius: 16px;
       border: 1px solid rgba(31, 94, 99, 0.16);
@@ -124,6 +127,115 @@
       letter-spacing: 0.8px;
     }
 
+    .loading-funny-stage {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .loading-overlay.quick-search-funny-mode .loading-funny-stage {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .loading-funny-road {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 8%;
+      height: 95px;
+      background: linear-gradient(180deg, rgba(33, 37, 41, 0.12) 0%, rgba(33, 37, 41, 0.18) 100%);
+      border-top: 2px dashed rgba(31, 94, 99, 0.24);
+      border-bottom: 2px dashed rgba(31, 94, 99, 0.18);
+    }
+
+    .loading-funny-cone {
+      position: absolute;
+      font-size: 1.5rem;
+      bottom: calc(8% + 28px);
+      opacity: 0.85;
+      animation: coneHop 2.3s ease-in-out infinite;
+    }
+
+    .loading-funny-cone.c1 { left: 12%; animation-delay: 0s; }
+    .loading-funny-cone.c2 { left: 20%; animation-delay: 0.35s; }
+    .loading-funny-cone.c3 { right: 20%; animation-delay: 0.7s; }
+    .loading-funny-cone.c4 { right: 12%; animation-delay: 1.05s; }
+
+    .loading-funny-controller {
+      position: absolute;
+      bottom: calc(8% + 26px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      animation: controllerBob 1.6s ease-in-out infinite;
+      filter: drop-shadow(0 4px 10px rgba(16, 50, 54, 0.2));
+    }
+
+    .loading-funny-controller .worker {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .loading-funny-controller .paddle {
+      font-size: 1.35rem;
+      transform-origin: 15% 50%;
+      animation: paddleWave 1.1s ease-in-out infinite;
+    }
+
+    .loading-funny-controller .label {
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #1f5e63;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(31, 94, 99, 0.25);
+      border-radius: 999px;
+      padding: 2px 8px;
+      text-transform: uppercase;
+    }
+
+    .loading-funny-controller.controller-left { left: 7%; }
+    .loading-funny-controller.controller-right { right: 7%; animation-delay: 0.45s; }
+    .loading-funny-controller.controller-right .paddle {
+      animation-delay: 0.35s;
+    }
+
+    .loading-funny-car {
+      position: absolute;
+      bottom: calc(8% + 6px);
+      font-size: 1.8rem;
+      animation: funnyCarDrive 6.2s linear infinite;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+    }
+
+    @keyframes funnyCarDrive {
+      0% { transform: translateX(-15vw); opacity: 0; }
+      8% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { transform: translateX(120vw); opacity: 0; }
+    }
+
+    @keyframes controllerBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes paddleWave {
+      0%, 100% { transform: rotate(8deg); }
+      50% { transform: rotate(-26deg); }
+    }
+
+    @keyframes coneHop {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
     @media (max-width: 640px) {
       .loading-card {
         padding: 22px 18px 18px;
@@ -133,6 +245,30 @@
       }
       .loading-detail-text {
         font-size: 0.87rem;
+      }
+
+      .loading-funny-controller {
+        bottom: calc(8% + 20px);
+      }
+
+      .loading-funny-controller .worker {
+        font-size: 1.7rem;
+      }
+
+      .loading-funny-car {
+        font-size: 1.45rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .loading-funny-stage,
+      .loading-funny-controller,
+      .loading-funny-controller .paddle,
+      .loading-funny-cone,
+      .loading-funny-car,
+      .loading-spinner {
+        animation: none !important;
+        transition: none !important;
       }
     }
 
@@ -3116,6 +3252,24 @@
   
   <!-- Loading overlay -->
   <div id="appLoadingOverlay" class="loading-overlay hidden" role="status" aria-live="polite" aria-busy="true">
+    <div class="loading-funny-stage" aria-hidden="true">
+      <div class="loading-funny-road"></div>
+      <div class="loading-funny-cone c1">🚧</div>
+      <div class="loading-funny-cone c2">🚧</div>
+      <div class="loading-funny-cone c3">🚧</div>
+      <div class="loading-funny-cone c4">🚧</div>
+      <div class="loading-funny-controller controller-left">
+        <div class="worker">👷</div>
+        <div class="paddle">🛑</div>
+        <div class="label">Stop</div>
+      </div>
+      <div class="loading-funny-controller controller-right">
+        <div class="worker">👷</div>
+        <div class="paddle">🟢</div>
+        <div class="label">Slow</div>
+      </div>
+      <div class="loading-funny-car">🚗</div>
+    </div>
     <div class="loading-card">
       <div class="loading-brand">Crompton Traffic Systems</div>
       <div class="loading-spinner"></div>
@@ -5111,6 +5265,7 @@
     const overlay = document.getElementById('appLoadingOverlay');
     if (overlay) {
       overlay.setAttribute('aria-busy', 'false');
+      overlay.classList.remove('quick-search-funny-mode');
     }
     loadingHintMode = 'default';
     loadingActiveHintList = null;
@@ -5139,6 +5294,7 @@
 
     quickTiaSearchOverlayOwnsVisibility = overlay.classList.contains('hidden');
     overlay.classList.remove('hidden');
+    overlay.classList.add('quick-search-funny-mode');
     loadingActiveHintList = getQuickSearchFunnyHints(queryText);
     activateFunnyLoadingMode();
     startLoadingHints();
@@ -5183,6 +5339,8 @@
     if (quickTiaSearchOverlayOwnsVisibility) {
       overlay.classList.add('hidden');
       stopLoadingHints();
+    } else {
+      overlay.classList.remove('quick-search-funny-mode');
     }
 
     quickTiaSearchOverlayOwnsVisibility = false;
