@@ -4840,6 +4840,7 @@
   let loadingHintMode = 'default';
   let loadingActiveHintList = null;
   let loadingTextTransitionInProgress = false;
+  const LOADING_HINT_ROTATION_MS = 4800;
   const loadingHints = [
     'Tip: Use Quick Search to jump straight to a known counter ID.',
     'Tip: You can upload custom CSV data and merge it with live datasets.',
@@ -5099,7 +5100,7 @@
       if (!overlay || overlay.classList.contains('hidden')) return;
       loadingHintIndex = (loadingHintIndex + 1) % hints.length;
       detailEl.textContent = hints[loadingHintIndex];
-    }, 3000);
+    }, LOADING_HINT_ROTATION_MS);
   }
 
   function stopLoadingHints() {
@@ -9718,6 +9719,109 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return key || loc || String(props['Id'] || props['ID'] || props['id'] || '').trim();
     };
 
+    const normalizeMacroLabelKey = (value) => String(value || '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, ' ')
+      .trim();
+
+    const isPlaceholderMacroLabel = (label, siteId = '') => {
+      const text = String(label || '').replace(/"/g, '').trim();
+      if (!text) return true;
+      if (/^(?:N\/?A|UNKNOWN|SITE|UNNAMED ROAD)$/i.test(text)) return true;
+      if (/^TSC\s*\d+$/i.test(text)) return true;
+
+      const normalizedLabel = normalizeMacroLabelKey(text).replace(/\s+/g, '');
+      const normalizedSiteId = normalizeMacroLabelKey(siteId).replace(/\s+/g, '');
+      if (normalizedSiteId && (normalizedLabel === normalizedSiteId || normalizedLabel === `TSC${normalizedSiteId}`)) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const pickBestMacroLabel = (siteId, siteData) => {
+      const roadName = String(siteData && siteData.road_name || '').trim();
+      const descriptionText = String(siteData && siteData.description || '').trim();
+      if (!isPlaceholderMacroLabel(roadName, siteId)) return roadName;
+      if (!isPlaceholderMacroLabel(descriptionText, siteId)) return descriptionText;
+      return '';
+    };
+
+    const inferBrisbaneRoadContext = (siteId, siteData, referenceSites) => {
+      const lat = Number(siteData && siteData.latitude);
+      const lon = Number(siteData && siteData.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Array.isArray(referenceSites) || !referenceSites.length) {
+        return null;
+      }
+
+      const distinctCandidates = [];
+      const seen = new Set();
+      const radiusSequence = [180, 320, 500];
+
+      for (const radiusMeters of radiusSequence) {
+        distinctCandidates.length = 0;
+        seen.clear();
+
+        referenceSites.forEach((reference) => {
+          const dist = haversineDistance(lat, lon, reference.latitude, reference.longitude);
+          if (!Number.isFinite(dist) || dist > radiusMeters) return;
+          const labelKey = normalizeMacroLabelKey(reference.label);
+          if (!labelKey || seen.has(labelKey)) return;
+          seen.add(labelKey);
+          distinctCandidates.push({ label: reference.label, dist });
+        });
+
+        distinctCandidates.sort((a, b) => a.dist - b.dist);
+        if (distinctCandidates.length) break;
+      }
+
+      if (!distinctCandidates.length) return null;
+
+      const roadNames = distinctCandidates.slice(0, 2).map(item => item.label);
+      const roadName = roadNames.join(' / ');
+      const description = roadNames.length > 1
+        ? `Approx. near ${roadNames.join(' / ')}`
+        : `Approx. near ${roadNames[0]}`;
+
+      return { roadName, description };
+    };
+
+    const applyBrisbaneRoadContextFallbacks = (siteMap) => {
+      if (!siteMap || typeof siteMap !== 'object') return 0;
+
+      const referenceSites = Object.entries(siteMap)
+        .map(([siteId, siteData]) => {
+          const label = pickBestMacroLabel(siteId, siteData);
+          const latitude = Number(siteData && siteData.latitude);
+          const longitude = Number(siteData && siteData.longitude);
+          if (!label || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+          return { siteId, label, latitude, longitude };
+        })
+        .filter(Boolean);
+
+      let updates = 0;
+      Object.entries(siteMap).forEach(([siteId, siteData]) => {
+        if (!siteData || String(siteData.source || '').toUpperCase() !== 'BRISBANE') return;
+
+        const hasPlaceholderRoad = isPlaceholderMacroLabel(siteData.road_name, siteId);
+        const hasPlaceholderDescription = isPlaceholderMacroLabel(siteData.description, siteId);
+        if (!hasPlaceholderRoad && !hasPlaceholderDescription) return;
+
+        const inferred = inferBrisbaneRoadContext(siteId, siteData, referenceSites);
+        if (!inferred) return;
+
+        if (hasPlaceholderRoad && inferred.roadName) {
+          siteData.road_name = inferred.roadName;
+          updates += 1;
+        }
+        if (hasPlaceholderDescription && inferred.description) {
+          siteData.description = inferred.description;
+        }
+      });
+
+      return updates;
+    };
+
     orderedFeatures.forEach(feature => {
       const props = feature.properties;
       if (!props) return;
@@ -10193,6 +10297,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       console.log('[Data Load] Parsed site data');
 
       baseMacroSitesData = mergeMacroSites(tmrSites, goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites);
+      const brisbaneFallbackCount = applyBrisbaneRoadContextFallbacks(baseMacroSitesData);
       macroSitesData = mergeMacroSites(baseMacroSitesData, customUploadedSitesData);
       window.macroSitesData = macroSitesData;
       setLoadingState('Applying directional inference...', 'Processing directional splits in responsive batches.', 64);
@@ -10200,6 +10305,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       await applyDirectionalSplitInferenceToSitesAsync(macroSitesData, { chunkSize: 220 });
       setLoadingState('Building site index...', 'Compiling searchable records and map references.', 70);
       console.log('[Data Load] Merged and processed', Object.keys(macroSitesData).length, 'sites');
+      if (brisbaneFallbackCount > 0) {
+        console.log('[Data Load] Inferred Brisbane road labels for', brisbaneFallbackCount, 'sites using nearby named counters');
+      }
 
       document.getElementById('sitesLoadedCount').textContent = Object.keys(macroSitesData).length;
       populateMacroSitesDatalist();
