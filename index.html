@@ -20677,6 +20677,82 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return result;
   }
 
+  function normalizeRoadForConnectivity(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/[.,'\-]/g, ' ')
+      .replace(/\b(st)\b/g, 'street')
+      .replace(/\b(rd)\b/g, 'road')
+      .replace(/\b(ave)\b/g, 'avenue')
+      .replace(/\b(dr)\b/g, 'drive')
+      .replace(/\b(cr|cres)\b/g, 'crescent')
+      .replace(/\b(ct)\b/g, 'court')
+      .replace(/\b(pl)\b/g, 'place')
+      .replace(/\b(hwy)\b/g, 'highway')
+      .replace(/\b(mt)\b/g, 'mount')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Step A: lightweight same-road/segment connectedness check.
+  function checkRoadConnectivity(searchedRoad, pointRoad) {
+    const search = normalizeRoadForConnectivity(searchedRoad);
+    const point = normalizeRoadForConnectivity(pointRoad);
+    if (!search || !point) return false;
+    if (search === point) return true;
+    if (point.includes(search) || search.includes(point)) return true;
+    return false;
+  }
+
+  // Detailed connectivity check keeps the higher-confidence route/network validation.
+  async function checkRoadConnectivityDetailed(searchedRoadName, referencePoint, userLat, userLon) {
+    const access = await classifyReferenceConnectivityToAddress(userLat, userLon, searchedRoadName, referencePoint);
+    return {
+      isConnected: !(access && access.exclude),
+      access
+    };
+  }
+
+  // Step B: apply connectedness filter before rendering/using references.
+  function updateSmartRefList(searchResults, searchedRoad) {
+    const input = Array.isArray(searchResults) ? searchResults : [];
+    return input.filter((point) => {
+      const pointRoad = Array.isArray(point)
+        ? String((point[1] && (point[1].road_name || point[1].description)) || '')
+        : String((point && (point.roadName || point.road_name || point.Description || point.description)) || '');
+      return checkRoadConnectivity(searchedRoad, pointRoad);
+    });
+  }
+
+  async function filterSmartReferencePoints(searchedRoadName, allReferencePoints, userLat, userLon) {
+    const sourceList = Array.isArray(allReferencePoints) ? allReferencePoints : [];
+    const included = [];
+    const excluded = [];
+
+    for (const point of sourceList) {
+      const pointRoad = String((point && (point.roadName || point.road_name || point.Description || point.description)) || '');
+      if (!checkRoadConnectivity(searchedRoadName, pointRoad)) {
+        excluded.push({
+          point,
+          access: {
+            exclude: true,
+            reason: 'Road not connected to searched address network by same-road/segment check.'
+          }
+        });
+        continue;
+      }
+
+      const { isConnected, access } = await checkRoadConnectivityDetailed(searchedRoadName, point, userLat, userLon);
+      if (isConnected) included.push(point);
+      else excluded.push({ point, access });
+    }
+
+    return {
+      included,
+      excluded
+    };
+  }
+
   async function applySmartReferenceConnectivityFilter(matchResult, userLat, userLon, userRoadName) {
     const base = matchResult || {};
     const exact = Array.isArray(base.exactMatches) ? base.exactMatches : [];
@@ -20693,15 +20769,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       };
     }
 
-    const decisions = await Promise.all(pool.map(async (entry) => {
-      const access = await classifyReferenceConnectivityToAddress(userLat, userLon, userRoadName, entry);
+    const connectivityOutcome = await filterSmartReferencePoints(userRoadName, pool, userLat, userLon);
+    const connectedSet = new Set((connectivityOutcome.included || []).map((entry) => String(entry && entry.id ? entry.id : '')));
+    const decisions = pool.map((entry) => {
       const key = String(entry && entry.id ? entry.id : '');
+      const excludedHit = (connectivityOutcome.excluded || []).find((item) => String(item && item.point && item.point.id ? item.point.id : '') === key);
       return {
         key,
         entry,
-        access
+        access: excludedHit ? excludedHit.access : { exclude: !connectedSet.has(key), reason: '' }
       };
-    }));
+    });
 
     const excludedMap = new Map();
     const excludedRefs = [];
@@ -21169,7 +21247,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     refList.innerHTML = '';
     if (roadWeightList) roadWeightList.innerHTML = '';
     
-    const refArray = nearbyArray.map((item) => {
+    const connectedNearbyArray = updateSmartRefList(nearbyArray, searchTerm);
+    const refArray = connectedNearbyArray.map((item) => {
       const siteId = item[0];
       const data = item[1];
       const distFromCenter = item[2] || haversineDistance(centerLat, centerLon, Number(data.latitude), Number(data.longitude));
@@ -21193,6 +21272,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         selected: true
       };
     });
+
+    if (!refArray.length) {
+      refList.innerHTML = '<div style="padding:10px; border:1px solid #ef9a9a; border-radius:6px; background:#ffebee; color:#b71c1c; font-size:0.86em;"><strong>⚠ No connected datapoint found</strong><br><span style="font-size:0.82em;">No same-road/segment connected references were found for this address.</span></div>';
+      document.getElementById('quickTiaMultipleRefs').style.display = 'none';
+      document.getElementById('quickTiaError').innerHTML = '<strong>⚠ No connected datapoint found within 5km.</strong><br><span style="font-size:0.9em;">Use manual trip generation method.</span>';
+      document.getElementById('quickTiaError').style.display = 'block';
+      return;
+    }
 
     const areaProfile = detectAreaProfile(searchTerm, refArray);
     refArray.forEach(site => {
