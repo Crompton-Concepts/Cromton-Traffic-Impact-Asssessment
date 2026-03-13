@@ -1363,6 +1363,7 @@
     .source-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.82em; font-weight: 700; border: 1px solid transparent; }
     .source-tmr { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
     .source-gold-coast { background: #fff3e0; color: #ef6c00; border-color: #ffcc80; }
+    .source-brisbane { background: #ede7f6; color: #512da8; border-color: #b39ddb; }
     .source-ipswich { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }
     .source-logan { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
     .source-custom-address { background: #ede7f6; color: #5e35b1; border-color: #b39ddb; }
@@ -3494,12 +3495,14 @@
           <div style="margin-bottom: 8px;">
             <label for="macroSourceFilter" style="color: #2e7d32; font-size: 0.8em; margin-bottom: 4px;">Data Source</label>
             <select id="macroSourceFilter" style="border: 2px solid #4caf50; background-color: #f0fdf4;">
-              <option value="ALL" selected>All Sources (TMR + Gold Coast + Ipswich + Logan + Toowoomba)</option>
+              <option value="ALL" selected>All Sources (TMR + Gold Coast + Brisbane + Ipswich + Logan + Toowoomba + Tewantin)</option>
               <option value="TMR">TMR Only</option>
               <option value="Gold Coast">Gold Coast Only</option>
+              <option value="Brisbane">Brisbane Only</option>
               <option value="Ipswich">Ipswich Only</option>
               <option value="Logan">Logan Only</option>
               <option value="Toowoomba">Toowoomba Only</option>
+              <option value="Tewantin">Tewantin Only</option>
             </select>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
@@ -7572,6 +7575,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // ===== DATA CONFIG & LOADING =====
   const GITHUB_TMR_URL = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/tmr.geojson';
   const GITHUB_GOLDCOAST_URL = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/goldcoast.geojson';
+  const GITHUB_BRISBANE_URL = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/Brisbane.geojson';
   const GITHUB_IPSWICH_URL = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/Ipswich.geojson';
   const GITHUB_LOGAN_URL = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/logan.geojson';
   const GITHUB_TOOWOOMBA_URL = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/toowoomba.geojson';
@@ -10141,17 +10145,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       setLoadingState('Downloading live records...', 'Fetched TMR traffic feed.', 46);
       const goldCoastData = await fetchDatasetWithFallback(GITHUB_GOLDCOAST_URL, './goldcoast.geojson', 'Gold Coast');
       setLoadingState('Downloading live records...', 'Fetched Gold Coast traffic feed.', 50);
+      const brisbaneData = await fetchDatasetWithFallback(GITHUB_BRISBANE_URL, './Brisbane.geojson', 'Brisbane');
+      setLoadingState('Downloading live records...', 'Fetched Brisbane traffic feed.', 52);
       const ipswichData = await fetchDatasetWithFallback(GITHUB_IPSWICH_URL, './Ipswich.geojson', 'Ipswich');
-      setLoadingState('Downloading live records...', 'Fetched Ipswich traffic feed.', 54);
+      setLoadingState('Downloading live records...', 'Fetched Ipswich traffic feed.', 56);
       const loganData = await fetchDatasetWithFallback(GITHUB_LOGAN_URL, './logan.geojson', 'Logan');
-      setLoadingState('Downloading live records...', 'Fetched Logan traffic feed.', 58);
+      setLoadingState('Downloading live records...', 'Fetched Logan traffic feed.', 60);
       const toowoombaData = await fetchDatasetWithFallback(GITHUB_TOOWOOMBA_URL, './toowoomba.geojson', 'Toowoomba');
-      setLoadingState('Downloading live records...', 'Fetched Toowoomba traffic feed.', 62);
+      setLoadingState('Downloading live records...', 'Fetched Toowoomba traffic feed.', 64);
       const tewantinData = await fetchDatasetWithFallback(GITHUB_TEWANTIN_URL, './tewantin.geojson', 'Tewantin');
       console.log('[Data Load] GitHub data fetched');
 
       const tmrSites = tmrData ? parseMacroTrafficData(tmrData, 'TMR') : {};
       const goldCoastSites = goldCoastData ? parseMacroTrafficData(goldCoastData, 'Gold Coast') : {};
+      const brisbaneSites = brisbaneData ? parseMacroTrafficData(brisbaneData, 'Brisbane') : {};
       const ipswichSites = ipswichData ? parseMacroTrafficData(ipswichData, 'Ipswich') : (console.warn('ipswichData is null/falsy'), {});
       const loganSites = loganData ? parseMacroTrafficData(loganData, 'Logan') : {};
       const toowoomSites = toowoombaData ? parseMacroTrafficData(toowoombaData, 'Toowoomba') : {};
@@ -10159,7 +10166,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       setLoadingState('Processing records...', 'Normalizing dataset schema and deriving direction labels.', 58);
       console.log('[Data Load] Parsed site data');
 
-      baseMacroSitesData = mergeMacroSites(tmrSites, goldCoastSites, ipswichSites, loganSites, toowoomSites, tewantinSites);
+      baseMacroSitesData = mergeMacroSites(tmrSites, goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites);
       macroSitesData = mergeMacroSites(baseMacroSitesData, customUploadedSitesData);
       window.macroSitesData = macroSitesData;
       setLoadingState('Applying directional inference...', 'Processing directional splits in responsive batches.', 64);
@@ -10185,7 +10192,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const mapInfo = document.getElementById('macroMapInfo');
       if (mapInfo) {
-        mapInfo.textContent = `${Object.keys(macroSitesData).length} combined sites loaded (TMR + Gold Coast + Ipswich + Logan + Toowoomba + Tewantin). Click a marker to select a site.`;
+        mapInfo.textContent = `${Object.keys(macroSitesData).length} combined sites loaded (TMR + Gold Coast + Brisbane + Ipswich + Logan + Toowoomba + Tewantin). Click a marker to select a site.`;
       }
       
       // Hide loading overlay (only if was shown)
@@ -11990,6 +11997,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const sourceUpper = site && site.source ? String(site.source).trim().toUpperCase() : '';
     if (sourceUpper === 'GOLD COAST') return totalVadt;
+    if (sourceUpper === 'BRISBANE') return totalVadt;
     if (sourceUpper === 'LOGAN') return totalVadt;
     if (sourceUpper === 'TOOWOOMBA') return totalVadt;
     
@@ -12188,7 +12196,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       amParts = pmParts = { lv: peakLv, hv: peakHv, rt: peakRt };
       opParts = evParts = { lv: offLv, hv: offHv, rt: offRt };
     }
-    else if (source === 'LOGAN' || source === 'TOOWOOMBA') {
+    else if (source === 'BRISBANE' || source === 'LOGAN' || source === 'TOOWOOMBA') {
       const peakBase = numberRoundUp(Math.max(0, Number(dailyVolume) || 0) * 0.12 * 0.85, 0);
       const offBase = numberRoundUp(peakBase * 0.45, 0);
 
@@ -13149,6 +13157,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const sourceUpper = String(site && site.source ? site.source : '').trim().toUpperCase();
     const sourceAnchors = {
       'GOLD COAST': { lat: -28.0167, lon: 153.4000 },
+      'BRISBANE': { lat: -27.4698, lon: 153.0251 },
       'LOGAN': { lat: -27.6390, lon: 153.1090 },
       'IPSWICH': { lat: -27.6140, lon: 152.7600 },
       'TOOWOOMBA': { lat: -27.5606, lon: 151.9539 }
@@ -14192,6 +14201,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let profileText = 'Template (Non-TMR)';
       if (sourceUpper === 'TMR') profileText = 'TMR (Measured Hourly + TMR Rules)';
       else if (sourceUpper === 'GOLD COAST') profileText = 'Gold Coast (CoGC Method)';
+      else if (sourceUpper === 'BRISBANE') profileText = 'Brisbane (Council Method)';
       else if (sourceUpper === 'IPSWICH') profileText = 'Ipswich (Ipswich Method)';
       else if (sourceUpper === 'LOGAN') profileText = 'Logan (Council Method)';
       else if (sourceUpper === 'TOOWOOMBA') profileText = 'Toowoomba (Council Method)';
@@ -15295,7 +15305,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     } else if (sourceText === 'GOLD COAST') {
       dvFormulaStr = `max(500, ROUNDUP(0.15 * ReferenceCapacity / 2))`;
       peakVolStr = 'Peak = 15% * 85% of Daily, Off-Peak = 48.55% of Peak';
-    } else if (sourceText === 'LOGAN' || sourceText === 'TOOWOOMBA') {
+    } else if (sourceText === 'BRISBANE' || sourceText === 'LOGAN' || sourceText === 'TOOWOOMBA') {
       dvFormulaStr = `max(500, ROUNDUP(0.15 * ReferenceCapacity / Total_Lanes))`;
       peakVolStr = 'Peak = 12% * 85% of Daily, Off-Peak = 45% of Peak';
     } else {
