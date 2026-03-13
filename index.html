@@ -7261,6 +7261,69 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
   }
 
+  const externalScriptLoadPromises = {};
+
+  function loadExternalScriptOnce(src) {
+    const url = String(src || '').trim();
+    if (!url) return Promise.reject(new Error('Script URL is required'));
+    if (externalScriptLoadPromises[url]) return externalScriptLoadPromises[url];
+
+    externalScriptLoadPromises[url] = new Promise((resolve, reject) => {
+      const existing = Array.from(document.getElementsByTagName('script'))
+        .find(el => String(el && el.src || '').trim() === url);
+
+      if (existing && existing.dataset && existing.dataset.loadState === 'loaded') {
+        resolve();
+        return;
+      }
+
+      const scriptEl = existing || document.createElement('script');
+      scriptEl.src = url;
+      scriptEl.async = true;
+
+      const onLoad = () => {
+        if (!scriptEl.dataset) scriptEl.dataset = {};
+        scriptEl.dataset.loadState = 'loaded';
+        resolve();
+      };
+
+      const onError = () => {
+        reject(new Error(`Failed to load script: ${url}`));
+      };
+
+      scriptEl.addEventListener('load', onLoad, { once: true });
+      scriptEl.addEventListener('error', onError, { once: true });
+
+      if (!existing) {
+        document.head.appendChild(scriptEl);
+      }
+    });
+
+    return externalScriptLoadPromises[url];
+  }
+
+  async function ensureLeafletLoaded() {
+    if (typeof window.L !== 'undefined') return;
+
+    // Retry with alternate CDN endpoints in case one is blocked.
+    const leafletCandidates = [
+      'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+      'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'
+    ];
+
+    for (const url of leafletCandidates) {
+      try {
+        await loadExternalScriptOnce(url);
+        await waitForLibrary('L', 6000);
+        return;
+      } catch (err) {
+        console.warn('[Lib Load] Leaflet fallback failed for', url, err);
+      }
+    }
+
+    throw new Error('Leaflet library could not be loaded from available CDNs.');
+  }
+
   // Track initialization to avoid duplicate listeners
   let isUIInitialized = false;
   let isQuickTiaSearchInitialized = false;
@@ -10266,7 +10329,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Ensure Leaflet is loaded before initializing maps
       console.log('[Data Load] Waiting for Leaflet...');
       setLoadingState('Preparing mapping tools...', 'Loading map libraries and chart services.', 28);
-      await waitForLibrary('L', 10000);
+      await ensureLeafletLoaded();
       console.log('[Data Load] Leaflet is ready');
       
       console.log('[Data Load] Fetching data from GitHub...');
@@ -10345,6 +10408,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const loadingText = document.getElementById('loadingText');
       if (loadingText) {
         setLoadingState('Data load interrupted', 'Unable to complete startup. Please retry in a few seconds.', 100);
+      }
+      const mapInfo = document.getElementById('macroMapInfo');
+      if (mapInfo) {
+        mapInfo.textContent = `Data load failed: ${String(error && error.message ? error.message : error)}`;
       }
       throw error;  // Re-throw so caller knows about the error
     }
