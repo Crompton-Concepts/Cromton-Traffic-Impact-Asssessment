@@ -37,14 +37,14 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 15% 0%, rgba(31, 94, 99, 0.11) 0%, transparent 40%),
-                  radial-gradient(circle at 85% 100%, rgba(15, 47, 50, 0.1) 0%, transparent 50%),
-                  rgba(252, 253, 254, 0.97);
+      background: radial-gradient(circle at 12% 4%, rgba(31, 94, 99, 0.14) 0%, transparent 36%),
+                  radial-gradient(circle at 88% 98%, rgba(15, 47, 50, 0.13) 0%, transparent 52%),
+                  linear-gradient(180deg, rgba(248, 251, 253, 0.98) 0%, rgba(241, 247, 250, 0.98) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      padding: 24px;
+      padding: clamp(12px, 2vw, 24px);
       backdrop-filter: blur(5px);
       overflow: hidden;
       animation: loadingBackdropPulse 8s ease-in-out infinite;
@@ -56,38 +56,105 @@
     .loading-overlay.hidden {
       display: none;
     }
+
+    .loading-shell {
+      width: min(96vw, 1260px);
+      height: min(94vh, 920px);
+      max-height: 94vh;
+      display: grid;
+      grid-template-rows: minmax(132px, 24%) minmax(260px, 43%) minmax(180px, 33%);
+      gap: clamp(12px, 1.6vw, 20px);
+      position: relative;
+      z-index: 2;
+      padding: clamp(10px, 1.4vw, 18px);
+      border-radius: 22px;
+      border: 1px solid rgba(31, 94, 99, 0.18);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.86) 0%, rgba(245, 251, 252, 0.88) 100%);
+      box-shadow: 0 30px 60px rgba(9, 30, 32, 0.22);
+      overflow: hidden;
+    }
+
+    .loading-shell::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(31, 94, 99, 0.03) 0%, rgba(31, 94, 99, 0) 34%, rgba(15, 47, 50, 0.05) 100%);
+      pointer-events: none;
+    }
+
+    .loading-top-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(10px, 1.1vw, 14px);
+      position: relative;
+      z-index: 2;
+    }
+
+    .loading-top-card {
+      border-radius: 14px;
+      border: 1px solid rgba(31, 94, 99, 0.17);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 20px rgba(11, 48, 53, 0.12);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 7px;
+      min-height: 0;
+    }
+
+    .loading-top-label {
+      margin: 0;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.72rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #44666a;
+      font-weight: 700;
+    }
+
+    .loading-top-value {
+      margin: 0;
+      font-size: clamp(0.92rem, 1.5vw, 1.06rem);
+      color: #113a3e;
+      line-height: 1.42;
+      font-weight: 600;
+    }
+
     .loading-card {
       position: relative;
       z-index: 2;
-      width: min(92vw, 540px);
-      border-radius: 16px;
-      border: 1px solid rgba(31, 94, 99, 0.16);
+      border-radius: 18px;
+      border: 1px solid rgba(31, 94, 99, 0.18);
       background: linear-gradient(180deg, #ffffff 0%, #f7fbfc 100%);
       box-shadow: 0 20px 48px rgba(9, 30, 32, 0.2);
-      padding: 28px 28px 24px;
+      padding: clamp(18px, 3vw, 30px);
       text-align: center;
-      animation: loadingCardIn 0.35s ease-out, loadingCardFloat 3.6s ease-in-out infinite;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 7px;
+      animation: loadingCardIn 0.35s ease-out;
     }
+
     @keyframes loadingCardIn {
       from { opacity: 0; transform: translateY(8px) scale(0.985); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    @keyframes loadingCardFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
-    }
+
     .loading-brand {
       font-family: "JetBrains Mono", monospace;
       letter-spacing: 2px;
       font-size: 0.78rem;
       color: #53767a;
-      margin-bottom: 12px;
+      margin-bottom: 4px;
       text-transform: uppercase;
       font-weight: 700;
     }
+
     .loading-spinner {
-      width: 56px;
-      height: 56px;
+      width: 58px;
+      height: 58px;
       border: 4px solid #e1ded8;
       border-top: 4px solid var(--brand);
       border-radius: 50%;
@@ -95,6 +162,7 @@
       animation: spin 0.95s linear infinite;
       position: relative;
     }
+
     .loading-spinner::after {
       content: '';
       position: absolute;
@@ -105,37 +173,45 @@
       border-radius: 50%;
       animation: spinReverse 1.4s linear infinite;
     }
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
     @keyframes spinReverse {
       0% { transform: rotate(360deg); }
       100% { transform: rotate(0deg); }
     }
+
     .loading-text {
-      margin-top: 16px;
-      font-size: 1.32rem;
+      margin-top: 9px;
+      font-size: clamp(1.2rem, 2vw, 1.9rem);
       color: var(--brand);
       font-weight: 700;
       letter-spacing: 0.2px;
+      line-height: 1.2;
     }
+
     .loading-detail-text {
-      margin: 8px auto 14px;
-      color: #4f6669;
-      font-size: 0.94rem;
-      line-height: 1.5;
-      min-height: 2.7em;
-      max-width: 44ch;
+      margin: 3px auto 8px;
+      color: #35575b;
+      font-size: clamp(0.94rem, 1.25vw, 1.08rem);
+      line-height: 1.54;
+      min-height: 3.2em;
+      max-width: min(78ch, 96%);
+      font-weight: 600;
     }
+
     .loading-progress-track {
-      width: 100%;
-      height: 10px;
+      width: min(840px, 95%);
+      height: 12px;
       border-radius: 999px;
       background: #d9e3e5;
       overflow: hidden;
-      margin-top: 8px;
+      margin-top: 4px;
     }
+
     .loading-progress-fill {
       width: 12%;
       height: 100%;
@@ -145,26 +221,35 @@
       transition: width 0.35s ease;
       animation: loadingProgressSweep 1.8s linear infinite;
     }
+
     @keyframes loadingProgressSweep {
       from { background-position: 0% 50%; }
       to { background-position: 200% 50%; }
     }
+
     .loading-progress-value {
-      margin-top: 7px;
+      margin-top: 4px;
       color: #2f6166;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       font-weight: 700;
       letter-spacing: 0.8px;
     }
 
     .loading-funny-stage {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
+      position: relative;
+      z-index: 2;
       opacity: 0;
       transform: translateY(8px);
       transition: opacity 0.35s ease, transform 0.35s ease;
+      border-radius: 16px;
+      border: 1px solid rgba(31, 94, 99, 0.18);
+      background: linear-gradient(180deg, rgba(244, 250, 251, 0.9) 0%, rgba(234, 243, 246, 0.92) 100%);
+      box-shadow: inset 0 10px 20px rgba(255, 255, 255, 0.55);
+      padding: 10px 14px 0;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
     }
 
     .loading-overlay.quick-search-funny-mode .loading-funny-stage {
@@ -172,33 +257,54 @@
       transform: translateY(0);
     }
 
+    .loading-funny-comment {
+      margin: 0 0 8px;
+      justify-self: center;
+      text-align: center;
+      max-width: min(96%, 85ch);
+      color: #0f4348;
+      font-size: clamp(0.95rem, 1.35vw, 1.1rem);
+      font-weight: 700;
+      line-height: 1.4;
+      min-height: 2.8em;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(31, 94, 99, 0.18);
+      border-radius: 12px;
+    }
+
+    .loading-funny-road-wrap {
+      position: relative;
+      min-height: 0;
+    }
+
     .loading-funny-road {
       position: absolute;
       left: 0;
       right: 0;
-      bottom: 8%;
-      height: 95px;
-      background: linear-gradient(180deg, rgba(33, 37, 41, 0.12) 0%, rgba(33, 37, 41, 0.18) 100%);
+      bottom: 0;
+      height: min(100%, 130px);
+      background: linear-gradient(180deg, rgba(72, 88, 96, 0.14) 0%, rgba(54, 66, 72, 0.2) 100%);
       border-top: 2px dashed rgba(31, 94, 99, 0.24);
       border-bottom: 2px dashed rgba(31, 94, 99, 0.18);
     }
 
     .loading-funny-cone {
       position: absolute;
-      font-size: 1.5rem;
-      bottom: calc(8% + 28px);
-      opacity: 0.85;
-      animation: coneHop 2.3s ease-in-out infinite;
+      font-size: 1.45rem;
+      bottom: 42px;
+      opacity: 0.9;
+      animation: coneHop 2.2s ease-in-out infinite;
     }
 
     .loading-funny-cone.c1 { left: 12%; animation-delay: 0s; }
-    .loading-funny-cone.c2 { left: 20%; animation-delay: 0.35s; }
-    .loading-funny-cone.c3 { right: 20%; animation-delay: 0.7s; }
-    .loading-funny-cone.c4 { right: 12%; animation-delay: 1.05s; }
+    .loading-funny-cone.c2 { left: 23%; animation-delay: 0.4s; }
+    .loading-funny-cone.c3 { right: 24%; animation-delay: 0.8s; }
+    .loading-funny-cone.c4 { right: 12%; animation-delay: 1.15s; }
 
     .loading-funny-controller {
       position: absolute;
-      bottom: calc(8% + 26px);
+      bottom: 34px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -232,23 +338,37 @@
 
     .loading-funny-controller.controller-left { left: 7%; }
     .loading-funny-controller.controller-right { right: 7%; animation-delay: 0.45s; }
-    .loading-funny-controller.controller-right .paddle {
-      animation-delay: 0.35s;
-    }
+    .loading-funny-controller.controller-right .paddle { animation-delay: 0.35s; }
 
-    .loading-funny-car {
+    .loading-funny-truck {
       position: absolute;
-      bottom: calc(8% + 6px);
-      font-size: 1.8rem;
-      animation: funnyCarDrive 6.2s linear infinite;
-      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+      bottom: 10px;
+      font-size: 1.85rem;
+      animation: funnyTruckDrive 7s linear infinite;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.22));
     }
 
-    @keyframes funnyCarDrive {
-      0% { transform: translateX(-15vw); opacity: 0; }
-      8% { opacity: 1; }
-      70% { opacity: 1; }
-      100% { transform: translateX(120vw); opacity: 0; }
+    .loading-funny-police {
+      position: absolute;
+      bottom: 12px;
+      font-size: 1.55rem;
+      animation: funnyPolicePatrol 6.3s linear infinite;
+      animation-delay: 1.05s;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+    }
+
+    @keyframes funnyTruckDrive {
+      0% { transform: translateX(-18vw); opacity: 0; }
+      10% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { transform: translateX(118vw); opacity: 0; }
+    }
+
+    @keyframes funnyPolicePatrol {
+      0% { transform: translateX(108vw) scaleX(-1); opacity: 0; }
+      12% { opacity: 1; }
+      82% { opacity: 1; }
+      100% { transform: translateX(-14vw) scaleX(-1); opacity: 0; }
     }
 
     @keyframes controllerBob {
@@ -266,27 +386,43 @@
       50% { transform: translateY(-3px); }
     }
 
+    @media (max-width: 920px) {
+      .loading-shell {
+        grid-template-rows: minmax(168px, 29%) minmax(250px, 40%) minmax(180px, 31%);
+      }
+      .loading-top-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 640px) {
+      .loading-shell {
+        width: 98vw;
+        height: 96vh;
+        gap: 10px;
+        padding: 10px;
+        grid-template-rows: minmax(190px, 34%) minmax(245px, 34%) minmax(190px, 32%);
+      }
       .loading-card {
-        padding: 22px 18px 18px;
+        padding: 16px 12px;
       }
       .loading-text {
-        font-size: 1.14rem;
+        font-size: 1.08rem;
       }
       .loading-detail-text {
-        font-size: 0.87rem;
+        font-size: 0.88rem;
+        min-height: 3.8em;
       }
-
-      .loading-funny-controller {
-        bottom: calc(8% + 20px);
+      .loading-funny-comment {
+        font-size: 0.88rem;
+        min-height: 3.2em;
       }
-
       .loading-funny-controller .worker {
-        font-size: 1.7rem;
+        font-size: 1.55rem;
       }
-
-      .loading-funny-car {
-        font-size: 1.45rem;
+      .loading-funny-truck,
+      .loading-funny-police {
+        font-size: 1.3rem;
       }
     }
 
@@ -295,8 +431,10 @@
       .loading-funny-controller,
       .loading-funny-controller .paddle,
       .loading-funny-cone,
-      .loading-funny-car,
-      .loading-spinner {
+      .loading-funny-truck,
+      .loading-funny-police,
+      .loading-spinner,
+      .loading-progress-fill {
         animation: none !important;
         transition: none !important;
       }
@@ -3282,33 +3420,51 @@
   
   <!-- Loading overlay -->
   <div id="appLoadingOverlay" class="loading-overlay hidden" role="status" aria-live="polite" aria-busy="true">
-    <div class="loading-funny-stage" aria-hidden="true">
-      <div class="loading-funny-road"></div>
-      <div class="loading-funny-cone c1">🚧</div>
-      <div class="loading-funny-cone c2">🚧</div>
-      <div class="loading-funny-cone c3">🚧</div>
-      <div class="loading-funny-cone c4">🚧</div>
-      <div class="loading-funny-controller controller-left">
-        <div class="worker">👷</div>
-        <div class="paddle">🛑</div>
-        <div class="label">Stop</div>
+    <div class="loading-shell">
+      <div class="loading-top-grid">
+        <article class="loading-top-card" aria-live="polite">
+          <p class="loading-top-label">Interesting Traffic Facts</p>
+          <p class="loading-top-value" id="loadingTrafficFact">Urban signal coordination can reduce arterial travel delay by around 10-20% in peak periods.</p>
+        </article>
+        <article class="loading-top-card" aria-live="polite">
+          <p class="loading-top-label">Recommended By System</p>
+          <p class="loading-top-value" id="loadingRecommendation">Start with one primary and two secondary reference counters before tuning detour assumptions.</p>
+        </article>
       </div>
-      <div class="loading-funny-controller controller-right">
-        <div class="worker">👷</div>
-        <div class="paddle">🟢</div>
-        <div class="label">Slow</div>
+
+      <div class="loading-card">
+        <div class="loading-brand">Crompton Traffic Systems</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Preparing your traffic workspace...</div>
+        <div class="loading-detail-text" id="loadingDetailText">Connecting to data sources and validating map tools.</div>
+        <div class="loading-progress-track" aria-hidden="true">
+          <div class="loading-progress-fill" id="loadingProgressFill"></div>
+        </div>
+        <div class="loading-progress-value" id="loadingProgressValue">12%</div>
       </div>
-      <div class="loading-funny-car">🚗</div>
-    </div>
-    <div class="loading-card">
-      <div class="loading-brand">Crompton Traffic Systems</div>
-      <div class="loading-spinner"></div>
-      <div class="loading-text" id="loadingText">Preparing your traffic workspace...</div>
-      <div class="loading-detail-text" id="loadingDetailText">Connecting to data sources and validating map tools.</div>
-      <div class="loading-progress-track" aria-hidden="true">
-        <div class="loading-progress-fill" id="loadingProgressFill"></div>
+
+      <div class="loading-funny-stage" aria-hidden="true">
+        <p class="loading-funny-comment" id="loadingFunnyComment">Traffic control says the coffee truck can pass after one more cycle.</p>
+        <div class="loading-funny-road-wrap">
+          <div class="loading-funny-road"></div>
+          <div class="loading-funny-cone c1">🚧</div>
+          <div class="loading-funny-cone c2">🚧</div>
+          <div class="loading-funny-cone c3">🚧</div>
+          <div class="loading-funny-cone c4">🚧</div>
+          <div class="loading-funny-controller controller-left">
+            <div class="worker">👷</div>
+            <div class="paddle">🛑</div>
+            <div class="label">Hold</div>
+          </div>
+          <div class="loading-funny-controller controller-right">
+            <div class="worker">👷</div>
+            <div class="paddle">✅</div>
+            <div class="label">Wave</div>
+          </div>
+          <div class="loading-funny-truck">🚚</div>
+          <div class="loading-funny-police">🚓</div>
+        </div>
       </div>
-      <div class="loading-progress-value" id="loadingProgressValue">12%</div>
     </div>
   </div>
   
@@ -5020,64 +5176,102 @@
 <script>
   const AUTH_SESSION_KEY = 'crompton_tia_auth';
   let loadingHintTimer = null;
+  let loadingFunnyCommentTimer = null;
+  let loadingProgressPulseTimer = null;
+  let loadingDisplayedProgress = 12;
+  let loadingProgressPulseCap = 92;
   let loadingHintIndex = 0;
   let loadingHintMode = 'default';
   let loadingActiveHintList = null;
+  let loadingFunnyCommentList = null;
+  let loadingFactsDeck = [];
+  let loadingFactsDeckCursor = 0;
+  let loadingRecommendationsDeck = [];
+  let loadingRecommendationsDeckCursor = 0;
   let loadingTextTransitionInProgress = false;
   let loadingHintDeck = [];
   let loadingHintDeckCursor = 0;
+  let loadingFunnyCommentDeck = [];
+  let loadingFunnyCommentDeckCursor = 0;
   let loadingLastHint = '';
+  let loadingLastFunnyComment = '';
   const LOADING_HINT_ROTATION_MS = 4800;
+  const LOADING_FUNNY_COMMENT_ROTATION_MS = 3600;
+  const LOADING_META_ROTATION_MS = 6400;
   const loadingHints = [
-    'Tip: Use Quick Search to jump straight to a known counter ID.',
-    'Tip: You can upload custom CSV data and merge it with live datasets.',
-    'Tip: Queue and VCR badges highlight the most critical operating period.',
-    'Tip: Use Create Editable Report to tailor commentary before exporting PDF.'
+    'Syncing GeoJSON chunks from regional sources and validating CRS consistency.',
+    'Running directional split harmonization for AM and PM demand profiles.',
+    'Indexing counter metadata and cache keys for fast map hit resolution.',
+    'Comparing nearest-neighbor road bearings before confidence scoring.',
+    'Building staged search candidates and removing disconnected outliers.',
+    'Cross-checking lane assumptions against operation-mode and closure settings.',
+    'Refreshing map marker clusters with latest reference geometry.',
+    'Computing queue and VCR baselines for rapid scenario updates.'
+  ];
+  const loadingTrafficFacts = [
+    'Adaptive signal plans can reduce corridor stop delay by about 10-25% in many urban arterials.',
+    'Well-timed merge taper design often lowers sudden braking events in temporary lane closures.',
+    'Queue spillback from one intersection can propagate upstream in under two signal cycles.',
+    'A small heavy-vehicle share can disproportionately influence queue growth on constrained links.',
+    'Clear detour wayfinding can significantly reduce wrong turns and circulating traffic.',
+    'Short data checks at 15-minute intervals usually reveal peak-direction shifts earlier than daily totals.'
+  ];
+  const loadingRecommendations = [
+    'Recommended: validate one nearest counter plus one upstream and one downstream reference before finalizing.',
+    'Recommended: keep detour diversion assumptions conservative, then stress-test at +10% demand.',
+    'Recommended: review directional lane allocation before comparing VCR between scenarios.',
+    'Recommended: use quick search first, then verify connectivity before applying calculated values.',
+    'Recommended: recheck heavy vehicle and right-turn percentages when queue growth looks unexpected.',
+    'Recommended: lock your baseline scenario before trying stop/go or lane-closure variants.'
   ];
   const loadingFunnyHints = [
-    'Warming up satellite pigeons for address reconnaissance...',
-    'Calibrating kangaroo traffic controllers for peak-hour diplomacy...',
-    'Politely asking road cones to stand in a straight line...',
-    'Negotiating with queue waves to stop being dramatic...',
-    'Teaching VCR values to stay calm under pressure...',
-    'Bribing map tiles with premium digital coffee beans...',
-    'Checking if this road is truly connected, not just emotionally connected...',
-    'Sending tiny survey drones to count polite lane merges...',
-    'Assembling a roundtable of very opinionated traffic signals...',
-    'Running a detour reality check with 100 percent less guesswork...',
-    'Scanning for mystery tunnels, flyovers, and dramatic one-way twists...',
-    'Applying anti-chaos coating to the nearest intersection model...',
-    'Asking GPS satellites to stop speaking over each other...',
-    'Converting road names into machine-readable common sense...',
-    'Verifying this is a road search and not a treasure map...',
-    'Balancing inbound and outbound vibes for directional sanity...',
-    'Checking if your shortcut is genius or just optimistic...',
-    'Deploying lane math with suspicious confidence...',
-    'Measuring traffic patience in scientifically tiny units...',
-    'Finalizing results before the coffee gets cold...'
+    'Supervisor said, "just one cone". The cones union disagreed.',
+    'Temporary signal plan update: green means go, amber means negotiate.',
+    'Two controllers, one whistle, and 47 opinions about right turns.',
+    'Queue length claims are currently under peer review by impatient drivers.',
+    'Detour shortcut discovered: only legal if your car can teleport.',
+    'Work zone mascot has requested another lane and a snack break.',
+    'Lane merge etiquette test: results pending, confidence medium.',
+    'Traffic witchcraft complete. It is now called "engineering" in the report.',
+    'Stop/Go paddle now has a fan club and strict autograph schedule.',
+    'Road cones are standing like they just got promoted to management.',
+    'Truck driver asked if this is a detour or a scenic tour package.',
+    'Signal cycle says 60 seconds; drivers say it feels like geological time.'
   ];
 
   function getQuickSearchFunnyHints(queryText = '') {
     const q = String(queryText || '').toLowerCase();
-    const hintPool = [...loadingFunnyHints];
+    const hintPool = [...loadingHints];
 
     if (/\b(street|st|road|rd|avenue|ave|way|drive|dr)\b/.test(q)) {
-      hintPool.push('Street-mode detected: aligning curbs, lanes, and local shortcuts...');
-      hintPool.push('Road-name spelling tribunal is now in session...');
+      hintPool.push('Street mode: resolving curb-level geometry and nearby local access links.');
+      hintPool.push('Road-name normalization running for abbreviated and alternate spellings.');
     }
     if (/\b(highway|motorway|arterial|freeway|m1|m3|m7)\b/.test(q)) {
-      hintPool.push('Highway-mode: checking ramps, links, and no-route surprises...');
-      hintPool.push('Motorway sanity test: reachable in practice, not just on paper...');
+      hintPool.push('Highway mode: validating ramps, interchanges, and controlled-access continuity.');
+      hintPool.push('Motorway profile detected: prioritizing access-aware connectivity checks.');
     }
     if (/\b(court|close|place|crescent|cct|lane|ln)\b/.test(q)) {
-      hintPool.push('Local-street mode: tiny roads, big detective energy...');
-      hintPool.push('Looking for hidden neighborhood connectors and legal turns...');
+      hintPool.push('Local-street mode: testing neighborhood turn permissions and minor links.');
+      hintPool.push('Scanning for short connectors and one-way constraints near target address.');
     }
     if (/\b(qld|queensland|brisbane|gold coast|logan|ipswich|toowoomba|sunshine coast)\b/.test(q)) {
-      hintPool.push('Queensland mode engaged: sun, signals, and suspicious slip lanes...');
+      hintPool.push('Queensland profile detected: loading regional factors and source-specific metadata.');
     }
 
     return hintPool;
+  }
+
+  function getQuickSearchFunnyComments(queryText = '') {
+    const q = String(queryText || '').toLowerCase();
+    const comments = [...loadingFunnyHints];
+    if (/\b(highway|motorway|freeway|m1|m3|m7)\b/.test(q)) {
+      comments.push('Motorway memo: everyone is late, but only one lane is open.');
+    }
+    if (/\b(street|road|rd|avenue|ave|lane|ln|drive|dr)\b/.test(q)) {
+      comments.push('Local crew update: cones deployed with military precision and mild chaos.');
+    }
+    return comments;
   }
 
   function buildShuffledHintDeck(hints) {
@@ -5114,6 +5308,44 @@
     return hint;
   }
 
+  function resetLoadingFunnyCommentDeck(hints) {
+    loadingFunnyCommentDeck = buildShuffledHintDeck(hints);
+    loadingFunnyCommentDeckCursor = 0;
+  }
+
+  function getNextFunnyCommentFromDeck(hints) {
+    const source = Array.isArray(hints) ? hints.filter(Boolean) : [];
+    if (!source.length) return '';
+    if (!Array.isArray(loadingFunnyCommentDeck) || !loadingFunnyCommentDeck.length || loadingFunnyCommentDeckCursor >= loadingFunnyCommentDeck.length) {
+      resetLoadingFunnyCommentDeck(source);
+    }
+    const msg = String(loadingFunnyCommentDeck[loadingFunnyCommentDeckCursor] || '').trim();
+    loadingFunnyCommentDeckCursor += 1;
+    if (msg) loadingLastFunnyComment = msg;
+    return msg;
+  }
+
+  function getNextPanelItem(deckName, values) {
+    const list = Array.isArray(values) ? values.filter(Boolean) : [];
+    if (!list.length) return '';
+    if (deckName === 'facts') {
+      if (!loadingFactsDeck.length || loadingFactsDeckCursor >= loadingFactsDeck.length) {
+        loadingFactsDeck = buildShuffledHintDeck(list);
+        loadingFactsDeckCursor = 0;
+      }
+      const item = String(loadingFactsDeck[loadingFactsDeckCursor] || '').trim();
+      loadingFactsDeckCursor += 1;
+      return item;
+    }
+    if (!loadingRecommendationsDeck.length || loadingRecommendationsDeckCursor >= loadingRecommendationsDeck.length) {
+      loadingRecommendationsDeck = buildShuffledHintDeck(list);
+      loadingRecommendationsDeckCursor = 0;
+    }
+    const item = String(loadingRecommendationsDeck[loadingRecommendationsDeckCursor] || '').trim();
+    loadingRecommendationsDeckCursor += 1;
+    return item;
+  }
+
   function pickRandomHintExcludingCurrent(hints, currentHint = '') {
     const source = (Array.isArray(hints) ? hints : []).map(h => String(h || '').trim()).filter(Boolean);
     if (!source.length) return '';
@@ -5129,6 +5361,123 @@
     if (p < 78) return 'Stage 3/4: Checking road connectivity';
     if (p < 100) return 'Stage 4/4: Building reference candidates';
     return fallbackTitle || 'Search complete';
+  }
+
+  function setLoadingMetaPanels(progressPercent = 0) {
+    const factEl = document.getElementById('loadingTrafficFact');
+    const recEl = document.getElementById('loadingRecommendation');
+    const p = Math.max(0, Math.min(100, Number(progressPercent) || 0));
+    const rotationBias = Math.floor(p / 20);
+
+    if (factEl) {
+      const nextFact = getNextPanelItem('facts', loadingTrafficFacts);
+      if (nextFact) factEl.textContent = nextFact;
+      factEl.dataset.stage = String(rotationBias);
+    }
+    if (recEl) {
+      const nextRec = getNextPanelItem('recommendations', loadingRecommendations);
+      if (nextRec) recEl.textContent = nextRec;
+      recEl.dataset.stage = String(rotationBias);
+    }
+  }
+
+  function startLoadingMetaRotation() {
+    if (window.loadingMetaRotationTimer) return;
+    setLoadingMetaPanels(loadingDisplayedProgress);
+    window.loadingMetaRotationTimer = setInterval(() => {
+      const overlay = document.getElementById('appLoadingOverlay');
+      if (!overlay || overlay.classList.contains('hidden')) return;
+      setLoadingMetaPanels(loadingDisplayedProgress);
+    }, LOADING_META_ROTATION_MS);
+  }
+
+  function stopLoadingMetaRotation() {
+    if (window.loadingMetaRotationTimer) {
+      clearInterval(window.loadingMetaRotationTimer);
+      window.loadingMetaRotationTimer = null;
+    }
+  }
+
+  function setLoadingFunnyComment(commentText) {
+    const commentEl = document.getElementById('loadingFunnyComment');
+    if (!commentEl) return;
+    const text = String(commentText || '').trim();
+    if (!text) return;
+    commentEl.style.opacity = '0.15';
+    commentEl.style.transform = 'translateY(2px)';
+    setTimeout(() => {
+      commentEl.textContent = text;
+      commentEl.style.transition = 'opacity 0.24s ease, transform 0.24s ease';
+      commentEl.style.opacity = '1';
+      commentEl.style.transform = 'translateY(0)';
+    }, 110);
+  }
+
+  function startFunnyComments() {
+    if (loadingFunnyCommentTimer) return;
+    const comments = (Array.isArray(loadingFunnyCommentList) && loadingFunnyCommentList.length)
+      ? loadingFunnyCommentList
+      : loadingFunnyHints;
+    if (!comments.length) return;
+    resetLoadingFunnyCommentDeck(comments);
+    const first = getNextFunnyCommentFromDeck(comments);
+    if (first) setLoadingFunnyComment(first);
+
+    loadingFunnyCommentTimer = setInterval(() => {
+      const overlay = document.getElementById('appLoadingOverlay');
+      if (!overlay || overlay.classList.contains('hidden')) return;
+      const next = getNextFunnyCommentFromDeck(comments);
+      if (next) setLoadingFunnyComment(next);
+    }, LOADING_FUNNY_COMMENT_ROTATION_MS);
+  }
+
+  function stopFunnyComments() {
+    if (loadingFunnyCommentTimer) {
+      clearInterval(loadingFunnyCommentTimer);
+      loadingFunnyCommentTimer = null;
+    }
+    loadingFunnyCommentList = null;
+    loadingFunnyCommentDeck = [];
+    loadingFunnyCommentDeckCursor = 0;
+    loadingLastFunnyComment = '';
+  }
+
+  function setLoadingProgressVisual(progressPercent) {
+    const fillEl = document.getElementById('loadingProgressFill');
+    const valueEl = document.getElementById('loadingProgressValue');
+    const clamped = Math.max(6, Math.min(100, Number(progressPercent) || 0));
+    loadingDisplayedProgress = clamped;
+    if (fillEl) fillEl.style.width = `${clamped}%`;
+    if (valueEl) valueEl.textContent = `${Math.round(clamped)}%`;
+  }
+
+  function setLoadingProgressPulseCap(progressPercent) {
+    const p = Math.max(6, Math.min(99, Number(progressPercent) || 0));
+    loadingProgressPulseCap = Math.max(loadingDisplayedProgress, p);
+  }
+
+  function startLoadingProgressPulse() {
+    if (loadingProgressPulseTimer) return;
+    loadingProgressPulseTimer = setInterval(() => {
+      const overlay = document.getElementById('appLoadingOverlay');
+      if (!overlay || overlay.classList.contains('hidden')) return;
+      if (loadingDisplayedProgress >= loadingProgressPulseCap) return;
+
+      const remaining = loadingProgressPulseCap - loadingDisplayedProgress;
+      const baseStep = loadingDisplayedProgress < 50 ? 1.25 : loadingDisplayedProgress < 80 ? 0.82 : 0.45;
+      const randomStep = 0.2 + (Math.random() * 0.55);
+      const step = Math.min(remaining, baseStep + randomStep);
+      const next = loadingDisplayedProgress + step;
+      setLoadingProgressVisual(next);
+    }, 900);
+  }
+
+  function stopLoadingProgressPulse() {
+    if (loadingProgressPulseTimer) {
+      clearInterval(loadingProgressPulseTimer);
+      loadingProgressPulseTimer = null;
+    }
+    loadingProgressPulseCap = 92;
   }
 
   function applyLoadingTextTransition(mainText, detailText) {
@@ -5287,24 +5636,38 @@
   };
   console.log('Trip Generation Calculator v2.0 - Scenarios loaded at', new Date().toLocaleTimeString());
 
+  function getProgressPulseCapForStage(progressPercent) {
+    const p = Math.max(0, Math.min(100, Number(progressPercent) || 0));
+    if (p >= 100) return 100;
+    if (p < 24) return 30;
+    if (p < 52) return 60;
+    if (p < 78) return 84;
+    return 97;
+  }
+
   function activateFunnyLoadingMode() {
     loadingHintMode = 'funny';
     loadingHintIndex = 0;
-    const detailEl = document.getElementById('loadingDetailText');
-    if (detailEl) {
-      const activeHints = Array.isArray(loadingActiveHintList) && loadingActiveHintList.length ? loadingActiveHintList : loadingFunnyHints;
-      resetLoadingHintDeck(activeHints);
-      const openingHint = getNextHintFromDeck(activeHints);
-      if (openingHint) detailEl.textContent = openingHint;
+    loadingFunnyCommentList = Array.isArray(loadingFunnyCommentList) && loadingFunnyCommentList.length
+      ? loadingFunnyCommentList
+      : loadingFunnyHints;
+
+    const activeHints = Array.isArray(loadingActiveHintList) && loadingActiveHintList.length ? loadingActiveHintList : loadingHints;
+    resetLoadingHintDeck(activeHints);
+    const openingHint = getNextHintFromDeck(activeHints);
+    if (openingHint) {
+      applyLoadingTextTransition(
+        String((document.getElementById('loadingText') || {}).textContent || 'Preparing your traffic workspace...').trim(),
+        openingHint
+      );
     }
+    startFunnyComments();
   }
 
   function setLoadingState(mainText, detailText = '', progressPercent = null) {
     const overlay = document.getElementById('appLoadingOverlay');
     const titleEl = document.getElementById('loadingText');
     const detailEl = document.getElementById('loadingDetailText');
-    const fillEl = document.getElementById('loadingProgressFill');
-    const valueEl = document.getElementById('loadingProgressValue');
 
     if (titleEl && typeof mainText === 'string' && mainText.trim()) {
       titleEl.textContent = mainText;
@@ -5312,23 +5675,28 @@
     if (detailEl && typeof detailText === 'string' && detailText.trim()) {
       detailEl.textContent = detailText;
     }
-    if (fillEl && Number.isFinite(progressPercent)) {
-      const clamped = Math.max(6, Math.min(100, Math.round(progressPercent)));
-      fillEl.style.width = `${clamped}%`;
-      if (valueEl) valueEl.textContent = `${clamped}%`;
+    if (Number.isFinite(progressPercent)) {
+      const requested = Math.max(6, Math.min(100, Number(progressPercent)));
+      const monotonic = requested >= 100 ? 100 : Math.max(loadingDisplayedProgress, requested);
+      setLoadingProgressVisual(monotonic);
+      setLoadingProgressPulseCap(getProgressPulseCapForStage(monotonic));
+      setLoadingMetaPanels(monotonic);
     }
+
     if (overlay) {
       overlay.setAttribute('aria-busy', 'true');
     }
   }
 
   function startLoadingHints() {
+    startLoadingProgressPulse();
+    startLoadingMetaRotation();
     if (loadingHintTimer) return;
     const detailEl = document.getElementById('loadingDetailText');
     if (!detailEl) return;
     const hints = (Array.isArray(loadingActiveHintList) && loadingActiveHintList.length)
       ? loadingActiveHintList
-      : (loadingHintMode === 'funny' ? loadingFunnyHints : loadingHints);
+      : loadingHints;
     if (!hints.length) return;
     resetLoadingHintDeck(hints);
     loadingHintTimer = setInterval(() => {
@@ -5347,6 +5715,9 @@
       clearInterval(loadingHintTimer);
       loadingHintTimer = null;
     }
+    stopLoadingProgressPulse();
+    stopLoadingMetaRotation();
+    stopFunnyComments();
     const overlay = document.getElementById('appLoadingOverlay');
     if (overlay) {
       overlay.setAttribute('aria-busy', 'false');
@@ -5358,6 +5729,12 @@
     loadingHintDeck = [];
     loadingHintDeckCursor = 0;
     loadingLastHint = '';
+    loadingDisplayedProgress = 12;
+    setLoadingProgressVisual(12);
+    loadingFactsDeck = [];
+    loadingFactsDeckCursor = 0;
+    loadingRecommendationsDeck = [];
+    loadingRecommendationsDeckCursor = 0;
   }
 
   const QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS = 5000;
@@ -5377,13 +5754,18 @@
       title: titleEl ? titleEl.textContent : '',
       detail: detailEl ? detailEl.textContent : '',
       width: fillEl ? fillEl.style.width : '',
-      value: valueEl ? valueEl.textContent : ''
+      value: valueEl ? valueEl.textContent : '',
+      progress: loadingDisplayedProgress
     };
 
     quickTiaSearchOverlayOwnsVisibility = overlay.classList.contains('hidden');
     overlay.classList.remove('hidden');
     overlay.classList.add('quick-search-funny-mode');
     loadingActiveHintList = getQuickSearchFunnyHints(queryText);
+    loadingFunnyCommentList = getQuickSearchFunnyComments(queryText);
+    setLoadingProgressVisual(12);
+    setLoadingProgressPulseCap(30);
+    setLoadingMetaPanels(12);
     activateFunnyLoadingMode();
     startLoadingHints();
 
@@ -5398,13 +5780,17 @@
   function updateQuickAddressSearchOverlay(mainText, detailText, progressPercent) {
     const activeHints = (Array.isArray(loadingActiveHintList) && loadingActiveHintList.length)
       ? loadingActiveHintList
-      : loadingFunnyHints;
+      : loadingHints;
     const currentDetail = String((document.getElementById('loadingDetailText') || {}).textContent || '').trim();
     const nextHint = pickRandomHintExcludingCurrent(activeHints, currentDetail);
     const stagedTitle = getQuickSearchStageTitle(progressPercent, mainText);
-    const stagedDetail = [detailText, nextHint].filter(Boolean).join(' | ');
+    const stagedDetail = nextHint || detailText;
     applyLoadingTextTransition(stagedTitle, stagedDetail);
     setLoadingState(stagedTitle, stagedDetail, progressPercent);
+    if (Number.isFinite(progressPercent)) {
+      setLoadingProgressPulseCap(getProgressPulseCapForStage(progressPercent));
+      setLoadingMetaPanels(progressPercent);
+    }
   }
 
   function hideQuickAddressSearchOverlay() {
@@ -5419,8 +5805,12 @@
     if (quickTiaSearchOverlaySnapshot) {
       if (titleEl) titleEl.textContent = quickTiaSearchOverlaySnapshot.title || 'Preparing your traffic workspace...';
       if (detailEl) detailEl.textContent = quickTiaSearchOverlaySnapshot.detail || 'Connecting to data sources and validating map tools.';
-      if (fillEl && typeof quickTiaSearchOverlaySnapshot.width === 'string') fillEl.style.width = quickTiaSearchOverlaySnapshot.width || '12%';
-      if (valueEl) valueEl.textContent = quickTiaSearchOverlaySnapshot.value || '12%';
+      if (typeof quickTiaSearchOverlaySnapshot.progress === 'number' && Number.isFinite(quickTiaSearchOverlaySnapshot.progress)) {
+        setLoadingProgressVisual(quickTiaSearchOverlaySnapshot.progress);
+      } else {
+        if (fillEl && typeof quickTiaSearchOverlaySnapshot.width === 'string') fillEl.style.width = quickTiaSearchOverlaySnapshot.width || '12%';
+        if (valueEl) valueEl.textContent = quickTiaSearchOverlaySnapshot.value || '12%';
+      }
     }
 
     if (quickTiaSearchOverlayOwnsVisibility) {
@@ -5428,6 +5818,9 @@
       stopLoadingHints();
     } else {
       overlay.classList.remove('quick-search-funny-mode');
+      loadingHintMode = 'default';
+      loadingActiveHintList = null;
+      stopFunnyComments();
     }
 
     quickTiaSearchOverlayOwnsVisibility = false;
