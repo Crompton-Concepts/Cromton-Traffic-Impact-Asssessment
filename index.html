@@ -9815,6 +9815,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const isLogan = sourceUpper === 'LOGAN';
     const isToowoomba = sourceUpper === 'TOOWOOMBA';
 
+    const firstDefinedValue = (...values) => {
+      for (const value of values) {
+        if (value === null || value === undefined) continue;
+        if (typeof value === 'string' && value.trim() === '') continue;
+        return value;
+      }
+      return null;
+    };
+
+    const parseVolumeValue = (value) => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      const matches = String(value).replace(/,/g, '').match(/-?\d+(?:\.\d+)?/g);
+      if (!matches || !matches.length) return null;
+      // Prefer trailing token for strings like "Direction 1: 7,454".
+      const parsed = Number(matches[matches.length - 1]);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
     const normalizeHourLabel = (rawHours) => {
       const value = String(rawHours || '').trim().toLowerCase();
       if (!value) return '';
@@ -10102,17 +10121,34 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const hvPercent = hvPercentDirect !== null ? hvPercentDirect : normalizePercentValue(isLogan ? calcLoganHvPercent(props) : null);
       const roadClass = normalizeRoadClass(props['ROAD_CLASS'] || props['ROAD_TYPE'] || props['Road Type'] || props['ROAD TYPE'] || props['road type'] || props['CLASSIFICATION'] || props['ROAD CATEGORY'] || 'tmr');
       const designCapacityDaily = Math.max(0, Number(props['DESIGN_CAPACITY_DAILY'] || props['CAPACITY_DAILY'] || props['CAPACITY_REF_DAILY'] || props['ROAD_CAPACITY_DAILY'] || 0));
-      const totalVadtFromProps = Number(props['VADT'] || props['AADT'] || props['VPD'] || props['TOTAL_VADT'] || props['Average Daily Traffic Adt Vehicles Per Day'] || props['Average Weekday Traffic Awt Vehicles Per Day'] || props['ADT'] || props['total_volume']) || null;
+      const totalVadtFromProps = parseVolumeValue(firstDefinedValue(
+        props['VADT'],
+        props['AADT'],
+        props['VPD'],
+        props['TOTAL_VADT'],
+        props['Average Daily Traffic Adt Vehicles Per Day'],
+        props['Average Weekday Traffic Awt Vehicles Per Day'],
+        props['ADT'],
+        props['total_volume']
+      ));
 
-      let d1VadtFromProps = Number(props['D1_VADT'] || props['GAZETTAL_VADT'] || props['VADT_D1'] || props['VOL1'] || '') || null;
-      let d2VadtFromProps = Number(props['D2_VADT'] || props['AGAINST_GAZETTAL_VADT'] || props['VADT_D2'] || props['VOL2'] || '') || null;
+      let d1VadtFromProps = parseVolumeValue(firstDefinedValue(
+        props['D1_VADT'],
+        props['GAZETTAL_VADT'],
+        props['VADT_D1'],
+        props['VOL1']
+      ));
+      let d2VadtFromProps = parseVolumeValue(firstDefinedValue(
+        props['D2_VADT'],
+        props['AGAINST_GAZETTAL_VADT'],
+        props['VADT_D2'],
+        props['VOL2']
+      ));
       if (!d1VadtFromProps && props['DIRECTION_1A']) {
-        const m = String(props['DIRECTION_1A']).match(/(\d+)/);
-        if (m) d1VadtFromProps = Number(m[1]);
+        d1VadtFromProps = parseVolumeValue(props['DIRECTION_1A']);
       }
       if (!d2VadtFromProps && props['DIRECTION_2A']) {
-        const m = String(props['DIRECTION_2A']).match(/(\d+)/);
-        if (m) d2VadtFromProps = Number(m[1]);
+        d2VadtFromProps = parseVolumeValue(props['DIRECTION_2A']);
       }
 
       let d1Lanes = Number(props['D1_LANES'] || props['GAZETTAL_LANES'] || props['LANES_D1'] || '') || null;
@@ -21768,8 +21804,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     refList.innerHTML = '';
     if (roadWeightList) roadWeightList.innerHTML = '';
     
-    const connectedNearbyArray = updateSmartRefList(nearbyArray, searchTerm);
-    const displayNearbyArray = connectedNearbyArray.length ? connectedNearbyArray : (Array.isArray(nearbyArray) ? nearbyArray : []);
+    const baseNearbyArray = Array.isArray(nearbyArray) ? nearbyArray : [];
+    // Only apply same-road text filtering for explicit same-road matches.
+    // Radius-based matches should keep all nearby references regardless of road name.
+    const connectedNearbyArray = isSameRoadMatch ? updateSmartRefList(baseNearbyArray, searchTerm) : baseNearbyArray;
+    const displayNearbyArray = connectedNearbyArray.length ? connectedNearbyArray : baseNearbyArray;
     const refArray = displayNearbyArray.map((item) => {
       const siteId = item[0];
       const data = item[1];
