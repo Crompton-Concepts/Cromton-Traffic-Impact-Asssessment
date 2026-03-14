@@ -47,6 +47,11 @@
       padding: 24px;
       backdrop-filter: blur(5px);
       overflow: hidden;
+      animation: loadingBackdropPulse 8s ease-in-out infinite;
+    }
+    @keyframes loadingBackdropPulse {
+      0%, 100% { background-position: 0% 0%, 100% 100%, center; }
+      50% { background-position: 8% -3%, 92% 104%, center; }
     }
     .loading-overlay.hidden {
       display: none;
@@ -61,11 +66,15 @@
       box-shadow: 0 20px 48px rgba(9, 30, 32, 0.2);
       padding: 28px 28px 24px;
       text-align: center;
-      animation: loadingCardIn 0.35s ease-out;
+      animation: loadingCardIn 0.35s ease-out, loadingCardFloat 3.6s ease-in-out infinite;
     }
     @keyframes loadingCardIn {
       from { opacity: 0; transform: translateY(8px) scale(0.985); }
       to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes loadingCardFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
     }
     .loading-brand {
       font-family: "JetBrains Mono", monospace;
@@ -84,10 +93,25 @@
       border-radius: 50%;
       margin: 0 auto;
       animation: spin 0.95s linear infinite;
+      position: relative;
+    }
+    .loading-spinner::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border: 3px solid transparent;
+      border-right-color: rgba(31, 94, 99, 0.55);
+      border-bottom-color: rgba(31, 94, 99, 0.55);
+      border-radius: 50%;
+      animation: spinReverse 1.4s linear infinite;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    @keyframes spinReverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
     }
     .loading-text {
       margin-top: 16px;
@@ -117,7 +141,13 @@
       height: 100%;
       border-radius: inherit;
       background: linear-gradient(90deg, #1f5e63 0%, #2d7f86 100%);
+      background-size: 200% 100%;
       transition: width 0.35s ease;
+      animation: loadingProgressSweep 1.8s linear infinite;
+    }
+    @keyframes loadingProgressSweep {
+      from { background-position: 0% 50%; }
+      to { background-position: 200% 50%; }
     }
     .loading-progress-value {
       margin-top: 7px;
@@ -4994,6 +5024,9 @@
   let loadingHintMode = 'default';
   let loadingActiveHintList = null;
   let loadingTextTransitionInProgress = false;
+  let loadingHintDeck = [];
+  let loadingHintDeckCursor = 0;
+  let loadingLastHint = '';
   const LOADING_HINT_ROTATION_MS = 4800;
   const loadingHints = [
     'Tip: Use Quick Search to jump straight to a known counter ID.',
@@ -5047,6 +5080,48 @@
     return hintPool;
   }
 
+  function buildShuffledHintDeck(hints) {
+    const deck = Array.isArray(hints) ? hints.slice() : [];
+    for (let i = deck.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = deck[i];
+      deck[i] = deck[j];
+      deck[j] = tmp;
+    }
+    if (deck.length > 1 && loadingLastHint && deck[0] === loadingLastHint) {
+      const swapIdx = 1 + Math.floor(Math.random() * (deck.length - 1));
+      const tmp = deck[0];
+      deck[0] = deck[swapIdx];
+      deck[swapIdx] = tmp;
+    }
+    return deck;
+  }
+
+  function resetLoadingHintDeck(hints) {
+    loadingHintDeck = buildShuffledHintDeck(hints);
+    loadingHintDeckCursor = 0;
+  }
+
+  function getNextHintFromDeck(hints) {
+    const source = Array.isArray(hints) ? hints.filter(Boolean) : [];
+    if (!source.length) return '';
+    if (!Array.isArray(loadingHintDeck) || !loadingHintDeck.length || loadingHintDeckCursor >= loadingHintDeck.length) {
+      resetLoadingHintDeck(source);
+    }
+    const hint = String(loadingHintDeck[loadingHintDeckCursor] || '').trim();
+    loadingHintDeckCursor += 1;
+    if (hint) loadingLastHint = hint;
+    return hint;
+  }
+
+  function pickRandomHintExcludingCurrent(hints, currentHint = '') {
+    const source = (Array.isArray(hints) ? hints : []).map(h => String(h || '').trim()).filter(Boolean);
+    if (!source.length) return '';
+    const filtered = currentHint ? source.filter(h => h !== currentHint) : source;
+    const pool = filtered.length ? filtered : source;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
   function getQuickSearchStageTitle(progressPercent, fallbackTitle) {
     const p = Math.max(0, Math.min(100, Number(progressPercent) || 0));
     if (p < 24) return 'Stage 1/4: Reading the address';
@@ -5066,16 +5141,20 @@
     }
 
     loadingTextTransitionInProgress = true;
-    titleEl.style.transition = 'opacity 0.18s ease';
-    detailEl.style.transition = 'opacity 0.18s ease';
+    titleEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    detailEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
     titleEl.style.opacity = '0.18';
     detailEl.style.opacity = '0.18';
+    titleEl.style.transform = 'translateY(-2px)';
+    detailEl.style.transform = 'translateY(2px)';
 
     setTimeout(() => {
       if (typeof mainText === 'string' && mainText.trim()) titleEl.textContent = mainText;
       if (typeof detailText === 'string' && detailText.trim()) detailEl.textContent = detailText;
       titleEl.style.opacity = '1';
       detailEl.style.opacity = '1';
+      titleEl.style.transform = 'translateY(0)';
+      detailEl.style.transform = 'translateY(0)';
       setTimeout(() => {
         loadingTextTransitionInProgress = false;
       }, 190);
@@ -5214,7 +5293,9 @@
     const detailEl = document.getElementById('loadingDetailText');
     if (detailEl) {
       const activeHints = Array.isArray(loadingActiveHintList) && loadingActiveHintList.length ? loadingActiveHintList : loadingFunnyHints;
-      detailEl.textContent = activeHints[0];
+      resetLoadingHintDeck(activeHints);
+      const openingHint = getNextHintFromDeck(activeHints);
+      if (openingHint) detailEl.textContent = openingHint;
     }
   }
 
@@ -5249,11 +5330,15 @@
       ? loadingActiveHintList
       : (loadingHintMode === 'funny' ? loadingFunnyHints : loadingHints);
     if (!hints.length) return;
+    resetLoadingHintDeck(hints);
     loadingHintTimer = setInterval(() => {
       const overlay = document.getElementById('appLoadingOverlay');
       if (!overlay || overlay.classList.contains('hidden')) return;
-      loadingHintIndex = (loadingHintIndex + 1) % hints.length;
-      detailEl.textContent = hints[loadingHintIndex];
+      const nextHint = getNextHintFromDeck(hints);
+      if (!nextHint) return;
+      loadingHintIndex = (loadingHintIndex + 1) % Math.max(1, hints.length);
+      const titleText = String((document.getElementById('loadingText') || {}).textContent || 'Preparing your traffic workspace...').trim();
+      applyLoadingTextTransition(titleText, nextHint);
     }, LOADING_HINT_ROTATION_MS);
   }
 
@@ -5270,6 +5355,9 @@
     loadingHintMode = 'default';
     loadingActiveHintList = null;
     loadingHintIndex = 0;
+    loadingHintDeck = [];
+    loadingHintDeckCursor = 0;
+    loadingLastHint = '';
   }
 
   const QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS = 5000;
@@ -5311,9 +5399,8 @@
     const activeHints = (Array.isArray(loadingActiveHintList) && loadingActiveHintList.length)
       ? loadingActiveHintList
       : loadingFunnyHints;
-    const nextHint = activeHints.length
-      ? activeHints[(loadingHintIndex + 1) % activeHints.length]
-      : '';
+    const currentDetail = String((document.getElementById('loadingDetailText') || {}).textContent || '').trim();
+    const nextHint = pickRandomHintExcludingCurrent(activeHints, currentDetail);
     const stagedTitle = getQuickSearchStageTitle(progressPercent, mainText);
     const stagedDetail = [detailText, nextHint].filter(Boolean).join(' | ');
     applyLoadingTextTransition(stagedTitle, stagedDetail);
