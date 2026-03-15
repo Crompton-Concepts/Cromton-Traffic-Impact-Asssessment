@@ -1670,6 +1670,7 @@
     .source-brisbane { background: #ede7f6; color: #512da8; border-color: #b39ddb; }
     .source-ipswich { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }
     .source-logan { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .source-nsw { background: #e8eaf6; color: #1a237e; border-color: #9fa8da; }
     .source-custom-address { background: #ede7f6; color: #5e35b1; border-color: #b39ddb; }
     
     .quality-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.82em; font-weight: 700; border: 1px solid transparent; }
@@ -3615,6 +3616,17 @@
       <p style="color: #0d47a1; margin: 0 0 12px 0; font-size: 0.95em;">
         Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
       </p>
+
+      <div style="display:grid; grid-template-columns:minmax(180px,240px) 1fr; gap:12px; align-items:end; margin-bottom:10px;">
+        <div>
+          <label for="quickTiaStateSelect" style="display:block; color:#0d47a1; font-weight:700; margin-bottom:4px; font-size:0.88em;">State Database</label>
+          <select id="quickTiaStateSelect" style="width:100%; border:2px solid #1976d2; background:#ffffff; color:#0d47a1; border-radius:4px; padding:9px 10px; font-weight:700;">
+            <option value="QLD" selected>Queensland (QLD)</option>
+            <option value="NSW">New South Wales (NSW)</option>
+          </select>
+        </div>
+        <div id="quickTiaStateLoadStatus" style="font-size:0.82em; color:#0d47a1; font-weight:700;">Current database: Queensland (QLD)</div>
+      </div>
        
       <div style="display: grid; grid-template-columns: 1fr 180px; gap: 12px; margin-bottom: 12px;">
         <div>
@@ -3835,7 +3847,7 @@
           <div style="margin-bottom: 8px;">
             <label for="macroSourceFilter" style="color: #2e7d32; font-size: 0.8em; margin-bottom: 4px;">Data Source</label>
             <select id="macroSourceFilter" style="border: 2px solid #4caf50; background-color: #f0fdf4;">
-              <option value="ALL" selected>All Sources (TMR + Gold Coast + Brisbane + Ipswich + Logan + Toowoomba + Tewantin)</option>
+              <option value="ALL" selected>All Sources (QLD + NSW)</option>
               <option value="TMR">TMR Only</option>
               <option value="Gold Coast">Gold Coast Only</option>
               <option value="Brisbane">Brisbane Only</option>
@@ -3843,6 +3855,7 @@
               <option value="Logan">Logan Only</option>
               <option value="Toowoomba">Toowoomba Only</option>
               <option value="Tewantin">Tewantin Only</option>
+              <option value="NSW">NSW Only</option>
             </select>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
@@ -5257,6 +5270,9 @@
     }
     if (/\b(qld|queensland|brisbane|gold coast|logan|ipswich|toowoomba|sunshine coast)\b/.test(q)) {
       hintPool.push('Queensland profile detected: loading regional factors and source-specific metadata.');
+    }
+    if (/\b(nsw|new south wales|sydney|newcastle|wollongong)\b/.test(q)) {
+      hintPool.push('NSW profile detected: loading state-road metadata and harmonized field mappings.');
     }
 
     return hintPool;
@@ -7967,6 +7983,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   let isQuickTiaSearchInitialized = false;
   // Track data loading state for optimized auth flow
   let dataLoadingPromise = null;
+  let requestedDataScope = 'QLD';
+  let loadedDataScope = '';
 
   async function initializeUIComponents() {
     if (isUIInitialized) return;
@@ -8282,6 +8300,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const GITHUB_LOGAN_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/logan.geojson';
   const GITHUB_TOOWOOMBA_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/toowoomba.geojson';
   const GITHUB_TEWANTIN_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tewantin.geojson';
+  const GITHUB_NSW_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/TNSW.geojson';
   const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v3:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const GITHUB_FETCH_TIMEOUT_MS = 60000;
@@ -11080,10 +11099,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return updates;
   }
 
-  async function loadMacroSitesData(showOverlay = true) {
+  async function loadMacroSitesData(showOverlay = true, stateScopeOverride = '') {
     console.log('[Data Load] Starting loadMacroSitesData, showOverlay=', showOverlay);
     const loadingOverlay = document.getElementById('appLoadingOverlay');
     const loadingText = document.getElementById('loadingText');
+    const requestedScope = String(stateScopeOverride || getQuickTiaSelectedState() || 'QLD').trim().toUpperCase() === 'NSW' ? 'NSW' : 'QLD';
+    requestedDataScope = requestedScope;
     
     try {
       // Only show overlay if user is authenticated (after login)
@@ -11107,20 +11128,36 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       console.log('[Data Load] Leaflet is ready');
       
       console.log('[Data Load] Fetching data from GitHub...');
-      setLoadingState('Downloading live records...', 'Fetching TMR and council traffic feeds.', 42);
-      const tmrData = await fetchDatasetWithFallback(GITHUB_TMR_URL, './tmr.geojson', 'TMR');
-      setLoadingState('Downloading live records...', 'Fetched TMR traffic feed.', 46);
-      const goldCoastData = await fetchDatasetWithFallback(GITHUB_GOLDCOAST_URL, './goldcoast.geojson', 'Gold Coast');
-      setLoadingState('Downloading live records...', 'Fetched Gold Coast traffic feed.', 50);
-      const brisbaneData = await fetchDatasetWithFallback(GITHUB_BRISBANE_URL, './Brisbane.geojson', 'Brisbane');
-      setLoadingState('Downloading live records...', 'Fetched Brisbane traffic feed.', 52);
-      const ipswichData = await fetchDatasetWithFallback(GITHUB_IPSWICH_URL, './Ipswich.geojson', 'Ipswich');
-      setLoadingState('Downloading live records...', 'Fetched Ipswich traffic feed.', 56);
-      const loganData = await fetchDatasetWithFallback(GITHUB_LOGAN_URL, './logan.geojson', 'Logan');
-      setLoadingState('Downloading live records...', 'Fetched Logan traffic feed.', 60);
-      const toowoombaData = await fetchDatasetWithFallback(GITHUB_TOOWOOMBA_URL, './toowoomba.geojson', 'Toowoomba');
-      setLoadingState('Downloading live records...', 'Fetched Toowoomba traffic feed.', 64);
-      const tewantinData = await fetchDatasetWithFallback(GITHUB_TEWANTIN_URL, './tewantin.geojson', 'Tewantin');
+      let tmrData = null;
+      let goldCoastData = null;
+      let brisbaneData = null;
+      let ipswichData = null;
+      let loganData = null;
+      let toowoombaData = null;
+      let tewantinData = null;
+      let nswData = null;
+
+      if (requestedScope === 'NSW') {
+        setLoadingState('Downloading live records...', 'Fetching NSW state-roads traffic feed.', 42);
+        nswData = await fetchDatasetWithFallback(GITHUB_NSW_URL, '', 'NSW');
+        setLoadingState('Downloading live records...', 'Fetched NSW traffic feed.', 68);
+      } else {
+        setLoadingState('Downloading live records...', 'Fetching Queensland traffic feeds.', 42);
+        tmrData = await fetchDatasetWithFallback(GITHUB_TMR_URL, './tmr.geojson', 'TMR');
+        setLoadingState('Downloading live records...', 'Fetched TMR traffic feed.', 46);
+        goldCoastData = await fetchDatasetWithFallback(GITHUB_GOLDCOAST_URL, './goldcoast.geojson', 'Gold Coast');
+        setLoadingState('Downloading live records...', 'Fetched Gold Coast traffic feed.', 50);
+        brisbaneData = await fetchDatasetWithFallback(GITHUB_BRISBANE_URL, './Brisbane.geojson', 'Brisbane');
+        setLoadingState('Downloading live records...', 'Fetched Brisbane traffic feed.', 52);
+        ipswichData = await fetchDatasetWithFallback(GITHUB_IPSWICH_URL, './Ipswich.geojson', 'Ipswich');
+        setLoadingState('Downloading live records...', 'Fetched Ipswich traffic feed.', 56);
+        loganData = await fetchDatasetWithFallback(GITHUB_LOGAN_URL, './logan.geojson', 'Logan');
+        setLoadingState('Downloading live records...', 'Fetched Logan traffic feed.', 60);
+        toowoombaData = await fetchDatasetWithFallback(GITHUB_TOOWOOMBA_URL, './toowoomba.geojson', 'Toowoomba');
+        setLoadingState('Downloading live records...', 'Fetched Toowoomba traffic feed.', 64);
+        tewantinData = await fetchDatasetWithFallback(GITHUB_TEWANTIN_URL, './tewantin.geojson', 'Tewantin');
+        setLoadingState('Downloading live records...', 'Fetched Tewantin traffic feed.', 66);
+      }
       console.log('[Data Load] GitHub data fetched');
 
       const tmrSites = tmrData ? parseMacroTrafficData(tmrData, 'TMR') : {};
@@ -11130,13 +11167,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const loganSites = loganData ? parseMacroTrafficData(loganData, 'Logan') : {};
       const toowoomSites = toowoombaData ? parseMacroTrafficData(toowoombaData, 'Toowoomba') : {};
       const tewantinSites = tewantinData ? parseMacroTrafficData(tewantinData, 'Tewantin') : {};
+      const nswSites = nswData ? parseMacroTrafficData(nswData, 'NSW') : {};
       setLoadingState('Processing records...', 'Normalizing dataset schema and deriving direction labels.', 58);
       console.log('[Data Load] Parsed site data');
 
-      baseMacroSitesData = mergeMacroSites(tmrSites, goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites);
-      const brisbaneFallbackCount = applyBrisbaneRoadContextFallbacks(baseMacroSitesData);
+      baseMacroSitesData = requestedScope === 'NSW'
+        ? mergeMacroSites(nswSites)
+        : mergeMacroSites(tmrSites, goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites);
+      const brisbaneFallbackCount = requestedScope === 'NSW' ? 0 : applyBrisbaneRoadContextFallbacks(baseMacroSitesData);
       macroSitesData = mergeMacroSites(baseMacroSitesData, customUploadedSitesData);
       window.macroSitesData = macroSitesData;
+      const filterEl = document.getElementById('macroSourceFilter');
+      if (requestedScope === 'NSW') {
+        macroSourceFilter = 'NSW';
+        if (filterEl) filterEl.value = 'NSW';
+      } else if (macroSourceFilter === 'NSW') {
+        macroSourceFilter = 'ALL';
+        if (filterEl) filterEl.value = 'ALL';
+      }
       setLoadingState('Applying directional inference...', 'Processing directional splits in responsive batches.', 64);
       await applyDirectionalSplitInferenceToSitesAsync(baseMacroSitesData, { chunkSize: 220 });
       await applyDirectionalSplitInferenceToSitesAsync(macroSitesData, { chunkSize: 220 });
@@ -11163,8 +11211,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const mapInfo = document.getElementById('macroMapInfo');
       if (mapInfo) {
-        mapInfo.textContent = `${Object.keys(macroSitesData).length} combined sites loaded (TMR + Gold Coast + Brisbane + Ipswich + Logan + Toowoomba + Tewantin). Click a marker to select a site.`;
+        mapInfo.textContent = requestedScope === 'NSW'
+          ? `${Object.keys(macroSitesData).length} NSW sites loaded. Click a marker to select a site.`
+          : `${Object.keys(macroSitesData).length} Queensland sites loaded. Click a marker to select a site.`;
       }
+      loadedDataScope = requestedScope;
+      updateQuickTiaStateStatus(`Current database: ${requestedScope === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)'}`);
       
       // Hide loading overlay (only if was shown)
       if (loadingOverlay && isAuthenticated) {
@@ -11179,6 +11231,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       console.log('[Data Load] Complete!');
     } catch (error) {
       console.error('[Data Load] Error:', error);
+      const failedScope = String(requestedDataScope || 'QLD').toUpperCase() === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)';
+      updateQuickTiaStateStatus(`Failed to load ${failedScope} database`, true);
       const loadingText = document.getElementById('loadingText');
       if (loadingText) {
         setLoadingState('Data load interrupted', 'Unable to complete startup. Please retry in a few seconds.', 100);
@@ -11966,6 +12020,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return document.getElementById('quickTiaInput') || document.getElementById('quickTiaAddress');
   }
 
+  function getQuickTiaSelectedState() {
+    const stateEl = document.getElementById('quickTiaStateSelect');
+    const raw = String((stateEl && stateEl.value) || requestedDataScope || 'QLD').trim().toUpperCase();
+    return raw === 'NSW' ? 'NSW' : 'QLD';
+  }
+
+  function updateQuickTiaStateStatus(message, isError = false) {
+    const statusEl = document.getElementById('quickTiaStateLoadStatus');
+    if (!statusEl) return;
+    statusEl.textContent = String(message || '').trim();
+    statusEl.style.color = isError ? '#b71c1c' : '#0d47a1';
+  }
+
+  async function ensureSelectedStateDataLoaded(showOverlay = true) {
+    const stateScope = getQuickTiaSelectedState();
+    if (loadedDataScope === stateScope && Object.keys(baseMacroSitesData || {}).length > 0) {
+      return;
+    }
+    requestedDataScope = stateScope;
+    updateQuickTiaStateStatus(`Loading ${stateScope === 'NSW' ? 'NSW' : 'Queensland'} database...`);
+    await loadMacroSitesData(showOverlay, stateScope);
+  }
+
   function getReportAddressForPrint() {
     const resolvedAddress = String(window.lastQuickTiaResolvedAddress || '').trim();
     if (resolvedAddress) {
@@ -12397,7 +12474,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       statusEl.style.display = visible ? 'block' : 'none';
     };
 
-    const runQuickTiaSearch = () => {
+    const runQuickTiaSearch = async () => {
       setQuickTiaTypingStatus(false);
       const fn = window && window.performQuickTIASearch;
       if (typeof fn !== 'function') {
@@ -12405,6 +12482,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const errEl = document.getElementById('quickTiaError');
         if (errEl) {
           errEl.innerHTML = '<strong>❌ Search function is not ready yet.</strong><br><span style="font-size: 0.9em;">Please refresh the page and try again.</span>';
+          errEl.style.display = 'block';
+        }
+        return;
+      }
+      try {
+        await ensureSelectedStateDataLoaded(true);
+      } catch (err) {
+        const errEl = document.getElementById('quickTiaError');
+        if (errEl) {
+          errEl.innerHTML = `<strong>❌ Could not load ${getQuickTiaSelectedState()} database:</strong> ${String(err && err.message ? err.message : err)}`;
           errEl.style.display = 'block';
         }
         return;
@@ -12421,6 +12508,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const quickBtn = document.getElementById('quickTiaSearchBtn');
     if (quickBtn) quickBtn.addEventListener('click', runQuickTiaSearch);
+
+    const stateSelect = document.getElementById('quickTiaStateSelect');
+    if (stateSelect) {
+      stateSelect.addEventListener('change', async () => {
+        const stateScope = getQuickTiaSelectedState();
+        requestedDataScope = stateScope;
+        const label = stateScope === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)';
+        updateQuickTiaStateStatus(`Switching to ${label} database...`);
+        try {
+          dataLoadingPromise = loadMacroSitesData(true, stateScope);
+          await dataLoadingPromise;
+          updateQuickTiaStateStatus(`Current database: ${label}`);
+        } catch (err) {
+          updateQuickTiaStateStatus(`Failed to load ${label} database`, true);
+          const errEl = document.getElementById('quickTiaError');
+          if (errEl) {
+            errEl.innerHTML = `<strong>❌ Database switch failed:</strong> ${String(err && err.message ? err.message : err)}`;
+            errEl.style.display = 'block';
+          }
+        }
+      });
+    }
 
     const quickInput = getQuickTiaInputElement();
     if (quickInput) {
@@ -12465,6 +12574,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         updateTiaCalculations();
       });
     }
+
+    updateQuickTiaStateStatus(`Current database: ${getQuickTiaSelectedState() === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)'}`);
   }
 
   // Load sites on page load
@@ -12999,6 +13110,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (sourceUpper === 'BRISBANE') return totalVadt;
     if (sourceUpper === 'LOGAN') return totalVadt;
     if (sourceUpper === 'TOOWOOMBA') return totalVadt;
+    if (sourceUpper === 'NSW') return totalVadt;
     
     return totalVadt;
   }
@@ -13195,7 +13307,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       amParts = pmParts = { lv: peakLv, hv: peakHv, rt: peakRt };
       opParts = evParts = { lv: offLv, hv: offHv, rt: offRt };
     }
-    else if (source === 'BRISBANE' || source === 'LOGAN' || source === 'TOOWOOMBA') {
+    else if (source === 'BRISBANE' || source === 'LOGAN' || source === 'TOOWOOMBA' || source === 'NSW') {
       const peakBase = numberRoundUp(Math.max(0, Number(dailyVolume) || 0) * 0.12 * 0.85, 0);
       const offBase = numberRoundUp(peakBase * 0.45, 0);
 
@@ -14159,7 +14271,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       'BRISBANE': { lat: -27.4698, lon: 153.0251 },
       'LOGAN': { lat: -27.6390, lon: 153.1090 },
       'IPSWICH': { lat: -27.6140, lon: 152.7600 },
-      'TOOWOOMBA': { lat: -27.5606, lon: 151.9539 }
+      'TOOWOOMBA': { lat: -27.5606, lon: 151.9539 },
+      'NSW': { lat: -33.8688, lon: 151.2093 }
     };
     if (sourceAnchors[sourceUpper]) return sourceAnchors[sourceUpper];
 
@@ -14169,7 +14282,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       { lat: -26.6500, lon: 153.0667 },
       { lat: -27.6140, lon: 152.7600 },
       { lat: -27.6390, lon: 153.1090 },
-      { lat: -27.5606, lon: 151.9539 }
+      { lat: -27.5606, lon: 151.9539 },
+      { lat: -33.8688, lon: 151.2093 }
     ];
 
     const lat = Number(site && site.latitude);
@@ -15204,6 +15318,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       else if (sourceUpper === 'IPSWICH') profileText = 'Ipswich (Ipswich Method)';
       else if (sourceUpper === 'LOGAN') profileText = 'Logan (Council Method)';
       else if (sourceUpper === 'TOOWOOMBA') profileText = 'Toowoomba (Council Method)';
+      else if (sourceUpper === 'NSW') profileText = 'NSW (State Roads Method)';
       else if (sourceUpper === 'CUSTOM UPLOAD') profileText = isTmrStyleSource(site) ? 'Custom Upload (Measured Hourly)' : 'Custom Upload (Template Hourly)';
       else if (!sourceUpper && window.selectedTiaData && window.selectedTiaData.type === 'references') profileText = 'Quick Address (Weighted References)';
       kpiModelProfileEl.textContent = `Model Profile: ${profileText}`;
@@ -16304,7 +16419,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     } else if (sourceText === 'GOLD COAST') {
       dvFormulaStr = `max(500, ROUNDUP(0.15 * ReferenceCapacity / 2))`;
       peakVolStr = 'Peak = 15% * 85% of Daily, Off-Peak = 48.55% of Peak';
-    } else if (sourceText === 'BRISBANE' || sourceText === 'LOGAN' || sourceText === 'TOOWOOMBA') {
+    } else if (sourceText === 'BRISBANE' || sourceText === 'LOGAN' || sourceText === 'TOOWOOMBA' || sourceText === 'NSW') {
       dvFormulaStr = `max(500, ROUNDUP(0.15 * ReferenceCapacity / Total_Lanes))`;
       peakVolStr = 'Peak = 12% * 85% of Daily, Off-Peak = 45% of Peak';
     } else {
