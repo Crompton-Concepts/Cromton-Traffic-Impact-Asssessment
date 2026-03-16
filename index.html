@@ -14459,28 +14459,91 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   /**
    * Derives grouped-summary period metrics (AM/OP/PM/EV) from an hour-indexed hourly profile.
-   * Uses the PEAK SINGLE HOUR within each period as the representative 1-hour volume.
-   * This ensures AM ≠ PM for directions that have different diurnal shapes (non-TMR sources).
+  * 
+  * For TMR sources (with actual measured 24-hour data):
+  *   - Finds peak hour in morning block (0-11) and uses that + adjacent hour for AM (2-hour period)
+  *   - Finds peak hour in evening block (12-23) and uses that + adjacent hour for PM (2-hour period)
+  *   - OP/EV find their own peaks from the remaining hours
+  * 
+  * For non-TMR sources (template-based):
+  *   - Uses the PEAK SINGLE HOUR within each fixed period as the representative 1-hour volume
+  *   - Fixed periods: AM = 7-8, OP = 9-15, PM = 16-17, EV = 18-06
+  * 
+  * This ensures AM ≠ PM for directions that have different diurnal shapes.
+  * 
    * @param {Object} hourlyProfile - Hour-indexed profile from buildHourlyDirectionProfile (keys 0-23)
    * @param {number} hvPct - Heavy vehicle fraction (0-1)
    * @param {number} rtPct - Road train fraction (0-1)
    * @param {number} lanes - Lane count for this direction
    * @param {boolean} isRtr - Whether RTR adjustment applies
+  * @param {boolean} isTmr - Whether this is a TMR source with measured hourly data
    * @returns {Object} Period metrics object { lanes, AM, OP, PM, EV } compatible with calcDirectionMetrics output
    */
-  function buildPeriodMetricsFromHourly(hourlyProfile, hvPct, rtPct, lanes, isRtr) {
-    const periodDefs = [
-      { key: 'AM', hours: [7, 8] },
-      { key: 'OP', hours: [9, 10, 11, 12, 13, 14, 15] },
-      { key: 'PM', hours: [16, 17] },
-      { key: 'EV', hours: [18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6] }
-    ];
+  function buildPeriodMetricsFromHourly(hourlyProfile, hvPct, rtPct, lanes, isRtr, isTmr) {
     const laneCount = Math.max(1, Number(lanes) || 1);
     const hvF = Number(hvPct) || 0;
     const rtF = Number(rtPct) || 0;
     const lvF = Math.max(0, 1 - hvF - rtF);
     const factor = isRtr ? 1.5 : 1;
     const out = { lanes: laneCount };
+
+    let periodDefs;
+    
+    if (isTmr) {
+      // TMR: Use actual measured peaks from 12-hour blocks
+      // Find peak hour in morning (0-11) and evening (12-23), then build adjacent 2-hour periods
+      let morningPeakHour = 6, morningPeakVol = 0;
+      let eveningPeakHour = 16, eveningPeakVol = 0;
+
+      // Find peak in morning block (0-11)
+      for (let h = 0; h <= 11; h++) {
+        const vol = Number((hourlyProfile && hourlyProfile[h] && hourlyProfile[h].total) || 0);
+        if (vol > morningPeakVol) {
+          morningPeakVol = vol;
+          morningPeakHour = h;
+        }
+      }
+
+      // Find peak in evening block (12-23)
+      for (let h = 12; h <= 23; h++) {
+        const vol = Number((hourlyProfile && hourlyProfile[h] && hourlyProfile[h].total) || 0);
+        if (vol > eveningPeakVol) {
+          eveningPeakVol = vol;
+          eveningPeakHour = h;
+        }
+      }
+
+      // Build 2-hour AM period around the morning peak
+      const amHour1 = Math.max(0, morningPeakHour - 1);
+      const amHour2 = Math.min(11, Math.max(amHour1 + 1, morningPeakHour));
+      const amHours = [amHour1, amHour2];
+
+      // Build 2-hour PM period around the evening peak
+      const pmHour1 = Math.max(12, eveningPeakHour - 1);
+      const pmHour2 = Math.min(23, Math.max(pmHour1 + 1, eveningPeakHour));
+      const pmHours = [pmHour1, pmHour2];
+
+      // OP = 9-15 (between AM and PM)
+      const opHours = [9, 10, 11, 12, 13, 14, 15];
+
+      // EV = 18-23, 0-5 (remaining hours)
+      const evHours = [18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5];
+
+      periodDefs = [
+        { key: 'AM', hours: amHours },
+        { key: 'OP', hours: opHours },
+        { key: 'PM', hours: pmHours },
+        { key: 'EV', hours: evHours }
+      ];
+    } else {
+      // Non-TMR: Use fixed period definitions and find peak within each
+      periodDefs = [
+        { key: 'AM', hours: [7, 8] },
+        { key: 'OP', hours: [9, 10, 11, 12, 13, 14, 15] },
+        { key: 'PM', hours: [16, 17] },
+        { key: 'EV', hours: [18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6] }
+      ];
+    }
 
     periodDefs.forEach(({ key, hours }) => {
       // Find the peak single-hour volume within this period
@@ -15517,10 +15580,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Derive period metrics from the actual hourly distribution (peak single-hour per period).
     // This replaces the flat VADT-formula estimates so Grouped Summary, Queue, and VCR
     // all reflect real directional AM/PM differentiation.
-    const d1AdjProfile = buildPeriodMetricsFromHourly(d1HourlyProfile, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES');
-    const d2AdjProfile = buildPeriodMetricsFromHourly(d2HourlyProfile, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES');
-    const d1BaseAdjProfile = buildPeriodMetricsFromHourly(d1BaseHourlyProfile, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES');
-    const d2BaseAdjProfile = buildPeriodMetricsFromHourly(d2BaseHourlyProfile, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES');
+    const isTmrSource = sourceUpper === 'TMR' || (sourceUpper === 'CUSTOM UPLOAD' && isTmrStyleSource(site));
+    const d1AdjProfile = buildPeriodMetricsFromHourly(d1HourlyProfile, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES', isTmrSource);
+    const d2AdjProfile = buildPeriodMetricsFromHourly(d2HourlyProfile, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES', isTmrSource);
+    const d1BaseAdjProfile = buildPeriodMetricsFromHourly(d1BaseHourlyProfile, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES', isTmrSource);
+    const d2BaseAdjProfile = buildPeriodMetricsFromHourly(d2BaseHourlyProfile, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES', isTmrSource);
 
     // Override global period profiles so generateWorkWindow() uses the real directional peaks
     lastD1Profile = d1AdjProfile;
