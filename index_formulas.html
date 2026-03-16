@@ -14457,6 +14457,75 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return profile;
   }
 
+  /**
+   * Derives grouped-summary period metrics (AM/OP/PM/EV) from an hour-indexed hourly profile.
+   * Uses the PEAK SINGLE HOUR within each period as the representative 1-hour volume.
+   * This ensures AM ≠ PM for directions that have different diurnal shapes (non-TMR sources).
+   * @param {Object} hourlyProfile - Hour-indexed profile from buildHourlyDirectionProfile (keys 0-23)
+   * @param {number} hvPct - Heavy vehicle fraction (0-1)
+   * @param {number} rtPct - Road train fraction (0-1)
+   * @param {number} lanes - Lane count for this direction
+   * @param {boolean} isRtr - Whether RTR adjustment applies
+   * @returns {Object} Period metrics object { lanes, AM, OP, PM, EV } compatible with calcDirectionMetrics output
+   */
+  function buildPeriodMetricsFromHourly(hourlyProfile, hvPct, rtPct, lanes, isRtr) {
+    const periodDefs = [
+      { key: 'AM', hours: [7, 8] },
+      { key: 'OP', hours: [9, 10, 11, 12, 13, 14, 15] },
+      { key: 'PM', hours: [16, 17] },
+      { key: 'EV', hours: [18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6] }
+    ];
+    const laneCount = Math.max(1, Number(lanes) || 1);
+    const hvF = Number(hvPct) || 0;
+    const rtF = Number(rtPct) || 0;
+    const lvF = Math.max(0, 1 - hvF - rtF);
+    const factor = isRtr ? 1.5 : 1;
+    const out = { lanes: laneCount };
+
+    periodDefs.forEach(({ key, hours }) => {
+      // Find the peak single-hour volume within this period
+      let peakTotal = 0;
+      let peakPerLane = 0;
+      hours.forEach(h => {
+        const entry = (hourlyProfile && hourlyProfile[h]) || {};
+        const vol = Number(entry.total) || 0;
+        if (vol > peakTotal) {
+          peakTotal = vol;
+          peakPerLane = Number(entry.perLane) || 0;
+        }
+      });
+
+      const hv = numberRoundUp(peakTotal * hvF, 0);
+      const rt = numberRoundUp(peakTotal * rtF, 0);
+      const lv = Math.max(0, peakTotal - hv - rt);
+      const lvPerLane = numberRoundUp(lv / laneCount, 0);
+      const hvPerLane = numberRoundUp(hv / laneCount, 0);
+      const rtPerLane = numberRoundUp(rt / laneCount, 0);
+
+      // Queue derived from peak hour per-lane 5-minute flow
+      const per5 = peakPerLane / 12;
+      const lv5 = numberRoundUp(per5 * lvF, 0);
+      const hv5 = numberRoundUp(per5 * hvF, 0);
+      const rt5 = numberRoundUp(per5 * rtF, 0);
+
+      out[key] = {
+        total: peakTotal,
+        lv, hv, rt,
+        lvPerLane, hvPerLane, rtPerLane,
+        hourlyPerLane: peakPerLane,
+        per5: lv5 + hv5 + rt5,
+        queue: {
+          q2:  numberRoundUp((lv5 * 2.4  + hv5 * 8  + rt5 * 25.2) * factor, 0),
+          q5:  numberRoundUp((lv5 * 6    + hv5 * 20 + rt5 * 63)   * factor, 0),
+          q10: numberRoundUp((lv5 * 12   + hv5 * 40 + rt5 * 126)  * factor, 0),
+          q15: numberRoundUp((lv5 * 18   + hv5 * 60 + rt5 * 189)  * factor, 0)
+        }
+      };
+    });
+
+    return out;
+  }
+
   function fmtVcrLos(v) {
     if (!Number.isFinite(v) || v < 0) return 'N/A';
     return `${v.toFixed(3)} (${losLabel(v)})`;
@@ -15439,7 +15508,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d1HourlyProfile = buildHourlyDirectionProfile(1, d1Daily, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES', d1Metrics, site);
     const d2HourlyProfile = buildHourlyDirectionProfile(2, d2Daily, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES', d2Metrics, site);
     lastWorkWindowHourlyProfiles = { d1: d1HourlyProfile, d2: d2HourlyProfile };
-    
+
+    // Build base year hourly profiles so the grouped table base-year row also reflects
+    // the actual directional diurnal pattern (AM ≠ PM per direction).
+    const d1BaseHourlyProfile = buildHourlyDirectionProfile(1, d1DailyBase, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES', d1BaseMetrics, site);
+    const d2BaseHourlyProfile = buildHourlyDirectionProfile(2, d2DailyBase, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES', d2BaseMetrics, site);
+
+    // Derive period metrics from the actual hourly distribution (peak single-hour per period).
+    // This replaces the flat VADT-formula estimates so Grouped Summary, Queue, and VCR
+    // all reflect real directional AM/PM differentiation.
+    const d1AdjProfile = buildPeriodMetricsFromHourly(d1HourlyProfile, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES');
+    const d2AdjProfile = buildPeriodMetricsFromHourly(d2HourlyProfile, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES');
+    const d1BaseAdjProfile = buildPeriodMetricsFromHourly(d1BaseHourlyProfile, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES');
+    const d2BaseAdjProfile = buildPeriodMetricsFromHourly(d2BaseHourlyProfile, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES');
+
+    // Override global period profiles so generateWorkWindow() uses the real directional peaks
+    lastD1Profile = d1AdjProfile;
+    lastD2Profile = d2AdjProfile;
+
     // CRITICAL: Render charts AFTER storing hourly profiles so Peak Hours table can use them
     rerenderMacroChartsWithCurrentGrowth();
 
@@ -15464,8 +15550,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     periodKeys.forEach(p => {
-      const m1 = d1Metrics[p];
-      const m2 = d2Metrics[p];
+      const m1 = d1AdjProfile[p];
+      const m2 = d2AdjProfile[p];
 
       baseD1[p] = TMRCalculator.calculateVCR(m1.hourlyPerLane, dv1);
       baseD2[p] = TMRCalculator.calculateVCR(m2.hourlyPerLane, dv2);
@@ -15591,26 +15677,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         groupedBodyD2.innerHTML = `
         <tr>
           <td class="rowhead">${baseYearLabel}</td>
-          ${periodLvHvRtMarkup(d2BaseMetrics, 'AM', d2HvPct, d2RtPct)}
-          ${periodLvHvRtMarkup(d2BaseMetrics, 'OP', d2HvPct, d2RtPct)}
-          ${periodLvHvRtMarkup(d2BaseMetrics, 'PM', d2HvPct, d2RtPct)}
-          ${periodLvHvRtMarkup(d2BaseMetrics, 'EV', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2BaseAdjProfile, 'AM', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2BaseAdjProfile, 'OP', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2BaseAdjProfile, 'PM', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2BaseAdjProfile, 'EV', d2HvPct, d2RtPct)}
           <td><strong>${fmtInt(d2BaseTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">${openingYearLabel}</td>
-          ${periodLvHvRtMarkup(d2Profile, 'AM', d2HvPct, d2RtPct)}
-          ${periodLvHvRtMarkup(d2Profile, 'OP', d2HvPct, d2RtPct)}
-          ${periodLvHvRtMarkup(d2Profile, 'PM', d2HvPct, d2RtPct)}
-          ${periodLvHvRtMarkup(d2Profile, 'EV', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2AdjProfile, 'AM', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2AdjProfile, 'OP', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2AdjProfile, 'PM', d2HvPct, d2RtPct)}
+          ${periodLvHvRtMarkup(d2AdjProfile, 'EV', d2HvPct, d2RtPct)}
           <td><strong>${fmtInt(d2OpenTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">Hrly Avg / lane</td>
-          ${periodPerLaneMarkup(d2Profile, 'AM')}
-          ${periodPerLaneMarkup(d2Profile, 'OP')}
-          ${periodPerLaneMarkup(d2Profile, 'PM')}
-          ${periodPerLaneMarkup(d2Profile, 'EV')}
+          ${periodPerLaneMarkup(d2AdjProfile, 'AM')}
+          ${periodPerLaneMarkup(d2AdjProfile, 'OP')}
+          ${periodPerLaneMarkup(d2AdjProfile, 'PM')}
+          ${periodPerLaneMarkup(d2AdjProfile, 'EV')}
           <td>-</td>
         </tr>
       `;
@@ -15629,26 +15715,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         groupedBodyD1.innerHTML = `
         <tr>
           <td class="rowhead">${baseYearLabel}</td>
-          ${periodLvHvRtMarkup(d1BaseMetrics, 'AM', d1HvPct, d1RtPct)}
-          ${periodLvHvRtMarkup(d1BaseMetrics, 'OP', d1HvPct, d1RtPct)}
-          ${periodLvHvRtMarkup(d1BaseMetrics, 'PM', d1HvPct, d1RtPct)}
-          ${periodLvHvRtMarkup(d1BaseMetrics, 'EV', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1BaseAdjProfile, 'AM', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1BaseAdjProfile, 'OP', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1BaseAdjProfile, 'PM', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1BaseAdjProfile, 'EV', d1HvPct, d1RtPct)}
           <td><strong>${fmtInt(d1BaseTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">${openingYearLabel}</td>
-          ${periodLvHvRtMarkup(d1Profile, 'AM', d1HvPct, d1RtPct)}
-          ${periodLvHvRtMarkup(d1Profile, 'OP', d1HvPct, d1RtPct)}
-          ${periodLvHvRtMarkup(d1Profile, 'PM', d1HvPct, d1RtPct)}
-          ${periodLvHvRtMarkup(d1Profile, 'EV', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1AdjProfile, 'AM', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1AdjProfile, 'OP', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1AdjProfile, 'PM', d1HvPct, d1RtPct)}
+          ${periodLvHvRtMarkup(d1AdjProfile, 'EV', d1HvPct, d1RtPct)}
           <td><strong>${fmtInt(d1OpenTotalDisplay)}</strong></td>
         </tr>
         <tr>
           <td class="rowhead">Hrly Avg / lane</td>
-          ${periodPerLaneMarkup(d1Profile, 'AM')}
-          ${periodPerLaneMarkup(d1Profile, 'OP')}
-          ${periodPerLaneMarkup(d1Profile, 'PM')}
-          ${periodPerLaneMarkup(d1Profile, 'EV')}
+          ${periodPerLaneMarkup(d1AdjProfile, 'AM')}
+          ${periodPerLaneMarkup(d1AdjProfile, 'OP')}
+          ${periodPerLaneMarkup(d1AdjProfile, 'PM')}
+          ${periodPerLaneMarkup(d1AdjProfile, 'EV')}
           <td>-</td>
         </tr>
       `;
@@ -15688,8 +15774,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return out;
     };
 
-    const queuePeriodD1 = derivePeriodQueueFromHourly(d1HourlyProfile, d1Profile);
-    const queuePeriodD2 = derivePeriodQueueFromHourly(d2HourlyProfile, d2Profile);
+    const queuePeriodD1 = derivePeriodQueueFromHourly(d1HourlyProfile, d1AdjProfile);
+    const queuePeriodD2 = derivePeriodQueueFromHourly(d2HourlyProfile, d2AdjProfile);
 
     // Queue formula for all council profiles (including TMR/council-derived paths).
     const qFormulaStr = 'Q = (Lv_5min * 2.4) + (Hv_5min * 8) + (Rt_5min * 25.2)';
@@ -20247,8 +20333,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <summary style="cursor: pointer; font-size: 1.2em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">Detour Analysis</summary>
       `;
 
-      if (macroDataVizSectionEl && macroDataVizSectionEl.parentNode) {
-        macroDataVizSectionEl.insertAdjacentElement('afterend', detourSectionEl);
+      const hourlyEstimateCardEl = document.getElementById('hourlyEstimateCard');
+      if (hourlyEstimateCardEl && hourlyEstimateCardEl.parentNode) {
+        hourlyEstimateCardEl.insertAdjacentElement('afterend', detourSectionEl);
       } else {
         betaSectionEl.parentNode.insertBefore(detourSectionEl, betaSectionEl);
       }
