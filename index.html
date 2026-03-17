@@ -20817,6 +20817,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const workWindowCard = document.getElementById('workWindowCard');
     if (workWindowCard) workWindowCard.style.display = 'block';
 
+    const timelineEl = document.getElementById('wwTimeline');
+    const summaryEl = document.getElementById('wwSummary');
+    if (!timelineEl) return;
+
+    try {
+
     const maxVcr = Number(document.getElementById('wwMaxVcr').value) || 0.85;
 
     // NEW: Source-aware variables for Work Window
@@ -20852,10 +20858,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!Array.isArray(agData) || agData.length !== 24 || agData.reduce((a,b)=>a+(Number(b)||0),0) <= 0) {
       agData = buildSyntheticHourlyFromDaily(num('D2_VADT'), 2);
     }
-
-    const timelineEl = document.getElementById('wwTimeline');
-    if (!timelineEl) return;
-    const summaryEl = document.getElementById('wwSummary');
 
     const rawD1Label = (selectedMacroSite && macroSitesData[selectedMacroSite])
       ? macroSitesData[selectedMacroSite].d1_direction_label
@@ -20911,7 +20913,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const permittedBlocks = [];
       for (let h = 0; h < 24; h += 1) {
-        const vcr = Number(vcrByHour[h]) || 0;
+        const rawVcr = Number(vcrByHour[h]);
+        const vcr = Number.isFinite(rawVcr) ? rawVcr : 999;
+        const vcrText = Number.isFinite(rawVcr) ? rawVcr.toFixed(2) : 'N/A';
         const isPermitted = vcr <= maxVcr;
         if (isPermitted) permittedBlocks.push(h);
 
@@ -20922,7 +20926,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         block.style.alignItems = 'center';
         block.style.borderRight = h === 23 ? 'none' : '1px solid rgba(255,255,255,0.35)';
         block.style.cursor = 'help';
-        block.title = `Hour: ${h}:00 - ${h + 1}:00\nWork VCR: ${vcr.toFixed(2)}\nStatus: ${isPermitted ? 'Permitted' : 'Restricted'}`;
+        block.title = `Hour: ${h}:00 - ${h + 1}:00\nWork VCR: ${vcrText}\nStatus: ${isPermitted ? 'Permitted' : 'Restricted'}`;
         if (isPermitted) {
           block.style.backgroundColor = vcr > (maxVcr - 0.1) ? '#ffb300' : '#4caf50';
           block.style.color = '#fff';
@@ -20997,6 +21001,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       <div style="margin-top:4px;"><strong>${wwD1Label}:</strong> ${d1Summary}</div>
       <div style="margin-top:2px;"><strong>${wwD2Label}:</strong> ${d2Summary}</div>
     `;
+    } catch (err) {
+      console.error('[Work Window] Render failed:', err);
+      timelineEl.innerHTML = `
+        <div style="width:100%;height:50px;display:flex;align-items:center;justify-content:center;background:#fff8e1;color:#8a4b00;font-weight:700;border:1px solid #f5c26b;border-radius:6px;">
+          Unable to render work-window timeline
+        </div>
+      `;
+      if (summaryEl) {
+        summaryEl.innerHTML = '<span style="color:#8a4b00;">⚠ Work Window render fallback applied. Please click Calculate again.</span>';
+      }
+    }
   }
 
   
