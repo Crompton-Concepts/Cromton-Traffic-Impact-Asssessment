@@ -10318,6 +10318,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const sites = {};
     const features = jsonData.features || [];
     const sourceUpper = String(sourceName || '').toUpperCase();
+    const isNsw = sourceUpper === 'NSW';
     const isIpswich = sourceUpper === 'IPSWICH';
     const isLogan = sourceUpper === 'LOGAN';
     const isToowoomba = sourceUpper === 'TOOWOOMBA';
@@ -10575,14 +10576,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const rawSiteId = isIpswich
         ? createIpswichSiteKey(props)
-        : (props['SITE_ID'] || props['site_id'] || props['OBJECTID'] || props['ID'] || props['id'] || props['Id'] || props['SITE'] || props['Site'] || props['tsc'] || '');
+        : (props['SITE_ID'] || props['site_id'] || props['OBJECTID'] || props['ID'] || props['id'] || props['Id'] || props['SITE'] || props['Site'] || props['tsc'] || props['station_key'] || '');
       const siteId = String(rawSiteId || '').trim();
       if (!siteId) return;
 
-      const suburb = props['SUBURB'] || props['Suburb'] || props['Suburb'] || '';
+      const suburb = props['SUBURB'] || props['Suburb'] || props['suburb'] || '';
       const rawDescription = props['DESCRIPTION'] || props['LOCATION'] || props['COUNTER_LOCATION_BETWEEN'] || props['Site Description'] || props['Local_Road_Alias'] || props['address'] || '';
       const description = suburb ? `${suburb} - ${rawDescription}` : String(rawDescription).replace(/"/g, '').trim();
-      const roadName = String(props['ROAD_NAME'] || props['STREET'] || props['STREET_NAME'] || props['Road Name'] || props['Road_Name'] || props['address'] || '').replace(/"/g, '').trim();
+      const roadName = String(props['ROAD_NAME'] || props['road_name'] || props['STREET'] || props['STREET_NAME'] || props['Road Name'] || props['Road_Name'] || props['address'] || '').replace(/"/g, '').trim();
       const geomCoords = feature && feature.geometry && Array.isArray(feature.geometry.coordinates) ? feature.geometry.coordinates : [];
 
       let longitude = props['LONGITUDE'] || props['LON'] || props['LONG'] || props['Longitude'];
@@ -10631,6 +10632,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const totalVadtFromProps = parseVolumeValue(firstDefinedValue(
         props['VADT'],
         props['AADT'],
+        props['daily_total'],
         props['VPD'],
         props['TOTAL_VADT'],
         props['Average Daily Traffic Adt Vehicles Per Day'],
@@ -10829,6 +10831,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const weekdayAvg = props['WEEKDAY_AVERAGE'] ? Math.ceil(parseFloat(props['WEEKDAY_AVERAGE'])) : 0;
           site.directions_weekday[direction][hourIndex] = weekdayAvg;
           site.directions[direction][hourIndex] = weekdayAvg;
+        }
+      }
+
+      if (isNsw) {
+        const hasNswHourlyShape = Array.from({ length: 24 }, (_, h) => h).some(h => {
+          const key = `hour_${String(h).padStart(2, '0')}`;
+          return Number(props[key]) > 0;
+        });
+
+        if (hasNswHourlyShape) {
+          // NSW feed provides combined hourly totals. Split evenly so directional logic can reuse TMR-style calculations.
+          const d1Hourly = new Array(24).fill(0);
+          const d2Hourly = new Array(24).fill(0);
+          let hourlyTotal = 0;
+
+          for (let hour = 0; hour < 24; hour += 1) {
+            const key = `hour_${String(hour).padStart(2, '0')}`;
+            const totalHour = Math.max(0, Number(props[key]) || 0);
+            hourlyTotal += totalHour;
+            const half = totalHour / 2;
+            d1Hourly[hour] = half;
+            d2Hourly[hour] = Math.max(0, totalHour - half);
+          }
+
+          site.directions_weekday['GAZETTAL'] = d1Hourly;
+          site.directions_weekday['AGAINST GAZETTAL'] = d2Hourly;
+          site.directions['GAZETTAL'] = d1Hourly.slice();
+          site.directions['AGAINST GAZETTAL'] = d2Hourly.slice();
+
+          if ((!site.vadt || site.vadt <= 0) && hourlyTotal > 0) {
+            site.vadt = Math.round(hourlyTotal);
+          }
+          site.direction_split_mode = 'hourly';
         }
       }
 
@@ -13110,7 +13145,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function isTmrStyleSource(site, directionKey) {
     const source = String(site ? site.source : '').toUpperCase();
     if (source === 'TMR') return true;
-    if (source !== 'CUSTOM UPLOAD') return false;
+    if (source !== 'CUSTOM UPLOAD' && source !== 'NSW') return false;
     if (!site || !site.directions_weekday) return false;
     // If a specific direction is requested, only check that direction
     if (directionKey) {
