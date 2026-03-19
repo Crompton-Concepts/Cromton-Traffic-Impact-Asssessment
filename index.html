@@ -8307,7 +8307,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const GITHUB_LOGAN_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/logan.geojson';
   const GITHUB_TOOWOOMBA_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/toowoomba.geojson';
   const GITHUB_TEWANTIN_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tewantin.geojson';
-  const GITHUB_NSW_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/nsw_2026.geojson';
+  const GITHUB_NSW_2026_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/nsw_2026.geojson';
+  const GITHUB_NSW_TNSW_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/TNSW.geojson';
   const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v4:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const GITHUB_FETCH_TIMEOUT_MS = 60000;
@@ -10582,7 +10583,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const rawSiteId = isIpswich
         ? createIpswichSiteKey(props)
-        : (props['SITE_ID'] || props['site_id'] || props['OBJECTID'] || props['ID'] || props['id'] || props['Id'] || props['SITE'] || props['Site'] || props['tsc'] || props['station_key'] || '');
+        : (props['SITE_ID'] || props['site_id'] || props['station_id'] || props['OBJECTID'] || props['ID'] || props['id'] || props['Id'] || props['SITE'] || props['Site'] || props['tsc'] || props['station_key'] || '');
       const siteId = String(rawSiteId || '').trim();
       if (!siteId) return;
 
@@ -10592,8 +10593,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const roadName = String(props['ROAD_NAME'] || props['road_name'] || props['STREET'] || props['STREET_NAME'] || props['Road Name'] || props['Road_Name'] || props['address'] || '').replace(/"/g, '').trim();
       const geomCoords = feature && feature.geometry && Array.isArray(feature.geometry.coordinates) ? feature.geometry.coordinates : [];
 
-      let longitude = props['LONGITUDE'] || props['LON'] || props['LONG'] || props['Longitude'];
-      let latitude = props['LATITUDE'] || props['LAT'] || props['Latitude'];
+      let longitude = props['LONGITUDE'] || props['LON'] || props['LONG'] || props['Longitude'] || props['wgs84_longitude'];
+      let latitude = props['LATITUDE'] || props['LAT'] || props['Latitude'] || props['wgs84_latitude'];
 
       if (!Number.isFinite(Number(longitude)) || !Number.isFinite(Number(latitude))) {
         const derivedPoint = extractPointFromGeometry(feature && feature.geometry);
@@ -10638,6 +10639,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const totalVadtFromProps = parseVolumeValue(firstDefinedValue(
         props['VADT'],
         props['AADT'],
+        props['traffic_count'],
         props['daily_total'],
         props['VPD'],
         props['TOTAL_VADT'],
@@ -10742,11 +10744,60 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             'GAZETTAL': 'Direction 1',
             'AGAINST GAZETTAL': 'Direction 2'
           },
-          _directionMap: {}
+          _directionMap: {},
+          _nswCardinalMap: {}
         };
       }
 
       const site = sites[siteId];
+
+      const isNswPeriodSchema = isNsw && (
+        Object.prototype.hasOwnProperty.call(props, 'period')
+        || Object.prototype.hasOwnProperty.call(props, 'classification_type')
+        || Object.prototype.hasOwnProperty.call(props, 'cardinal_direction_name')
+      );
+      if (isNswPeriodSchema) {
+        const cls = String(props['classification_type'] || '').trim().toUpperCase();
+        const period = String(props['period'] || '').trim().toUpperCase();
+        if (cls && cls !== 'ALL VEHICLES') return;
+        if (period && period !== 'ALL DAYS') return;
+
+        const dir = String(props['cardinal_direction_name'] || '').trim().toUpperCase();
+        const nswCount = parseVolumeValue(props['traffic_count']);
+        if (!Number.isFinite(nswCount) || nswCount <= 0) return;
+
+        if (dir === 'BOTH') {
+          if (!site.vadt || site.vadt < nswCount) {
+            site.vadt = Math.round(nswCount);
+            site.vadt_is_estimated = false;
+            site.vadt_estimate_note = '';
+          }
+          return;
+        }
+
+        if (dir === 'NORTH' || dir === 'SOUTH' || dir === 'EAST' || dir === 'WEST') {
+          let targetDir = site._nswCardinalMap[dir];
+          if (!targetDir) {
+            targetDir = site._nswCardinalMap.__hasPrimary ? 'AGAINST GAZETTAL' : 'GAZETTAL';
+            if (targetDir === 'GAZETTAL') site._nswCardinalMap.__hasPrimary = true;
+            site._nswCardinalMap[dir] = targetDir;
+          }
+
+          if (targetDir === 'GAZETTAL') {
+            site.d1_vadt = Math.max(Number(site.d1_vadt) || 0, Number(nswCount) || 0);
+          } else {
+            site.d2_vadt = Math.max(Number(site.d2_vadt) || 0, Number(nswCount) || 0);
+          }
+          const expanded = expandDirectionLabel(dir);
+          if (expanded) {
+            site.direction_base_labels[targetDir] = expanded;
+            site.direction_descriptions[targetDir] = expanded;
+          }
+          site.direction_split_mode = 'provided';
+        }
+        return;
+      }
+
       if (totalVadtFromProps && (!site.vadt || site.vadt <= 0 || countYear >= (site.countYear || 0))) {
         site.vadt = totalVadtFromProps;
         site.vadt_is_estimated = false;
@@ -11007,6 +11058,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       
       // Clean up helper property
       delete site._directionMap;
+      delete site._nswCardinalMap;
       
       // Smart direction labeling with opposite direction inference
       const gazLabel = site.direction_descriptions['GAZETTAL'];
@@ -11070,6 +11122,105 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         };
       });
     });
+    return merged;
+  }
+
+  function mergeNswSites(primarySites, supplementalSites) {
+    const merged = {};
+    const normalizeRefText = (value) => String(value || '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const buildReferenceKey = (siteId, site) => {
+      const rawRoad = site && (site.road_name || site.description || '');
+      const road = normalizeRefText(rawRoad);
+      const lat = Number(site && site.latitude);
+      const lon = Number(site && site.longitude);
+      const loc = (Number.isFinite(lat) && Number.isFinite(lon))
+        ? `${lat.toFixed(4)},${lon.toFixed(4)}`
+        : '';
+      const fallbackId = normalizeRefText(siteId || (site && site.id) || '');
+      return road && loc ? `${road}|${loc}` : (loc || road || fallbackId);
+    };
+    const copyHourly = (target, source, key) => {
+      const sourceArr = source && source.directions_weekday && Array.isArray(source.directions_weekday[key])
+        ? source.directions_weekday[key]
+        : null;
+      if (!sourceArr) return;
+      const sourceSum = sourceArr.reduce((sum, value) => sum + (Number(value) || 0), 0);
+      if (sourceSum <= 0) return;
+
+      const targetArr = target && target.directions_weekday && Array.isArray(target.directions_weekday[key])
+        ? target.directions_weekday[key]
+        : null;
+      const targetSum = targetArr ? targetArr.reduce((sum, value) => sum + (Number(value) || 0), 0) : 0;
+      if (targetSum > 0) return;
+
+      if (!target.directions_weekday) target.directions_weekday = {};
+      if (!target.directions) target.directions = {};
+      target.directions_weekday[key] = sourceArr.slice();
+      target.directions[key] = sourceArr.slice();
+    };
+
+    const fillMissingFields = (target, supplemental) => {
+      const fillIfMissing = (field) => {
+        const targetVal = target[field];
+        const sourceVal = supplemental[field];
+        if (targetVal === null || targetVal === undefined || targetVal === '' || Number(targetVal) === 0) {
+          if (sourceVal !== null && sourceVal !== undefined && sourceVal !== '') {
+            target[field] = sourceVal;
+          }
+        }
+      };
+
+      fillIfMissing('vadt');
+      fillIfMissing('d1_vadt');
+      fillIfMissing('d2_vadt');
+      fillIfMissing('growth_rate');
+      fillIfMissing('hv_percent');
+      fillIfMissing('d1_lanes');
+      fillIfMissing('d2_lanes');
+      fillIfMissing('total_lanes');
+      fillIfMissing('road_class');
+      fillIfMissing('design_capacity_daily');
+
+      if (!target.countYear || Number(target.countYear) < 1900) {
+        target.countYear = supplemental.countYear;
+      }
+
+      copyHourly(target, supplemental, 'GAZETTAL');
+      copyHourly(target, supplemental, 'AGAINST GAZETTAL');
+    };
+
+    const referenceToSiteId = new Map();
+
+    Object.entries(primarySites || {}).forEach(([siteId, site]) => {
+      merged[siteId] = { ...site };
+      const refKey = buildReferenceKey(siteId, site);
+      if (refKey) referenceToSiteId.set(refKey, siteId);
+    });
+
+    Object.entries(supplementalSites || {}).forEach(([siteId, supplemental]) => {
+      let targetSiteId = siteId;
+      if (!merged[targetSiteId]) {
+        const refKey = buildReferenceKey(siteId, supplemental);
+        if (refKey && referenceToSiteId.has(refKey)) {
+          targetSiteId = referenceToSiteId.get(refKey);
+        }
+      }
+
+      if (!merged[targetSiteId]) {
+        merged[targetSiteId] = { ...supplemental, id: targetSiteId };
+        const refKey = buildReferenceKey(targetSiteId, supplemental);
+        if (refKey) referenceToSiteId.set(refKey, targetSiteId);
+        return;
+      }
+
+      const target = merged[targetSiteId];
+      fillMissingFields(target, supplemental);
+    });
+
     return merged;
   }
 
@@ -11209,12 +11360,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let loganData = null;
       let toowoombaData = null;
       let tewantinData = null;
-      let nswData = null;
+      let nswData2026 = null;
+      let nswDataLegacy = null;
 
       if (requestedScope === 'NSW') {
-        setLoadingState('Downloading live records...', 'Fetching NSW state-roads traffic feed.', 42);
-        nswData = await fetchDatasetWithFallback(GITHUB_NSW_URL, './nsw_2026.geojson', 'NSW');
-        setLoadingState('Downloading live records...', 'Fetched NSW traffic feed.', 68);
+        setLoadingState('Downloading live records...', 'Fetching NSW 2026 traffic feed.', 42);
+        nswData2026 = await fetchDatasetWithFallback(GITHUB_NSW_2026_URL, './nsw_2026.geojson', 'NSW 2026');
+        setLoadingState('Downloading live records...', 'Fetched NSW 2026 traffic feed.', 56);
+        nswDataLegacy = await fetchDatasetWithFallback(GITHUB_NSW_TNSW_URL, './tnsw.geojson', 'NSW Legacy');
+        setLoadingState('Downloading live records...', 'Fetched NSW legacy hourly feed.', 68);
       } else {
         setLoadingState('Downloading live records...', 'Fetching Queensland traffic feeds.', 42);
         tmrData = await fetchDatasetWithFallback(GITHUB_TMR_URL, './tmr.geojson', 'TMR');
@@ -11241,7 +11395,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const loganSites = loganData ? parseMacroTrafficData(loganData, 'Logan') : {};
       const toowoomSites = toowoombaData ? parseMacroTrafficData(toowoombaData, 'Toowoomba') : {};
       const tewantinSites = tewantinData ? parseMacroTrafficData(tewantinData, 'Tewantin') : {};
-      const nswSites = nswData ? parseMacroTrafficData(nswData, 'NSW') : {};
+      const nswSites2026 = nswData2026 ? parseMacroTrafficData(nswData2026, 'NSW') : {};
+      const nswSitesLegacy = nswDataLegacy ? parseMacroTrafficData(nswDataLegacy, 'NSW') : {};
+      const nswSites = mergeNswSites(nswSites2026, nswSitesLegacy);
       setLoadingState('Processing records...', 'Normalizing dataset schema and deriving direction labels.', 58);
       console.log('[Data Load] Parsed site data');
 
