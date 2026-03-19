@@ -10290,7 +10290,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function isGeoJsonFeatureCollection(data) {
-    return !!(data && typeof data === 'object' && Array.isArray(data.features) && data.features.length > 0);
+    return !!(
+      data
+      && typeof data === 'object'
+      && (
+        (Array.isArray(data.features) && data.features.length > 0)
+        || (Array.isArray(data) && data.length > 0)
+      )
+    );
   }
 
   function buildGithubCdnMirrorUrl(url) {
@@ -10327,7 +10334,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function parseMacroTrafficData(jsonData, sourceName = 'TMR') {
     const sites = {};
-    const features = jsonData.features || [];
+    const features = Array.isArray(jsonData && jsonData.features)
+      ? jsonData.features
+      : (Array.isArray(jsonData) ? jsonData.map(row => ({ properties: row, geometry: null })) : []);
     const sourceUpper = String(sourceName || '').toUpperCase();
     const isNsw = sourceUpper === 'NSW';
     const isIpswich = sourceUpper === 'IPSWICH';
