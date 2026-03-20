@@ -9861,8 +9861,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       macroHourlyChart: 'Hourly profile = current and projected hourly volumes by direction (measured or synthetic diurnal model)',
       macroD1PieChart: 'Pie share = bucket total / daily directional total for D1 (AM/OP/PM/EV)',
       macroD2PieChart: 'Pie share = bucket total / daily directional total for D2 (AM/OP/PM/EV)',
-      macroD1PeakHours: 'Peak list = hours ranked by descending hourly vph for D1',
-      macroD2PeakHours: 'Peak list = hours ranked by descending hourly vph for D2',
+      macroD1PeakHours: 'Peak list = highlighted peak hours shown in chronological timing order for D1',
+      macroD2PeakHours: 'Peak list = highlighted peak hours shown in chronological timing order for D2',
       sgClearance: 'Clearance = Length / (Speed/3.6)',
       sgD1Green: 'D1 Green = (Cycle - 2*Clearance) * directional split',
       sgD2Green: 'D2 Green = (Cycle - 2*Clearance) * directional split',
@@ -12120,8 +12120,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d2AmTopHours = getTopWindowHourSet(d2RankingHourly, amHoursSet, 2);
     const d2PmTopHours = getTopWindowHourSet(d2RankingHourly, pmHoursSet, 2);
 
-    const d1Peaks = getPeakHours(d1DisplayHourly, d1RankingHourly);
-    const d2Peaks = getPeakHours(d2DisplayHourly, d2RankingHourly);
+    const d1PeaksRanked = getPeakHours(d1DisplayHourly, d1RankingHourly);
+    const d2PeaksRanked = getPeakHours(d2DisplayHourly, d2RankingHourly);
+    const d1PeaksByTime = [...d1PeaksRanked].sort((a, b) => a.hour - b.hour);
+    const d2PeaksByTime = [...d2PeaksRanked].sort((a, b) => a.hour - b.hour);
 
     const getPeakWindowRowStyle = (hour, borderColor, amTopSet, pmTopSet) => {
       const h = Number(hour);
@@ -12136,13 +12138,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return `${h}:00-${h + 1}:00`;
     };
 
+    const peakRankingSourceBadgeHtml = `
+      <div style="margin:0 0 8px 0; padding:6px 8px; border-radius:6px; border:1px solid ${isTmrStylePeakSource ? '#90caf9' : '#b7d6dc'}; background:${isTmrStylePeakSource ? '#e3f2fd' : '#f3fbfd'}; color:${isTmrStylePeakSource ? '#0d47a1' : '#0f4e55'}; font-size:0.82em; font-weight:700;">
+        Peak ranking source: ${isTmrStylePeakSource ? 'Database hourly profile (TMR/TMR-style)' : 'Calculated hourly profile'}
+      </div>
+    `;
+
     const peakInsightsEl = document.getElementById('macroPeakInsights');
     if (peakInsightsEl) {
       const d1Total = d1DisplayHourly.reduce((sum, value) => sum + (Number(value) || 0), 0);
       const d2Total = d2DisplayHourly.reduce((sum, value) => sum + (Number(value) || 0), 0);
       const totalDirectional = d1Total + d2Total;
-      const d1Top = d1Peaks[0] || null;
-      const d2Top = d2Peaks[0] || null;
+      const d1Top = d1PeaksRanked[0] || null;
+      const d2Top = d2PeaksRanked[0] || null;
 
       if (!d1Top && !d2Top) {
         peakInsightsEl.innerHTML = '<strong>Peak Insights:</strong> No usable hourly profile is available yet.';
@@ -12154,15 +12162,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           : 'Single-direction peak available';
 
         const d1Top3Share = d1Total > 0
-          ? ((d1Peaks.slice(0, 3).reduce((sum, p) => sum + p.volume, 0) / d1Total) * 100)
+          ? ((d1PeaksRanked.slice(0, 3).reduce((sum, p) => sum + p.volume, 0) / d1Total) * 100)
           : 0;
         const d2Top3Share = d2Total > 0
-          ? ((d2Peaks.slice(0, 3).reduce((sum, p) => sum + p.volume, 0) / d2Total) * 100)
+          ? ((d2PeaksRanked.slice(0, 3).reduce((sum, p) => sum + p.volume, 0) / d2Total) * 100)
           : 0;
 
         const criticalHours = Array.from(new Set([
-          ...d1Peaks.slice(0, 3).map(p => p.hour),
-          ...d2Peaks.slice(0, 3).map(p => p.hour)
+          ...d1PeaksRanked.slice(0, 3).map(p => p.hour),
+          ...d2PeaksRanked.slice(0, 3).map(p => p.hour)
         ])).sort((a, b) => a - b);
         const criticalWindowText = criticalHours.length
           ? criticalHours.map(h => `${h}:00-${h + 1}:00`).join(', ')
@@ -12192,10 +12200,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d1PeakEl = document.getElementById('macroD1PeakHours');
     if (d1PeakEl) {
       const d1Total = d1DisplayHourly.reduce((sum, value) => sum + (Number(value) || 0), 0);
-      if (!d1Peaks.length) {
-        d1PeakEl.innerHTML = '<div>No non-zero hourly profile available from source data.</div>';
+      if (!d1PeaksByTime.length) {
+        d1PeakEl.innerHTML = `${peakRankingSourceBadgeHtml}<div>No non-zero hourly profile available from source data.</div>`;
       } else {
-        const rows = d1Peaks.map((p, i) => {
+        const rows = d1PeaksByTime.map((p, i) => {
           const opposing = Number(d2DisplayHourly[p.hour]) || 0;
           const share = d1Total > 0 ? (p.volume / d1Total) * 100 : 0;
           const diff = p.volume - opposing;
@@ -12212,10 +12220,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }).join('');
 
         d1PeakEl.innerHTML = `
+          ${peakRankingSourceBadgeHtml}
           <table style="width:100%; border-collapse:collapse; font-size:0.88em; background:#fff;">
             <thead>
               <tr>
-                <th style="padding:5px 6px; border:1px solid #9ccc9f;">#</th>
+                <th style="padding:5px 6px; border:1px solid #9ccc9f;">Time Order</th>
                 <th style="padding:5px 6px; border:1px solid #9ccc9f; text-align:left;">Hour</th>
                 <th style="padding:5px 6px; border:1px solid #9ccc9f; text-align:right;">D1 vph</th>
                 <th style="padding:5px 6px; border:1px solid #9ccc9f; text-align:right;">D1 Share</th>
@@ -12226,7 +12235,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <tbody>${rows}</tbody>
           </table>
           <div class="formula-inline">✓ Opening year volumes (matches Queue Length hourly table). v_hour = daily directional volume * diurnal factor(hour)</div>
-          <div class="formula-inline">Highlighting = top 2 AM and top 2 PM hours (dynamic). ${isTmrStylePeakSource ? 'Ranking source: database hourly profile (TMR/TMR-style).' : 'Ranking source: calculated hourly profile.'}</div>
+          <div class="formula-inline">Highlighting = top 2 AM and top 2 PM hours (dynamic). Display order = chronological timing. ${isTmrStylePeakSource ? 'Ranking source: database hourly profile (TMR/TMR-style).' : 'Ranking source: calculated hourly profile.'}</div>
         `;
       }
     }
@@ -12234,10 +12243,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d2PeakEl = document.getElementById('macroD2PeakHours');
     if (d2PeakEl) {
       const d2Total = d2DisplayHourly.reduce((sum, value) => sum + (Number(value) || 0), 0);
-      if (!d2Peaks.length) {
-        d2PeakEl.innerHTML = '<div>No non-zero hourly profile available from source data.</div>';
+      if (!d2PeaksByTime.length) {
+        d2PeakEl.innerHTML = `${peakRankingSourceBadgeHtml}<div>No non-zero hourly profile available from source data.</div>`;
       } else {
-        const rows = d2Peaks.map((p, i) => {
+        const rows = d2PeaksByTime.map((p, i) => {
           const opposing = Number(d1DisplayHourly[p.hour]) || 0;
           const share = d2Total > 0 ? (p.volume / d2Total) * 100 : 0;
           const diff = p.volume - opposing;
@@ -12254,10 +12263,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }).join('');
 
         d2PeakEl.innerHTML = `
+          ${peakRankingSourceBadgeHtml}
           <table style="width:100%; border-collapse:collapse; font-size:0.88em; background:#fff;">
             <thead>
               <tr>
-                <th style="padding:5px 6px; border:1px solid #ef9a9a;">#</th>
+                <th style="padding:5px 6px; border:1px solid #ef9a9a;">Time Order</th>
                 <th style="padding:5px 6px; border:1px solid #ef9a9a; text-align:left;">Hour</th>
                 <th style="padding:5px 6px; border:1px solid #ef9a9a; text-align:right;">D2 vph</th>
                 <th style="padding:5px 6px; border:1px solid #ef9a9a; text-align:right;">D2 Share</th>
@@ -12268,7 +12278,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <tbody>${rows}</tbody>
           </table>
           <div class="formula-inline">✓ Opening year volumes (matches Queue Length hourly table). v_hour = daily directional volume * diurnal factor(hour)</div>
-          <div class="formula-inline">Highlighting = top 2 AM and top 2 PM hours (dynamic). ${isTmrStylePeakSource ? 'Ranking source: database hourly profile (TMR/TMR-style).' : 'Ranking source: calculated hourly profile.'}</div>
+          <div class="formula-inline">Highlighting = top 2 AM and top 2 PM hours (dynamic). Display order = chronological timing. ${isTmrStylePeakSource ? 'Ranking source: database hourly profile (TMR/TMR-style).' : 'Ranking source: calculated hourly profile.'}</div>
         `;
       }
     }
