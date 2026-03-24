@@ -12296,6 +12296,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <td style="padding:4px 6px; border:1px solid #b7dcb9; text-align:right; ${rowStyle}">${Math.ceil(p.volume).toLocaleString()}</td>
             <td style="padding:4px 6px; border:1px solid #b7dcb9; text-align:right; ${rowStyle}">${share.toFixed(1)}%</td>
             <td style="padding:4px 6px; border:1px solid #b7dcb9; text-align:right; ${rowStyle}">${Math.ceil(opposing).toLocaleString()}</td>
+            <td style="padding:4px 6px; border:1px solid #b7dcb9; text-align:right; ${rowStyle}">${diffText}</td>
+          </tr>`;
+        }).join('');
 
         d1PeakEl.innerHTML = `
           ${peakRankingSourceBadgeHtml}
@@ -12336,6 +12339,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <td style="padding:4px 6px; border:1px solid #f0b4b4; text-align:right; ${rowStyle}">${Math.ceil(p.volume).toLocaleString()}</td>
             <td style="padding:4px 6px; border:1px solid #f0b4b4; text-align:right; ${rowStyle}">${share.toFixed(1)}%</td>
             <td style="padding:4px 6px; border:1px solid #f0b4b4; text-align:right; ${rowStyle}">${Math.ceil(opposing).toLocaleString()}</td>
+            <td style="padding:4px 6px; border:1px solid #f0b4b4; text-align:right; ${rowStyle}">${diffText}</td>
+          </tr>`;
+        }).join('');
 
         d2PeakEl.innerHTML = `
           ${peakRankingSourceBadgeHtml}
