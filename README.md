@@ -83,3 +83,58 @@ powershell -ExecutionPolicy Bypass -File scripts/install-hooks.ps1
 ```
 
 After that, each commit auto-runs the sync whenever `index.html` is staged, then auto-stages `index_formulas.html`.
+
+## Automated Dataset Update Pipeline
+
+The repository now includes an automated release-detection and update flow for GeoJSON datasets.
+
+- Scheduled workflow: `.github/workflows/dataset-update.yml` (runs every 6 hours, plus manual trigger)
+- Update script: `scripts/check_and_update_datasets.py`
+- Dataset manifest: `dataset_manifest.json`
+
+### What It Does
+
+1. Fetches each configured upstream dataset URL.
+2. Validates payload shape (GeoJSON `FeatureCollection` or non-empty JSON list).
+3. Compares SHA-256 against the last accepted manifest version.
+4. Rejects suspicious row drops (default threshold: >30% drop).
+5. Updates changed local dataset files and regenerates `dataset_manifest.json`.
+6. Opens a pull request with the updated files.
+
+### Manual Run
+
+```bash
+python scripts/check_and_update_datasets.py
+```
+
+### Reuse A Single Virtual Environment
+
+Use one local environment (`venv`) and reuse it for all tasks:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/use-venv.ps1
+```
+
+Optional flags:
+
+```powershell
+# Reuse/create venv and install requirements
+powershell -ExecutionPolicy Bypass -File scripts/use-venv.ps1 -InstallRequirements
+
+# Reuse/create venv and run dataset updater
+powershell -ExecutionPolicy Bypass -File scripts/use-venv.ps1 -RunDatasetUpdate
+```
+
+Cleanup helper (keeps `venv`, removes duplicate env folders like `.venv`, `venv-1`, `.env`, `env`):
+
+```powershell
+# Dry run (preview only)
+powershell -ExecutionPolicy Bypass -File scripts/cleanup-extra-venvs.ps1
+
+# Apply cleanup
+powershell -ExecutionPolicy Bypass -File scripts/cleanup-extra-venvs.ps1 -Apply
+```
+
+### Frontend Cache Behavior
+
+`index.html` reads `dataset_manifest.json` on load. If dataset hashes/versions changed since the last visit, cached dataset entries are cleared and fresh data is fetched automatically.
