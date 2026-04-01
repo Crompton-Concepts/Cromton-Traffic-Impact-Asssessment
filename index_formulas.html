@@ -13267,7 +13267,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const connectedBeyond5Count = Math.max(0, Number(accessAwareResult.connectedBeyond5Count) || 0);
           const excludedBeyond5Count = Math.max(0, Number(accessAwareResult.excludedBeyond5Count) || 0);
           const excludedWithin5Count = Math.max(0, excludedRefs.length - excludedBeyond5Count);
-          const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.5';
+          const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.0';
 
           if (excludedRefs.length && exclusionSummary && errEl) {
             errEl.innerHTML = `<strong>Note:</strong> ${exclusionSummary}<br><span style="font-size:0.9em;">Connected references shown below are within the validated 5km-radius context.</span>`;
@@ -22298,7 +22298,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function findBestReferencePoints(userAddress, userLat, userLon, allDatabaseCounters) {
     const userRoadNormalized = normalizeRoadName(userAddress);
-    const BASE_SEARCH_RADIUS_KM = 1.5;
+    const BASE_SEARCH_RADIUS_KM = 1.0;
     const SEARCH_STEP_KM = 1.0;
     const PREFERRED_MAX_RADIUS_KM = 5.0;
     const counters = Array.isArray(allDatabaseCounters)
@@ -22926,6 +22926,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
   }
 
+  function buildWithin5kmFallbackNearbyArray(allSites, maxDistanceMeters = QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS, limit = 3) {
+    const source = Array.isArray(allSites) ? allSites : [];
+    const thresholdMeters = Math.max(0, Number(maxDistanceMeters) || QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS);
+    const maxItems = Math.max(1, Number(limit) || 3);
+    const usedRoads = new Set();
+
+    return source
+      .filter((site) => Number.isFinite(Number(site && site.dist)) && Number(site.dist) > 0 && Number(site.dist) <= thresholdMeters)
+      .sort((a, b) => Number(a.dist) - Number(b.dist))
+      .filter((site) => {
+        const roadName = String((site && site.data && (site.data.road_name || site.data.description)) || '').trim();
+        const roadKey = standardizeRoadName(roadName) || `site:${String(site && site.id ? site.id : '')}`;
+        if (usedRoads.has(roadKey)) return false;
+        usedRoads.add(roadKey);
+        return true;
+      })
+      .slice(0, maxItems)
+      .map((site) => {
+        const payload = {
+          ...(site && site.data ? site.data : {}),
+          latitude: Number(site && site.lat),
+          longitude: Number(site && site.lon)
+        };
+        return [
+          site.id,
+          payload,
+          Number(site.dist),
+          String(site.direction || 'Nearby')
+        ];
+      });
+  }
+
   async function handleAddressSearch(addressQuery) {
     const query = String(addressQuery || '').trim();
     if (!query) {
@@ -23022,7 +23054,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       .map((s) => ({ ...s.data, latitude: s.lat, longitude: s.lon, distanceFromTarget: s.dist / 1000 }));
     if (nearestWithin3Km.length) populateReferencePointsUI(nearestWithin3Km);
 
-    // 3. Fuzzy + spatial matcher (strict 1.5 km)
+    // 3. Fuzzy + spatial matcher (start at 1 km, expand by 1 km until a datapoint is found)
     const targetRoad = location.road || searchRoadName || searchInput;
     const oneWayResult = await applyAutoOneWayModeFromLocation(location.lat, location.lon, targetRoad, {
       notify: false,
@@ -23044,7 +23076,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const connectedWithin5Count = Math.max(0, Number(accessAwareResult.connectedWithin5Count) || 0);
     const connectedBeyond5Count = Math.max(0, Number(accessAwareResult.connectedBeyond5Count) || 0);
 
-    const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.5';
+    const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.0';
+    const within5FallbackRefs = buildWithin5kmFallbackNearbyArray(sites, QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS, 3);
     const beyond5FallbackRefs = buildBeyond5kmFallbackNearbyArray(sites, QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS, 2);
     updateQuickAddressSearchOverlay('Validating road connectivity...', 'Removing references not connected to the searched address road network.', 78);
 
@@ -23056,23 +23089,27 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const beyondRadiusExtra = connectedBeyond5Count > 0 || excludedBeyond5Count > 0
         ? '<br><span style="font-size:0.9em;">Some roads may still connect beyond 5km, but no connected reference is available within the 5km radius.</span>'
         : '';
-      const fallbackReferenceExtra = beyond5FallbackRefs.length
+      const fallbackReferenceExtra = within5FallbackRefs.length
+        ? `<br><span style="font-size:0.9em;">Showing ${within5FallbackRefs.length} nearest datapoint${within5FallbackRefs.length === 1 ? '' : 's'} within 5km as proximity fallback (connectivity not verified).</span>`
+        : (beyond5FallbackRefs.length
         ? `<br><span style="font-size:0.9em;">Showing ${beyond5FallbackRefs.length} nearest datapoint${beyond5FallbackRefs.length === 1 ? '' : 's'} beyond 5km radius as reference only.</span>`
-        : '';
+        : '');
+      const fallbackRefsToDisplay = within5FallbackRefs.length ? within5FallbackRefs : beyond5FallbackRefs;
+      const fallbackIsBeyondRadius = !within5FallbackRefs.length && beyond5FallbackRefs.length > 0;
       document.getElementById('quickTiaError').innerHTML = `${noConnectedMsg}${disconnectedExtra}${beyondRadiusExtra}${fallbackReferenceExtra}`;
       document.getElementById('quickTiaError').style.display = 'block';
       const panelEl = document.getElementById('quickTiaPanel');
       if (panelEl) panelEl.style.display = 'block';
-      if (beyond5FallbackRefs.length) {
-        displayQuickTiaMultipleRefs(searchInput, beyond5FallbackRefs, location.lat, location.lon, false, {
+      if (fallbackRefsToDisplay.length) {
+        displayQuickTiaMultipleRefs(searchInput, fallbackRefsToDisplay, location.lat, location.lon, false, {
           excludedRefs,
           exclusionSummary,
           connectedWithin5Count,
           connectedBeyond5Count,
           excludedWithin5Count: Math.max(0, excludedRefs.length - excludedBeyond5Count),
           excludedBeyond5Count,
-          beyondRadiusFallback: true,
-          fallbackReferenceCount: beyond5FallbackRefs.length
+          beyondRadiusFallback: fallbackIsBeyondRadius,
+          fallbackReferenceCount: fallbackRefsToDisplay.length
         });
       }
       const manualRadio = document.querySelector('input[name="trafficCalcMethod"][value="manual"]');
