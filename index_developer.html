@@ -14701,32 +14701,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const amPeakDirEl = document.getElementById('amPeakDirection');
     const amPeakDir = amPeakDirEl ? amPeakDirEl.value : '1';
 
-    let amShare, pmShare;
+    // Smooth directional diurnal templates (AM-biased vs PM-biased)
+    // to avoid flat period blocks in non-hourly datasets.
+    const amBiasTemplate = [
+      0.009, 0.007, 0.005, 0.005, 0.011, 0.028, 0.072, 0.090, 0.098, 0.070,
+      0.054, 0.048, 0.046, 0.048, 0.054, 0.066, 0.074, 0.078, 0.052, 0.034,
+      0.024, 0.018, 0.013, 0.010
+    ];
+    const pmBiasTemplate = [
+      0.009, 0.007, 0.005, 0.005, 0.010, 0.024, 0.056, 0.070, 0.076, 0.064,
+      0.054, 0.050, 0.050, 0.054, 0.062, 0.078, 0.098, 0.108, 0.062, 0.038,
+      0.026, 0.019, 0.014, 0.011
+    ];
 
+    const normalizeToUnit = (arr) => {
+      const sum = arr.reduce((s, v) => s + (Number(v) || 0), 0);
+      if (!(sum > 0)) return new Array(24).fill(1 / 24);
+      return arr.map(v => (Number(v) || 0) / sum);
+    };
+
+    const amNorm = normalizeToUnit(amBiasTemplate);
+    const pmNorm = normalizeToUnit(pmBiasTemplate);
+
+    let profile;
     if (amPeakDir === 'even') {
-      amShare = 0.20;
-      pmShare = 0.20;
+      profile = amNorm.map((v, i) => (v + pmNorm[i]) / 2);
     } else {
       const isAmDominant = (direction.toString() === amPeakDir);
-      amShare = isAmDominant ? 0.28 : 0.12;
-      pmShare = isAmDominant ? 0.12 : 0.28;
+      profile = isAmDominant ? amNorm : pmNorm;
     }
 
-    const middayShare = 0.35;
-    const nightShare = 0.25;
-
-    hourly[7] = (total * amShare) / 2;
-    hourly[8] = (total * amShare) / 2;
-
-    hourly[16] = (total * pmShare) / 2;
-    hourly[17] = (total * pmShare) / 2;
-
-    for (let i = 9; i <= 15; i++) {
-      hourly[i] = (total * middayShare) / 7;
+    for (let hour = 0; hour < 24; hour += 1) {
+      hourly[hour] = total * profile[hour];
     }
-
-    for (let i = 18; i <= 23; i++) hourly[i] = (total * nightShare) / 13;
-    for (let i = 0; i <= 6; i++) hourly[i] = (total * nightShare) / 13;
 
     return hourly.map(v => Math.round(v));
   }
