@@ -12401,7 +12401,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const { growthFactor, effectiveYears, growthRatePct } = getCurrentGrowthProjectionContext();
     const sourceUpper = String(data && data.source ? data.source : '').trim().toUpperCase();
     const useProvidedHourly = !!options.useProvidedHourly;
-    const useMeasuredHourly = useProvidedHourly || isTmrStyleSource(data);
+    const hasD1MeasuredHourly = isTmrStyleSource(data, 'GAZETTAL');
+    const hasD2MeasuredHourly = isTmrStyleSource(data, 'AGAINST GAZETTAL');
+    const useMeasuredHourly = useProvidedHourly || hasD1MeasuredHourly || hasD2MeasuredHourly;
 
     let gazData = new Array(24).fill(0);
     let agData = new Array(24).fill(0);
@@ -12417,8 +12419,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       gazPredData = gazData; // These are already opening year values
       agPredData = agData;   // These are already opening year values
     } else if (useMeasuredHourly) {
-      gazData = data.directions_weekday['GAZETTAL'] || new Array(24).fill(0);
-      agData = data.directions_weekday['AGAINST GAZETTAL'] || new Array(24).fill(0);
+      gazData = (hasD1MeasuredHourly || useProvidedHourly)
+        ? (data.directions_weekday['GAZETTAL'] || new Array(24).fill(0))
+        : new Array(24).fill(0);
+      agData = (hasD2MeasuredHourly || useProvidedHourly)
+        ? (data.directions_weekday['AGAINST GAZETTAL'] || new Array(24).fill(0))
+        : new Array(24).fill(0);
 
       const gazTotal = gazData.reduce((sum, value) => sum + (Number(value) || 0), 0);
       const agTotal = agData.reduce((sum, value) => sum + (Number(value) || 0), 0);
@@ -12619,9 +12625,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const useDatabaseDisplayHourly = hasD1DbHourly || hasD2DbHourly;
 
     if (sourceEl) {
-      const hourlySourceTrace = useDatabaseDisplayHourly
-        ? 'Hourly Source: Database hourly profile scaled to opening year'
-        : 'Hourly Source: Austroads default profile fallback at opening year';
+      let hourlySourceTrace = 'Hourly Source: Austroads default profile fallback at opening year';
+      if (hasD1DbHourly && hasD2DbHourly) {
+        hourlySourceTrace = 'Hourly Source: Database hourly profile (D1 & D2) scaled to opening year';
+      } else if (hasD1DbHourly && !hasD2DbHourly) {
+        hourlySourceTrace = 'Hourly Source: Mixed - D1 database hourly; D2 Austroads proportional fallback at opening year';
+      } else if (!hasD1DbHourly && hasD2DbHourly) {
+        hourlySourceTrace = 'Hourly Source: Mixed - D2 database hourly; D1 Austroads proportional fallback at opening year';
+      }
       sourceEl.textContent = `${sourceText} | ${hourlySourceTrace}`;
     }
 
