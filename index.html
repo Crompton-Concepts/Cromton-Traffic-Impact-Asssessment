@@ -4022,6 +4022,21 @@
           <div id="macroDetailD2Label" style="font-weight:700;">D2 VADT:</div><div id="macroDetailD2">-</div>
           <div style="font-weight:700;">Total VADT:</div><div id="macroDetailTotal">-</div>
         </div>
+        <div id="macroDetailDirInfo" style="display:none; margin-top:10px; background:#f0f7ff; border:1px solid #90caf9; border-radius:6px; padding:8px 10px;">
+          <div style="font-size:0.78em; font-weight:700; color:#1565c0; margin-bottom:6px;">&#x1F9ED; Directional Orientation (relative to road survey direction)</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <div style="display:flex; align-items:center; gap:6px; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:5px; padding:5px 10px;">
+              <span style="font-size:1.5em;" id="macroDetailDirD1Arrow">&#x27A1;</span>
+              <div><div style="font-size:0.72em; color:#2e7d32; font-weight:700;">D1 &mdash; Gazettal</div><div id="macroDetailDirD1Label" style="font-size:0.85em; color:#1b5e20; font-weight:600;">-</div></div>
+            </div>
+            <div style="font-size:1.1em; color:#78909c;">&#x21C4;</div>
+            <div style="display:flex; align-items:center; gap:6px; background:#fce4ec; border:1px solid #f48fb1; border-radius:5px; padding:5px 10px;">
+              <span style="font-size:1.5em;" id="macroDetailDirD2Arrow">&#x2B05;</span>
+              <div><div style="font-size:0.72em; color:#880e4f; font-weight:700;">D2 &mdash; Against Gazettal</div><div id="macroDetailDirD2Label" style="font-size:0.85em; color:#880e4f; font-weight:600;">-</div></div>
+            </div>
+          </div>
+          <div id="macroDetailDirNote" style="font-size:0.72em; color:#546e7a; margin-top:5px;"></div>
+        </div>
       </div>
 
       <div style="margin-top: 10px;">
@@ -4809,6 +4824,25 @@
         </div>
         <div id="detourGeometryWarningText" style="display:none; margin-top: 8px; padding: 10px; border-radius: 6px; border: 1px solid #ffcdd2; background: #ffebee; color: #b71c1c; font-size: 0.82em; line-height: 1.4;"></div>
         <p class="optional-warning-note" id="detourWarningText"></p>
+
+        <div id="detourAnalysisResults" style="display: none; margin-top: 15px;">
+          <h3 style="color: #6a1b9a; margin: 0 0 10px 0; border-bottom: 2px solid #ce93d8; padding-bottom: 6px;">📈 Detour Route Capacity Check (Peak Diverted Load)</h3>
+        </div>
+
+        <div id="postDiversionResults" style="display: none; margin-top: 15px;">
+          <h3 style="color: #00695c; margin: 0 0 10px 0; border-bottom: 2px solid #80cbc4; padding-bottom: 6px;">🛣️ Road Status After Diversion (Existing Road)</h3>
+          <p style="font-size: 0.85em; color: #555; margin-bottom: 8px;">Shows the Level of Service (LOS) and V/C ratio for the remaining traffic on the work zone road.</p>
+          <div class="table-wrap">
+            <table id="postDiversionTable" style="font-size: 0.82em; width: 100%; text-align: center;">
+              <thead>
+                <tr id="postDiversionHeadRow">
+                  <th style="background: #00897b; color: white; padding: 6px;">Metric</th>
+                </tr>
+              </thead>
+              <tbody id="postDiversionBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -10366,7 +10400,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         weight: 1
       }).addTo(macroSiteLayer);
 
-      marker.bindTooltip(`${siteId} - ${site.road_name || site.description || 'Site'}`);
+      const _d1Desc = (site.direction_descriptions && site.direction_descriptions['GAZETTAL']) || (site.d1_direction_label || '');
+      const _d2Desc = (site.direction_descriptions && site.direction_descriptions['AGAINST GAZETTAL']) || (site.d2_direction_label || '');
+      const _dirTip = (_d1Desc || _d2Desc) ? '\n\u{1F7E2}D1(Gaz): ' + (_d1Desc || '?') + '  \u{1F534}D2: ' + (_d2Desc || '?') : '';
+      marker.bindTooltip((siteId + ' \u2014 ' + (site.road_name || site.description || 'Site') + _dirTip).trim(), { sticky: true });
       marker.on('click', () => selectMacroSite(siteId));
       macroMarkersById[siteId] = marker;
       points.push([lat, lon]);
@@ -12000,6 +12037,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setText('macroDetailD1', d1.toLocaleString());
     setText('macroDetailD2', d2.toLocaleString());
     setText('macroDetailTotal', vadt.toLocaleString());
+
+    // --- Gazettal direction compass indicator ---
+    (function() {
+      const dirInfoEl    = document.getElementById('macroDetailDirInfo');
+      const d1ArrowEl    = document.getElementById('macroDetailDirD1Arrow');
+      const d1LblEl      = document.getElementById('macroDetailDirD1Label');
+      const d2ArrowEl    = document.getElementById('macroDetailDirD2Arrow');
+      const d2LblEl      = document.getElementById('macroDetailDirD2Label');
+      const dirNoteEl    = document.getElementById('macroDetailDirNote');
+      if (!dirInfoEl) return;
+      const compassArrow = function(label) {
+        const u = String(label || '').toUpperCase();
+        if (u.includes('NORTH')) return '\u2B06'; // ⬆
+        if (u.includes('SOUTH')) return '\u2B07'; // ⬇
+        if (u.includes('EAST'))  return '\u27A1'; // ➡
+        if (u.includes('WEST'))  return '\u2B05'; // ⬅
+        return '\u2194'; // ↔
+      };
+      const descGaz     = (data.direction_descriptions && data.direction_descriptions['GAZETTAL'])        || '';
+      const descAgainst = (data.direction_descriptions && data.direction_descriptions['AGAINST GAZETTAL']) || '';
+      const d1Text = descGaz     || d1RowLabel;
+      const d2Text = descAgainst || d2RowLabel;
+      if (d1LblEl) d1LblEl.textContent = d1Text || '\u2014';
+      if (d2LblEl) d2LblEl.textContent = d2Text || '\u2014';
+      if (d1ArrowEl) d1ArrowEl.textContent = compassArrow(d1Text);
+      if (d2ArrowEl) d2ArrowEl.textContent = compassArrow(d2Text);
+      if (dirNoteEl) {
+        dirNoteEl.textContent = (descGaz || descAgainst)
+          ? 'Compass direction extracted from road description. Verify against site plan before use in reports.'
+          : 'No compass direction found in description \u2014 labels show direction code only.';
+      }
+      dirInfoEl.style.display = 'block';
+    })();
 
     const siteLat = Number(data.latitude);
     const siteLon = Number(data.longitude);
@@ -14059,13 +14129,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const siteCapDaily = Math.max(0, Number(site && site.design_capacity_daily) || 0);
     if (siteCapDaily > 0) return siteCapDaily;
 
-    const sourceUpper = site && site.source ? String(site.source).trim().toUpperCase() : '';
-    if (sourceUpper === 'GOLD COAST') return totalVadt;
-    if (sourceUpper === 'BRISBANE') return totalVadt;
-    if (sourceUpper === 'LOGAN') return totalVadt;
-    if (sourceUpper === 'TOOWOOMBA') return totalVadt;
-    if (sourceUpper === 'NSW') return totalVadt;
-    
+    // Use the site's measured VADT as the fixed capacity anchor when available.
+    // This ensures VCR capacity denominator stays fixed to measured road conditions
+    // while user-adjusted demand changes the VCR numerator appropriately.
+    const measuredSiteVadt = Math.max(0, Number(site && site.vadt) || 0);
+    if (measuredSiteVadt > 0) return measuredSiteVadt;
+
     return totalVadt;
   }
 
@@ -14078,9 +14147,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const totalLanes = Math.max(1, num('D1_Lanes') + num('D2_Lanes'));
     
     if (isTmrStyle) {
-      return TMRCalculator.calculateCapacity(directionalDaily, dirLanes);
+      // Anchor capacity to the site's measured directional VADT (fixed reference), so VCR
+      // denominator stays fixed while the demand numerator changes with user-entered volume.
+      let measuredDirDaily = directionalDaily; // fallback to projected volume
+      if (site) {
+        const siteDir = Number(direction === 1 ? site.d1_vadt : site.d2_vadt) || 0;
+        if (siteDir > 0) {
+          measuredDirDaily = siteDir;
+        } else if (site.directions_weekday && Array.isArray(site.directions_weekday[dirKey])) {
+          const hourlySum = site.directions_weekday[dirKey].reduce((s, v) => s + Math.max(0, Number(v) || 0), 0);
+          if (hourlySum > 0) measuredDirDaily = hourlySum;
+        }
+      }
+      return TMRCalculator.calculateCapacity(measuredDirDaily, dirLanes);
     } else if (source === 'IPSWICH') {
-      const dynamicCapacity = Math.ceil((0.15 * Math.max(0, Number(totalProjectedAadt) || 0)) / 2);
+      const measuredVadt = Math.max(0, Number(site && site.vadt) || 0) || Math.max(0, Number(totalProjectedAadt) || 0);
+      const dynamicCapacity = Math.ceil((0.15 * measuredVadt) / 2);
       return Math.max(IPSWICH_CONSTANTS.CAPACITY_FLOOR, dynamicCapacity);
     } else if (source === 'GOLD COAST') {
       const refCap = getDesignCapacityReferenceDailyVolume(totalProjectedAadt, site);
@@ -15487,6 +15569,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const sourceHourly = getDirectionalHourlySource(siteData, directionKey);
 
     if (sourceHourly && sourceHourly.length === 24) {
+      // Scale the measured diurnal shape to match the user's projected directional AADT.
+      // This ensures the VCR numerator responds to user volume adjustments while
+      // preserving the site-specific time-of-day distribution.
+      const rawDailyTotal = sourceHourly.reduce((s, v) => s + Math.max(0, Number(v) || 0), 0);
+      if (rawDailyTotal > 0 && safeTargetAADT > 0) {
+        const scaleFactor = safeTargetAADT / rawDailyTotal;
+        return sourceHourly.map(vol => Math.max(0, Number(vol) || 0) * scaleFactor);
+      }
+      // Fallback: if targetAADT or rawDailyTotal is zero, apply compound growth to raw counts
       return sourceHourly.map(vol => Math.max(0, Number(vol) || 0) * compoundGrowthFactor);
     }
 
@@ -20964,7 +21055,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       if (newVcr > maxNewVcr) maxNewVcr = newVcr;
 
-      periodResults.push({ key: p.key, baseVcr, newVcr, totalDivertedVol, debugMaxBaseD1, debugMaxBaseD2, debugAddedD1, debugAddedD2 });
+      periodResults.push({ key: p.key, baseVcr, newVcr, totalDivertedVol, sourceVol, debugMaxBaseD1, debugMaxBaseD2, debugAddedD1, debugAddedD2 });
     });
 
     // Build transposed table: 3 metric rows × 4 period columns
@@ -21046,6 +21137,47 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     } else {
       warningText.innerHTML = `✅ The selected ${validDetourModels.length} detour segment(s) have sufficient capacity across all periods. Mode: <strong>${diversionBasisText}</strong>.${worstCapacitySnapshot ? ` Capacity model risk: <strong>${worstCapacitySnapshot.risk}</strong>.` : ''}`;
       warningText.style.color = '#2e7d32';
+    }
+
+    // --- POST-DIVERSION TABLE: Remaining traffic on the existing work zone road ---
+    const postDivBody = document.getElementById('postDiversionBody');
+    const postDivHeadRow = document.getElementById('postDiversionHeadRow');
+    const postDivResultsPanel = document.getElementById('postDiversionResults');
+    if (postDivBody && postDivHeadRow && postDivResultsPanel) {
+      const remainingRate = 1 - diversionRate;
+      postDivBody.innerHTML = '';
+      // Always rebuild headers to match current dynamic period definitions
+      postDivHeadRow.innerHTML = '<th style="background: #00897b; color: white; padding: 6px;">Metric</th>';
+      periods.forEach(p => {
+        postDivHeadRow.innerHTML += `<th style="background: #00897b; color: white; padding: 6px;">${p.key}</th>`;
+      });
+
+      // Work zone capacity: use configured lane closure count for oneway, or 1 lane (SLRF) for full closure
+      const totalPrimaryLanes = Math.max(1, (num('D1_Lanes') || 0) + (num('D2_Lanes') || 0));
+      const closedDirLanes = closureType === 'oneway'
+        ? Math.max(1, Number(closedDirection === 'D2' ? num('D2_Lanes') : num('D1_Lanes')) || 1)
+        : totalPrimaryLanes;
+      const laneClosures = closureType === 'oneway' ? Math.min(getSelectedLaneClosureCount(), closedDirLanes - 1) : closedDirLanes;
+      const workZoneLanes = Math.max(1, closedDirLanes - laneClosures);
+      const existingRoadCapacity = detourBaseLaneCapacity * workZoneLanes;
+
+      let remainingVolRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Remaining Volume (vph)</td>';
+      let remainingVcrRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Revised V/C Ratio</td>';
+      let remainingLosRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Revised LOS</td>';
+
+      periodResults.forEach(r => {
+        const remainingVol = Math.max(0, (r.sourceVol || 0) * remainingRate);
+        const revisedVcr = existingRoadCapacity > 0 ? (remainingVol / existingRoadCapacity) : 0;
+        remainingVolRow += `<td style="padding:5px 8px;">${Math.round(remainingVol).toLocaleString()}</td>`;
+        remainingVcrRow += `<td style="padding:5px 8px;">${revisedVcr.toFixed(3)}</td>`;
+        remainingLosRow += `<td style="padding:5px 8px;">${formatVCR(revisedVcr)}</td>`;
+      });
+
+      remainingVolRow += '</tr>';
+      remainingVcrRow += '</tr>';
+      remainingLosRow += '</tr>';
+      postDivBody.innerHTML = remainingVolRow + remainingVcrRow + remainingLosRow;
+      postDivResultsPanel.style.display = 'block';
     }
 
     syncPedestrianDetourFromTraffic({ skipRecalc: true });
