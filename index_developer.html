@@ -17,7 +17,8 @@
   <script async src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    :root {
+    
+:root {
       --bg: #f8fafc;
       --ink: #1c1c1c;
       --muted: #5f5f5f;
@@ -859,6 +860,93 @@
       .queue-calculator-module .result-container { min-width: 0; text-align: left; }
     }
 
+    .queue-calculator-card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .queue-calculator-card h3 {
+      margin: 0 0 10px 0;
+      color: #1f5e63;
+      font-size: 1.02em;
+      border-bottom: 1px solid #d6e3ea;
+      padding-bottom: 6px;
+    }
+    .queue-calculator-card .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .queue-calculator-card .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .queue-calculator-card .input-group label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    .queue-calculator-card .input-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .queue-calculator-card .results-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+    }
+    .queue-calculator-card .result-box {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      background: #ffffff;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+    .queue-calculator-card .result-box span {
+      font-size: 0.76em;
+      color: #546e7a;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+    .queue-calculator-card .result-box strong {
+      font-size: 1.24em;
+      color: #1f5e63;
+      line-height: 1.1;
+    }
+    .queue-calculator-card .result-box.highlight {
+      border-color: #0056b3;
+      background: #e9f2fc;
+    }
+    .queue-calculator-card .los-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-align: center;
+      color: white;
+      margin-top: 5px;
+    }
+
+    /* Updated Austroads/HCM Aligned LOS Colors */
+    .queue-calculator-card .los-a { background-color: #28a745; } /* <= 0.60 */
+    .queue-calculator-card .los-b { background-color: #8bc34a; } /* <= 0.70 */
+    .queue-calculator-card .los-c { background-color: #ffc107; color: #333; } /* <= 0.80 */
+    .queue-calculator-card .los-d { background-color: #fd7e14; } /* <= 0.90 */
+    .queue-calculator-card .los-e { background-color: #dc3545; } /* <= 1.00 */
+    .queue-calculator-card .los-f { background-color: #8b0000; } /* > 1.00 */
+
     .ux-intro {
       margin-top: 14px;
       border: 1px solid #cfdde3;
@@ -1377,6 +1465,34 @@
     }
 
     .table-actions { display: flex; justify-content: flex-end; align-items: center; margin: 8px 0; }
+    #hourlyQueueSplitView,
+    #hourlyVcrSplitView {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 14px;
+      row-gap: 8px;
+      align-items: start;
+    }
+    #hourlyQueueD1Title, #hourlyVcrD1Title { grid-column: 1; grid-row: 1; }
+    #hourlyQueueWrapD1, #hourlyVcrWrapD1 { grid-column: 1; grid-row: 2; }
+    #hourlyQueueD2Title, #hourlyVcrD2Title { grid-column: 2; grid-row: 1; margin-top: 10px !important; }
+    #hourlyQueueWrapD2, #hourlyVcrWrapD2 { grid-column: 2; grid-row: 2; }
+
+    @media (max-width: 980px) {
+      #hourlyQueueSplitView,
+      #hourlyVcrSplitView {
+        grid-template-columns: 1fr;
+        row-gap: 10px;
+      }
+      #hourlyQueueD1Title, #hourlyVcrD1Title,
+      #hourlyQueueWrapD1, #hourlyVcrWrapD1,
+      #hourlyQueueD2Title, #hourlyVcrD2Title,
+      #hourlyQueueWrapD2, #hourlyVcrWrapD2 {
+        grid-column: 1;
+        grid-row: auto;
+      }
+    }
+
     .copy-table-btn, .vcr-toggle-btn, .queue-toggle-btn, .hourly-queue-toggle-btn, .hourly-vcr-toggle-btn {
       box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
       height: 31px; padding: 6px 10px; border-radius: 4px; font-size: 0.82rem; line-height: 1.2;
@@ -1875,8 +1991,8 @@
     }
     .vcr-los-a { background-color: #b9fbc0; color: #0b3b2e; } /* LOS A: VCR ≤ 0.60 */
     .vcr-los-b { background-color: #a7f3d0; color: #134e4a; } /* LOS B: VCR ≤ 0.70 */
-    .vcr-los-c { background-color: #fde68a; color: #713f12; } /* LOS C: VCR ≤ 0.90 */
-    .vcr-los-d { background-color: #fdba74; color: #7c2d12; } /* LOS D: VCR ≤ 0.95 */
+    .vcr-los-c { background-color: #fde68a; color: #713f12; } /* LOS C: VCR ≤ 0.80 */
+    .vcr-los-d { background-color: #fdba74; color: #7c2d12; } /* LOS D: VCR ≤ 0.90 */
     .vcr-los-e { background-color: #fb923c; color: #7c2d12; } /* LOS E: VCR ≤ 1.00 */
     .vcr-los-f { background-color: #ef4444; color: #ffffff; } /* LOS F: VCR > 1.00 */
 
@@ -3481,10 +3597,13 @@
     <div class="login-card">
       <img class="login-logo" src="logo.jpeg" alt="Crompton logo" />
       <h2 id="loginTitle" class="login-title">Crompton Login</h2>
-      <p class="login-note">Enter the developer PIN to access the Traffic Impact Assessment tool.</p>
+      <p class="login-note">Please sign in to access the Traffic Impact Assessment tool.</p>
       <form id="loginForm">
-        <label for="loginPin">Developer PIN</label>
-        <input id="loginPin" name="loginPin" type="password" placeholder="Enter PIN" inputmode="numeric" maxlength="4" autocomplete="one-time-code" required />
+        <label for="loginUser">Username</label>
+        <input id="loginUser" name="loginUser" type="text" placeholder="Enter username" autocomplete="username" required />
+
+        <label for="loginPassword" style="margin-top:10px;">Password</label>
+        <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
 
         <button type="submit">Login</button>
         <div id="loginError" class="login-error" aria-live="polite"></div>
@@ -3775,6 +3894,12 @@
               </select>
             </div>
 
+            <div class="input-group" style="margin-bottom: 12px;">
+              <label for="tripRateReferenceSource"><strong>Reference Source (Auto by State):</strong></label>
+              <input type="text" id="tripRateReferenceSource" readonly style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #90caf9; background: #e3f2fd; color: #0d47a1; font-weight: 700;" />
+              <div id="tripRateReferenceSourceHint" style="font-size: 0.78em; color: #0d47a1; margin-top: 4px; line-height: 1.4;"></div>
+            </div>
+
             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
               <div class="input-group" style="flex: 1; min-width: 150px;">
                 <label id="quantityLabel" for="tripQuantity"><strong>Quantity:</strong></label>
@@ -3804,7 +3929,7 @@
             </button>
 
             <div style="margin-top: 10px; background: #e8f4f8; border: 1px solid #84cad8; border-radius: 6px; padding: 10px; font-size: 0.82em; line-height: 1.5;">
-              <strong>💡 Tip:</strong> Rates are based on RTA/RMS/TMR/ITE standards. Peak % is the portion of daily trips occurring in peak hour. AM/PM peaks show directional splits (In/Out) based on land use type.
+              <strong>💡 Tip:</strong> Reference source is selected automatically from the state database above (QLD -> TMR Guide, NSW -> RMS NSW Guide). Peak % is the portion of daily trips occurring in peak hour. AM/PM peaks show directional splits (In/Out) based on land use type.
             </div>
 
             <div id="tripGenResult" style="display: none; margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #ffffff 0%, #f0f7f8 100%); border: 2px solid #14746f; border-radius: 8px; box-shadow: 0 2px 8px rgba(20, 116, 111, 0.15);">
@@ -3892,9 +4017,24 @@
           <div id="macroDetailD1Label" style="font-weight:700;">D1 VADT:</div><div id="macroDetailD1">-</div>
           <div id="macroDetailD2Label" style="font-weight:700;">D2 VADT:</div><div id="macroDetailD2">-</div>
           <div style="font-weight:700;">Total VADT:</div><div id="macroDetailTotal">-</div>
+          <div id="macroDetailPdfLabel" style="font-weight:700; display:none;">PDF Report:</div><div id="macroDetailPdfValue" style="display:none;"><a id="macroPdfLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="color:#0056b3; text-decoration:none;">Open PDF Report</a></div>
+        </div>
+        <div id="macroDetailDirInfo" style="display:none; margin-top:10px; background:#f0f7ff; border:1px solid #90caf9; border-radius:6px; padding:8px 10px;">
+          <div style="font-size:0.78em; font-weight:700; color:#1565c0; margin-bottom:6px;">&#x1F9ED; Directional Orientation (relative to road survey direction)</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <div style="display:flex; align-items:center; gap:6px; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:5px; padding:5px 10px;">
+              <span style="font-size:1.5em;" id="macroDetailDirD1Arrow">&#x27A1;</span>
+              <div><div style="font-size:0.72em; color:#2e7d32; font-weight:700;">D1 &mdash; Gazettal</div><div id="macroDetailDirD1Label" style="font-size:0.85em; color:#1b5e20; font-weight:600;">-</div></div>
+            </div>
+            <div style="font-size:1.1em; color:#78909c;">&#x21C4;</div>
+            <div style="display:flex; align-items:center; gap:6px; background:#fce4ec; border:1px solid #f48fb1; border-radius:5px; padding:5px 10px;">
+              <span style="font-size:1.5em;" id="macroDetailDirD2Arrow">&#x2B05;</span>
+              <div><div style="font-size:0.72em; color:#880e4f; font-weight:700;">D2 &mdash; Against Gazettal</div><div id="macroDetailDirD2Label" style="font-size:0.85em; color:#880e4f; font-weight:600;">-</div></div>
+            </div>
+          </div>
+          <div id="macroDetailDirNote" style="font-size:0.72em; color:#546e7a; margin-top:5px;"></div>
         </div>
       </div>
-
       <div style="margin-top: 10px;">
         <h3 style="margin: 0 0 6px 0; color: #1f5e63; font-size: 1rem;">Site Location </h3>
         <p id="macroLocationHelp" style="font-size: 0.85em; color:#555; margin: 0 0 8px 0;">Select a site from search or click a marker to auto-fill inputs.</p>
@@ -4145,18 +4285,6 @@
           <canvas id="macroHourlyChart" class="chart-canvas-350"></canvas>
         </div>
         
-        <h3 style="color: #1f5e63; margin: 20px 0 10px 0;">Directional Distribution</h3>
-        <div class="report-keep-two-col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-          <div>
-            <h4 id="macroDataVizD1Heading" style="text-align: center; color: #2e7d32; margin: 0 0 10px 0;">Direction 1, Gazettal</h4>
-            <canvas id="macroD1PieChart" class="chart-canvas-250"></canvas>
-          </div>
-          <div>
-            <h4 id="macroDataVizD2Heading" style="text-align: center; color: #c30000; margin: 0 0 10px 0;">Direction 2, Against Gazettal</h4>
-            <canvas id="macroD2PieChart" class="chart-canvas-250"></canvas>
-          </div>
-        </div>
-        
         <h3 style="color: #1f5e63; margin: 20px 0 10px 0;">Peak Hour Analysis</h3>
         <div id="macroPeakInsights" style="margin: 0 0 12px 0; padding: 12px; background: #eef7fa; border: 1px solid #b7d6dc; border-radius: 8px; color: #11363a; font-size: 0.92em;"></div>
         <div class="report-keep-two-col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -4353,9 +4481,16 @@
       </p>
 
       <div style="background: #f5f5f5; border: 1px solid #ccc; border-radius: 6px; padding: 10px; margin: 0 0 12px 0;">
-        <label style="color: #333; font-weight: bold; font-size: 0.88em;" class="tooltip" data-tip="Blockage duration per cycle for SWT queue calculation. For stop/go operations, use half the cycle time. Typical: 60-180 seconds.">SWT Red Time Per Cycle (seconds)</label>
+        <label style="color: #333; font-weight: bold; font-size: 0.88em;" class="tooltip" data-tip="Blockage duration per cycle for SWT queue calculation. Temporary work-zone stop/go typically uses around 60-180s. Permanent signalized intersections are commonly around 45-80s.">SWT Red Time Per Cycle (seconds)</label>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
+          <label for="queueOperationType" style="margin:0; color:#37474f; font-size:0.8em; font-weight:700;">Operation Type</label>
+          <select id="queueOperationType" onchange="syncQueueOperationModeUi(true); generateWorkWindow();" style="width: 220px; padding: 6px; border: 1px solid #999; border-radius: 4px;">
+            <option value="workzone" selected>Temporary Work Zone (Stop/Go)</option>
+            <option value="signal">Permanent Signalized Intersection</option>
+          </select>
+        </div>
         <input type="number" id="swtRedTime" value="120" step="10" min="30" max="600" oninput="generateWorkWindow();" style="width: 120px; padding: 6px; border: 1px solid #999; border-radius: 4px; margin-top: 4px;" />
-        <div style="font-size: 0.75em; color: #666; margin-top: 4px;">⚠️ Use red time per cycle, NOT total hourly accumulation. Typical: 120s for 240s cycle.</div>
+        <div id="queueOperationHint" style="font-size: 0.75em; color: #666; margin-top: 4px;">⚠️ Use red time per cycle, NOT total hourly accumulation. Temporary work-zone stop/go commonly uses around 120s in a 240s cycle.</div>
       </div>
 
       <div class="queue-calculator-module">
@@ -4415,7 +4550,7 @@
       <div id="hourlyQueueTableView">
         <div class="hourly-report-split" id="hourlyQueueSplitView">
           <h4 id="hourlyQueueD1Title" style="margin: 10px 0 6px 0; color: #2e7d32;">Direction 1</h4>
-          <div class="table-wrap">
+          <div class="table-wrap" id="hourlyQueueWrapD1">
             <table id="hourlyQueueTableD1">
               <thead>
                 <tr>
@@ -4432,7 +4567,7 @@
           </div>
 
           <h4 id="hourlyQueueD2Title" style="margin: 12px 0 6px 0; color: #c30000;">Direction 2</h4>
-          <div class="table-wrap">
+          <div class="table-wrap" id="hourlyQueueWrapD2">
             <table id="hourlyQueueTableD2">
               <thead>
                 <tr>
@@ -4461,7 +4596,7 @@
       <div id="hourlyVcrTableView">
         <div class="hourly-report-split" id="hourlyVcrSplitView">
           <h4 id="hourlyVcrD1Title" style="margin: 10px 0 6px 0; color: #2e7d32;">Direction 1</h4>
-          <div class="table-wrap">
+          <div class="table-wrap" id="hourlyVcrWrapD1">
             <table id="hourlyVcrTableD1">
               <thead>
                 <tr>
@@ -4475,7 +4610,7 @@
           </div>
 
           <h4 id="hourlyVcrD2Title" style="margin: 12px 0 6px 0; color: #c30000;">Direction 2</h4>
-          <div class="table-wrap">
+          <div class="table-wrap" id="hourlyVcrWrapD2">
             <table id="hourlyVcrTableD2">
               <thead>
                 <tr>
@@ -4493,6 +4628,48 @@
         <canvas id="hourlyVcrChart" class="chart-canvas-360"></canvas>
       </div>
     </details>
+
+    <div class="card queue-calculator-card" id="intersectionQueueCapacityCard">
+      <h3>Intersection Queue &amp; Capacity Calculator</h3>
+
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="arrivalVol">Arrival Volume (vph)</label>
+          <input type="number" id="arrivalVol" value="750" step="10">
+        </div>
+        <div class="input-group">
+          <label for="laneCap">Base Lane Capacity (vph)</label>
+          <input type="number" id="laneCap" value="900" step="10">
+        </div>
+        <div class="input-group">
+          <label for="redTime">Red Time (seconds)</label>
+          <input type="number" id="redTime" value="60" step="5">
+        </div>
+        <div class="input-group">
+          <label for="hvPercent">Heavy Vehicles (%)</label>
+          <input type="number" id="hvPercent" value="5" step="1" max="100">
+        </div>
+      </div>
+
+      <div class="results-panel">
+        <div class="result-box">
+          <span>Volume/Capacity Ratio</span>
+          <strong id="vcrResult">0.83</strong>
+        </div>
+        <div class="result-box">
+          <span>Level of Service</span>
+          <span id="losBadge" class="los-badge los-d">LOS D</span>
+        </div>
+        <div class="result-box">
+          <span>Dynamic Spacing (m/veh)</span>
+          <strong id="spacingResult">7.25m</strong>
+        </div>
+        <div class="result-box highlight">
+          <span>Estimated Queue Length</span>
+          <strong id="queueResult">90.6m</strong>
+        </div>
+      </div>
+    </div>
 
     <div class="card" id="detourCard" style="border: 2px solid #8e24aa;">
       <h2 class="optional-card-title">
@@ -4524,6 +4701,13 @@
                 <option value="D1">Direction 1, Gazettal</option>
                 <option value="D2">Direction 2, Against Gazettal</option>
               </select>
+            </div>
+            <label style="display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; color: #6a1b9a; font-weight: 700; line-height: 1.35;">
+              <input type="checkbox" id="detourHvRouteSuitabilityConfirmed" onchange="calculateDetourOverlay()" style="width: auto; margin-top: 2px; cursor: pointer;" />
+              Heavy Vehicle Route Suitability Confirmed
+            </label>
+            <div style="font-size: 0.75em; color: #8e24aa; margin-top: 4px;">
+              Confirm bridge load limits, low-clearance structures, and swept-path suitability before adopting detour capacity outputs.
             </div>
           </div>
 
@@ -4573,6 +4757,26 @@
           <label style="color: #6a1b9a; font-weight: bold;">Estimated Detour Delay Inputs</label>
           <div class="grid-2" style="margin-top: 8px; gap: 8px;">
             <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
+              <label style="color: #6a1b9a; font-size: 0.78em;">Detour Lane Width (m)</label>
+              <input type="number" id="detourLaneWidth" value="3.7" step="0.1" min="2.0" oninput="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
+            </div>
+            <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
+              <label style="color: #6a1b9a; font-size: 0.78em;">Lateral Clearance Each Side (m)</label>
+              <input type="number" id="detourLateralClearance" value="2.0" step="0.1" min="0" oninput="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
+            </div>
+            <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
+              <label style="color: #6a1b9a; font-size: 0.78em;">Topography / Grade Class</label>
+              <select id="detourGradeType" onchange="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;">
+                <option value="level" selected>Level</option>
+                <option value="moderate">Moderate</option>
+                <option value="steep">Steep</option>
+              </select>
+            </div>
+            <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
+              <label style="color: #6a1b9a; font-size: 0.78em;">Base Lane Capacity (vph/lane)</label>
+              <input type="number" id="detourBaseLaneCapacity" value="1800" step="50" min="500" max="2500" oninput="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
+            </div>
+            <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
               <label style="color: #6a1b9a; font-size: 0.78em;">Detour Length (km)</label>
               <input type="number" id="detourRouteLengthKm" value="0.4" step="0.1" min="0" oninput="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
             </div>
@@ -4614,7 +4818,27 @@
             <tbody id="detourDetailedBody"></tbody>
           </table>
         </div>
+        <div id="detourGeometryWarningText" style="display:none; margin-top: 8px; padding: 10px; border-radius: 6px; border: 1px solid #ffcdd2; background: #ffebee; color: #b71c1c; font-size: 0.82em; line-height: 1.4;"></div>
         <p class="optional-warning-note" id="detourWarningText"></p>
+
+        <div id="detourAnalysisResults" style="display: none; margin-top: 15px;">
+          <h3 style="color: #6a1b9a; margin: 0 0 10px 0; border-bottom: 2px solid #ce93d8; padding-bottom: 6px;">📈 Detour Route Capacity Check (Peak Diverted Load)</h3>
+        </div>
+
+        <div id="postDiversionResults" style="display: none; margin-top: 15px;">
+          <h3 style="color: #00695c; margin: 0 0 10px 0; border-bottom: 2px solid #80cbc4; padding-bottom: 6px;">🛣️ Road Status After Diversion (Existing Road)</h3>
+          <p style="font-size: 0.85em; color: #555; margin-bottom: 8px;">Shows the Level of Service (LOS) and V/C ratio for the remaining traffic on the work zone road.</p>
+          <div class="table-wrap">
+            <table id="postDiversionTable" style="font-size: 0.82em; width: 100%; text-align: center;">
+              <thead>
+                <tr id="postDiversionHeadRow">
+                  <th style="background: #00897b; color: white; padding: 6px;">Metric</th>
+                </tr>
+              </thead>
+              <tbody id="postDiversionBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -4743,7 +4967,7 @@
       <div class="optional-card-title" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <div>
           <span><span class="hide-print">📐</span> AGTTM Layout Geometry &amp; Cross-Section</span>
-          <div style="font-size: 0.75rem; color: #546e7a; font-weight: 600; margin-top: 2px;">Ref: Austroads AGRD Part 3 / AGTTM Part 12</div>
+          <div style="font-size: 0.75rem; color: #546e7a; font-weight: 600; margin-top: 2px;">Ref: Austroads AGRD Part 3 / AGTTM Part 3 (Static Work Sites)</div>
         </div>
         <button type="button" class="print-toggle-btn" data-target-card="agttmGeometryCard" aria-pressed="true">Include in Print: Yes</button>
       </div>
@@ -4787,9 +5011,9 @@
           <p style="font-size: 0.7rem; color: #607d8b; margin: 4px 0 0 0;">Min 0.5m for urban, 2.0m for rural highway.</p>
         </div>
         <div style="background: #ffffff; border: 1px solid #80cbc4; border-radius: 6px; padding: 10px;">
-          <label style="color: #00695c;" class="tooltip" data-tip="Offset distance to kerb/barrier reference.">Lateral Clearance (Offset)</label>
+          <label style="color: #00695c;" class="tooltip" data-tip="Offset distance to kerb/barrier/worksite protection line. During construction staging, AGTTM Part 3 Section 3.2.1 clearances can govern (typically 1.2 m desirable, 0.3 m absolute minimum with approved barriers).">Lateral Clearance (Offset)</label>
           <input type="number" id="lateralOffset" value="0.6" step="0.1" min="0" style="border: 1px solid #80cbc4; background: #f1fdfb;" />
-          <p style="font-size: 0.7rem; color: #607d8b; margin: 4px 0 0 0;">Distance to kerb/barrier (AGRD Part 3 Table 4.6).</p>
+          <p style="font-size: 0.7rem; color: #607d8b; margin: 4px 0 0 0;">Distance to kerb/barrier (AGRD Part 3 Table 4.6). For worksite staging, also check AGTTM Part 3 Section 3.2.1 clearances (typically 1.2 m desirable, 0.3 m absolute minimum with approved barriers).</p>
         </div>
       </div>
 
@@ -4822,6 +5046,9 @@
       <p class="optional-card-note">
         Calculates the safe stopping distance required for approaching traffic based on speed, reaction time, and road gradient.
       </p>
+      <div style="margin: 0 0 12px 0; padding: 8px 10px; border-radius: 6px; background: #f3e5f5; border: 1px solid #d1c4e9; color: #4a148c; font-size: 0.8em; line-height: 1.45;">
+        <strong>Reference note:</strong> Backend longitudinal deceleration friction factors (<em>d</em>) used in ASD braking-distance calculations are sourced from Austroads AGRD Part 3, Table 5.2.
+      </div>
 
       <div class="grid" style="margin-bottom: 15px;">
         <div style="background: #ffffff; border: 1px solid #b39ddb; border-radius: 6px; padding: 10px;">
@@ -5193,29 +5420,6 @@
     <div class="copyright-footer">© 2026 Crompton Concepts. All rights reserved.</div>
 <script>
   const AUTH_SESSION_KEY = 'crompton_tia_auth';
-  let authSessionFallback = false;
-
-  function isAuthSessionActive() {
-    try {
-      return sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
-    } catch (_) {
-      return authSessionFallback === true;
-    }
-  }
-
-  function setAuthSessionActive(isActive) {
-    authSessionFallback = !!isActive;
-    try {
-      if (isActive) {
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      } else {
-        sessionStorage.removeItem(AUTH_SESSION_KEY);
-      }
-    } catch (_) {
-      // Fallback is kept in memory for this tab when storage is unavailable.
-    }
-  }
-
   let loadingHintTimer = null;
   let loadingFunnyCommentTimer = null;
   let loadingProgressPulseTimer = null;
@@ -5555,7 +5759,7 @@
   }
 
   // ===== TRIP GENERATION SCENARIOS (Global Definition) =====
-  // Enhanced Trip Generation Rates based on RTA/RMS/TMR/ITE Standards
+  // Baseline scenarios with state-specific source traceability.
   window.tripGenerationScenarios = {
     custom: { 
       label: 'Quantity', 
@@ -5679,6 +5883,33 @@
     }
   };
   console.log('Trip Generation Calculator v2.0 - Scenarios loaded at', new Date().toLocaleTimeString());
+
+  function getTripGenerationReferenceSourceDetails() {
+    const stateScope = getQuickTiaSelectedState();
+    if (stateScope === 'NSW') {
+      return {
+        key: 'RMS_NSW_2002',
+        label: 'RMS NSW Guide to Traffic Generating Developments (2002)',
+        shortLabel: 'RMS NSW (2002)',
+        hint: 'Auto-selected because NSW database is active.'
+      };
+    }
+    return {
+      key: 'TMR_QLD_2024',
+      label: 'TMR Guide to Traffic Impact Assessment (2024)',
+      shortLabel: 'TMR QLD (2024)',
+      hint: 'Auto-selected because Queensland database is active.'
+    };
+  }
+
+  function updateTripGenerationReferenceSourceUi() {
+    const details = getTripGenerationReferenceSourceDetails();
+    const sourceInput = document.getElementById('tripRateReferenceSource');
+    const sourceHint = document.getElementById('tripRateReferenceSourceHint');
+    if (sourceInput) sourceInput.value = details.label;
+    if (sourceHint) sourceHint.textContent = details.hint;
+    return details;
+  }
 
   function getProgressPulseCapForStage(progressPercent) {
     const p = Math.max(0, Math.min(100, Number(progressPercent) || 0));
@@ -8075,11 +8306,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function setupLoginGate() {
     const loginGate = document.getElementById('loginGate');
     const loginForm = document.getElementById('loginForm');
-    const loginPin = document.getElementById('loginPin');
+    const loginUser = document.getElementById('loginUser');
+    const loginPassword = document.getElementById('loginPassword');
     const loginError = document.getElementById('loginError');
-    if (!loginGate || !loginForm || !loginPin || !loginError) return;
+    if (!loginGate || !loginForm || !loginUser || !loginPassword || !loginError) return;
 
-    const DEVELOPER_PIN = '8080';
+    const allowedUsers = {
+      admin: 'Packer4551',
+      users: 'Crompton123'
+    };
 
     async function unlockApplication(options = {}) {
       const useFunnyLoading = !!(options && options.useFunnyLoading);
@@ -8132,22 +8367,31 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
-    if (isAuthSessionActive()) {
+    if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
       unlockApplication();
       return;
     }
 
-    loginPin.focus();
+    loginUser.focus();
 
     // Keep login typing responsive: do not start heavy data loading on input/focus.
     // Data loading now starts only after successful credential validation.
 
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
-      const enteredPin = String(loginPin.value || '').trim();
+      const usernameKey = String(loginUser.value || '').trim().toLowerCase();
+      const enteredPassword = String(loginPassword.value || '').trim();
+      const expectedPassword = allowedUsers[usernameKey];
 
-      if (enteredPin === DEVELOPER_PIN) {
-        setAuthSessionActive(true);
+      if (expectedPassword && enteredPassword === expectedPassword) {
+        if (window.PasswordCredential && navigator.credentials && typeof navigator.credentials.store === 'function') {
+          navigator.credentials.store(new PasswordCredential({
+            id: usernameKey,
+            password: enteredPassword,
+            name: usernameKey
+          })).catch(() => {});
+        }
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         loginError.textContent = '';
         // Instead of reloading, unlock app (will wait for data if needed)
         try {
@@ -8156,16 +8400,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           console.error('[Login] Unlock failed:', error);
           loginError.textContent = 'Login succeeded but app initialization failed. Please refresh and try again.';
           setAppStatusBanner('<strong>❌ App initialization failed:</strong> Please refresh the page and sign in again.', 'error');
-          setAuthSessionActive(false);
+          sessionStorage.removeItem(AUTH_SESSION_KEY);
           document.body.classList.add('app-locked');
           loginGate.style.display = 'flex';
         }
         return;
       }
 
-      loginError.textContent = 'Invalid PIN.';
-      loginPin.value = '';
-      loginPin.focus();
+      loginError.textContent = 'Invalid username or password.';
+      loginPassword.value = '';
+      loginPassword.focus();
     });
   }
 
@@ -8174,7 +8418,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!logoutBtn) return;
 
     logoutBtn.addEventListener('click', function () {
-      setAuthSessionActive(false);
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
       window.location.reload();
     });
   }
@@ -8319,10 +8563,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const GITHUB_TEWANTIN_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tewantin.geojson';
   const GITHUB_NSW_2026_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/nsw_2026.geojson';
   const GITHUB_NSW_TNSW_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/TNSW.geojson';
+  const GITHUB_DATASET_MANIFEST_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/dataset_manifest.json';
   const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v4:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const GITHUB_FETCH_TIMEOUT_MS = 60000;
+  const DATASET_MANIFEST_CACHE_KEY = 'crompton_tia_dataset_manifest_sig_v1';
+  const DATASET_MANIFEST_LOCAL_URL = './dataset_manifest.json';
   const githubRefreshInflight = new Map();
+  let datasetManifestSyncPromise = null;
 
   let macroSitesData = {};
   window.macroSitesData = macroSitesData;
@@ -8591,6 +8839,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function convertDailyVpdTo80thHourly(vpd) {
     const daily = Math.max(0, Number(vpd) || 0);
     return Math.round(daily * DETOUR_80TH_HOUR_FACTOR);
+  }
+
+  /**
+   * Calculates adjusted lane capacity using AGTM Part 3-style factors.
+   * Returns capacity per lane in vph.
+   */
+  function calculateDetourCapacity(laneWidth, lateralClearance, heavyVehiclePercent, gradeType, baseLaneCapacity) {
+    const baseCapacity = Math.max(500, Math.min(2500, Number(baseLaneCapacity) || 1800));
+
+    let fW = 1.0;
+    if (lateralClearance >= 2.0) {
+      if (laneWidth >= 3.7) fW = 1.00;
+      else if (laneWidth >= 3.2) fW = 0.90;
+      else fW = 0.70;
+    } else if (lateralClearance >= 1.0) {
+      if (laneWidth >= 3.7) fW = 0.90;
+      else if (laneWidth >= 3.2) fW = 0.80;
+      else fW = 0.63;
+    } else {
+      if (laneWidth >= 3.7) fW = 0.65;
+      else if (laneWidth >= 3.2) fW = 0.60;
+      else fW = 0.50;
+    }
+
+    const grade = String(gradeType || 'level').toLowerCase();
+    let eHV = 2.0;
+    if (grade === 'moderate') eHV = 4.0;
+    else if (grade === 'steep') eHV = 8.0;
+
+    const proportionHV = Math.max(0, Math.min(100, Number(heavyVehiclePercent) || 0)) / 100;
+    const fHV = 1 / (1 + proportionHV * (eHV - 1));
+
+    return Math.round(baseCapacity * fW * fHV);
   }
 
   function parseCsvLine(line) {
@@ -9767,7 +10048,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (t.includes('distance') || t.includes('length')) return 'Distance-based result = speed * time or queue vehicles * spacing';
     if (t.includes('capacity') || t.includes('dv')) return 'Capacity (DV) = max(500, factor * volume / lanes)';
     if (t.includes('peak')) return 'Peak value = max(values across AM, OP, PM, EV or hourly profile)';
-    if (t.includes('hour') || t.includes('profile')) return 'Hourly value = daily volume * hourly (diurnal) factor';
+    if (t.includes('hour') || t.includes('profile')) return 'Hourly value = DB measured profile (if ≥6 non-zero hours stored) scaled to daily total; otherwise Austroads diurnal template (Brisbane urban arterial: peak 8–9am / 5–6pm)';
     if (t.includes('ratio') || t.includes('%') || t.includes('percent')) return 'Ratio (%) = part / total * 100';
     if (t.includes('util')) return 'Utilization = demand / capacity';
     if (t.includes('hourly vol') || t.includes('vol (vph)')) return 'Hourly volume = projected daily volume * diurnal factor';
@@ -9881,7 +10162,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       predictedVADT: 'Predicted VADT = Base VADT * (1 + growth rate)^years',
       predictedD1VADT: 'Predicted D1 = Base D1 * (1 + growth rate)^years',
       predictedD2VADT: 'Predicted D2 = Base D2 * (1 + growth rate)^years',
-      macroHourlyChart: 'Hourly profile = current and projected hourly volumes by direction (measured or synthetic diurnal model)',
+      macroHourlyChart: 'Hourly profile = DB measured 24h data (if available, ≥6 non-zero hours) scaled to daily total; otherwise Austroads diurnal template (Brisbane urban arterial pattern: morning peak 8-9am, evening peak 5-6pm)',
       macroD1PieChart: 'Pie share = bucket total / daily directional total for D1 (AM/OP/PM/EV)',
       macroD2PieChart: 'Pie share = bucket total / daily directional total for D2 (AM/OP/PM/EV)',
       macroD1PeakHours: 'Peak list = highlighted peak hours shown in chronological timing order for D1',
@@ -10115,7 +10396,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         weight: 1
       }).addTo(macroSiteLayer);
 
-      marker.bindTooltip(`${siteId} - ${site.road_name || site.description || 'Site'}`);
+      const _d1Desc = (site.direction_descriptions && site.direction_descriptions['GAZETTAL']) || (site.d1_direction_label || '');
+      const _d2Desc = (site.direction_descriptions && site.direction_descriptions['AGAINST GAZETTAL']) || (site.d2_direction_label || '');
+      const _dirTip = (_d1Desc || _d2Desc) ? '\n\u{1F7E2}D1(Gaz): ' + (_d1Desc || '?') + '  \u{1F534}D2: ' + (_d2Desc || '?') : '';
+      marker.bindTooltip((siteId + ' \u2014 ' + (site.road_name || site.description || 'Site') + _dirTip).trim(), { sticky: true });
       marker.on('click', () => selectMacroSite(siteId));
       macroMarkersById[siteId] = marker;
       points.push([lat, lon]);
@@ -10289,6 +10573,95 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       return null;
     }
+  }
+
+  async function fetchJsonNoCache(url) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        cache: 'no-cache'
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  function buildManifestSignature(manifest) {
+    if (!manifest || typeof manifest !== 'object' || !manifest.datasets || typeof manifest.datasets !== 'object') {
+      return '';
+    }
+
+    const datasetPairs = Object.entries(manifest.datasets)
+      .map(([name, meta]) => {
+        const hash = (meta && typeof meta === 'object') ? String(meta.sha256 || '') : '';
+        const version = (meta && typeof meta === 'object') ? String(meta.version || '') : '';
+        return `${name}:${version}:${hash}`;
+      })
+      .sort();
+
+    return datasetPairs.join('|');
+  }
+
+  function clearDatasetCaches() {
+    try {
+      const keysToDelete = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(GITHUB_CACHE_PREFIX)) keysToDelete.push(key);
+      }
+      keysToDelete.forEach((key) => localStorage.removeItem(key));
+      return keysToDelete.length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  async function syncDatasetCacheWithManifest() {
+    let manifest = null;
+    try {
+      manifest = await fetchJsonNoCache(GITHUB_DATASET_MANIFEST_URL);
+    } catch (_) {
+      try {
+        manifest = await fetchJsonNoCache(DATASET_MANIFEST_LOCAL_URL);
+      } catch (_) {
+        manifest = null;
+      }
+    }
+
+    const signature = buildManifestSignature(manifest);
+    if (!signature) return false;
+
+    let previousSignature = '';
+    try {
+      previousSignature = String(localStorage.getItem(DATASET_MANIFEST_CACHE_KEY) || '');
+    } catch (_) {
+      previousSignature = '';
+    }
+
+    if (signature === previousSignature) return false;
+
+    const clearedCount = clearDatasetCaches();
+    try {
+      localStorage.setItem(DATASET_MANIFEST_CACHE_KEY, signature);
+    } catch (_) {
+    }
+
+    console.log('[Data Manifest] Detected dataset release update. Cleared cached datasets:', clearedCount);
+    return true;
+  }
+
+  async function ensureDatasetManifestSynced() {
+    if (!datasetManifestSyncPromise) {
+      datasetManifestSyncPromise = syncDatasetCacheWithManifest().catch((err) => {
+        console.warn('[Data Manifest] Sync failed:', err && err.message ? err.message : err);
+        return false;
+      });
+    }
+    return datasetManifestSyncPromise;
   }
 
   function isGeoJsonFeatureCollection(data) {
@@ -10673,6 +11046,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const hvPercentDirect = normalizePercentValue(hvPercentDirectRaw);
       const hvPercent = hvPercentDirect !== null ? hvPercentDirect : normalizePercentValue(isLogan ? calcLoganHvPercent(props) : null);
       const roadClass = normalizeRoadClass(props['ROAD_CLASS'] || props['ROAD_TYPE'] || props['Road Type'] || props['ROAD TYPE'] || props['road type'] || props['CLASSIFICATION'] || props['ROAD CATEGORY'] || 'tmr');
+      const pdfUrl = String(firstDefinedValue(
+        props['PDF_URL'],
+        props['pdf_url'],
+        props['PDF'],
+        props['pdf']
+      ) || '').trim();
       const designCapacityDaily = Math.max(0, Number(props['DESIGN_CAPACITY_DAILY'] || props['CAPACITY_DAILY'] || props['CAPACITY_REF_DAILY'] || props['ROAD_CAPACITY_DAILY'] || 0));
       const totalVadtFromProps = parseVolumeValue(firstDefinedValue(
         props['VADT'],
@@ -10751,6 +11130,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           vadt_estimate_note: '',
           growth_rate: growthRate,
           hv_percent: hvPercent,
+          pdf_url: pdfUrl,
           road_class: roadClass,
           design_capacity_daily: designCapacityDaily,
           d1_lanes: d1Lanes,
@@ -10850,6 +11230,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (d1VadtFromProps || d2VadtFromProps) site.direction_split_mode = 'provided';
       if (!site.hv_percent && hvPercent) site.hv_percent = hvPercent;
       if (!site.growth_rate && growthRate) site.growth_rate = growthRate;
+      if (!site.pdf_url && pdfUrl) site.pdf_url = pdfUrl;
       if (!site.road_class && roadClass) site.road_class = roadClass;
       if (!site.count_day_of_week && countDayOfWeek) site.count_day_of_week = countDayOfWeek;
       if (!site.design_capacity_daily && designCapacityDaily > 0) site.design_capacity_daily = designCapacityDaily;
@@ -11419,7 +11800,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     try {
       // Only show overlay if user is authenticated (after login)
       // During login, data loads silently in background
-      const isAuthenticated = isAuthSessionActive();
+      const isAuthenticated = sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
       console.log('[Data Load] isAuthenticated:', isAuthenticated);
       
       if (showOverlay && isAuthenticated && loadingOverlay) {
@@ -11435,6 +11816,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       console.log('[Data Load] Waiting for Leaflet...');
       setLoadingState('Preparing mapping tools...', 'Loading map libraries and chart services.', 28);
       await ensureLeafletLoaded();
+      await ensureDatasetManifestSynced();
       console.log('[Data Load] Leaflet is ready');
       
       console.log('[Data Load] Fetching data from GitHub...');
@@ -11603,6 +11985,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       el.innerHTML = `<span class="source-pill source-${classSuffix}">${source}</span>`;
     };
 
+    const setPdfLink = (url) => {
+      const labelEl = document.getElementById('macroDetailPdfLabel');
+      const valueEl = document.getElementById('macroDetailPdfValue');
+      const linkEl = document.getElementById('macroPdfLink');
+      const safeUrl = String(url || '').trim();
+      if (!labelEl || !valueEl || !linkEl) return;
+
+      if (safeUrl) {
+        labelEl.style.display = 'block';
+        valueEl.style.display = 'block';
+        linkEl.href = safeUrl;
+      } else {
+        labelEl.style.display = 'none';
+        valueEl.style.display = 'none';
+        linkEl.href = 'javascript:void(0)';
+      }
+    };
+
     const setQualityBadge = () => {
       const el = document.getElementById('macroDetailQuality');
       if (!el) return;
@@ -11659,6 +12059,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setText('macroDetailD1', d1.toLocaleString());
     setText('macroDetailD2', d2.toLocaleString());
     setText('macroDetailTotal', vadt.toLocaleString());
+
+    setPdfLink(data.pdf_url);
+    // --- Gazettal direction compass indicator ---
+    (function() {
+      const dirInfoEl    = document.getElementById('macroDetailDirInfo');
+      const d1ArrowEl    = document.getElementById('macroDetailDirD1Arrow');
+      const d1LblEl      = document.getElementById('macroDetailDirD1Label');
+      const d2ArrowEl    = document.getElementById('macroDetailDirD2Arrow');
+      const d2LblEl      = document.getElementById('macroDetailDirD2Label');
+      const dirNoteEl    = document.getElementById('macroDetailDirNote');
+      if (!dirInfoEl) return;
+      const compassArrow = function(label) {
+        const u = String(label || '').toUpperCase();
+        if (u.includes('NORTH')) return '\u2B06'; // ⬆
+        if (u.includes('SOUTH')) return '\u2B07'; // ⬇
+        if (u.includes('EAST'))  return '\u27A1'; // ➡
+        if (u.includes('WEST'))  return '\u2B05'; // ⬅
+        return '\u2194'; // ↔
+      };
+      const descGaz     = (data.direction_descriptions && data.direction_descriptions['GAZETTAL'])        || '';
+      const descAgainst = (data.direction_descriptions && data.direction_descriptions['AGAINST GAZETTAL']) || '';
+      const d1Text = descGaz     || d1RowLabel;
+      const d2Text = descAgainst || d2RowLabel;
+      if (d1LblEl) d1LblEl.textContent = d1Text || '\u2014';
+      if (d2LblEl) d2LblEl.textContent = d2Text || '\u2014';
+      if (d1ArrowEl) d1ArrowEl.textContent = compassArrow(d1Text);
+      if (d2ArrowEl) d2ArrowEl.textContent = compassArrow(d2Text);
+      if (dirNoteEl) {
+        dirNoteEl.textContent = (descGaz || descAgainst)
+          ? 'Compass direction extracted from road description. Verify against site plan before use in reports.'
+          : 'No compass direction found in description \u2014 labels show direction code only.';
+      }
+      dirInfoEl.style.display = 'block';
+    })();
 
     const siteLat = Number(data.latitude);
     const siteLon = Number(data.longitude);
@@ -11845,6 +12279,95 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   let macroD1PieChartInstance = null;
   let macroD2PieChartInstance = null;
   let lastMacroChartPayload = null;
+
+  const engineeringChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: { family: "'Space Grotesk', sans-serif", size: 13 },
+          usePointStyle: true,
+          boxWidth: 8
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        titleFont: { family: "'Space Grotesk', sans-serif", size: 14 },
+        bodyFont: { family: "'JetBrains Mono', monospace", size: 13 },
+        padding: 12,
+        cornerRadius: 4,
+        callbacks: {
+          label: function(context) {
+            return ` ${context.dataset.label}: ${context.parsed.y} vph`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+          drawBorder: false
+        },
+        ticks: {
+          font: { family: "'JetBrains Mono', monospace", size: 11 },
+          color: '#64748b'
+        }
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Traffic Volume (vph)',
+          font: { family: "'Space Grotesk', sans-serif", size: 12, weight: '600' },
+          color: '#475569'
+        },
+        grid: {
+          color: '#f1f5f9',
+          drawBorder: false
+        },
+        ticks: {
+          font: { family: "'JetBrains Mono', monospace", size: 12 },
+          color: '#64748b',
+          stepSize: 100
+        }
+      }
+    }
+  };
+
+  function deepMergeChartOptions(baseObj, overrides) {
+    if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) {
+      return baseObj;
+    }
+    const output = { ...baseObj };
+    Object.keys(overrides).forEach((key) => {
+      const baseValue = output[key];
+      const overrideValue = overrides[key];
+      if (
+        baseValue
+        && overrideValue
+        && typeof baseValue === 'object'
+        && typeof overrideValue === 'object'
+        && !Array.isArray(baseValue)
+        && !Array.isArray(overrideValue)
+      ) {
+        output[key] = deepMergeChartOptions(baseValue, overrideValue);
+      } else {
+        output[key] = overrideValue;
+      }
+    });
+    return output;
+  }
+
+  function buildEngineeringChartOptions(overrides = {}) {
+    return deepMergeChartOptions(engineeringChartOptions, overrides);
+  }
 
   function getCurrentGrowthProjectionContext() {
     const currentYear = new Date().getFullYear();
@@ -12060,93 +12583,49 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             }
           ]
         },
-        options: {
-          responsive: true,
+        options: buildEngineeringChartOptions({
           maintainAspectRatio: true,
           plugins: {
             title: {
               display: true,
               text: `Current vs Predicted @ ${numberRoundUp(growthRatePct, 3)}% p.a. over ${effectiveYears} year(s)`
             },
-            legend: { position: 'top' }
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ${Math.round(Number(context.parsed.y) || 0).toLocaleString()} vph`;
+                }
+              }
+            }
           },
           scales: {
-            y: {
-              beginAtZero: true,
-              title: { display: true, text: 'Volume (vph)' }
-            },
             x: {
               title: { display: true, text: 'Hour of Day' }
+            },
+            y: {
+              title: { display: true, text: 'Traffic Volume (vph)' },
+              ticks: {
+                stepSize: 100,
+                callback: (v) => Number(v).toLocaleString('en-AU')
+              }
             }
           }
-        }
+        })
       });
     }
     
-    // Pie Charts (AM/OP/PM/EV breakdown using global bucket definitions)
-    const aggregateByBucket = (hourlyData) => {
-      const sums = { AM: 0, OP: 0, PM: 0, EV: 0 };
-      for (let hour = 0; hour < 24; hour += 1) {
-        const bucket = getTrafficBucket(hour);
-        sums[bucket.key] += Number(hourlyData[hour]) || 0;
-      }
-      return sums;
-    };
-
-    const d1BucketTotals = aggregateByBucket(gazData);
-    const d2BucketTotals = aggregateByBucket(agData);
-    const pieLabels = ['AM (7-9)', 'OP (9-16)', 'PM (16-18)', 'EV (18-7)'];
-    
-    const ctx2 = document.getElementById('macroD1PieChart');
-    if (ctx2) {
-      if (macroD1PieChartInstance) macroD1PieChartInstance.destroy();
-      
-      macroD1PieChartInstance = new Chart(ctx2, {
-        type: 'pie',
-        data: {
-          labels: pieLabels,
-          datasets: [{
-            data: [d1BucketTotals.AM, d1BucketTotals.OP, d1BucketTotals.PM, d1BucketTotals.EV],
-            backgroundColor: CHART_PALETTE.viridis.slice(1)
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { position: 'top' }
-          }
-        }
-      });
+    // Directional pie charts removed by request; ensure any old instances are cleaned up.
+    if (macroD1PieChartInstance) {
+      macroD1PieChartInstance.destroy();
+      macroD1PieChartInstance = null;
     }
-    
-    const ctx3 = document.getElementById('macroD2PieChart');
-    if (ctx3) {
-      if (macroD2PieChartInstance) macroD2PieChartInstance.destroy();
-      
-      macroD2PieChartInstance = new Chart(ctx3, {
-        type: 'pie',
-        data: {
-          labels: pieLabels,
-          datasets: [{
-            data: [d2BucketTotals.AM, d2BucketTotals.OP, d2BucketTotals.PM, d2BucketTotals.EV],
-            backgroundColor: CHART_PALETTE.viridis.slice(1)
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { position: 'top' }
-          }
-        }
-      });
+    if (macroD2PieChartInstance) {
+      macroD2PieChartInstance.destroy();
+      macroD2PieChartInstance = null;
     }
     
     // Peak Hours Analysis
     const activePeriodDefs = getActivePeriodDefinitions();
-    const amHoursSet = new Set(((activePeriodDefs.find(p => p.key === 'AM') || {}).hours || []).map(h => Number(h)));
-    const pmHoursSet = new Set(((activePeriodDefs.find(p => p.key === 'PM') || {}).hours || []).map(h => Number(h)));
 
     const normalizeHourly = (hourlyData) => Array.from({ length: 24 }, (_, idx) => {
       const arr = Array.isArray(hourlyData) ? hourlyData : [];
@@ -12165,11 +12644,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       : null;
 
     const hasD1DbHourly = Array.isArray(d1DbHourly) && d1DbHourly.some(v => Number(v) > 0);
-    const hasD1DbHourly = Array.isArray(d1DbHourly) && d1DbHourly.some(v => Number(v) > 0);
     const hasD2DbHourly = Array.isArray(d2DbHourly) && d2DbHourly.some(v => Number(v) > 0);
+    const useDatabaseDisplayHourly = hasD1DbHourly || hasD2DbHourly;
 
-    // Always use opening-year projected data (gazPredData/agPredData) for display.
-    // gazPredData is the opening-year value in all three code paths:
+    if (sourceEl) {
       let hourlySourceTrace = 'Hourly Source: Austroads default profile fallback at opening year';
       if (hasD1DbHourly && hasD2DbHourly) {
         hourlySourceTrace = 'Hourly Source: Database hourly profile (D1 & D2) scaled to opening year';
@@ -12178,6 +12656,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       } else if (!hasD1DbHourly && hasD2DbHourly) {
         hourlySourceTrace = 'Hourly Source: Mixed - D2 database hourly; D1 Austroads proportional fallback at opening year';
       }
+      sourceEl.textContent = `${sourceText} | ${hourlySourceTrace}`;
+    }
+
+    // Always use opening-year projected data (gazPredData/agPredData) for display.
+    // gazPredData is the opening-year value in all three code paths:
+    //   - usingWorkProfiles: gazPredData = gazData (already opening year from calculateAll)
+    //   - useMeasuredHourly (NSW/TMR): gazPredData = gazData * growthFactor (opening year)
+    //   - calculated (non-TMR): gazPredData = gazData (opening year computed profiles)
     const d1DisplayHourly = normalizeHourly(gazPredData);
     const d2DisplayHourly = normalizeHourly(agPredData);
 
@@ -12216,14 +12702,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return new Set(ranked.map(item => item.hour));
     };
 
-    // Highlight morning/evening peaks per direction from hourly ranking data.
-    // Morning = 00:00-11:59, Evening = 12:00-23:59.
-    const morningHoursSet = new Set(Array.from({ length: 12 }, (_, h) => h));
-    const eveningHoursSet = new Set(Array.from({ length: 12 }, (_, i) => i + 12));
-    const d1AmTopHours = getTopWindowHourSet(d1RankingHourly, morningHoursSet, 2);
-    const d1PmTopHours = getTopWindowHourSet(d1RankingHourly, eveningHoursSet, 2);
-    const d2AmTopHours = getTopWindowHourSet(d2RankingHourly, morningHoursSet, 2);
-    const d2PmTopHours = getTopWindowHourSet(d2RankingHourly, eveningHoursSet, 2);
+    // Highlight top hours using runtime AM/PM windows; for TMR-style sources these are dynamic
+    // and derived from measured hourly database patterns.
+    const highlightPeriodDefs = isTmrStylePeakSource
+      ? buildTmrPeriodDefinitionsFromHourly(Array.from({ length: 24 }, (_, hour) => {
+          const d1Val = Number(d1RankingHourly[hour]) || 0;
+          const d2Val = Number(d2RankingHourly[hour]) || 0;
+          return d1Val + d2Val;
+        }))
+      : activePeriodDefs;
+    const highlightAmHoursSet = new Set(((highlightPeriodDefs.find(p => p.key === 'AM') || {}).hours || []).map(h => Number(h)));
+    const highlightPmHoursSet = new Set(((highlightPeriodDefs.find(p => p.key === 'PM') || {}).hours || []).map(h => Number(h)));
+    const d1AmTopHours = getTopWindowHourSet(d1RankingHourly, highlightAmHoursSet, 2);
+    const d1PmTopHours = getTopWindowHourSet(d1RankingHourly, highlightPmHoursSet, 2);
+    const d2AmTopHours = getTopWindowHourSet(d2RankingHourly, highlightAmHoursSet, 2);
+    const d2PmTopHours = getTopWindowHourSet(d2RankingHourly, highlightPmHoursSet, 2);
+
+    const formatWindowLabel = (hours) => {
+      const list = Array.from(new Set((Array.isArray(hours) ? hours : []).map(h => ((Number(h) % 24) + 24) % 24))).sort((a, b) => a - b);
+      if (!list.length) return 'N/A';
+      if (list.length === 1) {
+        const h = list[0];
+        return `${String(h).padStart(2, '0')}:00-${String((h + 1) % 24).padStart(2, '0')}:00`;
+      }
+      const isContiguous = list.every((h, idx) => idx === 0 || h === list[idx - 1] + 1);
+      if (isContiguous) {
+        const start = list[0];
+        const endExclusive = (list[list.length - 1] + 1) % 24;
+        return `${String(start).padStart(2, '0')}:00-${String(endExclusive).padStart(2, '0')}:00`;
+      }
+      return list.map((h) => `${String(h).padStart(2, '0')}:00`).join(', ');
+    };
+    const highlightAmWindow = formatWindowLabel((highlightPeriodDefs.find(p => p.key === 'AM') || {}).hours || []);
+    const highlightPmWindow = formatWindowLabel((highlightPeriodDefs.find(p => p.key === 'PM') || {}).hours || []);
 
     const d1PeaksRanked = getPeakHours(d1DisplayHourly, d1RankingHourly);
     const d2PeaksRanked = getPeakHours(d2DisplayHourly, d2RankingHourly);
@@ -12246,6 +12757,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const peakRankingSourceBadgeHtml = `
       <div style="margin:0 0 8px 0; padding:6px 8px; border-radius:6px; border:1px solid ${isTmrStylePeakSource ? '#90caf9' : '#b7d6dc'}; background:${isTmrStylePeakSource ? '#e3f2fd' : '#f3fbfd'}; color:${isTmrStylePeakSource ? '#0d47a1' : '#0f4e55'}; font-size:0.82em; font-weight:700;">
         Peak hourly source: ${useDatabaseDisplayHourly ? 'Database hourly profile' : 'Calculated hourly profile (hourly not available)'}
+        <div style="font-weight:600; margin-top:4px; opacity:0.95;">Dynamic highlight windows: AM ${highlightAmWindow} | PM ${highlightPmWindow}</div>
       </div>
     `;
 
@@ -12863,6 +13375,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       sourceEl.innerHTML = '<span class="source-pill source-custom-address">Custom Address</span>';
     }
 
+    const setPdfLink = (url) => {
+      const labelEl = document.getElementById('macroDetailPdfLabel');
+      const valueEl = document.getElementById('macroDetailPdfValue');
+      const linkEl = document.getElementById('macroPdfLink');
+      const safeUrl = String(url || '').trim();
+      if (!labelEl || !valueEl || !linkEl) return;
+
+      if (safeUrl) {
+        labelEl.style.display = 'block';
+        valueEl.style.display = 'block';
+        linkEl.href = safeUrl;
+      } else {
+        labelEl.style.display = 'none';
+        valueEl.style.display = 'none';
+        linkEl.href = 'javascript:void(0)';
+      }
+    };
+
     const d1RowLabel = String(detail.d1Label || 'Direction 1').trim();
     const d2RowLabel = String(detail.d2Label || 'Direction 2').trim();
     const qualityEl = document.getElementById('macroDetailQuality');
@@ -12900,6 +13430,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setText('macroDetailD1', d1.toLocaleString());
     setText('macroDetailD2', d2.toLocaleString());
     setText('macroDetailTotal', total.toLocaleString());
+    setPdfLink(detail.pdf_url || '');
 
     // Add peak hour information if available (from trip generation)
     const descEl = document.getElementById('macroDetailDescription');
@@ -13024,6 +13555,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const stateSelect = document.getElementById('quickTiaStateSelect');
     if (stateSelect) {
       stateSelect.addEventListener('change', async () => {
+        updateTripGenerationReferenceSourceUi();
         const stateScope = getQuickTiaSelectedState();
         requestedDataScope = stateScope;
         const label = stateScope === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)';
@@ -13109,7 +13641,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     // Initialize UI components only after authentication
-    if (!isAuthSessionActive()) {
+    if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
       return;
     }
 
@@ -13171,9 +13703,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         const toLocation = (item) => {
           if (!item) return null;
-          const lat = Number(item.lat);
-          const lon = Number(item.lon);
-          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+          const lat = numberOrNull(item.lat);
+          const lon = numberOrNull(item.lon);
+          if (!isValidSearchCoordinatePair(lat, lon)) return null;
           return {
             lat,
             lon,
@@ -13280,7 +13812,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const connectedBeyond5Count = Math.max(0, Number(accessAwareResult.connectedBeyond5Count) || 0);
           const excludedBeyond5Count = Math.max(0, Number(accessAwareResult.excludedBeyond5Count) || 0);
           const excludedWithin5Count = Math.max(0, excludedRefs.length - excludedBeyond5Count);
-          const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.5';
+          const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.0';
 
           if (excludedRefs.length && exclusionSummary && errEl) {
             errEl.innerHTML = `<strong>Note:</strong> ${exclusionSummary}<br><span style="font-size:0.9em;">Connected references shown below are within the validated 5km-radius context.</span>`;
@@ -13650,13 +14182,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const siteCapDaily = Math.max(0, Number(site && site.design_capacity_daily) || 0);
     if (siteCapDaily > 0) return siteCapDaily;
 
-    const sourceUpper = site && site.source ? String(site.source).trim().toUpperCase() : '';
-    if (sourceUpper === 'GOLD COAST') return totalVadt;
-    if (sourceUpper === 'BRISBANE') return totalVadt;
-    if (sourceUpper === 'LOGAN') return totalVadt;
-    if (sourceUpper === 'TOOWOOMBA') return totalVadt;
-    if (sourceUpper === 'NSW') return totalVadt;
-    
+    // Use the site's measured VADT as the fixed capacity anchor when available.
+    // This ensures VCR capacity denominator stays fixed to measured road conditions
+    // while user-adjusted demand changes the VCR numerator appropriately.
+    const measuredSiteVadt = Math.max(0, Number(site && site.vadt) || 0);
+    if (measuredSiteVadt > 0) return measuredSiteVadt;
+
     return totalVadt;
   }
 
@@ -13669,9 +14200,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const totalLanes = Math.max(1, num('D1_Lanes') + num('D2_Lanes'));
     
     if (isTmrStyle) {
-      return TMRCalculator.calculateCapacity(directionalDaily, dirLanes);
+      // Anchor capacity to the site's measured directional VADT (fixed reference), so VCR
+      // denominator stays fixed while the demand numerator changes with user-entered volume.
+      let measuredDirDaily = directionalDaily; // fallback to projected volume
+      if (site) {
+        const siteDir = Number(direction === 1 ? site.d1_vadt : site.d2_vadt) || 0;
+        if (siteDir > 0) {
+          measuredDirDaily = siteDir;
+        } else if (site.directions_weekday && Array.isArray(site.directions_weekday[dirKey])) {
+          const hourlySum = site.directions_weekday[dirKey].reduce((s, v) => s + Math.max(0, Number(v) || 0), 0);
+          if (hourlySum > 0) measuredDirDaily = hourlySum;
+        }
+      }
+      return TMRCalculator.calculateCapacity(measuredDirDaily, dirLanes);
     } else if (source === 'IPSWICH') {
-      const dynamicCapacity = Math.ceil((0.15 * Math.max(0, Number(totalProjectedAadt) || 0)) / 2);
+      const measuredVadt = Math.max(0, Number(site && site.vadt) || 0) || Math.max(0, Number(totalProjectedAadt) || 0);
+      const dynamicCapacity = Math.ceil((0.15 * measuredVadt) / 2);
       return Math.max(IPSWICH_CONSTANTS.CAPACITY_FLOOR, dynamicCapacity);
     } else if (source === 'GOLD COAST') {
       const refCap = getDesignCapacityReferenceDailyVolume(totalProjectedAadt, site);
@@ -13895,8 +14439,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (v === null || Number.isNaN(v) || v < 0) return '';
     if (v <= 0.6) return '#00eb00';
     if (v <= 0.7) return '#add8e6';
-    if (v <= 0.9) return '#ffff00';
-    if (v <= 0.95) return '#ffc896';
+    if (v <= 0.8) return '#ffff00';
+    if (v <= 0.9) return '#ffc896';
     if (v <= 1.0) return '#ffc000';
     return '#c00000';
   }
@@ -13906,8 +14450,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (v === null || Number.isNaN(v) || v < 0) return 'N/A';
     if (v <= 0.60) return 'LOS A';
     if (v <= 0.70) return 'LOS B';
-    if (v <= 0.90) return 'LOS C';
-    if (v <= 0.95) return 'LOS D';
+    if (v <= 0.80) return 'LOS C';
+    if (v <= 0.90) return 'LOS D';
     if (v <= 1.00) return 'LOS E';
     return 'LOS F';
   }
@@ -13923,8 +14467,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     let colorClass = 'vcr-los-a';
     if (value > 1.00) colorClass = 'vcr-los-f';
-    else if (value > 0.95) colorClass = 'vcr-los-e';
-    else if (value > 0.90) colorClass = 'vcr-los-d';
+    else if (value > 0.90) colorClass = 'vcr-los-e';
+    else if (value > 0.80) colorClass = 'vcr-los-d';
     else if (value > 0.70) colorClass = 'vcr-los-c';
     else if (value > 0.60) colorClass = 'vcr-los-b';
 
@@ -13944,6 +14488,60 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     `;
     td.style.fontWeight = '700';
     td.style.background = '#ffffff';
+  }
+
+  function updateIntersectionQueueCapacityCalculator() {
+    const arrivalEl = document.getElementById('arrivalVol');
+    const laneCapEl = document.getElementById('laneCap');
+    const redEl = document.getElementById('redTime');
+    const hvEl = document.getElementById('hvPercent');
+    const vcrEl = document.getElementById('vcrResult');
+    const losEl = document.getElementById('losBadge');
+    const spacingEl = document.getElementById('spacingResult');
+    const queueEl = document.getElementById('queueResult');
+    if (!arrivalEl || !laneCapEl || !redEl || !hvEl || !vcrEl || !losEl || !spacingEl || !queueEl) return;
+
+    const vol = parseFloat(arrivalEl.value) || 0;
+    const cap = parseFloat(laneCapEl.value) || 1;
+    const red = parseFloat(redEl.value) || 0;
+    const hv = (parseFloat(hvEl.value) || 0) / 100;
+
+    const vcr = vol / cap;
+    vcrEl.textContent = vcr.toFixed(2);
+
+    let losClass = 'los-a';
+    let losText = 'LOS A';
+    if (vcr > 1.0) { losClass = 'los-f'; losText = 'LOS F'; }
+    else if (vcr > 0.9) { losClass = 'los-e'; losText = 'LOS E'; }
+    else if (vcr > 0.8) { losClass = 'los-d'; losText = 'LOS D'; }
+    else if (vcr > 0.7) { losClass = 'los-c'; losText = 'LOS C'; }
+    else if (vcr > 0.6) { losClass = 'los-b'; losText = 'LOS B'; }
+
+    losEl.className = `los-badge ${losClass}`;
+    losEl.textContent = losText;
+
+    const dynamicSpacing = (7.0 * (1 - hv)) + (12.0 * hv);
+    spacingEl.textContent = dynamicSpacing.toFixed(2) + 'm';
+
+    const vehPerSec = vol / 3600;
+    const queuedVehicles = vehPerSec * red;
+    const queueLength = queuedVehicles * dynamicSpacing;
+    queueEl.textContent = queueLength.toFixed(1) + 'm';
+  }
+
+  function setupIntersectionQueueCapacityCalculator() {
+    const ids = ['arrivalVol', 'laneCap', 'redTime', 'hvPercent'];
+    const elements = ids.map(id => document.getElementById(id)).filter(Boolean);
+    if (!elements.length) return;
+
+    elements.forEach((el) => {
+      if (el.dataset.intersectionQueueBound === '1') return;
+      el.addEventListener('input', updateIntersectionQueueCapacityCalculator);
+      el.addEventListener('change', updateIntersectionQueueCapacityCalculator);
+      el.dataset.intersectionQueueBound = '1';
+    });
+
+    updateIntersectionQueueCapacityCalculator();
   }
 
   let vcrChartD1Instance = null;
@@ -14161,52 +14759,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       };
     };
 
-    const buildOptions = (maxY) => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+    const buildOptions = (maxY) => buildEngineeringChartOptions({
       layout: { padding: { top: 2, right: 8, bottom: 0, left: 4 } },
       scales: {
         y: {
-          beginAtZero: true,
           suggestedMax: maxY,
+          title: { display: true, text: 'V/C Ratio' },
           ticks: {
             stepSize: 0.2,
-            callback: (v) => Number(v).toFixed(2),
-            color: '#334148'
+            callback: (v) => Number(v).toFixed(2)
           },
           grid: {
-            color: (ctx) => (Number(ctx?.tick?.value) === 1 ? 'rgba(20,20,20,0.28)' : 'rgba(20,20,20,0.12)'),
+            color: (ctx) => (Number(ctx?.tick?.value) === 1 ? 'rgba(20,20,20,0.28)' : '#f1f5f9'),
             lineWidth: (ctx) => (Number(ctx?.tick?.value) === 1 ? 1.4 : 1)
-          },
-          border: { color: '#54646e', width: 1.2 },
-          title: { display: true, text: 'V/C Ratio', color: '#263238', font: { weight: '700' } }
+          }
         },
         x: {
-          grid: { color: 'rgba(20,20,20,0.08)' },
-          border: { color: '#54646e', width: 1.2 },
-          ticks: { color: '#334148', font: { weight: '600' } },
-          title: { display: true, text: 'Period', color: '#263238', font: { weight: '700' } }
+          title: { display: true, text: 'Period' },
+          grid: { display: true, color: '#f1f5f9' }
         }
       },
       plugins: {
-        legend: {
-          position: 'top',
-          align: 'center',
-          labels: {
-            color: '#2f3b42',
-            boxWidth: 30,
-            boxHeight: 10,
-            padding: 12
-          }
-        },
         tooltip: {
-          backgroundColor: 'rgba(18, 24, 28, 0.92)',
-          borderColor: 'rgba(120, 144, 156, 0.55)',
-          borderWidth: 1,
-          titleColor: '#e3edf2',
-          bodyColor: '#e3edf2',
-          padding: 10,
           callbacks: {
             label: (ctx) => {
               const value = ctx.parsed.y;
@@ -14358,60 +14932,36 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       };
     };
 
-    const buildOptions = (titleText, maxY) => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+    const buildOptions = (titleText, maxY) => buildEngineeringChartOptions({
       layout: { padding: { top: 2, right: 8, bottom: 0, left: 4 } },
       scales: {
         y: {
-          beginAtZero: true,
           suggestedMax: maxY,
+          title: { display: true, text: 'Queue Length (m)' },
           ticks: {
             stepSize: maxY >= 1200 ? 200 : 100,
-            color: '#334148',
             callback: (v) => Number(v).toLocaleString('en-AU')
           },
           grid: {
             color: (ctx) => {
               const value = Number(ctx?.tick?.value);
               if (value === 200 || value === 400) return 'rgba(20,20,20,0.24)';
-              return 'rgba(20,20,20,0.11)';
+              return '#f1f5f9';
             },
             lineWidth: (ctx) => {
               const value = Number(ctx?.tick?.value);
               return (value === 200 || value === 400) ? 1.3 : 1;
             }
-          },
-          border: { color: '#54646e', width: 1.2 },
-          title: { display: true, text: 'Queue Length (m)', color: '#263238', font: { weight: '700' } }
+          }
         },
         x: {
-          grid: { color: 'rgba(20,20,20,0.08)' },
-          border: { color: '#54646e', width: 1.2 },
-          ticks: { color: '#334148', font: { weight: '600' } },
-          title: { display: true, text: 'Period', color: '#263238', font: { weight: '700' } }
+          title: { display: true, text: 'Period' },
+          grid: { display: true, color: '#f1f5f9' }
         }
       },
       plugins: {
-        legend: {
-          position: 'top',
-          align: 'center',
-          labels: {
-            color: '#2f3b42',
-            boxWidth: 30,
-            boxHeight: 10,
-            padding: 12
-          }
-        },
         title: { display: false, text: titleText },
         tooltip: {
-          backgroundColor: 'rgba(18, 24, 28, 0.92)',
-          borderColor: 'rgba(120, 144, 156, 0.55)',
-          borderWidth: 1,
-          titleColor: '#e3edf2',
-          bodyColor: '#e3edf2',
-          padding: 10,
           callbacks: {
             label: (ctx) => {
               const value = ctx.parsed.y;
@@ -14478,24 +15028,33 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           { type: 'line', label: 'High 400m', data: labels.map(() => 400), borderColor: CHART_PALETTE.capacity, borderDash: [2, 3], pointRadius: 0, borderWidth: 2 }
         ]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
+      options: buildEngineeringChartOptions({
         scales: {
           y: {
-            beginAtZero: true,
             suggestedMax: maxY,
             title: { display: true, text: 'Queue Length (m)' },
-            grid: { color: 'rgba(120, 130, 140, 0.24)' }
+            ticks: {
+              stepSize: maxY >= 1200 ? 200 : 100,
+              callback: (v) => Number(v).toLocaleString('en-AU')
+            }
           },
           x: {
             title: { display: true, text: 'Hour of Day' },
-            grid: { color: 'rgba(120, 130, 140, 0.24)' }
+            grid: { display: true, color: '#f1f5f9' }
           }
         },
-        plugins: { legend: { position: 'top' } }
-      }
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const value = ctx.parsed.y;
+                if (!Number.isFinite(value)) return `${ctx.dataset.label}: N/A`;
+                return `${ctx.dataset.label}: ${Math.round(value).toLocaleString()} m`;
+              }
+            }
+          }
+        }
+      })
     });
   }
 
@@ -14518,25 +15077,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           { type: 'line', label: 'Capacity 1.00', data: labels.map(() => 1.0), borderColor: CHART_PALETTE.capacity, borderDash: [2, 3], pointRadius: 0, borderWidth: 2 }
         ]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
+      options: buildEngineeringChartOptions({
         scales: {
           y: {
-            beginAtZero: true,
             suggestedMax: maxY,
-            ticks: { callback: (v) => Number(v).toFixed(2) },
             title: { display: true, text: 'V/C Ratio' },
-            grid: { color: 'rgba(120, 130, 140, 0.24)' }
+            ticks: {
+              stepSize: 0.1,
+              callback: (v) => Number(v).toFixed(2)
+            }
           },
           x: {
             title: { display: true, text: 'Hour of Day' },
-            grid: { color: 'rgba(120, 130, 140, 0.24)' }
+            grid: { display: true, color: '#f1f5f9' }
           }
         },
         plugins: {
-          legend: { position: 'top' },
           tooltip: {
             callbacks: {
               label: (ctx) => {
@@ -14548,7 +15104,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             }
           }
         }
-      }
+      })
     });
   }
 
@@ -15000,60 +15556,92 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
-  function buildHourlyDirectionProfile(direction, dailyTotal, hvPct, rtPct, laneCount, rtrYes, metrics, site) {
+  // Austroads default hourly percentage profile (00:00 -> 23:00).
+  const AUSTROADS_DEFAULT_PROFILE = [
+    0.010, 0.008, 0.005, 0.005, 0.012, 0.030, 0.075, 0.085, 0.070, 0.055,
+    0.050, 0.050, 0.055, 0.055, 0.060, 0.075, 0.085, 0.090, 0.055, 0.035,
+    0.025, 0.020, 0.015, 0.010
+  ];
+
+  function getDirectionalHourlySource(siteData, directionKey) {
+    if (!siteData) return null;
+    // Require at least 6 non-zero hours to treat as genuine measured hourly data.
+    // This prevents artificial zero-filled arrays (from non-hourly sources like
+    // Gold Coast, Brisbane, Ipswich) from bypassing the Austroads proportional fallback.
+    const MINIMUM_NONZERO_HOURS = 6;
+    const hasSufficientData = (arr) => {
+      if (!Array.isArray(arr) || arr.length < 24) return false;
+      return arr.filter(v => Number(v) > 0).length >= MINIMUM_NONZERO_HOURS;
+    };
+
+    const directHourly = Array.isArray(siteData.hourly_volumes)
+      ? siteData.hourly_volumes
+      : null;
+    if (directHourly && directHourly.length === 24 && hasSufficientData(directHourly)) {
+      return directHourly.map(v => Math.max(0, Number(v) || 0));
+    }
+
+    if (
+      siteData.directions_weekday
+      && Array.isArray(siteData.directions_weekday[directionKey])
+      && siteData.directions_weekday[directionKey].length === 24
+      && hasSufficientData(siteData.directions_weekday[directionKey])
+    ) {
+      return siteData.directions_weekday[directionKey].map(v => Math.max(0, Number(v) || 0));
+    }
+
+    return null;
+  }
+
+  function generateTargetYearHourlyProfile(siteData, baseYear, targetYear, growthRate, targetAADT, directionKey) {
+    const safeBaseYear = Number(baseYear) || new Date().getFullYear();
+    const safeTargetYear = Number(targetYear) || safeBaseYear;
+    const safeGrowthRate = Number(growthRate) || 0;
+    const safeTargetAADT = Math.max(0, Number(targetAADT) || 0);
+
+    const yearDiff = Math.max(0, safeTargetYear - safeBaseYear);
+    const compoundGrowthFactor = Math.pow(1 + (safeGrowthRate / 100), yearDiff);
+    const sourceHourly = getDirectionalHourlySource(siteData, directionKey);
+
+    if (sourceHourly && sourceHourly.length === 24) {
+      // Scale the measured diurnal shape to match the user's projected directional AADT.
+      // This ensures the VCR numerator responds to user volume adjustments while
+      // preserving the site-specific time-of-day distribution.
+      const rawDailyTotal = sourceHourly.reduce((s, v) => s + Math.max(0, Number(v) || 0), 0);
+      if (rawDailyTotal > 0 && safeTargetAADT > 0) {
+        const scaleFactor = safeTargetAADT / rawDailyTotal;
+        return sourceHourly.map(vol => Math.max(0, Number(vol) || 0) * scaleFactor);
+      }
+      // Fallback: if targetAADT or rawDailyTotal is zero, apply compound growth to raw counts
+      return sourceHourly.map(vol => Math.max(0, Number(vol) || 0) * compoundGrowthFactor);
+    }
+
+    return AUSTROADS_DEFAULT_PROFILE.map(percentage => safeTargetAADT * percentage);
+  }
+
+  function buildHourlyDirectionProfile(direction, dailyTotal, hvPct, rtPct, laneCount, rtrYes, metrics, site, profileOptions = {}) {
     // Builds hourly profile where each hour = dailyTotal * diurnalFactor[hour]
     // This provides hourly volumes for use in SWT calculations
-    const source = String(site ? site.source : '').toUpperCase();
     const directionKey = direction === 1 ? 'GAZETTAL' : 'AGAINST GAZETTAL';
-    
-    const isTmrStyle = isTmrStyleSource(site, directionKey);
-    
-    let hourly;
-    if (isTmrStyle && site && site.directions_weekday && site.directions_weekday[directionKey].length === 24) {
-       // TMR style: scale 24-hour source data to match target daily total
-       const sourceHourly = site.directions_weekday[directionKey].map(v => Number(v) || 0);
-       const sourceTotal = sourceHourly.reduce((a,b)=>a+b, 0);
-       const scale = sourceTotal > 0 ? (dailyTotal / sourceTotal) : 1;
-       // Each hourly[hour] = dailyTotal * (sourceHourly[hour] / sourceTotal)
-       hourly = sourceHourly.map(v => Math.max(0, v * scale));
-    } else {
-       // No measured DB data (< 6 non-zero hours): apply Austroads realistic AU hourly diurnal factors.
-       // Based on typical Brisbane urban arterial patterns (morning peak 8-9am, evening peak 5-6pm).
-       // These factors distribute daily volume proportionally across 24 hours.
-      const amBiasTemplate = [23, 15, 10, 8, 12, 45, 120, 180, 210, 150, 100, 85, 80, 80, 90, 110, 140, 160, 100, 70, 55, 40, 30, 25];
-      const pmBiasTemplate = [22, 14, 9, 7, 10, 40, 100, 140, 160, 140, 110, 95, 90, 85, 100, 130, 180, 210, 140, 85, 60, 42, 32, 26];
 
-      const bias = inferDirectionalPeakBias(site);
-      const directionIsAmBias = Number(direction) === Number(bias && bias.amDirection);
-      const template = directionIsAmBias ? amBiasTemplate : pmBiasTemplate;
-       const templateTotal = template.reduce((sum, value) => sum + (Number(value) || 0), 0);
-       const targetTotal = Math.max(0, Number(dailyTotal) || 0);
+    const baseYear = Number.isFinite(Number(profileOptions.baseYear))
+      ? Number(profileOptions.baseYear)
+      : (Number(num('baseYear')) || new Date().getFullYear());
+    const targetYear = Number.isFinite(Number(profileOptions.targetYear))
+      ? Number(profileOptions.targetYear)
+      : (Number(num('macroOpeningYear')) || baseYear);
+    const growthRate = Number.isFinite(Number(profileOptions.growthRate))
+      ? Number(profileOptions.growthRate)
+      : (Number(num('macroGrowthRate')) || 0);
 
-      const peakHour = directionIsAmBias ? 8 : 17;
-       const templatePeak = Number(template[peakHour]) || 0;
-       const templateNonPeakTotal = Math.max(0, templateTotal - templatePeak);
-      const targetPeakRaw = directionIsAmBias
-         ? Number(metrics && metrics.AM && metrics.AM.total)
-         : Number(metrics && metrics.PM && metrics.PM.total);
-       // metrics.AM.total / metrics.PM.total are 2-hour period totals.
-       // Convert to 1-hour value before pinning a single peak hour.
-       const targetPeakPerHour = Number.isFinite(targetPeakRaw) ? (targetPeakRaw / 2) : 0;
-       const targetPeak = Math.max(0, Math.min(targetTotal, targetPeakPerHour));
-
-       if (templateTotal <= 0 || targetTotal <= 0) {
-         hourly = new Array(24).fill(0);
-       } else if (targetPeak > 0 && templateNonPeakTotal > 0) {
-         const remainingTotal = Math.max(0, targetTotal - targetPeak);
-         const nonPeakScale = remainingTotal / templateNonPeakTotal;
-         hourly = template.map((value, hour) => {
-           if (hour === peakHour) return targetPeak;
-           return Math.max(0, (Number(value) || 0) * nonPeakScale);
-         });
-       } else {
-         const scale = targetTotal / templateTotal;
-         hourly = template.map(value => Math.max(0, (Number(value) || 0) * scale));
-       }
-    }
+    const hourly = generateTargetYearHourlyProfile(
+      site,
+      baseYear,
+      targetYear,
+      growthRate,
+      Math.max(0, Number(dailyTotal) || 0),
+      directionKey
+    );
     
     const profile = {};
     for (let hour = 0; hour < 24; hour += 1) {
@@ -16024,13 +16612,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const sourceUpper = String(site && site.source ? site.source : '').trim().toUpperCase();
     const kpiModelProfileEl = document.getElementById('kpiModelProfile');
     if (kpiModelProfileEl) {
-      const sourceLabel = {
-        'TMR': 'TMR', 'GOLD COAST': 'Gold Coast', 'BRISBANE': 'Brisbane',
-        'IPSWICH': 'Ipswich', 'LOGAN': 'Logan', 'TOOWOOMBA': 'Toowoomba',
-        'NSW': 'NSW', 'CUSTOM UPLOAD': 'Custom Upload', 'TEWANTIN': 'Tewantin'
-      }[sourceUpper] || (sourceUpper || 'Unknown');
-      let profileText = isTmrStyleSource(site) ? `${sourceLabel} (Measured Hourly)` : `${sourceLabel} (Austroads Template)`;
-      if (!sourceUpper && window.selectedTiaData && window.selectedTiaData.type === 'references') profileText = 'Quick Address (Weighted References)';
+      let profileText = 'Template (Austroads Diurnal)';
+      const hasMeasuredHourly = isTmrStyleSource(site);
+      if (sourceUpper === 'TMR') profileText = 'TMR (Measured Hourly + TMR Rules)';
+      else if (sourceUpper === 'GOLD COAST') profileText = 'Gold Coast (CoGC Method)';
+      else if (sourceUpper === 'BRISBANE') profileText = hasMeasuredHourly ? 'Brisbane (Measured Hourly)' : 'Brisbane (Austroads Template)';
+      else if (sourceUpper === 'IPSWICH') profileText = hasMeasuredHourly ? 'Ipswich (Measured Hourly)' : 'Ipswich (Austroads Template)';
+      else if (sourceUpper === 'LOGAN') profileText = hasMeasuredHourly ? 'Logan (Measured Hourly)' : 'Logan (Austroads Template)';
+      else if (sourceUpper === 'TOOWOOMBA') profileText = hasMeasuredHourly ? 'Toowoomba (Measured Hourly)' : 'Toowoomba (Austroads Template)';
+      else if (sourceUpper === 'NSW') profileText = 'NSW (Measured Hourly + State Roads Method)';
+      else if (sourceUpper === 'CUSTOM UPLOAD') profileText = hasMeasuredHourly ? 'Custom Upload (Measured Hourly)' : 'Custom Upload (Austroads Template)';
+      else if (!sourceUpper && window.selectedTiaData && window.selectedTiaData.type === 'references') profileText = 'Quick Address (Weighted References)';
       kpiModelProfileEl.textContent = `Model Profile: ${profileText}`;
     }
     const oneWayMode = txt('roadOperationMode').toUpperCase() === 'ONE-WAY';
@@ -16138,14 +16730,30 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d1RtPct = getRTPercent(1);
     const d2RtPct = getRTPercent(2);
 
-    const d1HourlyProfile = buildHourlyDirectionProfile(1, d1Daily, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES', d1Metrics, site);
-    const d2HourlyProfile = buildHourlyDirectionProfile(2, d2Daily, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES', d2Metrics, site);
+    const d1HourlyProfile = buildHourlyDirectionProfile(1, d1Daily, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES', d1Metrics, site, {
+      baseYear: num('baseYear'),
+      targetYear: num('macroOpeningYear'),
+      growthRate: growthRatePct
+    });
+    const d2HourlyProfile = buildHourlyDirectionProfile(2, d2Daily, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES', d2Metrics, site, {
+      baseYear: num('baseYear'),
+      targetYear: num('macroOpeningYear'),
+      growthRate: growthRatePct
+    });
     lastWorkWindowHourlyProfiles = { d1: d1HourlyProfile, d2: d2HourlyProfile };
 
     // Build base year hourly profiles so the grouped table base-year row also reflects
     // the actual directional diurnal pattern (AM ≠ PM per direction).
-    const d1BaseHourlyProfile = buildHourlyDirectionProfile(1, d1DailyBase, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES', d1BaseMetrics, site);
-    const d2BaseHourlyProfile = buildHourlyDirectionProfile(2, d2DailyBase, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES', d2BaseMetrics, site);
+    const d1BaseHourlyProfile = buildHourlyDirectionProfile(1, d1DailyBase, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES', d1BaseMetrics, site, {
+      baseYear: num('baseYear'),
+      targetYear: num('baseYear'),
+      growthRate: growthRatePct
+    });
+    const d2BaseHourlyProfile = buildHourlyDirectionProfile(2, d2DailyBase, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES', d2BaseMetrics, site, {
+      baseYear: num('baseYear'),
+      targetYear: num('baseYear'),
+      growthRate: growthRatePct
+    });
 
     // Derive period metrics from the actual hourly distribution (peak single-hour per period).
     // This replaces the flat VADT-formula estimates so Grouped Summary, Queue, and VCR
@@ -16662,8 +17270,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const selectedHourlyQueueCustomMinutes = selectedHourlyQueueKey === 'custom' ? getHourlyQueueCustomMinutes() : null;
     const selectedHourlyQueueMeta = getHourlyQueueDurationMeta(selectedHourlyQueueKey);
     refreshHourlyQueueHeaders(selectedHourlyQueueMeta);
-    // Keep SWT aligned with the selected queue wait-time duration.
-    const swtRedTimePerCycle = getSelectedHourlyQueueDurationMinutes(selectedHourlyQueueKey) * 60;
+    // SWT red time is taken from operation-mode input (with duration-derived fallback).
+    const swtRedTimePerCycle = getQueueOperationRedTimeSec(getSelectedHourlyQueueDurationMinutes(selectedHourlyQueueKey) * 60);
     const swtQueuePeriodD1 = { AM: 0, OP: 0, PM: 0, EV: 0 };
     const swtQueuePeriodD2 = { AM: 0, OP: 0, PM: 0, EV: 0 };
     let swtAnomalyHoursD1 = 0;
@@ -17238,7 +17846,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   let savedScenarios = [];
   const SCENARIO_EXCLUDED_CONTROL_IDS = new Set([
     'scenarioNameInput',
-    'loginPin'
+    'loginUser',
+    'loginPassword'
   ]);
 
   function collectScenarioControlState() {
@@ -17632,6 +18241,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     };
   }
 
+  function getQueue95thPercentileFactor(vcr) {
+    const ratio = Math.max(0, Number(vcr) || 0);
+    if (!Number.isFinite(ratio) || ratio <= 0.85) return 1.0;
+    if (ratio >= 0.999) return 2.5;
+
+    const stress = (ratio - 0.85) / 0.15;
+    return 1 + (1.5 * ((Math.exp(stress) - 1) / (Math.E - 1)));
+  }
+
   function calculateMaxBackOfQueue(volumeVph, redTimeSec, satFlowVph, vehicleSpacingM) {
     if (volumeVph <= 0 || redTimeSec <= 0) return 0;
 
@@ -17641,9 +18259,46 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const redTimeHr = redTimeSec / 3600;
     const queueVehicles = (volumeVph * redTimeHr) / (1 - (volumeVph / satFlowVph));
-    const maxQueueMeters = queueVehicles * vehicleSpacingM;
+    const deterministicQueueMeters = queueVehicles * vehicleSpacingM;
+    const vcr = satFlowVph > 0 ? (volumeVph / satFlowVph) : 0;
+    const queue95Factor = getQueue95thPercentileFactor(vcr);
+    const queue95Meters = deterministicQueueMeters * queue95Factor;
 
-    return Math.round(maxQueueMeters) + ' m';
+    return Math.round(queue95Meters) + ' m';
+  }
+
+  function resolveQueueVehicleSpacing(hvPct, isRtrActive) {
+    const hv = Math.max(0, Math.min(1, Number(hvPct) || 0));
+    const spacing = (7.0 * (1 - hv)) + (12.0 * hv);
+    return numberRoundUp(spacing, 2);
+  }
+
+  function syncQueueOperationModeUi(forceDefault) {
+    const modeEl = document.getElementById('queueOperationType');
+    const redEl = document.getElementById('swtRedTime');
+    const hintEl = document.getElementById('queueOperationHint');
+    if (!modeEl || !redEl || !hintEl) return;
+
+    const isSignal = String(modeEl.value || 'workzone') === 'signal';
+    const recommendedRed = isSignal ? 60 : 120;
+
+    if (forceDefault) {
+      redEl.value = String(recommendedRed);
+    }
+
+    if (isSignal) {
+      hintEl.textContent = 'Use red time per cycle, NOT total hourly accumulation. Permanent signalized intersections are commonly around 45-80s red.';
+    } else {
+      hintEl.textContent = 'Use red time per cycle, NOT total hourly accumulation. Temporary work-zone stop/go commonly uses around 120s in a 240s cycle.';
+    }
+  }
+
+  function getQueueOperationRedTimeSec(defaultRedTimeSec) {
+    const fallback = Math.max(1, Number(defaultRedTimeSec) || 120);
+    const redEl = document.getElementById('swtRedTime');
+    const inputValue = redEl ? Number(redEl.value) : NaN;
+    if (!Number.isFinite(inputValue) || inputValue <= 0) return fallback;
+    return Math.max(1, inputValue);
   }
 
   function updateAutoBackOfQueueCalculator({ d1HourlyProfile, d2HourlyProfile, d1Lanes, d2Lanes, d1HvPct, d2HvPct, d1RtPct, d2RtPct, isRtrActive, redTimeSec }) {
@@ -17673,12 +18328,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const satFlowVph = selectedLanes * 1800;
 
     const hvPct = peakDirection === 'D2' ? (Number(d2HvPct) || 0) : (Number(d1HvPct) || 0);
-    const rtPct = peakDirection === 'D2' ? (Number(d2RtPct) || 0) : (Number(d1RtPct) || 0);
-    const lvPct = Math.max(0, 1 - hvPct - rtPct);
-
-    let spacing = (lvPct * 8) + (hvPct * 24) + (rtPct * 69);
-    if (!Number.isFinite(spacing) || spacing <= 0) spacing = 6.36;
-    if (isRtrActive) spacing *= 1.25;
+    const spacing = resolveQueueVehicleSpacing(hvPct, isRtrActive);
 
     const redTime = Math.max(0, Number(redTimeSec) || 0);
 
@@ -17690,7 +18340,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const result = calculateMaxBackOfQueue(peakArrivalVph, redTime, satFlowVph, spacing);
     resultDisplay.textContent = result;
     resultDisplay.style.color = (typeof result === 'string' && result.includes('Warning')) ? 'red' : '#333';
-    setFormulaBelow('queue-result', `Qmax = ((v * R / 3600) / (1 - v/s)) * spacing, with v=${Math.round(peakArrivalVph)}, R=${Math.round(redTime)}s, s=${Math.round(satFlowVph)} vph, spacing=${spacing.toFixed(2)} m`);
+    const vcr = satFlowVph > 0 ? (peakArrivalVph / satFlowVph) : 0;
+    const q95Factor = getQueue95thPercentileFactor(vcr);
+    setFormulaBelow('queue-result', `Q95 = [((v * R / 3600) / (1 - v/s)) * spacing] * F95, with v=${Math.round(peakArrivalVph)}, R=${Math.round(redTime)}s, s=${Math.round(satFlowVph)} vph, spacing=${spacing.toFixed(2)} m, v/c=${numberRoundUp(vcr, 3)}, F95=${numberRoundUp(q95Factor, 3)}`);
   }
 
   // ===== STOP/GO SHUTTLE SIMULATOR LOGIC =====
@@ -19789,6 +20441,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const roadInputData = getDetourManualRoadInput(roadName) || {};
       const speedLimitKmh = Math.max(10, Number(roadInputData.speedLimitKmh) || 60);
       const vpdMethodUsed = (roadInputData && roadInputData.vpdMethod) || 'datapoints';
+      const capInputs = model.capacityInputs || {};
+      const capBaseLaneCapacity = Number(capInputs.baseLaneCapacity);
+      const capLaneWidth = Number(capInputs.laneWidth);
+      const capClearance = Number(capInputs.lateralClearance);
+      const capHvPct = Number(capInputs.heavyVehiclePercent);
+      const capGradeType = String(capInputs.gradeType || 'level');
       const methodBadge = vpdMethodUsed === 'tripgen'
         ? '<span style="font-size:0.72em; color:#2a4045; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:8px; padding:1px 6px; margin-left:4px;">🚗 Trip Generation</span>'
         : '<span style="font-size:0.72em; color:#4a148c; background:#f3e5f5; border:1px solid #ce93d8; border-radius:8px; padding:1px 6px; margin-left:4px;">📡 Datapoints</span>';
@@ -19802,6 +20460,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <p><strong>Total Demand VPD (Base + Target):</strong> ${totalDemandVpd.toLocaleString()} vpd</p>
         <p><strong>Total Demand Peak Hour (80th):</strong> ${totalDemandPeakHourVol.toLocaleString()} vph</p>
         <p><strong>Lane Capacity:</strong> ${totalCapacity.toLocaleString()} vph</p>
+        <p><strong>Capacity Inputs:</strong> Base ${Number.isFinite(capBaseLaneCapacity) ? numberRoundUp(capBaseLaneCapacity, 0) : '-'} vph/lane, ${Number.isFinite(capLaneWidth) ? numberRoundUp(capLaneWidth, 2) : '-'}m lane, ${Number.isFinite(capClearance) ? numberRoundUp(capClearance, 2) : '-'}m clearance, HV ${Number.isFinite(capHvPct) ? numberRoundUp(capHvPct, 1) : '-'}%, ${capGradeType}</p>
         <p><strong>Worst Period VCR:</strong> ${numberRoundUp(maxNewVcr, 2)}${worstPeriod !== '-' ? ` (${worstPeriod})` : ''}</p>
         <p><strong>80th-Hour V/C:</strong> ${numberRoundUp(peakHourVc, 2)}</p>
         <p style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e1ded8;"><strong>${statusEmoji} 80th-Hour Capacity Status:</strong> ${statusText}</p>
@@ -19921,6 +20580,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     syncPedestrianDetourFromTraffic({ skipRecalc: true });
     updateDetourClosureUi();
     updateRouteDistanceDisplay();
+    const hvSuitabilityConfirmed = !!(document.getElementById('detourHvRouteSuitabilityConfirmed') && document.getElementById('detourHvRouteSuitabilityConfirmed').checked);
+    const geometryWarningEl = document.getElementById('detourGeometryWarningText');
+    if (geometryWarningEl) {
+      if (hvSuitabilityConfirmed) {
+        geometryWarningEl.style.display = 'none';
+        geometryWarningEl.innerHTML = '';
+      } else {
+        geometryWarningEl.style.display = 'block';
+        geometryWarningEl.innerHTML = '⚠️ <strong>Geometric Suitability Pending:</strong> Heavy vehicle route suitability has not been confirmed. Capacity/delay outputs do not verify bridge load limits, low-clearance structures, or swept-path compliance. Complete this check in line with AGTTM Part 2 and AGTM Part 12 before finalizing detour adoption.';
+      }
+    }
     const selectedRoadPath = Array.isArray(window.selectedTrafficDetourRoadNames)
       ? window.selectedTrafficDetourRoadNames.map(v => String(v || '').trim()).filter(Boolean)
       : [];
@@ -20102,6 +20772,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const inputVadt = Number(num('VADT')) || 0;
     const inputD1Vadt = dtcaYes ? (Number(num('D1_VADT')) || (inputVadt / 2)) : (inputVadt / 2);
     const inputD2Vadt = dtcaYes ? (Number(num('D2_VADT')) || (inputVadt / 2)) : (inputVadt / 2);
+    const detourLaneWidth = Math.max(2.0, Number((document.getElementById('detourLaneWidth') && document.getElementById('detourLaneWidth').value) || 3.7));
+    const detourLateralClearance = Math.max(0, Number((document.getElementById('detourLateralClearance') && document.getElementById('detourLateralClearance').value) || 2.0));
+    const detourGradeTypeRaw = String((document.getElementById('detourGradeType') && document.getElementById('detourGradeType').value) || 'level').toLowerCase();
+    const detourGradeType = ['level', 'moderate', 'steep'].includes(detourGradeTypeRaw) ? detourGradeTypeRaw : 'level';
+    const detourBaseLaneCapacity = Math.max(500, Math.min(2500, Number((document.getElementById('detourBaseLaneCapacity') && document.getElementById('detourBaseLaneCapacity').value) || 1800)));
+    const detourCapacityHvPercent = Math.max(0, Math.min(100, Math.max(
+      ((Number(getHVPercent(1)) || 0) + (Number(getRTPercent(1)) || 0)) * 100,
+      ((Number(getHVPercent(2)) || 0) + (Number(getRTPercent(2)) || 0)) * 100
+    )));
 
     const primaryD1Profile = getDirectionalProfile(primarySite, 'GAZETTAL', inputD1Vadt);
     const primaryD2Profile = getDirectionalProfile(primarySite, 'AGAINST GAZETTAL', inputD2Vadt);
@@ -20132,7 +20811,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const d1Lanes = laneSplit.d1Lanes;
           const d2Lanes = laneSplit.d2Lanes;
           const defaultDbLanes = Math.max(1, (Number(matchedSite.d1_lanes) || 1) + (Number(matchedSite.d2_lanes) || 1));
-          const perLaneCapacity = Math.max(500, (baseVpd > 0 ? (baseVpd * 0.12) : (Number(matchedSite.vadt || 5000) * 0.12)) / defaultDbLanes);
+          const perLaneCapacity = calculateDetourCapacity(detourLaneWidth, detourLateralClearance, detourCapacityHvPercent, detourGradeType, detourBaseLaneCapacity);
           const totalCapacity = Math.round(perLaneCapacity * lanes);
           detourModels.push({
             site: matchedSite,
@@ -20145,7 +20824,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             d2Lanes,
             d1Profile: sourceD1Profile,
             d2Profile: sourceD2Profile,
-            totalCapacity
+            totalCapacity,
+            capacityInputs: {
+              baseLaneCapacity: detourBaseLaneCapacity,
+              laneWidth: detourLaneWidth,
+              lateralClearance: detourLateralClearance,
+              heavyVehiclePercent: detourCapacityHvPercent,
+              gradeType: detourGradeType
+            }
           });
           return;
         }
@@ -20167,7 +20853,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d2Profile = profile.map(value => Math.max(0, (Number(value) || 0) * 0.5));
         const d1Lanes = Math.max(1, Math.ceil(lanes / 2));
         const d2Lanes = Math.max(1, Math.floor(lanes / 2));
-        const totalCapacity = lanes * 900;
+        const perLaneCapacity = calculateDetourCapacity(detourLaneWidth, detourLateralClearance, detourCapacityHvPercent, detourGradeType, detourBaseLaneCapacity);
+        const totalCapacity = Math.round(perLaneCapacity * lanes);
         detourModels.push({
           site: null,
           roadName,
@@ -20179,7 +20866,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           d2Lanes,
           d1Profile,
           d2Profile,
-          totalCapacity
+          totalCapacity,
+          capacityInputs: {
+            baseLaneCapacity: detourBaseLaneCapacity,
+            laneWidth: detourLaneWidth,
+            lateralClearance: detourLateralClearance,
+            heavyVehiclePercent: detourCapacityHvPercent,
+            gradeType: detourGradeType
+          }
         });
       });
     } else {
@@ -20396,7 +21090,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       if (newVcr > maxNewVcr) maxNewVcr = newVcr;
 
-      periodResults.push({ key: p.key, baseVcr, newVcr, totalDivertedVol, debugMaxBaseD1, debugMaxBaseD2, debugAddedD1, debugAddedD2 });
+      periodResults.push({ key: p.key, baseVcr, newVcr, totalDivertedVol, sourceVol, debugMaxBaseD1, debugMaxBaseD2, debugAddedD1, debugAddedD2 });
     });
 
     // Build transposed table: 3 metric rows × 4 period columns
@@ -20478,6 +21172,47 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     } else {
       warningText.innerHTML = `✅ The selected ${validDetourModels.length} detour segment(s) have sufficient capacity across all periods. Mode: <strong>${diversionBasisText}</strong>.${worstCapacitySnapshot ? ` Capacity model risk: <strong>${worstCapacitySnapshot.risk}</strong>.` : ''}`;
       warningText.style.color = '#2e7d32';
+    }
+
+    // --- POST-DIVERSION TABLE: Remaining traffic on the existing work zone road ---
+    const postDivBody = document.getElementById('postDiversionBody');
+    const postDivHeadRow = document.getElementById('postDiversionHeadRow');
+    const postDivResultsPanel = document.getElementById('postDiversionResults');
+    if (postDivBody && postDivHeadRow && postDivResultsPanel) {
+      const remainingRate = 1 - diversionRate;
+      postDivBody.innerHTML = '';
+      // Always rebuild headers to match current dynamic period definitions
+      postDivHeadRow.innerHTML = '<th style="background: #00897b; color: white; padding: 6px;">Metric</th>';
+      periods.forEach(p => {
+        postDivHeadRow.innerHTML += `<th style="background: #00897b; color: white; padding: 6px;">${p.key}</th>`;
+      });
+
+      // Work zone capacity: use configured lane closure count for oneway, or 1 lane (SLRF) for full closure
+      const totalPrimaryLanes = Math.max(1, (num('D1_Lanes') || 0) + (num('D2_Lanes') || 0));
+      const closedDirLanes = closureType === 'oneway'
+        ? Math.max(1, Number(closedDirection === 'D2' ? num('D2_Lanes') : num('D1_Lanes')) || 1)
+        : totalPrimaryLanes;
+      const laneClosures = closureType === 'oneway' ? Math.min(getSelectedLaneClosureCount(), closedDirLanes - 1) : closedDirLanes;
+      const workZoneLanes = Math.max(1, closedDirLanes - laneClosures);
+      const existingRoadCapacity = detourBaseLaneCapacity * workZoneLanes;
+
+      let remainingVolRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Remaining Volume (vph)</td>';
+      let remainingVcrRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Revised V/C Ratio</td>';
+      let remainingLosRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Revised LOS</td>';
+
+      periodResults.forEach(r => {
+        const remainingVol = Math.max(0, (r.sourceVol || 0) * remainingRate);
+        const revisedVcr = existingRoadCapacity > 0 ? (remainingVol / existingRoadCapacity) : 0;
+        remainingVolRow += `<td style="padding:5px 8px;">${Math.round(remainingVol).toLocaleString()}</td>`;
+        remainingVcrRow += `<td style="padding:5px 8px;">${revisedVcr.toFixed(3)}</td>`;
+        remainingLosRow += `<td style="padding:5px 8px;">${formatVCR(revisedVcr)}</td>`;
+      });
+
+      remainingVolRow += '</tr>';
+      remainingVcrRow += '</tr>';
+      remainingLosRow += '</tr>';
+      postDivBody.innerHTML = remainingVolRow + remainingVcrRow + remainingLosRow;
+      postDivResultsPanel.style.display = 'block';
     }
 
     syncPedestrianDetourFromTraffic({ skipRecalc: true });
@@ -20934,6 +21669,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   // Trigger calculation on page load
   document.addEventListener('DOMContentLoaded', () => {
+    setupIntersectionQueueCapacityCalculator();
+    syncQueueOperationModeUi(false);
     if(typeof calculateAgttmGeometry === 'function') calculateAgttmGeometry();
     calculateASD();
     applyGlobalFormulaAnnotations();
@@ -21097,7 +21834,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // });
   
   // detour inputs also update overlay
-  ['detourSiteSearch','detourDiversionRate','detourClosureType','detourClosedDirection','detourRouteLengthKm','detourAvgSpeedKmh','detourControlledIntCount','detourUncontrolledIntCount','detourControlledDelaySec','detourUncontrolledDelaySec'].forEach(id => {
+  ['detourSiteSearch','detourDiversionRate','detourClosureType','detourClosedDirection','detourHvRouteSuitabilityConfirmed','detourLaneWidth','detourLateralClearance','detourGradeType','detourBaseLaneCapacity','detourRouteLengthKm','detourAvgSpeedKmh','detourControlledIntCount','detourUncontrolledIntCount','detourControlledDelaySec','detourUncontrolledDelaySec'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const syncPedIfLinked = () => {
@@ -21206,7 +21943,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Add listeners to key input fields to reset calculation state when changed
   const keyInputs = document.querySelectorAll('input[id], select[id], textarea[id]');
   keyInputs.forEach(input => {
-    const excludedIds = ['scenarioNameInput', 'loginPin', 'quickTiaSearchAddress', 'macroSiteSearch'];
+    const excludedIds = ['scenarioNameInput', 'loginUser', 'loginPassword', 'quickTiaSearchAddress', 'macroSiteSearch'];
     if (excludedIds.includes(input.id)) return;
     if (input.closest('#scenarioManagerCard') || input.closest('#quickSearchCard')) return;
     
@@ -21816,6 +22553,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return dirs[Math.round(brng / 45) % 8];
   }
 
+  function isValidSearchCoordinatePair(lat, lon) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return false;
+    // Guard against null-island fallback values from malformed geocoder records.
+    if (Math.abs(lat) < 1e-9 && Math.abs(lon) < 1e-9) return false;
+    return true;
+  }
+
   function inferRoadTypeFromText(text) {
     const value = String(text || '').toLowerCase();
     if (!value) return 'unknown';
@@ -21887,9 +22632,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const requestedRoad = extractSearchRoadName(address);
     const toLocation = (item) => {
       if (!item) return null;
-      const lat = Number(item.lat);
-      const lon = Number(item.lon);
-      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+      const lat = numberOrNull(item.lat);
+      const lon = numberOrNull(item.lon);
+      if (!isValidSearchCoordinatePair(lat, lon)) return null;
       return {
         lat,
         lon,
@@ -21944,7 +22689,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   async function reverseGeocodeByCoordinates(lat, lon) {
     const safeLat = Number(lat);
     const safeLon = Number(lon);
-    if (!Number.isFinite(safeLat) || !Number.isFinite(safeLon)) return null;
+    if (!isValidSearchCoordinatePair(safeLat, safeLon)) return null;
 
     const cache = window.__quickReverseGeocodeCache || (window.__quickReverseGeocodeCache = new Map());
     const cacheKey = `${safeLat.toFixed(5)},${safeLon.toFixed(5)}`;
@@ -21998,7 +22743,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function runBackgroundCoordinateFallback(location, typedSearchInput = '') {
     const safeLat = Number(location && location.lat);
     const safeLon = Number(location && location.lon);
-    if (!Number.isFinite(safeLat) || !Number.isFinite(safeLon)) return;
+    if (!isValidSearchCoordinatePair(safeLat, safeLon)) return;
 
     const token = Date.now();
     window.__quickTiaCoordFallbackToken = token;
@@ -22278,7 +23023,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function findBestReferencePoints(userAddress, userLat, userLon, allDatabaseCounters) {
     const userRoadNormalized = normalizeRoadName(userAddress);
-    const BASE_SEARCH_RADIUS_KM = 1.5;
+    const BASE_SEARCH_RADIUS_KM = 1.0;
     const SEARCH_STEP_KM = 1.0;
     const PREFERRED_MAX_RADIUS_KM = 5.0;
     const counters = Array.isArray(allDatabaseCounters)
@@ -22906,6 +23651,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
   }
 
+  function buildWithin5kmFallbackNearbyArray(allSites, maxDistanceMeters = QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS, limit = 3) {
+    const source = Array.isArray(allSites) ? allSites : [];
+    const thresholdMeters = Math.max(0, Number(maxDistanceMeters) || QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS);
+    const maxItems = Math.max(1, Number(limit) || 3);
+    const usedRoads = new Set();
+
+    return source
+      .filter((site) => Number.isFinite(Number(site && site.dist)) && Number(site.dist) > 0 && Number(site.dist) <= thresholdMeters)
+      .sort((a, b) => Number(a.dist) - Number(b.dist))
+      .filter((site) => {
+        const roadName = String((site && site.data && (site.data.road_name || site.data.description)) || '').trim();
+        const roadKey = standardizeRoadName(roadName) || `site:${String(site && site.id ? site.id : '')}`;
+        if (usedRoads.has(roadKey)) return false;
+        usedRoads.add(roadKey);
+        return true;
+      })
+      .slice(0, maxItems)
+      .map((site) => {
+        const payload = {
+          ...(site && site.data ? site.data : {}),
+          latitude: Number(site && site.lat),
+          longitude: Number(site && site.lon)
+        };
+        return [
+          site.id,
+          payload,
+          Number(site.dist),
+          String(site.direction || 'Nearby')
+        ];
+      });
+  }
+
   async function handleAddressSearch(addressQuery) {
     const query = String(addressQuery || '').trim();
     if (!query) {
@@ -23002,7 +23779,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       .map((s) => ({ ...s.data, latitude: s.lat, longitude: s.lon, distanceFromTarget: s.dist / 1000 }));
     if (nearestWithin3Km.length) populateReferencePointsUI(nearestWithin3Km);
 
-    // 3. Fuzzy + spatial matcher (strict 1.5 km)
+    // 3. Fuzzy + spatial matcher (start at 1 km, expand by 1 km until a datapoint is found)
     const targetRoad = location.road || searchRoadName || searchInput;
     const oneWayResult = await applyAutoOneWayModeFromLocation(location.lat, location.lon, targetRoad, {
       notify: false,
@@ -23024,7 +23801,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const connectedWithin5Count = Math.max(0, Number(accessAwareResult.connectedWithin5Count) || 0);
     const connectedBeyond5Count = Math.max(0, Number(accessAwareResult.connectedBeyond5Count) || 0);
 
-    const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.5';
+    const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.0';
+    const within5FallbackRefs = buildWithin5kmFallbackNearbyArray(sites, QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS, 3);
     const beyond5FallbackRefs = buildBeyond5kmFallbackNearbyArray(sites, QUICK_TIA_MAX_CONNECTIVITY_DISTANCE_METERS, 2);
     updateQuickAddressSearchOverlay('Validating road connectivity...', 'Removing references not connected to the searched address road network.', 78);
 
@@ -23036,23 +23814,27 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const beyondRadiusExtra = connectedBeyond5Count > 0 || excludedBeyond5Count > 0
         ? '<br><span style="font-size:0.9em;">Some roads may still connect beyond 5km, but no connected reference is available within the 5km radius.</span>'
         : '';
-      const fallbackReferenceExtra = beyond5FallbackRefs.length
+      const fallbackReferenceExtra = within5FallbackRefs.length
+        ? `<br><span style="font-size:0.9em;">Showing ${within5FallbackRefs.length} nearest datapoint${within5FallbackRefs.length === 1 ? '' : 's'} within 5km as proximity fallback (connectivity not verified).</span>`
+        : (beyond5FallbackRefs.length
         ? `<br><span style="font-size:0.9em;">Showing ${beyond5FallbackRefs.length} nearest datapoint${beyond5FallbackRefs.length === 1 ? '' : 's'} beyond 5km radius as reference only.</span>`
-        : '';
+        : '');
+      const fallbackRefsToDisplay = within5FallbackRefs.length ? within5FallbackRefs : beyond5FallbackRefs;
+      const fallbackIsBeyondRadius = !within5FallbackRefs.length && beyond5FallbackRefs.length > 0;
       document.getElementById('quickTiaError').innerHTML = `${noConnectedMsg}${disconnectedExtra}${beyondRadiusExtra}${fallbackReferenceExtra}`;
       document.getElementById('quickTiaError').style.display = 'block';
       const panelEl = document.getElementById('quickTiaPanel');
       if (panelEl) panelEl.style.display = 'block';
-      if (beyond5FallbackRefs.length) {
-        displayQuickTiaMultipleRefs(searchInput, beyond5FallbackRefs, location.lat, location.lon, false, {
+      if (fallbackRefsToDisplay.length) {
+        displayQuickTiaMultipleRefs(searchInput, fallbackRefsToDisplay, location.lat, location.lon, false, {
           excludedRefs,
           exclusionSummary,
           connectedWithin5Count,
           connectedBeyond5Count,
           excludedWithin5Count: Math.max(0, excludedRefs.length - excludedBeyond5Count),
           excludedBeyond5Count,
-          beyondRadiusFallback: true,
-          fallbackReferenceCount: beyond5FallbackRefs.length
+          beyondRadiusFallback: fallbackIsBeyondRadius,
+          fallbackReferenceCount: fallbackRefsToDisplay.length
         });
       }
       const manualRadio = document.querySelector('input[name="trafficCalcMethod"][value="manual"]');
@@ -23779,6 +24561,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const scenarioKey = scenarioSelect.value;
       const scenarioData = window.tripGenerationScenarios[scenarioKey] || window.tripGenerationScenarios.custom;
+      updateTripGenerationReferenceSourceUi();
       
       console.log('Trip Generation: Selected scenario =', scenarioKey, 'Rate =', scenarioData.rate);
 
@@ -23801,6 +24584,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const rate = Number(document.getElementById('tripRate')?.value) || 0;
       const scenarioKey = document.getElementById('landUseScenario')?.value || 'custom';
       const scenarioData = window.tripGenerationScenarios[scenarioKey] || window.tripGenerationScenarios.custom;
+      const sourceDetails = updateTripGenerationReferenceSourceUi();
       
       console.log('Calculating trip generation: quantity =', quantity, 'rate =', rate, 'scenario =', scenarioKey);
     
@@ -23897,6 +24681,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       
       <div style="background: #fff9e6; border-left: 3px solid #ffc107; padding: 8px; margin-bottom: 10px; font-size: 0.83em; line-height: 1.4;">
         <strong>📍 Scenario:</strong> ${scenarioData.description}<br>
+        <strong>📚 Reference Source:</strong> ${sourceDetails.label}<br>
         <strong>🔀 Directional Split:</strong> ${inboundPercent.toFixed(0)}% In / ${outboundPercent.toFixed(0)}% Out (AM Peak)
       </div>
     `;
@@ -23935,7 +24720,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       peakPM_Out,
       scenario: scenarioKey,
       quantity,
-      rate
+      rate,
+      referenceSourceKey: sourceDetails.key,
+      referenceSourceLabel: sourceDetails.label,
+      referenceSourceShort: sourceDetails.shortLabel
     };
     } catch (error) {
       console.error('Error in calculateTripGeneration:', error);
@@ -23960,6 +24748,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Get the stored calculation data
     const data = window.manualTrafficGenData || {};
     const scenarioData = window.tripGenerationScenarios[data.scenario] || window.tripGenerationScenarios.custom;
+    const referenceSourceLabel = String(data.referenceSourceLabel || getTripGenerationReferenceSourceDetails().label || '').trim();
     
     // Apply total VADT
     mainVadtField.value = String(generatedVadt);
@@ -23987,7 +24776,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     showCustomAddressDetails({
       siteId: 'CUSTOM ADDRESS',
       roadName: currentAddress,
-      description: `Manual traffic generation calculation (${generatedVadt} total trips/day from ${data.quantity} ${scenarioData.unit})`,
+      description: `Manual traffic generation calculation (${generatedVadt} total trips/day from ${data.quantity} ${scenarioData.unit})${referenceSourceLabel ? ` [${referenceSourceLabel}]` : ''}`,
       countYear: 'Manual calculation',
       d1Label: getCurrentDirectionalLabelContext().d1Raw,
       d2Label: getCurrentDirectionalLabelContext().d2Raw,
@@ -24002,7 +24791,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       peakAM_Out: data.peakAM_Out,
       peakPM_In: data.peakPM_In,
       peakPM_Out: data.peakPM_Out,
-      scenario: scenarioData.description
+      scenario: `${scenarioData.description}${referenceSourceLabel ? ` | Source: ${referenceSourceLabel}` : ''}`
     });
     
     // Build detailed alert message
@@ -24043,6 +24832,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     console.log('Trip Generation: Initializing on DOMContentLoaded');
     // Small delay to ensure all elements are ready
     setTimeout(function() {
+      updateTripGenerationReferenceSourceUi();
       const scenarioSelect = document.getElementById('landUseScenario');
       if (scenarioSelect) {
         console.log('Trip Generation: Initial scenario =', scenarioSelect.value);
@@ -24120,10 +24910,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     const quickSearchAddressEl = document.getElementById('quickTiaSearchAddress');
+    const manualRefSource = String(window.manualTrafficGenData && window.manualTrafficGenData.referenceSourceLabel || '').trim();
     
     let descriptionText;
     if (selectedMethod === 'manual') {
-      descriptionText = `Manual traffic generation calculation (${window.manualTrafficGenData?.totalTrips || 0} total trips/day)`;
+      descriptionText = `Manual traffic generation calculation (${window.manualTrafficGenData?.totalTrips || 0} total trips/day)${manualRefSource ? ` [${manualRefSource}]` : ''}`;
     } else if (isOneWayApplied) {
       descriptionText = `Calculated from TMR datapoint or specific council datapoint (one-way adjusted at ${Number(window.selectedTiaData.oneWayPercent) || 100}% of selected datapoint AADT)`;
     } else {
@@ -24208,7 +24999,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }, { once: true });
 
     setTimeout(() => {
-      if (isAuthSessionActive()) {
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
         const quickInput = getQuickTiaInputElement();
         if (quickInput) {
           try {
@@ -24514,5 +25305,7 @@ const LoganTrafficEngine = (function() {
 <script src="tia-shared-sync.js"></script>
 </body>
 </html>
+
+
 
 

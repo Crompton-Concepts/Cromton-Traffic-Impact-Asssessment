@@ -4021,6 +4021,7 @@
           <div id="macroDetailD1Label" style="font-weight:700;">D1 VADT:</div><div id="macroDetailD1">-</div>
           <div id="macroDetailD2Label" style="font-weight:700;">D2 VADT:</div><div id="macroDetailD2">-</div>
           <div style="font-weight:700;">Total VADT:</div><div id="macroDetailTotal">-</div>
+          <div id="macroDetailPdfLabel" style="font-weight:700; display:none;">PDF Report:</div><div id="macroDetailPdfValue" style="display:none;"><a id="macroPdfLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="color:#0056b3; text-decoration:none;">Open PDF Report</a></div>
         </div>
         <div id="macroDetailDirInfo" style="display:none; margin-top:10px; background:#f0f7ff; border:1px solid #90caf9; border-radius:6px; padding:8px 10px;">
           <div style="font-size:0.78em; font-weight:700; color:#1565c0; margin-bottom:6px;">&#x1F9ED; Directional Orientation (relative to road survey direction)</div>
@@ -4038,7 +4039,6 @@
           <div id="macroDetailDirNote" style="font-size:0.72em; color:#546e7a; margin-top:5px;"></div>
         </div>
       </div>
-
       <div style="margin-top: 10px;">
         <h3 style="margin: 0 0 6px 0; color: #1f5e63; font-size: 1rem;">Site Location </h3>
         <p id="macroLocationHelp" style="font-size: 0.85em; color:#555; margin: 0 0 8px 0;">Select a site from search or click a marker to auto-fill inputs.</p>
@@ -11050,6 +11050,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const hvPercentDirect = normalizePercentValue(hvPercentDirectRaw);
       const hvPercent = hvPercentDirect !== null ? hvPercentDirect : normalizePercentValue(isLogan ? calcLoganHvPercent(props) : null);
       const roadClass = normalizeRoadClass(props['ROAD_CLASS'] || props['ROAD_TYPE'] || props['Road Type'] || props['ROAD TYPE'] || props['road type'] || props['CLASSIFICATION'] || props['ROAD CATEGORY'] || 'tmr');
+      const pdfUrl = String(firstDefinedValue(
+        props['PDF_URL'],
+        props['pdf_url'],
+        props['PDF'],
+        props['pdf']
+      ) || '').trim();
       const designCapacityDaily = Math.max(0, Number(props['DESIGN_CAPACITY_DAILY'] || props['CAPACITY_DAILY'] || props['CAPACITY_REF_DAILY'] || props['ROAD_CAPACITY_DAILY'] || 0));
       const totalVadtFromProps = parseVolumeValue(firstDefinedValue(
         props['VADT'],
@@ -11128,6 +11134,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           vadt_estimate_note: '',
           growth_rate: growthRate,
           hv_percent: hvPercent,
+          pdf_url: pdfUrl,
           road_class: roadClass,
           design_capacity_daily: designCapacityDaily,
           d1_lanes: d1Lanes,
@@ -11227,6 +11234,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (d1VadtFromProps || d2VadtFromProps) site.direction_split_mode = 'provided';
       if (!site.hv_percent && hvPercent) site.hv_percent = hvPercent;
       if (!site.growth_rate && growthRate) site.growth_rate = growthRate;
+      if (!site.pdf_url && pdfUrl) site.pdf_url = pdfUrl;
       if (!site.road_class && roadClass) site.road_class = roadClass;
       if (!site.count_day_of_week && countDayOfWeek) site.count_day_of_week = countDayOfWeek;
       if (!site.design_capacity_daily && designCapacityDaily > 0) site.design_capacity_daily = designCapacityDaily;
@@ -11981,6 +11989,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       el.innerHTML = `<span class="source-pill source-${classSuffix}">${source}</span>`;
     };
 
+    const setPdfLink = (url) => {
+      const labelEl = document.getElementById('macroDetailPdfLabel');
+      const valueEl = document.getElementById('macroDetailPdfValue');
+      const linkEl = document.getElementById('macroPdfLink');
+      const safeUrl = String(url || '').trim();
+      if (!labelEl || !valueEl || !linkEl) return;
+
+      if (safeUrl) {
+        labelEl.style.display = 'block';
+        valueEl.style.display = 'block';
+        linkEl.href = safeUrl;
+      } else {
+        labelEl.style.display = 'none';
+        valueEl.style.display = 'none';
+        linkEl.href = 'javascript:void(0)';
+      }
+    };
+
     const setQualityBadge = () => {
       const el = document.getElementById('macroDetailQuality');
       if (!el) return;
@@ -12038,6 +12064,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setText('macroDetailD2', d2.toLocaleString());
     setText('macroDetailTotal', vadt.toLocaleString());
 
+    setPdfLink(data.pdf_url);
     // --- Gazettal direction compass indicator ---
     (function() {
       const dirInfoEl    = document.getElementById('macroDetailDirInfo');
@@ -13352,6 +13379,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       sourceEl.innerHTML = '<span class="source-pill source-custom-address">Custom Address</span>';
     }
 
+    const setPdfLink = (url) => {
+      const labelEl = document.getElementById('macroDetailPdfLabel');
+      const valueEl = document.getElementById('macroDetailPdfValue');
+      const linkEl = document.getElementById('macroPdfLink');
+      const safeUrl = String(url || '').trim();
+      if (!labelEl || !valueEl || !linkEl) return;
+
+      if (safeUrl) {
+        labelEl.style.display = 'block';
+        valueEl.style.display = 'block';
+        linkEl.href = safeUrl;
+      } else {
+        labelEl.style.display = 'none';
+        valueEl.style.display = 'none';
+        linkEl.href = 'javascript:void(0)';
+      }
+    };
+
     const d1RowLabel = String(detail.d1Label || 'Direction 1').trim();
     const d2RowLabel = String(detail.d2Label || 'Direction 2').trim();
     const qualityEl = document.getElementById('macroDetailQuality');
@@ -13389,6 +13434,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setText('macroDetailD1', d1.toLocaleString());
     setText('macroDetailD2', d2.toLocaleString());
     setText('macroDetailTotal', total.toLocaleString());
+    setPdfLink(detail.pdf_url || '');
 
     // Add peak hour information if available (from trip generation)
     const descEl = document.getElementById('macroDetailDescription');
