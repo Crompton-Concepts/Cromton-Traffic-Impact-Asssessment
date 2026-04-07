@@ -4021,7 +4021,7 @@
           <div id="macroDetailD1Label" style="font-weight:700;">D1 VADT:</div><div id="macroDetailD1">-</div>
           <div id="macroDetailD2Label" style="font-weight:700;">D2 VADT:</div><div id="macroDetailD2">-</div>
           <div style="font-weight:700;">Total VADT:</div><div id="macroDetailTotal">-</div>
-          <div id="macroDetailPdfLabel" style="font-weight:700; display:none;">PDF Report:</div><div id="macroDetailPdfValue" style="display:none;"><a id="macroPdfLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="color:#0056b3; text-decoration:none;">Open PDF Report</a></div>
+          <div id="macroDetailPdfLabel" style="font-weight:700;">PDF Report:</div><div id="macroDetailPdfValue"><a id="macroPdfLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="color:#6b7280; text-decoration:none; pointer-events:none; opacity:0.75;">No PDF available for this site</a></div>
         </div>
         <div id="macroDetailDirInfo" style="display:none; margin-top:10px; background:#f0f7ff; border:1px solid #90caf9; border-radius:6px; padding:8px 10px;">
           <div style="font-size:0.78em; font-weight:700; color:#1565c0; margin-bottom:6px;">&#x1F9ED; Directional Orientation (relative to road survey direction)</div>
@@ -8548,6 +8548,66 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return `./${cleanName}`;
   }
 
+  function normalizePdfUrl(rawUrl) {
+    const value = String(rawUrl || '').replace(/^"+|"+$/g, '').trim();
+    if (!value) return '';
+
+    let candidate = '';
+    if (/^\/\//.test(value)) {
+      candidate = `${window.location.protocol}${value}`;
+    } else if (/^https?:\/\//i.test(value)) {
+      candidate = window.location.protocol === 'https:'
+        ? value.replace(/^http:\/\//i, 'https://')
+        : value;
+    } else if (/^[a-z0-9.-]+\.[a-z]{2,}(?:\/|$)/i.test(value)) {
+      candidate = `https://${value}`;
+    } else if (/\.pdf(?:[?#].*)?$/i.test(value)) {
+      try {
+        candidate = new URL(value, window.location.href).toString();
+      } catch (_) {
+        return '';
+      }
+    } else {
+      return '';
+    }
+
+    try {
+      const parsed = new URL(candidate);
+      return /\.pdf$/i.test(parsed.pathname) ? parsed.toString() : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function renderMacroPdfLink(url) {
+    const labelEl = document.getElementById('macroDetailPdfLabel');
+    const valueEl = document.getElementById('macroDetailPdfValue');
+    const linkEl = document.getElementById('macroPdfLink');
+    if (!labelEl || !valueEl || !linkEl) return;
+
+    const safeUrl = normalizePdfUrl(url);
+    labelEl.style.display = 'block';
+    valueEl.style.display = 'block';
+
+    if (safeUrl) {
+      linkEl.href = safeUrl;
+      linkEl.textContent = 'Open PDF Report';
+      linkEl.title = 'Open source PDF report in a new tab';
+      linkEl.style.pointerEvents = 'auto';
+      linkEl.style.opacity = '1';
+      linkEl.style.color = '#0056b3';
+      linkEl.removeAttribute('aria-disabled');
+    } else {
+      linkEl.href = 'javascript:void(0)';
+      linkEl.textContent = 'No PDF available for this site';
+      linkEl.title = 'No PDF report published for this record';
+      linkEl.style.pointerEvents = 'none';
+      linkEl.style.opacity = '0.75';
+      linkEl.style.color = '#6b7280';
+      linkEl.setAttribute('aria-disabled', 'true');
+    }
+  }
+
   function bindRepoSafeLinks() {
     const formulaLink = document.getElementById('formulaViewLink');
     if (formulaLink) formulaLink.href = resolveRepoRelativePath('index_formulas.html');
@@ -10726,6 +10786,36 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return null;
     };
 
+    const extractPdfUrl = (props) => {
+      const directUrl = normalizePdfUrl(firstDefinedValue(
+        props['PDF_URL'],
+        props['pdf_url'],
+        props['PDF'],
+        props['pdf'],
+        props['PDF_LINK'],
+        props['pdf_link'],
+        props['PDF Link'],
+        props['Report PDF'],
+        props['REPORT_PDF'],
+        props['document_url'],
+        props['DOCUMENT_URL']
+      ));
+      if (directUrl) return directUrl;
+
+      for (const [key, value] of Object.entries(props || {})) {
+        if (!/\b(pdf|report|document|attachment|file)\b/i.test(String(key))) continue;
+        const normalized = normalizePdfUrl(value);
+        if (normalized) return normalized;
+      }
+
+      for (const value of Object.values(props || {})) {
+        const normalized = normalizePdfUrl(value);
+        if (normalized) return normalized;
+      }
+
+      return '';
+    };
+
     const parseVolumeValue = (value) => {
       if (value === null || value === undefined) return null;
       if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -11050,12 +11140,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const hvPercentDirect = normalizePercentValue(hvPercentDirectRaw);
       const hvPercent = hvPercentDirect !== null ? hvPercentDirect : normalizePercentValue(isLogan ? calcLoganHvPercent(props) : null);
       const roadClass = normalizeRoadClass(props['ROAD_CLASS'] || props['ROAD_TYPE'] || props['Road Type'] || props['ROAD TYPE'] || props['road type'] || props['CLASSIFICATION'] || props['ROAD CATEGORY'] || 'tmr');
-      const pdfUrl = String(firstDefinedValue(
-        props['PDF_URL'],
-        props['pdf_url'],
-        props['PDF'],
-        props['pdf']
-      ) || '').trim();
+      const pdfUrl = extractPdfUrl(props);
       const designCapacityDaily = Math.max(0, Number(props['DESIGN_CAPACITY_DAILY'] || props['CAPACITY_DAILY'] || props['CAPACITY_REF_DAILY'] || props['ROAD_CAPACITY_DAILY'] || 0));
       const totalVadtFromProps = parseVolumeValue(firstDefinedValue(
         props['VADT'],
@@ -11989,24 +12074,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       el.innerHTML = `<span class="source-pill source-${classSuffix}">${source}</span>`;
     };
 
-    const setPdfLink = (url) => {
-      const labelEl = document.getElementById('macroDetailPdfLabel');
-      const valueEl = document.getElementById('macroDetailPdfValue');
-      const linkEl = document.getElementById('macroPdfLink');
-      const safeUrl = String(url || '').trim();
-      if (!labelEl || !valueEl || !linkEl) return;
-
-      if (safeUrl) {
-        labelEl.style.display = 'block';
-        valueEl.style.display = 'block';
-        linkEl.href = safeUrl;
-      } else {
-        labelEl.style.display = 'none';
-        valueEl.style.display = 'none';
-        linkEl.href = 'javascript:void(0)';
-      }
-    };
-
     const setQualityBadge = () => {
       const el = document.getElementById('macroDetailQuality');
       if (!el) return;
@@ -12064,7 +12131,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setText('macroDetailD2', d2.toLocaleString());
     setText('macroDetailTotal', vadt.toLocaleString());
 
-    setPdfLink(data.pdf_url);
+    renderMacroPdfLink(data.pdf_url);
     // --- Gazettal direction compass indicator ---
     (function() {
       const dirInfoEl    = document.getElementById('macroDetailDirInfo');
@@ -13379,24 +13446,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       sourceEl.innerHTML = '<span class="source-pill source-custom-address">Custom Address</span>';
     }
 
-    const setPdfLink = (url) => {
-      const labelEl = document.getElementById('macroDetailPdfLabel');
-      const valueEl = document.getElementById('macroDetailPdfValue');
-      const linkEl = document.getElementById('macroPdfLink');
-      const safeUrl = String(url || '').trim();
-      if (!labelEl || !valueEl || !linkEl) return;
-
-      if (safeUrl) {
-        labelEl.style.display = 'block';
-        valueEl.style.display = 'block';
-        linkEl.href = safeUrl;
-      } else {
-        labelEl.style.display = 'none';
-        valueEl.style.display = 'none';
-        linkEl.href = 'javascript:void(0)';
-      }
-    };
-
     const d1RowLabel = String(detail.d1Label || 'Direction 1').trim();
     const d2RowLabel = String(detail.d2Label || 'Direction 2').trim();
     const qualityEl = document.getElementById('macroDetailQuality');
@@ -13434,7 +13483,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setText('macroDetailD1', d1.toLocaleString());
     setText('macroDetailD2', d2.toLocaleString());
     setText('macroDetailTotal', total.toLocaleString());
-    setPdfLink(detail.pdf_url || '');
+    renderMacroPdfLink(detail.pdf_url || '');
 
     // Add peak hour information if available (from trip generation)
     const descEl = document.getElementById('macroDetailDescription');
