@@ -13885,6 +13885,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const geocodeOnline = async (address) => {
           const requestedRoad = extractSearchRoadName(address);
           const requestedHouseNumber = extractSearchHouseNumber(address);
+          const preciseCandidate = await fetchPreciseAddressCandidate(address);
+          if (preciseCandidate) return preciseCandidate;
           const stateHints = getQuickTiaStateSearchHints();
           const queries = [address, ...stateHints.map((hint) => `${address}, ${hint}`), `${address}, Australia`];
           for (const q of queries) {
@@ -22793,6 +22795,61 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return formattedResolved || formattedTyped;
   }
 
+  async function fetchPreciseAddressCandidate(address) {
+    const query = String(address || '').trim();
+    if (!query) return null;
+
+    const requestedHouseNumber = extractSearchHouseNumber(query);
+    if (!requestedHouseNumber) return null;
+
+    const url = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=pjson&maxLocations=5&sourceCountry=AUS&singleLine=${encodeURIComponent(query)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 9000);
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'Accept-Language': 'en-AU,en;q=0.9' }
+      });
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const candidates = Array.isArray(data && data.candidates) ? data.candidates : [];
+      if (!candidates.length) return null;
+
+      const requestedRoad = extractSearchRoadName(query);
+      const ranked = candidates
+        .map((candidate) => {
+          const candidateAddress = String(candidate && candidate.address ? candidate.address : '').trim();
+          const candidateHouseNumber = extractSearchHouseNumber(candidateAddress);
+          const candidateRoad = extractSearchRoadName(candidateAddress);
+          let score = Number(candidate && candidate.score) || 0;
+          if (requestedRoad) score += isSameRoad(requestedRoad, candidateRoad) ? 35 : -20;
+          if (requestedHouseNumber) score += candidateHouseNumber === requestedHouseNumber ? 60 : -80;
+          return { candidate, score };
+        })
+        .sort((a, b) => b.score - a.score);
+
+      const best = ranked.length ? ranked[0].candidate : null;
+      const lat = numberOrNull(best && best.location && best.location.y);
+      const lon = numberOrNull(best && best.location && best.location.x);
+      if (!isValidSearchCoordinatePair(lat, lon)) return null;
+
+      const bestAddress = String(best && best.address ? best.address : query).trim();
+      return {
+        lat,
+        lon,
+        displayName: bestAddress,
+        road: extractSearchRoadName(bestAddress),
+        houseNumber: extractSearchHouseNumber(bestAddress),
+        provider: 'ArcGIS World Geocoding'
+      };
+    } catch (_err) {
+      return null;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   function getBearingDirection(lat1, lon1, lat2, lon2) {
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const l1 = lat1 * Math.PI / 180;
@@ -22882,6 +22939,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   async function geocodeAddress(address) {
     const requestedRoad = extractSearchRoadName(address);
     const requestedHouseNumber = extractSearchHouseNumber(address);
+    const preciseCandidate = await fetchPreciseAddressCandidate(address);
+    if (preciseCandidate) return preciseCandidate;
     const toLocation = (item) => {
       if (!item) return null;
       const lat = numberOrNull(item.lat);
