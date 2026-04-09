@@ -134,6 +134,249 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   }
 
 
+def _normalize_title_key(value: Any) -> str:
+  text = _safe_text(value, "").lower()
+  text = re.sub(r"[^a-z0-9]+", " ", text)
+  return re.sub(r"\s+", " ", text).strip()
+
+
+def _title_tokens(value: Any) -> set[str]:
+  ignored = {
+    "the", "and", "for", "with", "from", "table", "chart", "analysis",
+    "summary", "detailed", "traffic", "results", "report",
+  }
+  return {token for token in _normalize_title_key(value).split() if token and token not in ignored}
+
+
+def _mapping_to_table(title: str, data: Any, key_label: str, value_label: str) -> dict[str, Any]:
+  if not isinstance(data, dict):
+    return {"title": title, "columns": [key_label, value_label], "rows": []}
+  rows = [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in data.items()]
+  return {"title": title, "columns": [key_label, value_label], "rows": rows}
+
+
+def _build_report_tables(payload: dict[str, Any]) -> list[dict[str, Any]]:
+  inputs = payload.get("inputs", {}) if isinstance(payload.get("inputs"), dict) else {}
+  results = payload.get("results", {}) if isinstance(payload.get("results"), dict) else {}
+  payload_tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+
+  tables: list[dict[str, Any]] = []
+  if inputs:
+    tables.append(_mapping_to_table("Analysis Parameters", inputs, "Parameter", "Value"))
+  if results:
+    tables.append(_mapping_to_table("Summary of Computed Results", results, "Metric", "Value"))
+  tables.extend(table for table in payload_tables if isinstance(table, dict))
+  return tables
+
+
+def _analyze_table_data(table_data: dict[str, Any]) -> dict[str, Any]:
+  columns = table_data.get("columns", []) if isinstance(table_data.get("columns"), list) else []
+  rows = table_data.get("rows", []) if isinstance(table_data.get("rows"), list) else []
+
+  cleaned_rows: list[list[str]] = []
+  numeric_cells: list[tuple[float, str, str]] = []
+  first_column_labels: list[str] = []
+
+  for row in rows:
+    if not isinstance(row, list) or not row:
+      continue
+    cleaned_row = [_safe_text(cell, "-") for cell in row]
+    cleaned_rows.append(cleaned_row)
+    if cleaned_row and cleaned_row[0] not in {"-", ""}:
+      first_column_labels.append(cleaned_row[0])
+
+    for idx, cell in enumerate(cleaned_row):
+      if idx == 0:
+        continue
+      num = _to_float(cell)
+      if num is None:
+        continue
+      row_label = cleaned_row[0] if cleaned_row else f"Row {len(cleaned_rows)}"
+      column_label = _safe_text(columns[idx], f"Column {idx + 1}") if idx < len(columns) else f"Column {idx + 1}"
+      numeric_cells.append((num, row_label, column_label))
+
+  top_numeric = sorted(numeric_cells, key=lambda item: item[0], reverse=True)[:3]
+  bottom_numeric = sorted(numeric_cells, key=lambda item: item[0])[:2]
+  distinct_labels = list(dict.fromkeys(first_column_labels))
+
+  return {
+    "title": _safe_text(table_data.get("title"), "Untitled Table"),
+    "columns": columns,
+    "rows": cleaned_rows,
+    "row_count": len(cleaned_rows),
+    "column_count": len(columns) if columns else max((len(row) for row in cleaned_rows), default=0),
+    "numeric_count": len(numeric_cells),
+    "numeric_min": min((cell[0] for cell in numeric_cells), default=None),
+    "numeric_max": max((cell[0] for cell in numeric_cells), default=None),
+    "top_numeric": top_numeric,
+    "bottom_numeric": bottom_numeric,
+    "labels": distinct_labels[:6],
+    "sample_rows": cleaned_rows[:6],
+  }
+
+
+def _summarize_table_for_prompt(table_data: dict[str, Any]) -> dict[str, Any]:
+  analysis = _analyze_table_data(table_data)
+  top_cells = [
+    {
+      "value": value,
+      "row_label": row_label,
+      "column_label": column_label,
+    }
+    for value, row_label, column_label in analysis["top_numeric"]
+  ]
+
+  return {
+    "title": analysis["title"],
+    "columns": analysis["columns"][:12],
+    "row_count": analysis["row_count"],
+    "column_count": analysis["column_count"],
+    "numeric_count": analysis["numeric_count"],
+    "numeric_min": analysis["numeric_min"],
+    "numeric_max": analysis["numeric_max"],
+    "labels": analysis["labels"],
+    "sample_rows": analysis["sample_rows"],
+    "top_numeric_cells": top_cells,
+  }
+
+
+def _build_table_scenario_text(title: str) -> str:
+  title_key = _normalize_title_key(title)
+  if "summary of computed results" in title_key:
+    return (
+      "These controlling outputs typically emerge when directional demand, lane closure constraints, and work-zone control delays align during the peak operating period. "
+      "A high queue or V/C outcome usually signals that short disturbances, heavy-vehicle platoons, or an extended stop-go cycle can rapidly push the corridor into unstable operation."
+    )
+  if "analysis parameters" in title_key or "input" in title_key:
+    return (
+      "This parameter set becomes critical when the field operating conditions differ from the assumed road mode, growth rate, or lane availability. "
+      "Any departure between assumed inputs and actual site conditions should be checked first because it can materially shift queue and V/C outcomes."
+    )
+  if "queue" in title_key and "hourly" in title_key:
+    return (
+      "Hourly queue stress is usually concentrated in the hours where arrival demand exceeds discharge opportunities during lane closure or stop-go control. "
+      "The controlling condition often occurs when queue storage from one hour is not fully recovered before the next peak hour begins."
+    )
+  if "queue" in title_key:
+    return (
+      "Elevated queue conditions commonly occur when temporary traffic control phases, reduced lane capacity, or strong directional peaks limit discharge opportunities. "
+      "This is the table to review when assessing whether queue storage may extend into upstream accesses, intersections, or sensitive frontages."
+    )
+  if "vcr" in title_key or "los" in title_key:
+    return (
+      "High V/C conditions occur when effective work-zone capacity is constrained by lane closure, heavy vehicles, turning friction, or peak directional loading. "
+      "Values near or above practical capacity indicate the network has limited resilience, so relatively minor disturbances can trigger disproportionate delay and recovery time."
+    )
+  if "detour" in title_key or "diversion" in title_key:
+    return (
+      "Detour pressure becomes material when diverted traffic is reassigned to roads with limited spare capacity during the same peak period as the primary corridor impact. "
+      "These conditions are most important where side-road intersections, local access, or school and freight activity are already operating close to their normal thresholds."
+    )
+  if "grouped directional summary" in title_key or "directional" in title_key:
+    return (
+      "Directional imbalance becomes important when one travel direction attracts a dominant commuter, freight, or school-period demand profile. "
+      "That imbalance often explains why one carriageway controls queue and V/C risk even though the combined daily volume appears reasonable at corridor level."
+    )
+  return (
+    "The conditions reflected in this table usually become important when multiple moderate effects combine within the same operating window. "
+    "Review the controlling rows and periods together rather than in isolation so the mitigation response remains aligned with the actual operational trigger."
+  )
+
+
+def _build_fallback_table_analysis(table_data: dict[str, Any]) -> dict[str, str]:
+  analysis = _analyze_table_data(table_data)
+  title = analysis["title"]
+
+  summary_parts = [
+    f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
+  ]
+  if analysis["labels"]:
+    summary_parts.append(f"The leading labels cover {', '.join(analysis['labels'][:4])}.")
+  if analysis["numeric_count"]:
+    summary_parts.append(
+      f"Reported numeric values range from {_format_number(analysis['numeric_min'], 2)} to {_format_number(analysis['numeric_max'], 2)}."
+    )
+  if analysis["top_numeric"]:
+    top_value, row_label, column_label = analysis["top_numeric"][0]
+    summary_parts.append(
+      f"The strongest reported value is {_format_number(top_value, 2)} for {row_label} in {column_label}."
+    )
+
+  chart_caption = (
+    f"This chart highlights the key pattern for {title.lower()} so the controlling periods can be identified before reviewing the detailed table below."
+  )
+
+  return {
+    "title": title,
+    "summary": " ".join(summary_parts),
+    "scenario": _build_table_scenario_text(title),
+    "chart_caption": chart_caption,
+  }
+
+
+def _build_fallback_professional_commentary(
+  payload: dict[str, Any],
+  table_analyses: list[dict[str, str]],
+) -> dict[str, list[str]]:
+  ctx = _build_report_context(payload)
+  commentary: list[str] = []
+
+  traffic_statement = []
+  if ctx["total_vadt"] is not None:
+    traffic_statement.append(f"approximately {_format_number(ctx['total_vadt'])} vehicles per day")
+  if ctx["growth_rate"] is not None:
+    traffic_statement.append(f"a growth allowance of {_format_number(ctx['growth_rate'], 2)}% per annum")
+  traffic_suffix = " with " + " and ".join(traffic_statement) if traffic_statement else ""
+
+  commentary.append(
+    f"The assessment for {ctx['project_name']} at {ctx['location']} indicates that the modeled road network should be interpreted as a constrained work-stage environment rather than a normal operating condition{traffic_suffix}. "
+    "The reported outputs are therefore most useful as a screening tool for operational risk, queue storage exposure, and the timing of mitigation triggers."
+  )
+
+  performance_bits: list[str] = []
+  if ctx["worst_vcr"] is not None:
+    performance_bits.append(f"a worst V/C ratio of {_format_number(ctx['worst_vcr'], 2)} corresponding to LOS {ctx['los']}")
+  if ctx["queue_peak"] is not None:
+    performance_bits.append(f"a peak queue on the order of {_format_number(ctx['queue_peak'])} m")
+  if performance_bits:
+    commentary.append(
+      "Operationally, the model points to " + " and ".join(performance_bits) + ". "
+      "These values suggest that traffic performance is being controlled by a limited number of peak-period constraints, so site management should focus on those controlling periods rather than average daily conditions."
+    )
+
+  commentary.append(
+    "From an engineering perspective, mitigation should prioritise maintaining discharge opportunities, reducing unnecessary blockage time, and protecting upstream intersections and accesses from queue spillback. "
+    "Where detour planning is triggered, the diversion strategy should be treated as an operational management measure with active monitoring rather than a one-off desktop assumption."
+  )
+
+  conclusion_points = [
+    "The controlling risk is concentrated in peak operating periods rather than uniformly across the day.",
+    "Queue and V/C results should be used to set monitoring triggers, traffic controller response actions, and escalation points for temporary traffic management.",
+    "Any material change in closure duration, lane availability, or directional demand should prompt the assessment to be refreshed before implementation.",
+  ]
+
+  if ctx["detour_recommended"]:
+    conclusion_points.insert(
+      0,
+      "Detour planning should be retained as an active mitigation measure because the modeled condition indicates insufficient resilience under the controlling scenario.",
+    )
+  else:
+    conclusion_points.insert(
+      0,
+      "A full detour response is not automatically required by the current model, but field observation and staged contingency planning remain appropriate.",
+    )
+
+  if table_analyses:
+    conclusion_points.append(
+      f"The detailed table set has been interpreted together with {len(table_analyses)} supporting result table(s) so that mitigation can be tied to the specific controlling scenario."
+    )
+
+  return {
+    "professional_commentary_paragraphs": commentary,
+    "conclusion_points": conclusion_points[:5],
+  }
+
+
 def _build_fallback_executive_paragraphs(payload: dict[str, Any]) -> list[str]:
   ctx = _build_report_context(payload)
   paragraphs: list[str] = []
@@ -206,20 +449,36 @@ def _request_gemini_report_notes(payload: dict[str, Any]) -> dict[str, Any] | No
   if not api_key:
     return None
 
+  report_tables = _build_report_tables(payload)
+
   prompt = {
-    "task": "Write a detailed executive summary and explanation notes for a traffic impact assessment report.",
+    "task": "Write a detailed traffic engineering report narrative, including per-table summaries and a final professional conclusion.",
     "instructions": [
       "Return strict JSON only.",
       "Use Australian traffic engineering wording.",
       "State where the assessment applies and what the modeled outputs mean operationally.",
       "Do not invent values beyond the supplied context.",
-      "Provide 3 or 4 executive summary paragraphs and 4 to 6 explanation notes."
+      "Provide 3 or 4 executive summary paragraphs and 4 to 6 explanation notes.",
+      "For every supplied table title, return a human summary paragraph, a scenario paragraph describing when the condition typically occurs, and a short chart caption.",
+      "Use the exact supplied table titles in the response so they can be mapped deterministically.",
+      "Provide 3 professional commentary paragraphs and 3 to 5 conclusion points."
     ],
     "response_schema": {
       "executive_paragraphs": ["string"],
-      "explanation_notes": ["string"]
+      "explanation_notes": ["string"],
+      "table_analyses": [
+        {
+          "title": "string",
+          "summary": "string",
+          "scenario": "string",
+          "chart_caption": "string"
+        }
+      ],
+      "professional_commentary_paragraphs": ["string"],
+      "conclusion_points": ["string"]
     },
     "context": _build_report_context(payload),
+    "tables": [_summarize_table_for_prompt(table) for table in report_tables[:24]],
   }
 
   request_body = json.dumps(
@@ -253,24 +512,82 @@ def _request_gemini_report_notes(payload: dict[str, Any]) -> dict[str, Any] | No
     data = json.loads(text)
     paragraphs = [str(item).strip() for item in data.get("executive_paragraphs", []) if str(item).strip()]
     notes = [str(item).strip() for item in data.get("explanation_notes", []) if str(item).strip()]
-    if not paragraphs and not notes:
+    table_analyses = []
+    for item in data.get("table_analyses", []):
+      if not isinstance(item, dict):
+        continue
+      title = str(item.get("title", "")).strip()
+      summary = str(item.get("summary", "")).strip()
+      scenario = str(item.get("scenario", "")).strip()
+      chart_caption = str(item.get("chart_caption", "")).strip()
+      if not title:
+        continue
+      table_analyses.append(
+        {
+          "title": title,
+          "summary": summary,
+          "scenario": scenario,
+          "chart_caption": chart_caption,
+        }
+      )
+    professional_commentary = [
+      str(item).strip()
+      for item in data.get("professional_commentary_paragraphs", [])
+      if str(item).strip()
+    ]
+    conclusion_points = [str(item).strip() for item in data.get("conclusion_points", []) if str(item).strip()]
+    if not paragraphs and not notes and not table_analyses and not professional_commentary and not conclusion_points:
       return None
-    return {"executive_paragraphs": paragraphs, "explanation_notes": notes}
+    return {
+      "executive_paragraphs": paragraphs,
+      "explanation_notes": notes,
+      "table_analyses": table_analyses,
+      "professional_commentary_paragraphs": professional_commentary,
+      "conclusion_points": conclusion_points,
+    }
   except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError):
     return None
 
 
-def _build_executive_content(payload: dict[str, Any]) -> dict[str, list[str]]:
+def _build_executive_content(payload: dict[str, Any]) -> dict[str, Any]:
+  report_tables = _build_report_tables(payload)
+  fallback_table_analyses = [_build_fallback_table_analysis(table) for table in report_tables]
+  fallback_commentary = _build_fallback_professional_commentary(payload, fallback_table_analyses)
   fallback = {
     "executive_paragraphs": _build_fallback_executive_paragraphs(payload),
     "explanation_notes": _build_fallback_explanation_notes(payload),
+    "table_analyses": fallback_table_analyses,
+    "professional_commentary_paragraphs": fallback_commentary["professional_commentary_paragraphs"],
+    "conclusion_points": fallback_commentary["conclusion_points"],
   }
   generated = _request_gemini_report_notes(payload)
   if not generated:
     return fallback
+  fallback_map = { _normalize_title_key(item["title"]): item for item in fallback_table_analyses }
+  generated_map = {
+    _normalize_title_key(item.get("title")): item
+    for item in generated.get("table_analyses", [])
+    if isinstance(item, dict) and _normalize_title_key(item.get("title"))
+  }
+  merged_table_analyses = []
+  for table in report_tables:
+    title_key = _normalize_title_key(table.get("title"))
+    fallback_item = fallback_map.get(title_key, _build_fallback_table_analysis(table))
+    generated_item = generated_map.get(title_key, {})
+    merged_table_analyses.append(
+      {
+        "title": fallback_item["title"],
+        "summary": generated_item.get("summary") or fallback_item["summary"],
+        "scenario": generated_item.get("scenario") or fallback_item["scenario"],
+        "chart_caption": generated_item.get("chart_caption") or fallback_item["chart_caption"],
+      }
+    )
   return {
     "executive_paragraphs": generated.get("executive_paragraphs") or fallback["executive_paragraphs"],
     "explanation_notes": generated.get("explanation_notes") or fallback["explanation_notes"],
+    "table_analyses": merged_table_analyses,
+    "professional_commentary_paragraphs": generated.get("professional_commentary_paragraphs") or fallback["professional_commentary_paragraphs"],
+    "conclusion_points": generated.get("conclusion_points") or fallback["conclusion_points"],
   }
 
 
@@ -281,26 +598,146 @@ def _render_paragraph_block(paragraphs: list[str]) -> str:
   return "".join(f"<p>{_escape(item)}</p>" for item in cleaned)
 
 
-def _render_key_value_table(title: str, data: dict[str, Any]) -> str:
-    if not isinstance(data, dict) or not data:
-        return ""
+def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, str]]:
+  raw_charts = payload.get("charts", []) if isinstance(payload.get("charts"), list) else []
+  chart_items: list[dict[str, str]] = []
 
-    rows: list[str] = []
-    for key, val in data.items():
-        label = _escape(str(key).replace("_", " ").title())
-        value = _escape(val)
-        rows.append(
-            f"<tr><th class=\"editable-text editable-cell\" contenteditable=\"true\">{label}</th>"
-            f"<td class=\"editable-text editable-cell\" contenteditable=\"true\">{value}</td></tr>"
-        )
-
-    return (
-        f"<div class=\"report-section report-block avoid-break\">"
-        f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">Remove Table</button></div>"
-        f"<h3 class=\"editable-text\" contenteditable=\"true\">{_escape(title)}</h3>"
-        f"<table class=\"kv-table\"><tbody>{''.join(rows)}</tbody></table>"
-        f"</div>"
+  for idx, chart in enumerate(raw_charts):
+    if not isinstance(chart, dict):
+      continue
+    image_data_url = _safe_text(chart.get("image_data_url"), "")
+    if not image_data_url.startswith("data:image/"):
+      continue
+    chart_items.append(
+      {
+        "title": _safe_text(chart.get("title"), f"Chart {idx + 1}"),
+        "image": image_data_url,
+        "canvas_id": _safe_text(chart.get("canvas_id"), ""),
+      }
     )
+
+  if not chart_items:
+    fallback = _safe_text(payload.get("chart_image_data_url"), "")
+    if fallback.startswith("data:image/"):
+      chart_items.append(
+        {
+          "title": "Primary Chart",
+          "image": fallback,
+          "canvas_id": _safe_text(payload.get("chart_image_canvas_id"), ""),
+        }
+      )
+
+  return chart_items
+
+
+def _score_chart_match(table_title: str, chart_item: dict[str, str]) -> int:
+  score = 0
+  title_key = _normalize_title_key(table_title)
+  chart_key = _normalize_title_key(chart_item.get("title"))
+  canvas_id = _normalize_title_key(chart_item.get("canvas_id"))
+
+  table_tokens = _title_tokens(table_title)
+  chart_tokens = _title_tokens(chart_key + " " + canvas_id)
+  score += len(table_tokens & chart_tokens) * 3
+
+  if "queuechartd1" in canvas_id and "queue" in title_key and ("d1" in title_key or "direction 1" in title_key):
+    score += 30
+  if "queuechartd2" in canvas_id and "queue" in title_key and ("d2" in title_key or "direction 2" in title_key):
+    score += 30
+  if "vcrchartd1" in canvas_id and "vcr" in title_key and ("d1" in title_key or "direction 1" in title_key):
+    score += 30
+  if "vcrchartd2" in canvas_id and "vcr" in title_key and ("d2" in title_key or "direction 2" in title_key):
+    score += 30
+  if "hourlyqueuechart" in canvas_id and "hourly" in title_key and "queue" in title_key:
+    score += 30
+  if "hourlyvcrchart" in canvas_id and "hourly" in title_key and ("vcr" in title_key or "los" in title_key):
+    score += 30
+  if "macrohourlychart" in canvas_id and ("directional" in title_key or "analysis parameters" in title_key):
+    score += 16
+  if "managementvizcanvas" in canvas_id and "summary of computed results" in title_key:
+    score += 24
+
+  if "queue" in title_key and "queue" in chart_key:
+    score += 8
+  if "vcr" in title_key and "vcr" in chart_key:
+    score += 8
+  if "hourly" in title_key and "hourly" in chart_key:
+    score += 5
+  if "directional" in title_key and "traffic data visualization" in chart_key:
+    score += 6
+
+  return score
+
+
+def _claim_chart_for_table(
+  table_title: str,
+  chart_items: list[dict[str, str]],
+  used_chart_indexes: set[int],
+) -> dict[str, str] | None:
+  best_index = -1
+  best_score = 0
+  for idx, chart_item in enumerate(chart_items):
+    if idx in used_chart_indexes:
+      continue
+    score = _score_chart_match(table_title, chart_item)
+    if score > best_score:
+      best_index = idx
+      best_score = score
+  if best_index < 0:
+    return None
+  used_chart_indexes.add(best_index)
+  return chart_items[best_index]
+
+
+def _render_embedded_chart(chart_item: dict[str, str] | None, title: str, caption: str) -> str:
+  if not chart_item:
+    return ""
+  chart_title = _escape(title)
+  chart_caption = _escape(caption or "This chart summarises the controlling pattern before the detailed table below.")
+  image_title = _escape(chart_item.get("title"), title)
+  return (
+    "<figure class=\"embedded-chart avoid-break\">"
+    f"<h5 class=\"chart-title editable-text\" contenteditable=\"true\">{chart_title} chart</h5>"
+    f"<img class=\"chart-img\" src=\"{chart_item.get('image', '')}\" alt=\"{image_title}\" />"
+    f"<figcaption class=\"editable chart-caption editable-text\" contenteditable=\"true\">{chart_caption}</figcaption>"
+    "</figure>"
+  )
+
+
+def _render_key_value_table(
+  title: str,
+  data: dict[str, Any],
+  analysis: dict[str, str] | None = None,
+  chart_item: dict[str, str] | None = None,
+) -> str:
+  if not isinstance(data, dict) or not data:
+    return ""
+
+  rows: list[str] = []
+  for key, val in data.items():
+    label = _escape(str(key).replace("_", " ").title())
+    value = _escape(val)
+    rows.append(
+      f"<tr><th class=\"editable-text editable-cell\" contenteditable=\"true\">{label}</th>"
+      f"<td class=\"editable-text editable-cell\" contenteditable=\"true\">{value}</td></tr>"
+    )
+
+  summary_text = _escape((analysis or {}).get("summary"), "This section summarises the key values used to interpret the modeled outcome.")
+  scenario_text = _escape((analysis or {}).get("scenario"), "Review these values together with the detailed result tables to confirm when the controlling condition is expected to emerge.")
+  chart_caption = (analysis or {}).get("chart_caption", "")
+  chart_html = _render_embedded_chart(chart_item, title, chart_caption)
+
+  return (
+    f"<div class=\"report-section report-block avoid-break\">"
+    f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">Remove Block</button></div>"
+    f"<h3 class=\"editable-text\" contenteditable=\"true\">{_escape(title)}</h3>"
+    f"<div class=\"editable table-note table-note-top\" contenteditable=\"true\"><p>{summary_text}</p></div>"
+    f"{chart_html}"
+    "<div class=\"table-detail-lead editable-text\" contenteditable=\"true\">Detailed table below sets out the supporting values used for the engineering interpretation.</div>"
+    f"<table class=\"kv-table\"><tbody>{''.join(rows)}</tbody></table>"
+    f"<div class=\"editable table-note table-note-bottom\" contenteditable=\"true\"><p>{scenario_text}</p></div>"
+    f"</div>"
+  )
 
 
 def _render_notes(notes: Any) -> str:
@@ -309,7 +746,11 @@ def _render_notes(notes: Any) -> str:
   return "".join(f"<li class=\"editable-text\" contenteditable=\"true\">{_escape(item)}</li>" for item in notes)
 
 
-def _render_data_table(table_data: Any) -> str:
+def _render_data_table(
+    table_data: Any,
+    analysis: dict[str, str] | None = None,
+    chart_item: dict[str, str] | None = None,
+) -> str:
     if not isinstance(table_data, dict):
         return ""
 
@@ -390,9 +831,10 @@ def _render_data_table(table_data: Any) -> str:
     row_count = len(cleaned_rows)
     col_count = len(normalized_columns) if normalized_columns else max((len(r) for r in cleaned_rows), default=0)
 
-    informative_default = (
-        f"This table presents {_safe_text(title)} with {row_count} row(s) and {col_count} column(s). "
-        "Edit this text to add assumptions, methodology, or interpretation for stakeholders."
+    informative_default = (analysis or {}).get(
+      "summary",
+      f"This table presents {_safe_text(title)} with {row_count} row(s) and {col_count} column(s). "
+      "Edit this text to add assumptions, methodology, or interpretation for stakeholders."
     )
 
     numeric_values: list[float] = []
@@ -407,69 +849,76 @@ def _render_data_table(table_data: Any) -> str:
     if numeric_values:
       n_min = min(numeric_values)
       n_max = max(numeric_values)
-      summary_default = (
+      summary_default = (analysis or {}).get(
+          "scenario",
           f"Summary: {row_count} row(s) reviewed. Numeric values range from {n_min:,.2f} to {n_max:,.2f}. "
           "Edit this summary to capture key implications and recommended actions."
       )
     else:
-      summary_default = (
+      summary_default = (analysis or {}).get(
+          "scenario",
           f"Summary: {row_count} row(s) reviewed for {_safe_text(title)}. "
           "Edit this summary to record key findings and decisions."
       )
 
     table_classes = "wide-table" if col_count >= 10 else ""
+    chart_html = _render_embedded_chart(chart_item, title, (analysis or {}).get("chart_caption", ""))
 
     return (
         f"<div class=\"report-section report-block avoid-break\">"
-        f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">Remove Table</button></div>"
+        f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">Remove Block</button></div>"
         f"<h4 class=\"editable-text\" contenteditable=\"true\">{title}</h4>"
         f"<div class=\"editable table-note table-note-top\" contenteditable=\"true\"><p>{_escape(informative_default)}</p></div>"
+        f"{chart_html}"
+        "<div class=\"table-detail-lead editable-text\" contenteditable=\"true\">Detailed table below provides the supporting values behind the narrative and chart summary.</div>"
       f"<table class=\"{table_classes}\">{head_html}{body_html}</table>"
         f"<div class=\"editable table-note table-note-bottom\" contenteditable=\"true\"><p>{_escape(summary_default)}</p></div>"
         f"</div>"
     )
 
 
-def _render_chart_blocks(payload: dict[str, Any]) -> str:
-    raw_charts = payload.get("charts", []) if isinstance(payload.get("charts"), list) else []
-    chart_items: list[dict[str, str]] = []
+def _render_additional_chart_blocks(
+  chart_items: list[dict[str, str]],
+  used_chart_indexes: set[int],
+) -> str:
+  remaining = [item for idx, item in enumerate(chart_items) if idx not in used_chart_indexes]
+  if not remaining:
+    return (
+      "<div class=\"report-section avoid-break\">"
+      "<div class=\"editable\" contenteditable=\"true\"><p>All core charts have been embedded with their corresponding tables. No additional standalone charts are required for this draft.</p></div>"
+      "</div>"
+    )
 
-    for idx, chart in enumerate(raw_charts):
-        if not isinstance(chart, dict):
-            continue
-        image_data_url = _safe_text(chart.get("image_data_url"), "")
-        if not image_data_url.startswith("data:image/"):
-            continue
-        title = _safe_text(chart.get("title"), f"Chart {idx + 1}")
-        chart_items.append({"title": title, "image": image_data_url})
+  blocks: list[str] = []
+  for idx, item in enumerate(remaining):
+    blocks.append(
+      "<figure class=\"report-section report-block chart-block avoid-break\">"
+      "<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">Remove Chart</button></div>"
+      f"<h4 class=\"chart-title editable-text\" contenteditable=\"true\">{_escape(item['title'], f'Chart {idx + 1}')}</h4>"
+      f"<img class=\"chart-img\" src=\"{item['image']}\" alt=\"{_escape(item['title'], f'Chart {idx + 1}')}\" />"
+      "<figcaption class=\"editable chart-caption editable-text\" contenteditable=\"true\">"
+      "Additional visual reference retained separately from the main table narrative."
+      "</figcaption>"
+      "</figure>"
+    )
 
-    if not chart_items:
-        fallback = _safe_text(payload.get("chart_image_data_url"), "")
-        if fallback.startswith("data:image/"):
-            chart_items.append({"title": "Primary Chart", "image": fallback})
+  return "".join(blocks)
 
-    if not chart_items:
-        return (
-            "<div class=\"report-section avoid-break\">"
-            "<div class=\"editable\" contenteditable=\"true\"><p>No chart snapshots were available for this draft. "
-            "You can add commentary here or remove this section.</p></div>"
-            "</div>"
-        )
 
-    blocks: list[str] = []
-    for idx, item in enumerate(chart_items):
-        blocks.append(
-            "<figure class=\"report-section report-block chart-block avoid-break\">"
-            "<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">Remove Chart</button></div>"
-            f"<h4 class=\"chart-title editable-text\" contenteditable=\"true\">{_escape(item['title'], f'Chart {idx + 1}')}</h4>"
-            f"<img class=\"chart-img\" src=\"{item['image']}\" alt=\"{_escape(item['title'], f'Chart {idx + 1}')}\" />"
-            "<figcaption class=\"editable chart-caption editable-text\" contenteditable=\"true\">"
-            "Describe what this chart shows, assumptions, and interpretation for stakeholders."
-            "</figcaption>"
-            "</figure>"
-        )
-
-    return "".join(blocks)
+def _render_commentary_block(paragraphs: list[str], conclusion_points: list[str]) -> str:
+  paragraph_html = _render_paragraph_block(paragraphs)
+  bullet_items = [str(item).strip() for item in conclusion_points if str(item).strip()]
+  if not bullet_items:
+    bullet_items = ["Insert conclusion points here."]
+  conclusion_html = "".join(
+    f"<li class=\"editable-text\" contenteditable=\"true\">{_escape(item)}</li>"
+    for item in bullet_items
+  )
+  return (
+    f"<div class=\"editable commentary-block\" contenteditable=\"true\">{paragraph_html}</div>"
+    "<h3 class=\"editable-text\" contenteditable=\"true\">Conclusion</h3>"
+    f"<ul class=\"conclusion-list\">{conclusion_html}</ul>"
+  )
 
 
 @app.get("/health")
@@ -503,6 +952,10 @@ def editor_page(draft_id: str) -> str:
     executive_content = _build_executive_content(payload)
     executive_summary_html = _render_paragraph_block(executive_content.get("executive_paragraphs", []))
     executive_notes_html = _render_notes(executive_content.get("explanation_notes", []))
+    commentary_html = _render_commentary_block(
+      executive_content.get("professional_commentary_paragraphs", []),
+      executive_content.get("conclusion_points", []),
+    )
     logo_data_url = _load_logo_data_url()
     cover_logo_html = f'<img class="cover-logo" src="{logo_data_url}" alt="Company Logo" />' if logo_data_url else ""
 
@@ -523,6 +976,13 @@ def editor_page(draft_id: str) -> str:
 
     notes_html = _render_notes(notes)
     tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+    table_analysis_map = {
+      _normalize_title_key(item.get("title")): item
+      for item in executive_content.get("table_analyses", [])
+      if isinstance(item, dict) and _normalize_title_key(item.get("title"))
+    }
+    chart_items = _collect_chart_items(payload)
+    used_chart_indexes: set[int] = set()
 
     def _table_priority(table_obj: Any) -> int:
         if not isinstance(table_obj, dict):
@@ -535,8 +995,27 @@ def editor_page(draft_id: str) -> str:
         return 2
 
     prioritized_tables = sorted(tables, key=_table_priority)
-    table_sections = "".join(_render_data_table(t) for t in prioritized_tables)
-    chart_sections = _render_chart_blocks(payload)
+    inputs_section_html = _render_key_value_table(
+      'Analysis Parameters',
+      inputs,
+      table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
+      _claim_chart_for_table('Analysis Parameters', chart_items, used_chart_indexes),
+    )
+    results_section_html = _render_key_value_table(
+      'Summary of Computed Results',
+      results,
+      table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
+      _claim_chart_for_table('Summary of Computed Results', chart_items, used_chart_indexes),
+    )
+    table_sections = "".join(
+      _render_data_table(
+        table,
+        table_analysis_map.get(_normalize_title_key(table.get('title'))),
+        _claim_chart_for_table(_safe_text(table.get('title'), ''), chart_items, used_chart_indexes),
+      )
+      for table in prioritized_tables
+    )
+    chart_sections = _render_additional_chart_blocks(chart_items, used_chart_indexes)
     payload_json = escape(json.dumps(payload))
 
     return f"""<!DOCTYPE html>
@@ -626,11 +1105,15 @@ def editor_page(draft_id: str) -> str:
     th[contenteditable="true"]:focus, td[contenteditable="true"]:focus, .editable-text:focus {{ outline: 2px solid rgba(31, 94, 99, 0.22); outline-offset: -2px; background: #fffef7; }}
     .table-note {{ min-height: 48px; margin: 8px 0; }}
     .table-note p {{ margin: 0; text-align: left; }}
+    .table-detail-lead {{ margin: 10px 0 8px; padding: 8px 12px; border-left: 4px solid var(--accent); background: #f3f8f9; color: #244448; font-style: italic; }}
+    .commentary-block {{ min-height: 140px; }}
+    .conclusion-list {{ margin-top: 8px; }}
 
     /* Charts */
     .chart-block {{ width: 100%; max-width: 100%; margin: 0 0 16px; }}
     .chart-title {{ margin-bottom: 8px; }}
-    .chart-img {{ width: auto; max-width: 100%; height: auto; border: 1px solid var(--border); display: block; margin: 10px auto; object-fit: contain; image-rendering: auto; }}
+    .embedded-chart {{ margin: 12px 0 14px; padding: 12px; border: 1px solid #bfd3d8; border-radius: 8px; background: linear-gradient(180deg, #ffffff 0%, #f6fbfc 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }}
+    .chart-img {{ width: auto; max-width: 100%; height: auto; border: 1px solid var(--border); display: block; margin: 10px auto; object-fit: contain; image-rendering: auto; background: #ffffff; }}
     .chart-caption {{ min-height: 48px; }}
 
     /* Table of Contents Styles */
@@ -644,6 +1127,7 @@ def editor_page(draft_id: str) -> str:
 
     /* Print Overrides */
     @media print {{
+      * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
       body {{ background: #fff; }}
       .document-wrapper {{ box-shadow: none; margin: 0; padding: 0; max-width: 100%; }}
       .toolbar {{ display: none; }}
@@ -651,6 +1135,7 @@ def editor_page(draft_id: str) -> str:
       .editable {{ border: none; background: transparent; padding: 0; }}
       .toc-container {{ border: none; padding: 0; }}
       .toc-link {{ border-bottom: none; }}
+      .embedded-chart {{ border: 1px solid #bfd3d8; background: #fff; }}
     }}
   </style>
 </head>
@@ -696,12 +1181,12 @@ def editor_page(draft_id: str) -> str:
     <ul>{executive_notes_html}</ul>
 
     <h2 contenteditable=\"true\">3. Design & Traffic Inputs</h2>
-    {_render_key_value_table('Analysis Parameters', inputs)}
+    {inputs_section_html}
 
     <div class=\"page-break\"></div>
 
     <h2 contenteditable=\"true\">4. Traffic Analysis & Results</h2>
-    {_render_key_value_table('Summary of Computed Results', results)}
+    {results_section_html}
 
     {table_sections}
 
@@ -714,9 +1199,7 @@ def editor_page(draft_id: str) -> str:
     <div id=\"chartSectionContent\">{chart_sections}</div>
 
     <h2 contenteditable=\"true\">7. Professional Commentary & Conclusion</h2>
-    <div class=\"editable\" contenteditable=\"true\">
-      <p>Enter your final engineering commentary, summary of impact, and mitigation recommendations here.</p>
-    </div>
+    {commentary_html}
 
   </main>
 

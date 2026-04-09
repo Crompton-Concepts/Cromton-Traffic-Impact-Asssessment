@@ -6939,6 +6939,18 @@
       const explicit = String(canvasEl.getAttribute('data-report-title') || '').trim();
       if (explicit) return explicit;
 
+      const chartPanel = canvasEl.closest('.chart-panel') || canvasEl.parentElement;
+      if (chartPanel) {
+        let prev = chartPanel.previousElementSibling;
+        while (prev) {
+          if (prev.matches && prev.matches('h3, h4, h5, .chart-title, .dir-heading')) {
+            const headingText = String(prev.textContent || '').trim();
+            if (headingText) return headingText;
+          }
+          prev = prev.previousElementSibling;
+        }
+      }
+
       const card = canvasEl.closest('.card');
       const cardTitle = card ? (card.querySelector('h2, h3, .card-title, .section-title')?.textContent || '').trim() : '';
       if (cardTitle) return cardTitle;
@@ -6970,7 +6982,8 @@
         if (!dataUrl || !dataUrl.startsWith('data:image/')) return;
         charts.push({
           title: getChartHeading(canvasEl, idx),
-          image_data_url: dataUrl
+          image_data_url: dataUrl,
+          canvas_id: String(canvasEl.id || '').trim()
         });
       } catch (_) {
         // Canvas export can fail for tainted canvases; skip silently.
