@@ -145,8 +145,10 @@ def _build_fallback_executive_paragraphs(payload: dict[str, Any]) -> list[str]:
   if ctx["total_vadt"] is not None:
     traffic_bits.append(f"the modeled daily traffic volume is approximately {_format_number(ctx['total_vadt'])} vehicles per day")
   if ctx["d1_vadt"] is not None and ctx["d2_vadt"] is not None:
+    d1_share = f", {ctx['d1_pct']:.1f}% of total" if ctx["d1_pct"] is not None else ""
+    d2_share = f", {ctx['d2_pct']:.1f}% of total" if ctx["d2_pct"] is not None else ""
     traffic_bits.append(
-      f"directional demand is split between D1 ({_format_number(ctx['d1_vadt'])} vpd{f', {ctx['d1_pct']:.1f}% of total' if ctx['d1_pct'] is not None else ''}) and D2 ({_format_number(ctx['d2_vadt'])} vpd{f', {ctx['d2_pct']:.1f}% of total' if ctx['d2_pct'] is not None else ''})"
+      f"directional demand is split between D1 ({_format_number(ctx['d1_vadt'])} vpd{d1_share}) and D2 ({_format_number(ctx['d2_vadt'])} vpd{d2_share})"
     )
   if ctx["growth_rate"] is not None:
     traffic_bits.append(f"an annual growth rate of {_format_number(ctx['growth_rate'], 2)}% has been applied")
@@ -502,6 +504,7 @@ def editor_page(draft_id: str) -> str:
     executive_summary_html = _render_paragraph_block(executive_content.get("executive_paragraphs", []))
     executive_notes_html = _render_notes(executive_content.get("explanation_notes", []))
     logo_data_url = _load_logo_data_url()
+    cover_logo_html = f'<img class="cover-logo" src="{logo_data_url}" alt="Company Logo" />' if logo_data_url else ""
 
     variant_raw = _safe_text(payload.get("report_variant"), "").lower()
     title_hint = _safe_text(draft.get("title", "")).lower()
@@ -659,7 +662,7 @@ def editor_page(draft_id: str) -> str:
   <main class=\"document-wrapper\">
 
     <div class=\"cover-page\">
-      {f'<img class="cover-logo" src="{logo_data_url}" alt="Company Logo" />' if logo_data_url else ''}
+      {cover_logo_html}
       <h1 contenteditable=\"true\">{project_name}</h1>
         <div class="cover-subtitle" contenteditable="true">Traffic Impact Assessment Report - {report_mode_label_escaped}</div>
 
