@@ -6948,7 +6948,7 @@
       const columnSignature = structured.columns.map((col) => normalizeTitleText(col).toLowerCase()).join('|');
 
       if (!structured.rows.length) return null;
-      if (/reference points beyond|excluded reference points|print customization|internal diagnostics/i.test(normalizedTitle)) return null;
+      if (/reference points beyond|excluded reference points|print customization|internal diagnostics|selected site details table/i.test(normalizedTitle)) return null;
       if (columnSignature === '#|datapoint|vpd|dist|use|weight %') return null;
 
       if (/\bformula\b/i.test(normalizedTitle) && !structured.rows.some((row) => row.some((cell) => hasNumericValue(cell)))) {
@@ -6966,14 +6966,15 @@
 
   function collectChartImages(maxCharts = 1000) {
     const reportChartTableIds = {
-      queueChartD1: ['queueGroupedTableD1'],
-      queueChartD2: ['queueGroupedTableD2'],
-      vcrChartD1: ['vcrGroupedTableD1'],
-      vcrChartD2: ['vcrGroupedTableD2'],
-      hourlyQueueChart: ['hourlyQueueTableD1', 'hourlyQueueTableD2'],
-      hourlyVcrChart: ['hourlyVcrTableD1', 'hourlyVcrTableD2'],
-      macroHourlyChart: [],
-      managementVizCanvas: []
+      macroHourlyChart: ['analysis_parameters'],
+      hourlyQueueChart: ['hourlyQueueTableD1'],
+      hourlyVcrChart: ['hourlyVcrTableD1']
+    };
+
+    const reportChartTitles = {
+      macroHourlyChart: 'Hourly Traffic Profile - Peak Hour Analysis',
+      hourlyQueueChart: 'Queue Length (Hourly Basis)',
+      hourlyVcrChart: 'VCR (Hourly Basis)'
     };
 
     function getReportChartTableIds(canvasId) {
@@ -7011,7 +7012,29 @@
       }
     }
 
+    function exportCanvasForReport(canvasEl) {
+      const width = Number(canvasEl && canvasEl.width) || 0;
+      const height = Number(canvasEl && canvasEl.height) || 0;
+      if (width <= 0 || height <= 0) return '';
+      try {
+        const scale = 2;
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = width * scale;
+        exportCanvas.height = height * scale;
+        const exportCtx = exportCanvas.getContext('2d');
+        if (!exportCtx) return canvasEl.toDataURL('image/png');
+        exportCtx.setTransform(scale, 0, 0, scale, 0, 0);
+        exportCtx.drawImage(canvasEl, 0, 0, width, height);
+        return exportCanvas.toDataURL('image/png');
+      } catch (_) {
+        return canvasEl.toDataURL('image/png');
+      }
+    }
+
     function getChartHeading(canvasEl, idx) {
+      const canvasId = String(canvasEl && canvasEl.id || '').trim();
+      if (reportChartTitles[canvasId]) return reportChartTitles[canvasId];
+
       const explicit = String(canvasEl.getAttribute('data-report-title') || '').trim();
       if (explicit) return explicit;
 
@@ -7056,7 +7079,7 @@
     chartEls.forEach((canvasEl, idx) => {
       try {
         if (!canvasHasMeaningfulContent(canvasEl)) return;
-        const dataUrl = canvasEl.toDataURL('image/png');
+        const dataUrl = exportCanvasForReport(canvasEl);
         if (!dataUrl || !dataUrl.startsWith('data:image/')) return;
         charts.push({
           title: getChartHeading(canvasEl, idx),
@@ -7072,15 +7095,8 @@
   }
 
   function prepareReportChartsForExport() {
-    if (typeof updateManagementViz === 'function') {
-      const templateEl = document.getElementById('vizTemplate');
-      if (String(templateEl && templateEl.value || 'none').toLowerCase() !== 'none') {
-        updateManagementViz();
-      }
-    }
-
     if (window.Chart && typeof window.Chart.getChart === 'function') {
-      ['queueChartD1', 'queueChartD2', 'vcrChartD1', 'vcrChartD2', 'hourlyQueueChart', 'hourlyVcrChart', 'macroHourlyChart'].forEach((canvasId) => {
+      ['hourlyQueueChart', 'hourlyVcrChart', 'macroHourlyChart'].forEach((canvasId) => {
         const chartInstance = window.Chart.getChart(canvasId);
         if (!chartInstance) return;
         try {
@@ -7089,6 +7105,91 @@
         } catch (_) {}
       });
     }
+  }
+
+  function collectSelectedSiteDetails() {
+    const mapLinkEl = document.getElementById('macroMapLink');
+    const rawMapHref = String(mapLinkEl && mapLinkEl.getAttribute('href') || '').trim();
+    const googleMapsUrl = rawMapHref && !/^javascript:/i.test(rawMapHref) ? rawMapHref : '';
+
+    const details = {
+      site_id: getElementValueOrText('macroDetailSiteId') || getElementValueOrText('macroSiteId') || '',
+      source: getElementValueOrText('macroDetailSource') || '',
+      road_name: getElementValueOrText('macroDetailRoadName') || '',
+      description: getElementValueOrText('macroDetailDescription') || '',
+      coordinates: getElementValueOrText('macroDetailCoords') || '',
+      google_maps_url: googleMapsUrl,
+      count_year: getElementValueOrText('macroDetailCountYear') || getElementValueOrText('baseYear') || '',
+      growth_rate: getElementValueOrText('macroDetailGrowthRate') || getElementValueOrText('macroGrowthRate') || '',
+      site_hv_percent: getElementValueOrText('macroDetailHV') || '',
+      data_quality: getElementValueOrText('macroDetailQuality') || '',
+      d1_direction: getElementValueOrText('macroDetailDirD1Label') || '',
+      d2_direction: getElementValueOrText('macroDetailDirD2Label') || '',
+      d1_vadt: getElementValueOrText('macroDetailD1') || '',
+      d2_vadt: getElementValueOrText('macroDetailD2') || '',
+      total_vadt: getElementValueOrText('macroDetailTotal') || '',
+      applied_d1_hv_percent: getElementValueOrText('D1_HVP') || '',
+      applied_d2_hv_percent: getElementValueOrText('D2_HVP') || '',
+      applied_d1_rt_percent: getElementValueOrText('D1_RTP') || '',
+      applied_d2_rt_percent: getElementValueOrText('D2_RTP') || ''
+    };
+
+    return Object.fromEntries(Object.entries(details).filter(([, value]) => String(value || '').trim() !== ''));
+  }
+
+  function getSeriesPeakDiagnostic(labels, values, labelText) {
+    const safeLabels = Array.isArray(labels) ? labels : [];
+    const safeValues = Array.isArray(values) ? values : [];
+    let bestIndex = -1;
+    let bestValue = -Infinity;
+    safeValues.forEach((value, index) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return;
+      if (numeric > bestValue) {
+        bestValue = numeric;
+        bestIndex = index;
+      }
+    });
+
+    if (bestIndex < 0 || !Number.isFinite(bestValue)) return null;
+    return {
+      label: String(labelText || '').trim(),
+      time_label: String(safeLabels[bestIndex] || `Hour ${bestIndex + 1}`),
+      value: bestValue,
+      index: bestIndex
+    };
+  }
+
+  function collectPeakDiagnostics() {
+    const queueLabels = lastHourlyQueueChartData && Array.isArray(lastHourlyQueueChartData.labels) ? lastHourlyQueueChartData.labels : [];
+    const vcrLabels = lastHourlyVcrChartData && Array.isArray(lastHourlyVcrChartData.labels) ? lastHourlyVcrChartData.labels : [];
+    const d1Queue = getSeriesPeakDiagnostic(queueLabels, lastHourlyQueueChartData && lastHourlyQueueChartData.d1Max, getElementValueOrText('hourlyQueueD1Title') || 'Direction 1');
+    const d2Queue = getSeriesPeakDiagnostic(queueLabels, lastHourlyQueueChartData && lastHourlyQueueChartData.d2Max, getElementValueOrText('hourlyQueueD2Title') || 'Direction 2');
+    const d1Vcr = getSeriesPeakDiagnostic(vcrLabels, lastHourlyVcrChartData && lastHourlyVcrChartData.d1Work, getElementValueOrText('hourlyVcrD1Title') || 'Direction 1');
+    const d2Vcr = getSeriesPeakDiagnostic(vcrLabels, lastHourlyVcrChartData && lastHourlyVcrChartData.d2Work, getElementValueOrText('hourlyVcrD2Title') || 'Direction 2');
+
+    const worstQueue = [d1Queue, d2Queue].filter(Boolean).sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))[0] || null;
+    const worstVcr = [d1Vcr, d2Vcr].filter(Boolean).sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))[0] || null;
+    const queueWaitMinutes = getSelectedHourlyQueueDurationMinutes();
+
+    return {
+      queue_wait_minutes: queueWaitMinutes,
+      queue_peak_time: worstQueue ? worstQueue.time_label : '',
+      queue_peak_direction: worstQueue ? worstQueue.label : '',
+      queue_peak_value_m: worstQueue && Number.isFinite(Number(worstQueue.value)) ? Math.round(Number(worstQueue.value)) : null,
+      d1_queue_peak_time: d1Queue ? d1Queue.time_label : '',
+      d1_queue_peak_value_m: d1Queue && Number.isFinite(Number(d1Queue.value)) ? Math.round(Number(d1Queue.value)) : null,
+      d2_queue_peak_time: d2Queue ? d2Queue.time_label : '',
+      d2_queue_peak_value_m: d2Queue && Number.isFinite(Number(d2Queue.value)) ? Math.round(Number(d2Queue.value)) : null,
+      los_peak_time: worstVcr ? worstVcr.time_label : '',
+      los_peak_direction: worstVcr ? worstVcr.label : '',
+      worst_hourly_vcr: worstVcr && Number.isFinite(Number(worstVcr.value)) ? Number(Number(worstVcr.value).toFixed(2)) : null,
+      worst_hourly_los: worstVcr && Number.isFinite(Number(worstVcr.value)) ? losLabel(Number(worstVcr.value)) : '',
+      d1_vcr_peak_time: d1Vcr ? d1Vcr.time_label : '',
+      d1_vcr_peak_value: d1Vcr && Number.isFinite(Number(d1Vcr.value)) ? Number(Number(d1Vcr.value).toFixed(2)) : null,
+      d2_vcr_peak_time: d2Vcr ? d2Vcr.time_label : '',
+      d2_vcr_peak_value: d2Vcr && Number.isFinite(Number(d2Vcr.value)) ? Number(Number(d2Vcr.value).toFixed(2)) : null
+    };
   }
 
   function buildAutoSummary({ roadMode, worstVcr, los, queuePeak, detourRecommended, notes }) {
@@ -7178,6 +7279,8 @@
 
     const rawCalc = getRawCalculationSnapshot();
     const primaryChart = capturePrimaryChartImageBase64('myChartCanvasId');
+    const selectedSiteDetails = collectSelectedSiteDetails();
+    const peakDiagnostics = collectPeakDiagnostics();
 
     const reportAddress = typeof getReportAddressForPrint === 'function'
       ? String(getReportAddressForPrint() || '').trim()
@@ -7231,7 +7334,8 @@
         name: title,
         location,
         report_date: new Date().toISOString().slice(0, 10),
-        prepared_by: 'TIA + QUEUE Web App'
+        prepared_by: "Planner's Name",
+        cc_number: 'CC0000'
       },
       inputs: {
         road_operation_mode: roadMode,
@@ -7273,6 +7377,8 @@
       chart_image_canvas_id: primaryChart.canvasId,
       chart_image_data_url: primaryChart.dataUrl,
       inputs_snapshot: collectInputSnapshot(),
+      selected_site_details: selectedSiteDetails,
+      peak_diagnostics: peakDiagnostics,
       tables: reportTables,
       charts: collectChartImages()
     };

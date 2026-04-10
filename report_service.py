@@ -92,14 +92,38 @@ def _format_number(value: Any, decimals: int = 0, fallback: str = "-") -> str:
   return f"{num:,.{decimals}f}"
 
 
+def _format_au_date(value: Any, fallback: str | None = None) -> str:
+  text = _safe_text(value, "")
+  if not text:
+    return fallback or datetime.now().strftime("%d/%m/%Y")
+
+  parse_candidates = [text]
+  if "T" in text:
+    parse_candidates.append(text.split("T", 1)[0])
+
+  for candidate in parse_candidates:
+    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%d-%m-%Y", "%B %d, %Y", "%d %B %Y"):
+      try:
+        return datetime.strptime(candidate, fmt).strftime("%d/%m/%Y")
+      except ValueError:
+        continue
+    try:
+      return datetime.fromisoformat(candidate).strftime("%d/%m/%Y")
+    except ValueError:
+      continue
+
+  return text
+
+
 def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   project = payload.get("project", {}) if isinstance(payload.get("project"), dict) else {}
   inputs = payload.get("inputs", {}) if isinstance(payload.get("inputs"), dict) else {}
   results = payload.get("results", {}) if isinstance(payload.get("results"), dict) else {}
   raw = payload.get("raw_js_results", {}) if isinstance(payload.get("raw_js_results"), dict) else {}
   notes = payload.get("notes", []) if isinstance(payload.get("notes"), list) else []
+  site_details = payload.get("selected_site_details", {}) if isinstance(payload.get("selected_site_details"), dict) else {}
+  peak_diagnostics = payload.get("peak_diagnostics", {}) if isinstance(payload.get("peak_diagnostics"), dict) else {}
 
-  # Support both old key names (aadt/d1_vadt/d2_vadt) and new projected-year names
   d1_vadt = _to_float(
     inputs.get("d1_vadt_opening_year") or inputs.get("d1_vadt") or raw.get("d1_vadt")
   )
@@ -124,7 +148,9 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   return {
     "project_name": _safe_text(project.get("name"), "Traffic Impact Assessment"),
     "location": _safe_text(project.get("location"), "Site location not specified"),
-    "report_date": _safe_text(project.get("report_date"), datetime.now().strftime("%Y-%m-%d")),
+    "report_date": _format_au_date(project.get("report_date")),
+    "prepared_by": _safe_text(project.get("prepared_by"), "Planner's Name"),
+    "cc_number": _safe_text(project.get("cc_number"), "CC0000"),
     "road_mode": _safe_text(inputs.get("road_operation_mode"), "TWO-WAY"),
     "base_year": _safe_text(inputs.get("base_year") or raw.get("base_year"), "Current year"),
     "opening_year": opening_year,
@@ -142,6 +168,16 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
     "los": _safe_text(results.get("los"), "-"),
     "detour_recommended": _to_bool(results.get("detour_recommended")),
     "notes": [str(note).strip() for note in notes if str(note).strip()],
+    "selected_site_details": {
+      _safe_text(key, ""): _safe_text(value, "")
+      for key, value in site_details.items()
+      if _safe_text(key, "") and _safe_text(value, "")
+    },
+    "peak_diagnostics": {
+      _safe_text(key, ""): value
+      for key, value in peak_diagnostics.items()
+      if _safe_text(key, "")
+    },
   }
 
 
@@ -298,9 +334,91 @@ def _build_table_scenario_text(title: str) -> str:
   )
 
 
-def _build_fallback_table_analysis(table_data: dict[str, Any]) -> dict[str, str]:
+def _build_fallback_table_analysis(table_data: dict[str, Any], payload: dict[str, Any] | None = None) -> dict[str, str]:
   analysis = _analyze_table_data(table_data)
   title = analysis["title"]
+  title_key = _normalize_title_key(title)
+  ctx = _build_report_context(payload or {})
+  site_details = ctx.get("selected_site_details", {}) if isinstance(ctx.get("selected_site_details"), dict) else {}
+  peak = ctx.get("peak_diagnostics", {}) if isinstance(ctx.get("peak_diagnostics"), dict) else {}
+
+  if "analysis parameters" in title_key:
+    site_bits = []
+    if site_details.get("site_id"):
+      site_bits.append(f"Site ID {site_details['site_id']}")
+    if site_details.get("road_name"):
+      site_bits.append(site_details["road_name"])
+    if site_details.get("count_year"):
+      site_bits.append(f"count year {site_details['count_year']}")
+
+    applied_hv_rt = []
+    if site_details.get("applied_d1_hv_percent"):
+      applied_hv_rt.append(f"D1 HV {site_details['applied_d1_hv_percent']}%")
+    if site_details.get("applied_d2_hv_percent"):
+      applied_hv_rt.append(f"D2 HV {site_details['applied_d2_hv_percent']}%")
+    if site_details.get("applied_d1_rt_percent"):
+      applied_hv_rt.append(f"D1 RT {site_details['applied_d1_rt_percent']}%")
+    if site_details.get("applied_d2_rt_percent"):
+      applied_hv_rt.append(f"D2 RT {site_details['applied_d2_rt_percent']}%")
+
+    summary_parts = [
+      f"Analysis parameters capture the selected site, growth, and directional demand assumptions used for the opening-year assessment."
+    ]
+    if site_bits:
+      summary_parts.append(f"The assessment is anchored to {'; '.join(site_bits)}.")
+    if site_details.get("site_hv_percent"):
+      summary_parts.append(f"The selected site reports HV content of {site_details['site_hv_percent']}.")
+    if applied_hv_rt:
+      summary_parts.append(f"Applied heavy-vehicle and rigid-truck inputs are {', '.join(applied_hv_rt)}.")
+    if site_details.get("google_maps_url"):
+      summary_parts.append("A Google Maps reference is included in the Selected Site Details section for field verification.")
+
+    return {
+      "title": title,
+      "summary": " ".join(summary_parts),
+      "scenario": (
+        "These inputs should be checked first during review because any change to the selected site source data, opening year, growth rate, HV share, or RT share will flow directly through the hourly profile, queue, and V/C outputs."
+      ),
+      "chart_caption": "Current selected-site hourly traffic profile showing the base directional pattern used for peak-hour interpretation.",
+    }
+
+  if "hourly queue" in title_key:
+    wait_minutes = _format_number(peak.get("queue_wait_minutes"), 0, "2")
+    peak_time = _safe_text(peak.get("queue_peak_time"), "the controlling hour")
+    peak_direction = _safe_text(peak.get("queue_peak_direction"), "the controlling direction")
+    peak_value = _format_number(peak.get("queue_peak_value_m"), 0, "-")
+    return {
+      "title": title,
+      "summary": (
+        f"{title} sets out the hourly queue result for the selected {wait_minutes}-minute wait criterion. "
+        f"The controlling queue occurs around {peak_time} on {peak_direction}, where the peak queue reaches approximately {peak_value} m."
+      ),
+      "scenario": (
+        "Review this section to confirm when queue storage becomes critical, whether the queue is isolated to one direction, and whether the selected wait-time assumption is appropriate for site operations and stakeholder expectations."
+      ),
+      "chart_caption": (
+        f"Hourly queue plot using the selected {wait_minutes}-minute wait assumption. The controlling queue occurs around {peak_time} on {peak_direction}."
+      ),
+    }
+
+  if "hourly vcr" in title_key or ("vcr" in title_key and "hourly" in title_key):
+    peak_time = _safe_text(peak.get("los_peak_time"), "the controlling hour")
+    peak_direction = _safe_text(peak.get("los_peak_direction"), "the controlling direction")
+    peak_vcr = _format_number(peak.get("worst_hourly_vcr"), 2, "-")
+    peak_los = _safe_text(peak.get("worst_hourly_los"), "-")
+    return {
+      "title": title,
+      "summary": (
+        f"{title} tracks the hourly work-zone V/C profile and associated LOS. "
+        f"The controlling LOS condition occurs around {peak_time} on {peak_direction}, where the worst hourly VCR reaches {peak_vcr} (LOS {peak_los})."
+      ),
+      "scenario": (
+        "This section shows when capacity stress becomes most acute through the day. Use it to identify whether mitigation is needed only in short peak windows or whether the corridor remains sensitive across multiple hours."
+      ),
+      "chart_caption": (
+        f"Hourly V/C plot highlighting the controlling hour around {peak_time} on {peak_direction}, where the worst modeled condition reaches VCR {peak_vcr} (LOS {peak_los})."
+      ),
+    }
 
   summary_parts = [
     f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
@@ -571,7 +689,7 @@ def _request_gemini_report_notes(payload: dict[str, Any]) -> dict[str, Any] | No
 
 def _build_executive_content(payload: dict[str, Any]) -> dict[str, Any]:
   report_tables = _build_report_tables(payload)
-  fallback_table_analyses = [_build_fallback_table_analysis(table) for table in report_tables]
+  fallback_table_analyses = [_build_fallback_table_analysis(table, payload) for table in report_tables]
   fallback_commentary = _build_fallback_professional_commentary(payload, fallback_table_analyses)
   fallback = {
     "executive_paragraphs": _build_fallback_executive_paragraphs(payload),
@@ -592,14 +710,18 @@ def _build_executive_content(payload: dict[str, Any]) -> dict[str, Any]:
   merged_table_analyses = []
   for table in report_tables:
     title_key = _normalize_title_key(table.get("title"))
-    fallback_item = fallback_map.get(title_key, _build_fallback_table_analysis(table))
+    fallback_item = fallback_map.get(title_key, _build_fallback_table_analysis(table, payload))
     generated_item = generated_map.get(title_key, {})
+    force_fallback = any(
+      key in title_key
+      for key in ["analysis parameters", "hourly queue", "hourly vcr"]
+    )
     merged_table_analyses.append(
       {
         "title": fallback_item["title"],
-        "summary": generated_item.get("summary") or fallback_item["summary"],
-        "scenario": generated_item.get("scenario") or fallback_item["scenario"],
-        "chart_caption": generated_item.get("chart_caption") or fallback_item["chart_caption"],
+        "summary": fallback_item["summary"] if force_fallback else (generated_item.get("summary") or fallback_item["summary"]),
+        "scenario": fallback_item["scenario"] if force_fallback else (generated_item.get("scenario") or fallback_item["scenario"]),
+        "chart_caption": fallback_item["chart_caption"] if force_fallback else (generated_item.get("chart_caption") or fallback_item["chart_caption"]),
       }
     )
   return {
@@ -824,6 +946,69 @@ def _render_key_value_table(
   )
 
 
+def _render_selected_site_details_section(site_details: dict[str, Any]) -> str:
+  if not isinstance(site_details, dict) or not site_details:
+    return ""
+
+  ordered_fields = [
+    ("Site ID", "site_id"),
+    ("Source", "source"),
+    ("Road Name", "road_name"),
+    ("Description", "description"),
+    ("Coordinates", "coordinates"),
+    ("Google Maps", "google_maps_url"),
+    ("Count Year", "count_year"),
+    ("Applied Growth Rate", "growth_rate"),
+    ("Selected Site HV%", "site_hv_percent"),
+    ("Data Quality", "data_quality"),
+    ("D1 Direction", "d1_direction"),
+    ("D2 Direction", "d2_direction"),
+    ("D1 VADT", "d1_vadt"),
+    ("D2 VADT", "d2_vadt"),
+    ("Total VADT", "total_vadt"),
+    ("Applied D1 HV%", "applied_d1_hv_percent"),
+    ("Applied D2 HV%", "applied_d2_hv_percent"),
+    ("Applied D1 RT%", "applied_d1_rt_percent"),
+    ("Applied D2 RT%", "applied_d2_rt_percent"),
+  ]
+
+  rows: list[str] = []
+  for label, key in ordered_fields:
+    value = _safe_text(site_details.get(key), "")
+    if not value:
+      continue
+    if key == "google_maps_url" and value.startswith(("http://", "https://")):
+      safe_href = escape(value, quote=True)
+      value_html = f'<a href="{safe_href}" target="_blank" rel="noopener noreferrer">View on Google Maps</a>'
+    else:
+      value_html = _escape(value)
+    rows.append(
+      f"<tr><th class=\"editable-text editable-cell\" contenteditable=\"true\">{_escape(label)}</th>"
+      f"<td class=\"editable-cell\">{value_html}</td></tr>"
+    )
+
+  if not rows:
+    return ""
+
+  summary_text = (
+    "Selected site details record the source counter, field description, mapping reference, and the heavy-vehicle / rigid-truck assumptions that feed the assessment."
+  )
+  scenario_text = (
+    "Use this section to verify that the adopted counter, mapped location, and HV / RT settings match the corridor actually being assessed before relying on the downstream queue or V/C outputs."
+  )
+
+  return (
+    "<div class=\"report-section report-block avoid-break\">"
+    "<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">Remove Block</button></div>"
+    "<h3 class=\"editable-text\" contenteditable=\"true\">Selected Site Details</h3>"
+    f"<div class=\"editable table-note table-note-top\" contenteditable=\"true\"><p>{_escape(summary_text)}</p></div>"
+    "<div class=\"table-detail-lead editable-text\" contenteditable=\"true\">Detailed table below confirms the selected counter, map reference, and applied vehicle-mix inputs used in the report.</div>"
+    f"<table class=\"kv-table\"><tbody>{''.join(rows)}</tbody></table>"
+    f"<div class=\"editable table-note table-note-bottom\" contenteditable=\"true\"><p>{_escape(scenario_text)}</p></div>"
+    "</div>"
+  )
+
+
 def _render_notes(notes: Any) -> str:
   if not isinstance(notes, list) or not notes:
     return "<li class=\"editable-text\" contenteditable=\"true\">No supplementary notes provided.</li>"
@@ -970,11 +1155,7 @@ def _render_additional_chart_blocks(
     if _normalize_title_key(item.get("canvas_id") or item.get("title")) not in embedded_chart_keys
   ]
   if not remaining:
-    return (
-      "<div class=\"report-section avoid-break\">"
-      "<div class=\"editable\" contenteditable=\"true\"><p>All core charts have been embedded with their corresponding tables. No additional standalone charts are required for this draft.</p></div>"
-      "</div>"
-    )
+    return ""
 
   blocks: list[str] = []
   for idx, item in enumerate(remaining):
@@ -1056,10 +1237,13 @@ def editor_page(draft_id: str) -> str:
       report_mode_label = "Python Report"
     report_mode_label_escaped = _escape(report_mode_label)
 
+    ctx = _build_report_context(payload)
     project_name = _escape(project.get("name", title))
     location = _escape(project.get("location", "Location Not Specified"))
-    report_date = _escape(project.get("report_date", datetime.now().strftime("%B %d, %Y")))
-    prepared_by = _escape(project.get("prepared_by", "Engineering Team"))
+    report_date = _escape(ctx.get("report_date"), datetime.now().strftime("%d/%m/%Y"))
+    prepared_by = _escape(ctx.get("prepared_by"), "Planner's Name")
+    cc_number = _escape(ctx.get("cc_number"), "CC0000")
+    selected_site_details = ctx.get("selected_site_details", {}) if isinstance(ctx.get("selected_site_details"), dict) else {}
 
     notes_html = _render_notes(notes)
     tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
@@ -1110,6 +1294,7 @@ def editor_page(draft_id: str) -> str:
       table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
       results_charts,
     )
+    selected_site_section_html = _render_selected_site_details_section(selected_site_details)
     table_blocks: list[str] = []
     for table in prioritized_tables:
       matched_charts = _select_charts_for_table(table, chart_items)
@@ -1130,7 +1315,7 @@ def editor_page(draft_id: str) -> str:
 <head>
   <meta charset=\"UTF-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
-  <title>{project_name} - {report_mode_label_escaped}</title>
+  <title>{project_name}</title>
   <style>
     /* Professional Engineering Document Variables */
     :root {{
@@ -1256,15 +1441,14 @@ def editor_page(draft_id: str) -> str:
     <div class=\"cover-page\">
       {cover_logo_html}
       <h1 contenteditable=\"true\">{project_name}</h1>
-        <div class="cover-subtitle" contenteditable="true">Traffic Impact Assessment Report - {report_mode_label_escaped}</div>
+        <div class="cover-subtitle" contenteditable="true">Traffic Impact Assessment Report</div>
 
       <div class=\"cover-details\">
         <table>
           <tr><th contenteditable=\"true\">Location:</th><td contenteditable=\"true\">{location}</td></tr>
           <tr><th contenteditable=\"true\">Date Prepared:</th><td contenteditable=\"true\">{report_date}</td></tr>
-            <tr><th contenteditable="true">Report Mode:</th><td contenteditable="true">{report_mode_label_escaped}</td></tr>
           <tr><th contenteditable=\"true\">Prepared By:</th><td contenteditable=\"true\">{prepared_by}</td></tr>
-          <tr><th contenteditable=\"true\">Draft Reference:</th><td contenteditable=\"true\" style=\"font-family: monospace; font-size: 0.8rem;\">{escape(draft_id)}</td></tr>
+          <tr><th contenteditable=\"true\">CC Number:</th><td contenteditable=\"true\" style=\"font-family: monospace; font-size: 0.8rem;\">{cc_number}</td></tr>
         </table>
       </div>
     </div>
@@ -1289,6 +1473,7 @@ def editor_page(draft_id: str) -> str:
 
     <h2 contenteditable=\"true\">3. Design & Traffic Inputs</h2>
     {inputs_section_html}
+    {selected_site_section_html}
 
     <div class=\"page-break\"></div>
 
