@@ -7031,6 +7031,58 @@
     return summaryBits.join(' ');
   }
 
+  function resolveDetourReportRouteCount(visibleTables) {
+    const tables = Array.isArray(visibleTables) ? visibleTables : [];
+    const hasDetourContent = tables.some((table) => {
+      const tableId = String(table && table.table_id || '').trim();
+      const title = String(table && table.title || '').trim().toLowerCase();
+      return tableId === 'detourSegmentDetailedTable'
+        || tableId === 'postDiversionTable'
+        || title.includes('detour')
+        || title.includes('diversion');
+    });
+
+    if (!hasDetourContent) return 1;
+
+    const defaultCount = Math.max(1, Math.min(10, Math.round(Number(window.detourReportRouteCount) || 1)));
+    const promptText = 'Number of detour routes to include in the report?\n\nIf more than 1, the current detour scenario will be duplicated as Route 1, Route 2, etc. so you can edit each route in the report.';
+    const response = window.prompt(promptText, String(defaultCount));
+    if (response === null) return defaultCount;
+
+    const parsed = Math.round(Number(response));
+    const safeCount = Number.isFinite(parsed) ? Math.max(1, Math.min(10, parsed)) : defaultCount;
+    window.detourReportRouteCount = safeCount;
+    return safeCount;
+  }
+
+  function expandDetourTablesForReport(visibleTables, routeCount) {
+    const tables = Array.isArray(visibleTables) ? visibleTables : [];
+    const safeRouteCount = Math.max(1, Math.min(10, Math.round(Number(routeCount) || 1)));
+    if (safeRouteCount <= 1) return tables;
+
+    const expandedTables = [];
+    tables.forEach((table) => {
+      const tableId = String(table && table.table_id || '').trim();
+      const title = String(table && table.title || '').trim();
+      const isDetourTable = tableId === 'detourSegmentDetailedTable'
+        || tableId === 'postDiversionTable'
+        || /detour|diversion/i.test(title);
+
+      if (!isDetourTable) {
+        expandedTables.push(table);
+        return;
+      }
+
+      for (let routeIndex = 1; routeIndex <= safeRouteCount; routeIndex += 1) {
+        expandedTables.push({
+          ...table,
+          title: `${title} - Detour Route ${routeIndex}`
+        });
+      }
+    });
+    return expandedTables;
+  }
+
   async function buildEditableReportPayload() {
     // Temporarily unhide all chart containers to ensure Chart.js renders them with valid dimensions
     const hiddenContainers = [];
@@ -7091,6 +7143,13 @@
     if (vcrRiskText && vcrRiskText !== '-') notes.push(vcrRiskText);
     if (pedDelayText && pedDelayText !== '-') notes.push(`Pedestrian: ${pedDelayText}`);
 
+    const visibleTables = collectVisibleTables();
+    const detourRouteCount = resolveDetourReportRouteCount(visibleTables);
+    const reportTables = expandDetourTablesForReport(visibleTables, detourRouteCount);
+    if (detourRouteCount > 1) {
+      notes.push(`Detour report includes ${detourRouteCount} replicated route sections for route-specific editing.`);
+    }
+
     const roadMode = getElementValueOrText('roadOperationMode') || 'TWO-WAY';
     const detourRecommended = Number.isFinite(queuePeak) && queuePeak >= 120;
 
@@ -7134,13 +7193,14 @@
         worst_vcr: rawCalc.worstVcr,
         d1_queue_peak_m: rawCalc.d1QueuePeak,
         d2_queue_peak_m: rawCalc.d2QueuePeak,
-        queue_peak_m: rawCalc.queuePeak
+        queue_peak_m: rawCalc.queuePeak,
+        detour_route_count: detourRouteCount
       },
       chart_image: primaryChart.base64,
       chart_image_canvas_id: primaryChart.canvasId,
       chart_image_data_url: primaryChart.dataUrl,
       inputs_snapshot: collectInputSnapshot(),
-      tables: collectVisibleTables(),
+      tables: reportTables,
       charts: collectChartImages()
     };
 
@@ -10098,11 +10158,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   async function getAllRoadsFromMap(lat, lon, radiusMeters = 200) {
-    // Overpass QL query: find all ways with a 'highway' and 'name' tag within the radius
+    // Overpass QL query: find all ways with a 'highway' and 'name' tag within the radius, with centroid
     const query = `
       [out:json][timeout:15];
       way(around:${radiusMeters},${lat},${lon})[highway][name];
-      out tags;
+      out center tags;
     `;
 
     const safeLat = Number(lat);
@@ -10113,10 +10173,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     try {
       const data = await fetchOverpassJson(query, { cacheKey, ttlMs: OVERPASS_CACHE_TTL_MS });
-      const uniqueRoads = new Set();
 
-      // Extract unique road names + maxspeed from the OSM tags
+      // Extract unique road names + maxspeed + centroid from the OSM tags
       const roadSpeedMap = new Map();
+      const roadCentroidMap = new Map(); // road name → {lat, lon}
       if (data && data.elements) {
         data.elements.forEach(el => {
           if (el.tags && el.tags.name) {
@@ -10127,9 +10187,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             } else if (!roadSpeedMap.get(rname) && rspeed) {
               roadSpeedMap.set(rname, rspeed);
             }
+            if (!roadCentroidMap.has(rname) && el.center && Number.isFinite(Number(el.center.lat)) && Number.isFinite(Number(el.center.lon))) {
+              roadCentroidMap.set(rname, { lat: Number(el.center.lat), lon: Number(el.center.lon) });
+            }
           }
         });
       }
+      // Store road centroids globally for use in VPD estimation distance calculations
+      if (!window.detourRoadCentroids) window.detourRoadCentroids = {};
+      roadCentroidMap.forEach((centroid, name) => { window.detourRoadCentroids[name] = centroid; });
       localFallbackRoads.forEach(n => { if (!roadSpeedMap.has(n)) roadSpeedMap.set(n, null); });
       return Array.from(roadSpeedMap.entries())
         .map(([name, speed]) => ({ name, speed }))
@@ -19278,8 +19344,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function estimateDetourRoadBaseVpd(roadName, centerLat, centerLon, manualRefPercents = null, manualRefEnabled = null) {
-    const lat = Number(centerLat);
-    const lon = Number(centerLon);
+    // Use road-specific centroid from OSM scan if available, so distances are measured from
+    // the road itself rather than the project center — giving meaningful per-road weights.
+    const roadCentroid = window.detourRoadCentroids && window.detourRoadCentroids[roadName];
+    const lat = Number(roadCentroid ? roadCentroid.lat : centerLat);
+    const lon = Number(roadCentroid ? roadCentroid.lon : centerLon);
     const radius = 5000;
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
       return { baseVpd: 0, source: 'No primary location', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [] };
@@ -19360,8 +19429,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return sum + percent;
     }, 0);
 
-    // Use user-entered percentages directly: Base VPD = sum((%/100) * reference VPD).
-    const weightedAvgVADT = Math.round(adjustedSum);
+    // Normalize by total active weight so the result is a proper weighted average
+    // even when user-entered weights don't sum to exactly 100%.
+    const weightedAvgVADT = totalWeightPercent > 0 ? Math.round(adjustedSum * 100 / totalWeightPercent) : 0;
     const finalAvgVADT = Math.max(0, Math.round(weightedAvgVADT));
 
     return {
