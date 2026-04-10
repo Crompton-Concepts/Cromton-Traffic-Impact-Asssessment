@@ -4654,6 +4654,17 @@
       <p class="optional-card-note">
         Merges the 24-hour hourly profile of the primary site with selected detour roads to identify specific peak-period failures.
       </p>
+      <div id="detourRouteScenarioManager" style="background: #faf5ff; border: 1px solid #d7bde8; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div style="font-size: 0.82em; font-weight: 700; color: #6a1b9a;">Detour Route Scenarios</div>
+            <div style="font-size: 0.76em; color: #8e24aa; margin-top: 2px;">Configure how many detour routes need separate analysis. Each route keeps its own selected path, weights, and detour inputs.</div>
+          </div>
+          <button type="button" onclick="configureDetourRouteCount()" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.82em; background: #6a1b9a; box-shadow: none;">Set Route Count</button>
+        </div>
+        <div id="detourRouteScenarioSummary" style="font-size: 0.78em; color: #4a148c; margin-top: 8px;">1 route configured.</div>
+        <div id="detourRouteScenarioTabs" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+      </div>
       
       <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
         
@@ -7031,56 +7042,46 @@
     return summaryBits.join(' ');
   }
 
-  function resolveDetourReportRouteCount(visibleTables) {
-    const tables = Array.isArray(visibleTables) ? visibleTables : [];
-    const hasDetourContent = tables.some((table) => {
-      const tableId = String(table && table.table_id || '').trim();
-      const title = String(table && table.title || '').trim().toLowerCase();
-      return tableId === 'detourSegmentDetailedTable'
-        || tableId === 'postDiversionTable'
-        || title.includes('detour')
-        || title.includes('diversion');
-    });
-
-    if (!hasDetourContent) return 1;
-
-    const defaultCount = Math.max(1, Math.min(10, Math.round(Number(window.detourReportRouteCount) || 1)));
-    const promptText = 'Number of detour routes to include in the report?\n\nIf more than 1, the current detour scenario will be duplicated as Route 1, Route 2, etc. so you can edit each route in the report.';
-    const response = window.prompt(promptText, String(defaultCount));
-    if (response === null) return defaultCount;
-
-    const parsed = Math.round(Number(response));
-    const safeCount = Number.isFinite(parsed) ? Math.max(1, Math.min(10, parsed)) : defaultCount;
-    window.detourReportRouteCount = safeCount;
-    return safeCount;
+  function isDetourReportTable(table) {
+    const tableId = String(table && table.table_id || '').trim();
+    const title = String(table && table.title || '').trim().toLowerCase();
+    return tableId === 'detourSegmentDetailedTable'
+      || tableId === 'postDiversionTable'
+      || title.includes('detour')
+      || title.includes('diversion');
   }
 
-  function expandDetourTablesForReport(visibleTables, routeCount) {
+  function buildReportTablesForDetourRoutes(visibleTables) {
     const tables = Array.isArray(visibleTables) ? visibleTables : [];
-    const safeRouteCount = Math.max(1, Math.min(10, Math.round(Number(routeCount) || 1)));
-    if (safeRouteCount <= 1) return tables;
+    ensureDetourRouteScenarios();
+    saveActiveDetourRouteScenario();
 
-    const expandedTables = [];
-    tables.forEach((table) => {
-      const tableId = String(table && table.table_id || '').trim();
-      const title = String(table && table.title || '').trim();
-      const isDetourTable = tableId === 'detourSegmentDetailedTable'
-        || tableId === 'postDiversionTable'
-        || /detour|diversion/i.test(title);
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+    if (scenarios.length <= 1) return tables;
 
-      if (!isDetourTable) {
-        expandedTables.push(table);
-        return;
-      }
+    const nonDetourTables = tables.filter((table) => !isDetourReportTable(table));
+    const originalIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
+    const originalState = captureCurrentDetourRouteState();
+    const routeTables = [];
 
-      for (let routeIndex = 1; routeIndex <= safeRouteCount; routeIndex += 1) {
-        expandedTables.push({
+    scenarios.forEach((scenario, index) => {
+      applyDetourRouteState(scenario || {}, { skipScan: true });
+      calculateDetourOverlay();
+      const scenarioTables = collectVisibleTables().filter((table) => isDetourReportTable(table));
+      scenarioTables.forEach((table) => {
+        routeTables.push({
           ...table,
-          title: `${title} - Detour Route ${routeIndex}`
+          title: `${table.title} - Detour Route ${index + 1}`
         });
-      }
+      });
     });
-    return expandedTables;
+
+    window.activeDetourRouteIndex = originalIndex;
+    applyDetourRouteState(originalState, { skipScan: true });
+    calculateDetourOverlay();
+    renderDetourRouteScenarioManager();
+
+    return [...nonDetourTables, ...routeTables];
   }
 
   async function buildEditableReportPayload() {
@@ -7144,16 +7145,16 @@
     if (pedDelayText && pedDelayText !== '-') notes.push(`Pedestrian: ${pedDelayText}`);
 
     const visibleTables = collectVisibleTables();
-    const detourRouteCount = resolveDetourReportRouteCount(visibleTables);
-    const reportTables = expandDetourTablesForReport(visibleTables, detourRouteCount);
+    const detourRouteCount = getDetourRouteScenarioCount();
+    const reportTables = buildReportTablesForDetourRoutes(visibleTables);
     if (detourRouteCount > 1) {
-      notes.push(`Detour report includes ${detourRouteCount} replicated route sections for route-specific editing.`);
+      notes.push(`Detour report includes ${detourRouteCount} route-specific sections exported from the detour scenario manager.`);
     }
 
     const roadMode = getElementValueOrText('roadOperationMode') || 'TWO-WAY';
     const detourRecommended = Number.isFinite(queuePeak) && queuePeak >= 120;
 
-    return {
+    const payload = {
       project: {
         name: title,
         location,
@@ -7204,7 +7205,6 @@
       charts: collectChartImages()
     };
 
-    // Restore original display states
     hiddenContainers.forEach(({ el, origDisplay }) => {
       el.style.display = origDisplay;
     });
@@ -19099,7 +19099,177 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   window.lastDetourPrimaryContextKey = window.lastDetourPrimaryContextKey || '';
   window.detourManualRoadInputs = window.detourManualRoadInputs || {};
   window.detourManualPanelRoads = window.detourManualPanelRoads || [];
+  window.detourRouteScenarios = window.detourRouteScenarios || [];
+  window.detourRouteCount = Math.max(1, Number(window.detourRouteCount) || 1);
+  window.activeDetourRouteIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
   window.lastSearchedAddress = window.lastSearchedAddress || '';
+
+  const DETOUR_ROUTE_STATE_FIELD_IDS = [
+    'detourDiversionRate',
+    'detourClosureType',
+    'detourClosedDirection',
+    'detourHvRouteSuitabilityConfirmed',
+    'detourNearbyRoadRadius',
+    'detourNearbyRoadRadiusInput',
+    'detourLaneWidth',
+    'detourLateralClearance',
+    'detourGradeType',
+    'detourBaseLaneCapacity',
+    'detourRouteLengthKm',
+    'detourAvgSpeedKmh',
+    'detourControlledIntCount',
+    'detourUncontrolledIntCount',
+    'detourControlledDelaySec',
+    'detourUncontrolledDelaySec'
+  ];
+
+  function cloneDetourRouteStateData(value, fallback) {
+    try {
+      return JSON.parse(JSON.stringify(value == null ? fallback : value));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function captureCurrentDetourRouteState() {
+    const controlValues = {};
+    DETOUR_ROUTE_STATE_FIELD_IDS.forEach((fieldId) => {
+      const el = document.getElementById(fieldId);
+      if (!el) return;
+      controlValues[fieldId] = el.type === 'checkbox' ? !!el.checked : String(el.value || '');
+    });
+
+    return {
+      selectedTrafficDetourRoadNames: cloneDetourRouteStateData(window.selectedTrafficDetourRoadNames || [], []),
+      selectedDetourSiteIds: cloneDetourRouteStateData(window.selectedDetourSiteIds || [], []),
+      selectedDetourSiteId: window.selectedDetourSiteId || null,
+      detourManualRoadInputs: cloneDetourRouteStateData(window.detourManualRoadInputs || {}, {}),
+      detourManualPanelRoads: cloneDetourRouteStateData(window.detourManualPanelRoads || [], []),
+      controlValues
+    };
+  }
+
+  function applyDetourRouteState(routeState, options = {}) {
+    const state = routeState || {};
+    const controlValues = state.controlValues || {};
+
+    DETOUR_ROUTE_STATE_FIELD_IDS.forEach((fieldId) => {
+      const el = document.getElementById(fieldId);
+      if (!el || !Object.prototype.hasOwnProperty.call(controlValues, fieldId)) return;
+      if (el.type === 'checkbox') {
+        el.checked = !!controlValues[fieldId];
+      } else {
+        el.value = String(controlValues[fieldId] == null ? '' : controlValues[fieldId]);
+      }
+    });
+
+    window.selectedTrafficDetourRoadNames = cloneDetourRouteStateData(state.selectedTrafficDetourRoadNames || [], []);
+    window.selectedDetourSiteIds = cloneDetourRouteStateData(state.selectedDetourSiteIds || [], []);
+    window.selectedDetourSiteId = state.selectedDetourSiteId || (window.selectedDetourSiteIds[0] || null);
+    window.detourManualRoadInputs = cloneDetourRouteStateData(state.detourManualRoadInputs || {}, {});
+    window.detourManualPanelRoads = cloneDetourRouteStateData(state.detourManualPanelRoads || window.selectedTrafficDetourRoadNames || [], []);
+
+    updateDetourNearbyRoadRadiusLabel();
+    updateDetourClosureUi();
+    updateTrafficSelectedRoadsSummary();
+
+    if (!(options && options.skipScan)) {
+      const coords = getDetourPrimaryCoordinates();
+      if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lon)) {
+        scanDetourNearbyRoads(coords.lat, coords.lon);
+      }
+    }
+  }
+
+  function getDetourRouteScenarioCount() {
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+    return Math.max(1, scenarios.length || Number(window.detourRouteCount) || 1);
+  }
+
+  function saveActiveDetourRouteScenario() {
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+    const activeIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
+    scenarios[activeIndex] = captureCurrentDetourRouteState();
+    window.detourRouteScenarios = scenarios;
+    window.detourRouteCount = Math.max(1, scenarios.length);
+  }
+
+  function ensureDetourRouteScenarios(count = null) {
+    const requestedCount = Math.max(1, Math.min(10, Math.round(Number(count != null ? count : getDetourRouteScenarioCount()) || 1)));
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios.slice() : [];
+    const activeState = captureCurrentDetourRouteState();
+    const activeIndex = Math.max(0, Math.min(requestedCount - 1, Number(window.activeDetourRouteIndex) || 0));
+
+    if (!scenarios.length) {
+      scenarios.push(cloneDetourRouteStateData(activeState, activeState));
+    } else {
+      scenarios[Math.max(0, Number(window.activeDetourRouteIndex) || 0)] = cloneDetourRouteStateData(activeState, activeState);
+    }
+
+    while (scenarios.length < requestedCount) {
+      scenarios.push(cloneDetourRouteStateData(activeState, activeState));
+    }
+    scenarios.length = requestedCount;
+
+    window.detourRouteScenarios = scenarios;
+    window.detourRouteCount = requestedCount;
+    window.activeDetourRouteIndex = activeIndex;
+    return scenarios;
+  }
+
+  function renderDetourRouteScenarioManager() {
+    const summaryEl = document.getElementById('detourRouteScenarioSummary');
+    const tabsEl = document.getElementById('detourRouteScenarioTabs');
+    if (!summaryEl || !tabsEl) return;
+
+    const scenarios = ensureDetourRouteScenarios();
+    const activeIndex = Math.max(0, Math.min(scenarios.length - 1, Number(window.activeDetourRouteIndex) || 0));
+    scenarios[activeIndex] = captureCurrentDetourRouteState();
+    window.detourRouteScenarios = scenarios;
+
+    summaryEl.textContent = `${scenarios.length} route${scenarios.length === 1 ? '' : 's'} configured. Active route: ${activeIndex + 1}.`;
+    tabsEl.innerHTML = '';
+
+    scenarios.forEach((scenario, index) => {
+      const selectedRoads = Array.isArray(scenario && scenario.selectedTrafficDetourRoadNames)
+        ? scenario.selectedTrafficDetourRoadNames.map((value) => String(value || '').trim()).filter(Boolean)
+        : [];
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = `width:auto; margin:0; padding:7px 10px; border-radius:8px; border:1px solid ${index === activeIndex ? '#6a1b9a' : '#d1c4e9'}; background:${index === activeIndex ? '#6a1b9a' : '#ffffff'}; color:${index === activeIndex ? '#ffffff' : '#4a148c'}; box-shadow:none;`;
+      btn.textContent = `Route ${index + 1}${selectedRoads.length ? `: ${selectedRoads.join(' >> ')}` : ''}`;
+      btn.addEventListener('click', () => setActiveDetourRouteScenario(index));
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function setActiveDetourRouteScenario(routeIndex) {
+    const scenarios = ensureDetourRouteScenarios();
+    const nextIndex = Math.max(0, Math.min(scenarios.length - 1, Number(routeIndex) || 0));
+    saveActiveDetourRouteScenario();
+    window.activeDetourRouteIndex = nextIndex;
+    applyDetourRouteState(window.detourRouteScenarios[nextIndex] || {}, { skipScan: false });
+    calculateDetourOverlay();
+    renderDetourRouteScenarioManager();
+  }
+  window.setActiveDetourRouteScenario = setActiveDetourRouteScenario;
+
+  function configureDetourRouteCount() {
+    const currentCount = getDetourRouteScenarioCount();
+    const response = window.prompt(
+      'Number of detour routes to analyse?\n\nIf the number is greater than 1, the current detour scenario will be duplicated so each route keeps its own path, weights, and detour inputs.',
+      String(currentCount)
+    );
+    if (response === null) return;
+
+    const parsed = Math.round(Number(response));
+    const safeCount = Number.isFinite(parsed) ? Math.max(1, Math.min(10, parsed)) : currentCount;
+    ensureDetourRouteScenarios(safeCount);
+    renderDetourRouteScenarioManager();
+    calculateDetourOverlay();
+  }
+  window.configureDetourRouteCount = configureDetourRouteCount;
+  setTimeout(renderDetourRouteScenarioManager, 0);
 
   const QUICK_TIA_HISTORY_KEY = 'quickTiaAddressHistory';
 
@@ -19313,6 +19483,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (typeof window.refreshDetourRoadPreviewMap === 'function') {
       window.refreshDetourRoadPreviewMap();
     }
+
+    renderDetourRouteScenarioManager();
   }
 
   function getDetourManualRoadKey(roadName) {
@@ -19824,6 +19996,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const existing = window.detourManualRoadInputs[key] || getDetourManualRoadInput(roadName) || { lanes: 2 };
       if (!existing.refPercents || typeof existing.refPercents !== 'object') existing.refPercents = {};
       existing.refPercents[siteId] = value;
+      existing.baseVpdManual = false;
       window.detourManualRoadInputs[key] = existing;
 
       updateDetourRefWeightTotalBadge(key);
@@ -19840,6 +20013,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const existing = window.detourManualRoadInputs[key] || getDetourManualRoadInput(roadName) || { lanes: 2 };
       if (!existing.refEnabled || typeof existing.refEnabled !== 'object') existing.refEnabled = {};
       existing.refEnabled[siteId] = isEnabled;
+  existing.baseVpdManual = false;
       window.detourManualRoadInputs[key] = existing;
 
       const sliderEl = bodyEl.querySelector(`.detour-ref-weight-slider[data-detour-manual-key="${key}"][data-ref-siteid="${siteId}"]`);
