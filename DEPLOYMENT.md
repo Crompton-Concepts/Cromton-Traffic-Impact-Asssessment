@@ -45,19 +45,19 @@ This ensures that when you stage `index.html`, `index_formulas.html` is automati
 
 ### Start the Python Report Service
 ```powershell
-# Default: runs on http://127.0.0.1:8000
+# Default: runs on http://127.0.0.1:8060
 python report_service.py
 
 # Or with custom configuration:
 $env:HOST="0.0.0.0"
-$env:PORT="8000"
+$env:PORT="8060"
 python report_service.py
 ```
 
 The service will be available at:
-- **Main UI**: http://127.0.0.1:8000/docs (Swagger UI)
-- **Health Check**: http://127.0.0.1:8000/health
-- **Report Editor**: http://127.0.0.1:8000/report/editor/{draft_id}
+- **Main UI**: http://127.0.0.1:8060/docs (Swagger UI)
+- **Health Check**: http://127.0.0.1:8060/health
+- **Report Editor**: http://127.0.0.1:8060/report/editor/{draft_id}
 
 ### Open the Frontend
 1. In your web browser, open the index.html file directly

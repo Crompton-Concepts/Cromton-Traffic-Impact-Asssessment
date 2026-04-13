@@ -31,6 +31,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install-hooks.ps1
 ```bash
 # Start the Python report service
 python report_service.py
+# Service URL: http://127.0.0.1:8060
 
 # Open the frontend in browser
 # File: index.html
