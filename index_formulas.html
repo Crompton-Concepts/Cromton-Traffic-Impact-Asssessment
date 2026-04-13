@@ -22319,6 +22319,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (!segmentResultsByRoad.has(segmentKey)) {
             segmentResultsByRoad.set(segmentKey, {
               roadName: String(model.roadName || '').trim() || 'Detour road',
+              laneCount: Number(model.laneCount) || 2,
               periods: {}
             });
           }
@@ -22362,11 +22363,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       orderedRoadResults.forEach((roadResult) => {
         const roadLabel = String(roadResult.roadName || 'Detour road');
+        const isSingleLane = (roadResult.laneCount || 2) <= 1;
 
         const baseDetailRow = document.createElement('tr');
         baseDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">Base Direction LOS</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
+          if (isSingleLane) {
+            return `<td data-label="${p.key}">${formatVCR(result.baseVcr)}</td>`;
+          }
           return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D1</span>${formatVCR(result.baseD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D2</span>${formatVCR(result.baseD2Vcr)}</div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(baseDetailRow);
@@ -22375,6 +22380,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         addedDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">Added Diverted Vol</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
+          if (isSingleLane) {
+            return `<td data-label="${p.key}" style="color: #6a1b9a;">+${Math.round(result.addedD1 + result.addedD2).toLocaleString()} vph</td>`;
+          }
           return `<td data-label="${p.key}" style="color: #6a1b9a;"><div class="directional-stack"><div class="directional-row"><span class="direction-label">D1</span><span>+${Math.round(result.addedD1).toLocaleString()} vph</span></div><div class="directional-row"><span class="direction-label">D2</span><span>+${Math.round(result.addedD2).toLocaleString()} vph</span></div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(addedDetailRow);
@@ -22383,6 +22391,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         newDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">New Direction LOS</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
+          if (isSingleLane) {
+            return `<td data-label="${p.key}">${formatVCR(result.newVcr)}</td>`;
+          }
           return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D1</span>${formatVCR(result.updatedD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D2</span>${formatVCR(result.updatedD2Vcr)}</div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(newDetailRow);
