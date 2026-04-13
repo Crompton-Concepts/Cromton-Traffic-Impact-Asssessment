@@ -1758,17 +1758,17 @@ def editor_page(draft_id: str) -> str:
 if __name__ == "__main__":
     import uvicorn
     
-    # Run the server on localhost:8000 by default
+    # Run the server on localhost:8060 by default
     # Set environment variables to customize:
     # - HOST: defaults to 127.0.0.1 (localhost)
-    # - PORT: defaults to 8000
+    # - PORT: defaults to 8060 (matches frontend REPORT_SERVICE_BASE_URL)
     # - RELOAD: set to "true" for auto-reload in development
     
     host = os.environ.get("HOST", "127.0.0.1")
-    port = int(os.environ.get("PORT", "8000"))
+    port = int(os.environ.get("PORT", "8060"))
     reload = os.environ.get("RELOAD", "").lower() == "true"
     
-    print(f"🚀 Starting TIA Report Service at http://{host}:{port}")
+    print(f"Starting TIA Report Service at http://{host}:{port}")
     print(f"   Health check: http://{host}:{port}/health")
     print(f"   API docs: http://{host}:{port}/docs")
     
