@@ -1222,6 +1222,133 @@ def _render_computed_results_section(
   )
 
 
+def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict) -> str:
+  """Render a compact 3-subsection detour block for the short report."""
+  label_esc = _escape(route_label)
+  route_num = _escape(re.sub(r".*route\s*(\d+).*", r"Route \1", route_label, flags=re.IGNORECASE) or route_label)
+
+  # Render any payload tables collected for this route
+  table_html_parts: list[str] = []
+  for table in route_tables:
+    analysis = analysis_map.get(_normalize_title_key(table.get("title")))
+    table_html_parts.append(_render_data_table(table, analysis))
+  tables_html = "".join(table_html_parts)
+
+  return (
+    f"<div class=\"report-section report-block detour-route-block\">"
+    f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
+    f"<h3 class=\"editable-text\" contenteditable=\"true\">{label_esc}</h3>"
+
+    f"{tables_html}"
+
+    # 1. Detour Road Capacity Summary
+    "<div class=\"detour-sub-block avoid-break\">"
+    "<h4 class=\"editable-text\" contenteditable=\"true\">1. Detour Road Capacity Summary</h4>"
+    "<table><thead><tr>"
+    "<th contenteditable=\"true\">Parameter</th>"
+    "<th contenteditable=\"true\">Value</th>"
+    "<th contenteditable=\"true\">Notes</th>"
+    "</tr></thead><tbody>"
+    "<tr><td contenteditable=\"true\">Road Name / Classification</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Posted Speed (km/h)</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Lane Count</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Total Two-Way Capacity (vpd)</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Diverted VPD (Peak Direction)</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Remaining Surplus Capacity (vpd)</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">VCR After Diversion</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">LOS After Diversion</td><td contenteditable=\"true\">—</td><td contenteditable=\"true\">—</td></tr>"
+    "</tbody></table>"
+    "<p class=\"editable-text\" contenteditable=\"true\">Edit to confirm detour road capacity relative to diverted demand. Ensure VCR remains below 0.85 for acceptable operations.</p>"
+    "</div>"
+
+    # 2. Estimated Delay
+    "<div class=\"detour-sub-block avoid-break\">"
+    "<h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Delay</h4>"
+    "<table><thead><tr>"
+    "<th contenteditable=\"true\">Parameter</th>"
+    "<th contenteditable=\"true\">Value</th>"
+    "</tr></thead><tbody>"
+    "<tr><td contenteditable=\"true\">Detour Route Length (km)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Original Route Length (km)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Extra Distance (km)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Average Travel Speed on Detour (km/h)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Travel Time (s)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Intersection Delay (s)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Total Time (s)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Estimated Additional Delay (min)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Delay Classification</td><td contenteditable=\"true\">—</td></tr>"
+    "</tbody></table>"
+    "<p class=\"editable-text\" contenteditable=\"true\">Edit to record the additional travel time imposed on motorists using this detour route. "
+    "Estimated Delay = ceil((Travel Time + Intersection Delay) / 60).</p>"
+    "</div>"
+
+    # 3. Pedestrian Delay
+    "<div class=\"detour-sub-block avoid-break\">"
+    "<h4 class=\"editable-text\" contenteditable=\"true\">3. Pedestrian Delay</h4>"
+    "<div class=\"editable\" contenteditable=\"true\">"
+    "<p>Assess whether the detour route maintains safe pedestrian connectivity. Consider: "
+    "footpath / shared path availability, suitable crossing facilities, WCAG/DDA compliance, "
+    "and additional walking distance. Edit this section to record pedestrian impact findings.</p>"
+    "</div>"
+    "<table><thead><tr>"
+    "<th contenteditable=\"true\">Parameter</th>"
+    "<th contenteditable=\"true\">Value</th>"
+    "</tr></thead><tbody>"
+    "<tr><td contenteditable=\"true\">Pedestrian Detour Distance (m)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Additional Walking Time (min)</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Pedestrian Crossing Adequacy</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Pedestrian Delay Classification</td><td contenteditable=\"true\">—</td></tr>"
+    "<tr><td contenteditable=\"true\">Mitigation Recommended</td><td contenteditable=\"true\">—</td></tr>"
+    "</tbody></table>"
+    "</div>"
+
+    "</div>"
+  )
+
+
+def _build_short_detour_section(tables: list[dict], route_count: int, analysis_map: dict) -> str:
+  """Build the complete Section 5 Detour Analysis HTML for the short report."""
+  # Separate detour tables from non-detour tables.
+  detour_tables = [t for t in tables if "detour" in _safe_text(t.get("title"), "").lower()]
+  if not detour_tables and route_count < 1:
+    return ""
+
+  # Group by route number. Tables suffixed "- Detour Route N" map to that route.
+  # Tables without a route suffix go to a catch-all Route 1 group.
+  from collections import defaultdict
+  route_groups: dict[str, list[dict]] = defaultdict(list)
+  route_labels: dict[str, str] = {}
+
+  for table in detour_tables:
+    title = _safe_text(table.get("title"), "")
+    m = re.search(r"Detour Route\s*(\d+)", title, re.IGNORECASE)
+    key = m.group(1) if m else "1"
+    route_groups[key].append(table)
+
+  # Determine how many routes to render.
+  effective_count = max(route_count, len(route_groups), 1)
+  rendered: list[str] = []
+  for i in range(1, effective_count + 1):
+    key = str(i)
+    route_label_str = f"Detour Route {i}"
+    block = _render_short_detour_route_block(route_label_str, route_groups.get(key, []), analysis_map)
+    rendered.append(block)
+
+  if not rendered:
+    return ""
+
+  return (
+    "<div class=\"page-break\"></div>"
+    "<h2 contenteditable=\"true\">5. Detour Analysis</h2>"
+    "<div class=\"editable table-note\" contenteditable=\"true\">"
+    "<p>This section summarises the detour route analysis. "
+    "For each alternative route, the road capacity, estimated motorist delay, and pedestrian impact are assessed. "
+    "Edit the values in each subsection to reflect the actual detour configuration.</p>"
+    "</div>"
+    + "".join(rendered)
+  )
+
+
 def _render_detour_subsections(route_label: str = "") -> str:
   """Render expanded detour analysis subsections for a route."""
   label = _escape(route_label) if route_label else "Detour Route"
@@ -1742,6 +1869,22 @@ def editor_page(draft_id: str) -> str:
     chart_sections = _render_additional_chart_blocks(chart_items, embedded_chart_keys)
     payload_json = escape(json.dumps(payload))
 
+    # Short report: build Section 5 Detour Analysis if there are detour tables or routes.
+    raw_js = payload.get("raw_js_results", {}) if isinstance(payload.get("raw_js_results"), dict) else {}
+    detour_route_count = int(raw_js.get("detour_route_count") or 0)
+    is_short = variant_raw == "short"
+    short_detour_section_html = ""
+    if is_short:
+      short_detour_section_html = _build_short_detour_section(
+        tables, detour_route_count, table_analysis_map
+      )
+
+    # Adjust section numbers if short report has detour section.
+    sec5_label = "5. Detour Analysis" if is_short and short_detour_section_html else ""
+    sec_eng_num   = "6" if (is_short and short_detour_section_html) else "5"
+    sec_chart_num = "7" if (is_short and short_detour_section_html) else "6"
+    sec_comm_num  = "8" if (is_short and short_detour_section_html) else "7"
+
     return f"""<!DOCTYPE html>
 <html lang=\"en\">
 <head>
@@ -1932,15 +2075,17 @@ def editor_page(draft_id: str) -> str:
 
     {table_sections}
 
+    {short_detour_section_html}
+
     <div class=\"page-break\"></div>
 
-    <h2 contenteditable=\"true\">5. Engineering Observations &amp; Notes</h2>
+    <h2 contenteditable=\"true\">{sec_eng_num}. Engineering Observations &amp; Notes</h2>
     {engineering_obs_html}
 
-    <h2 contenteditable=\"true\">6. Charts</h2>
+    <h2 contenteditable=\"true\">{sec_chart_num}. Charts</h2>
     <div id=\"chartSectionContent\">{chart_sections}</div>
 
-    <h2 contenteditable=\"true\">7. Professional Commentary & Conclusion</h2>
+    <h2 contenteditable=\"true\">{sec_comm_num}. Professional Commentary &amp; Conclusion</h2>
     {commentary_html}
 
   </main>
