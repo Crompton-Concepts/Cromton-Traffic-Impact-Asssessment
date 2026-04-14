@@ -7286,7 +7286,8 @@
     // 2. Detour Road Capacity Summary — per-road parameters
     var capRows = [];
     snap.roads.forEach(function(road) {
-      var surplusVph = road.totalCapacity - convertDailyVpdTo80thHourly(road.baseVpd + snap.divertedVpdTotal);
+      var designYearVpd = Math.round(road.baseVpd * gf);
+      var surplusVph = road.totalCapacity - convertDailyVpdTo80thHourly(designYearVpd + snap.divertedVpdTotal);
       capRows.push(
         [road.name + ' - Posted Speed (km/h)', String(road.speedLimitKmh), ''],
         [road.name + ' - Lanes', String(road.laneCount), ''],
@@ -9600,7 +9601,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       );
 
       const baseSpeedSafe = Math.max(1, Number(baseSpeed) || 1);
-      const speedReductionFactor = adjustedFFS / baseSpeedSafe;
+      // HCM-aligned FFS capacity adjustment.
+      // A 1:1 linear ratio (adjustedFFS / baseSpeed) is incorrect: it would imply
+      // a 40 km/h road has half the throughput of an 80 km/h road. In practice,
+      // vehicles at lower speeds travel closer together, preserving throughput.
+      // HCM 6th Ed. (Exhibit 15-2) shows capacity falls only ~3-4% per 10 km/h
+      // drop in FFS. We apply a dampened factor where the maximum capacity penalty
+      // is capped at 20% regardless of how low the adjusted FFS falls.
+      // Formula: factor = 1 - 0.8 * max(0, (base - adjusted) / base)
+      // This limits the linear speed penalty to 20% at zero FFS, matching HCM guidance.
+      const rawLinearRatio = adjustedFFS / baseSpeedSafe;
+      const speedReductionFactor = Math.max(0.80, rawLinearRatio);
       let operationalCapacity = theoreticalRouteCapacity * speedReductionFactor;
       operationalCapacity *= Number(this.config.environmentalFactor) || 1;
 
@@ -9620,7 +9631,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
 
       const demandPCE = this.calculatePCEVolume(vehicleMix, grade);
-      const safeCapacity = Math.max(1, bottleneckCapacity);
+
+      // Convert bottleneckCapacity from mixed vph → PCE/h so the V/C ratio is
+      // dimensionally consistent. calculateIntersectionAbsorption() returns mixed
+      // vph; calculatePCEVolume() returns pc/h. Dividing PCE demand by a mixed-vph
+      // capacity inflates the V/C ratio. Fix: scale the capacity by the same
+      // fleet PCE factor (demandPCE / rawVehicles).
+      const rawVehicles = Object.values(vehicleMix).reduce((s, v) => s + (Number(v) || 0), 0);
+      const pceFactor = rawVehicles > 0 ? demandPCE / rawVehicles : 1;
+      const bottleneckCapacityPCE = bottleneckCapacity * pceFactor;
+
+      const safeCapacity = Math.max(1, bottleneckCapacityPCE);
       const vcRatio = demandPCE / safeCapacity;
       const breakdownRisk = vcRatio > this.config.targetMaxVC ? 'CRITICAL' : (vcRatio > 0.75 ? 'ELEVATED' : 'STABLE');
       const estimatedOperatingSpeed = vcRatio > this.config.targetMaxVC ? adjustedFFS * 0.4 : adjustedFFS;
@@ -9628,11 +9649,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       return {
         theoreticalBase: theoreticalRouteCapacity,
-        operationalCapacity: Math.floor(safeCapacity),
+        operationalCapacity: Math.floor(bottleneckCapacity),        // mixed vph — infrastructure unit
         demandPCE: Math.floor(demandPCE),
-        volumeToCapacityRatio: Number(vcRatio.toFixed(3)),
+        volumeToCapacityRatio: Number(vcRatio.toFixed(3)),          // PCE/h ÷ PCE/h — dimensionally consistent
         flowBreakdownRisk: breakdownRisk,
-        recommendedMaxDemand: Math.floor(safeCapacity * this.config.targetMaxVC),
+        recommendedMaxDemand: Math.floor(bottleneckCapacity * this.config.targetMaxVC), // mixed vph threshold
         bottleneckConstrained: bottleneckActive,
         vehicleHoursDelay: Number(delayHours.toFixed(2))
       };
