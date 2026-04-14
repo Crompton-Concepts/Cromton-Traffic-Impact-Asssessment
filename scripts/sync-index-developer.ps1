@@ -31,6 +31,34 @@ $outputContent = [regex]::Replace(
   ''
 )
 
+# Inject developer auth bypass block.
+# In the production build (index.html) the login gate is active. In the developer
+# build we bypass it entirely: the auth session key is pre-set AND the blur/gate
+# are synchronously cleared so a failing async data-load can never leave the UI
+# permanently blurred.
+$devBypassMarker  = '/* DEV-BYPASS-BLOCK */'
+$devBypassBlock   = @'
+  /* DEV-BYPASS-BLOCK */
+  // Developer build only: bypass login gate entirely.
+  // Pre-set auth session key and synchronously remove the app-locked blur so
+  // the UI is immediately usable regardless of async data-loading failures.
+  sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+  (function() {
+    document.body.classList.remove('app-locked');
+    var _g = document.getElementById('loginGate');
+    if (_g) _g.style.display = 'none';
+  })();
+
+'@
+$setupLoginGateCall = '  setupLoginGate();'
+# Only inject if the bypass is not already present (idempotent).
+if ($outputContent -notmatch [regex]::Escape($devBypassMarker)) {
+  $outputContent = $outputContent.Replace(
+    $setupLoginGateCall,
+    $devBypassBlock + $setupLoginGateCall
+  )
+}
+
 $existingOutput = if (Test-Path $developerPath) { Get-Content -Path $developerPath -Raw } else { '' }
 
 if ($existingOutput -ne $outputContent) {

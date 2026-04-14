@@ -3469,83 +3469,6 @@
         page-break-before: auto !important;
       }
     }
-
-    /* ===== DEVELOPER SPLIT-PANEL DASHBOARD LAYOUT ===== */
-    /* Dashboard split-panel is opt-in via body.dashboard-mode */
-    .dashboard-wrapper {
-      display: block;
-    }
-
-    body.dashboard-mode .dashboard-wrapper {
-      display: grid;
-      grid-template-columns: 400px 1fr;
-      min-height: 100vh;
-      align-items: start;
-    }
-
-    .control-panel {
-      background: #ffffff;
-    }
-
-    body.dashboard-mode .control-panel {
-      border-right: 2px solid #cfd8dc;
-      padding: 20px 18px 40px 18px;
-      min-height: 100vh;
-      overflow-y: auto;
-      position: sticky;
-      top: 0;
-      max-height: 100vh;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.06);
-      z-index: 5;
-    }
-
-    body.dashboard-mode .output-canvas {
-      background: #f0f4f8;
-      padding: 20px 24px 40px 24px;
-      min-height: 100vh;
-      overflow-y: auto;
-    }
-
-    /* In report mode, always full width */
-    body.report-mode-detailed .dashboard-wrapper,
-    body.report-mode-short .dashboard-wrapper {
-      display: block !important;
-    }
-    body.report-mode-detailed .control-panel,
-    body.report-mode-short .control-panel {
-      display: none !important;
-    }
-    body.report-mode-detailed .output-canvas,
-    body.report-mode-short .output-canvas {
-      padding: 0 !important;
-      background: transparent !important;
-      max-height: none !important;
-      overflow: visible !important;
-    }
-
-    /* Panel header label */
-    .panel-section-label {
-      font-size: 0.7em;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #90a4ae;
-      margin: 0 0 10px 2px;
-    }
-
-    /* Responsive: stack vertically on narrow screens */
-    @media (max-width: 960px) {
-      body.dashboard-mode .dashboard-wrapper {
-        display: block;
-      }
-      body.dashboard-mode .control-panel {
-        position: static;
-        max-height: none;
-        border-right: none;
-        border-bottom: 2px solid #cfd8dc;
-      }
-    }
-    /* ===== END DEVELOPER DASHBOARD ===== */
   </style>
 </head>
 <body class="app-locked input-color-mode">
@@ -3673,7 +3596,7 @@
     </div>
   </div>
   
-  <div id="loginGate" role="dialog" aria-modal="true" aria-labelledby="loginTitle" style="display:none;">
+  <div id="loginGate" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="login-card">
       <img class="login-logo" src="logo.jpeg" alt="Crompton logo" />
       <h2 id="loginTitle" class="login-title">Crompton Login</h2>
@@ -3727,7 +3650,6 @@
         <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal">📖 User Manual</button>
         <a id="formulaViewLink" class="contact-dev-button" href="/Cromton-Traffic-Impact-Asssessment/index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View">📘 Formula View</a>
         <a id="developerViewLink" class="contact-dev-button" href="/Cromton-Traffic-Impact-Asssessment/index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View">🧪 Developer View</a>
-        <button id="splitViewToggleBtn" type="button" class="contact-dev-button" onclick="toggleDashboardMode()" title="Toggle split-panel layout" style="transition: background 0.2s;">⬜ Split View</button>
         <div class="contact-dev-wrap">
           <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel">💬 Contact Developer</button>
           <div id="contactDevPanel" class="contact-dev-panel hidden" role="dialog" aria-label="Developer contact details">
@@ -3794,10 +3716,16 @@
         <div id="pythonSetupGuide" style="margin:0 0 10px 0; padding:10px 12px; border:1px solid #dbe2ea; border-radius:8px; background:#f8fafc; color:#334155;"></div>
         <p style="margin-bottom:8px; color:#334155;"><strong>Step 3: Run these commands in Terminal/Command Prompt:</strong></p>
         <pre id="pythonSetupCommands" style="white-space:pre-wrap; word-break:break-word; margin:0; padding:12px; border:1px solid #dbe2ea; border-radius:8px; background:#f8fafc; color:#0f172a; font-family:Consolas, 'Courier New', monospace; font-size:13px;"></pre>
+        <div id="cmdOpenHint" style="display:none; margin-top:10px; padding:8px 12px; background:#ede9fe; border:1px solid #a78bfa; border-radius:8px; font-size:0.88em; color:#4c1d95;">
+          ✅ Commands copied! Now:<br>
+          1. Press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Win + R</kbd>, type <code style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">cmd</code>, press Enter.<br>
+          2. In the Command Prompt window, press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Ctrl + V</kbd> to paste and then press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Enter</kbd>.
+        </div>
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px;">
           <a id="downloadPythonBtn" href="https://apps.microsoft.com/detail/9NCVDN91XZQP" target="_blank" rel="noopener noreferrer" class="contact-dev-button" style="background:#1d4ed8; text-decoration:none; display:inline-flex; align-items:center;">Get Python from Microsoft Store</a>
           <a id="downloadReportServiceBtn" href="https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/report_service.py" target="_blank" rel="noopener noreferrer" class="contact-dev-button" style="background:#0f766e; text-decoration:none; display:inline-flex; align-items:center;">Download Report-Service</a>
           <button id="copyPythonSetupBtn" type="button" class="contact-dev-button" style="background:#166534;">Copy Commands</button>
+          <button id="copyOpenCmdBtn" type="button" class="contact-dev-button" style="background:#7c3aed;" title="Copy commands to clipboard and open Command Prompt — then paste with Ctrl+V">📋 Copy &amp; Open CMD</button>
           <button id="pythonSetupOkBtn" type="button" class="contact-dev-button">OK</button>
         </div>
       </div>
@@ -3824,10 +3752,6 @@
         </div>
       </div>
     </div>
-
-    <div class="dashboard-wrapper">
-    <aside class="control-panel">
-    <p class="panel-section-label">Inputs &amp; Parameters</p>
 
     <h1 class="main-report-heading">Traffic Impact Assessment</h1>
     <p class="subtitle">database-integrated directional traffic, queue metrics, and capacity checks</p>
@@ -4294,6 +4218,18 @@
             <p style="font-size: 0.8em; color: #666; margin: 0 0 4px 0;">(auto-filled if in DB; editable when needed)</p>
             <input id="D2_Lanes" type="number" value="1" min="1" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;" />
           </div>
+          <div style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
+            <label style="color: #c30000; font-weight: bold;">Road Classification (Cap.) *</label>
+            <p style="font-size: 0.8em; color: #666; margin: 0 0 4px 0;">Physical per-lane capacity for V/C ratio denominator</p>
+            <select id="roadCapacityClass" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
+              <option value="freeway">Freeway / Motorway (1,800 vph/lane)</option>
+              <option value="multi_lane">Multi-lane Arterial (1,600 vph/lane)</option>
+              <option value="arterial" selected>Urban Arterial 60–80 km/h (1,500 vph/lane)</option>
+              <option value="sub_arterial">Sub-arterial / Collector (1,200 vph/lane)</option>
+              <option value="local">Local Street ≤50 km/h (900 vph/lane)</option>
+              <option value="rural_highway">Rural Highway (1,000 vph/lane)</option>
+            </select>
+          </div>
           <div id="laneClosureModeWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
             <label style="color: #c30000; font-weight: bold;">Lane Closure Mode *</label>
             <select id="laneClosureCount" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
@@ -4364,23 +4300,6 @@
         <p class="field-help" style="text-align:center; margin-top:8px;">This updates directional summary, queue, VCR/LOS, optional diagnostics, and charts in one pass.</p>
       </div>
     </div>
-
-    <details class="card">
-      <summary style="font-weight:700; color:#1f5e63; cursor:pointer;">Quick KPI (Click to Expand)</summary>
-      <div class="kpi-grid" style="margin-top:12px;">
-        <div class="kpi"><div class="kpi-label">Design Volume (DV)</div><div class="kpi-value" id="kpiDV">-</div></div>
-        <div class="kpi"><div class="kpi-label">D1 Peak Queue (2m)</div><div class="kpi-value" id="kpiD1PeakQueue">-</div></div>
-        <div class="kpi"><div class="kpi-label">D2 Peak Queue (2m)</div><div class="kpi-value" id="kpiD2PeakQueue">-</div></div>
-        <div class="kpi"><div class="kpi-label">Worst V/C Ratio</div><div class="kpi-value" id="kpiWorstVcr">-</div></div>
-        <div class="kpi"><div class="kpi-label">SLRF Peak</div><div class="kpi-value" id="kpiSlrfPeak">-</div></div>
-        <div class="kpi"><div class="kpi-label">Road Train Rule</div><div class="kpi-value" id="kpiRoadTrain">-</div></div>
-      </div>
-      <div id="kpiModelProfile" style="margin-top:10px; padding:8px 10px; border-radius:6px; background:#eef3f7; border:1px solid #d0dde6; color:#1f5e63; font-size:0.88em; font-weight:700;">Model Profile: -</div>
-    </details>
-
-    </aside>
-    <main class="output-canvas">
-    <p class="panel-section-label">Analysis Outputs</p>
 
     <!-- Data Visualization -->
     <details class="card" id="macroDataVizSection" style="display:none;" open>
@@ -4536,6 +4455,11 @@
         <div class="chart-panel">
           <canvas id="queueChartD1" class="chart-canvas-300"></canvas>
         </div>
+      </div>
+
+      <div id="queueVisualizerWrap" class="simulation-container" style="display:none; background:#2c3e50; padding:15px; border-radius:8px; margin-top:16px;">
+        <h4 style="color:#ecf0f1; margin:0 0 10px 0;">Peak Queue Visualizer</h4>
+        <canvas id="queueCanvas" width="600" height="150" style="background:#34495e; border-radius:4px; width:100%;"></canvas>
       </div>
     </div>
 
@@ -4748,6 +4672,17 @@
       <p class="optional-card-note">
         Merges the 24-hour hourly profile of the primary site with selected detour roads to identify specific peak-period failures.
       </p>
+      <div id="detourRouteScenarioManager" style="background: #faf5ff; border: 1px solid #d7bde8; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div style="font-size: 0.82em; font-weight: 700; color: #6a1b9a;">Detour Route Scenarios</div>
+            <div style="font-size: 0.76em; color: #8e24aa; margin-top: 2px;">Configure how many detour routes need separate analysis. Each route keeps its own selected path, weights, and detour inputs.</div>
+          </div>
+          <button type="button" onclick="configureDetourRouteCount()" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.82em; background: #6a1b9a; box-shadow: none;">Set Route Count</button>
+        </div>
+        <div id="detourRouteScenarioSummary" style="font-size: 0.78em; color: #4a148c; margin-top: 8px;">1 route configured.</div>
+        <div id="detourRouteScenarioTabs" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+      </div>
       
       <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
         
@@ -4789,7 +4724,9 @@
               <input type="number" id="detourNearbyRoadRadiusInput" min="200" max="3000" step="100" value="200" style="width: 84px; margin: 0; border: 1px solid #ce93d8; border-radius: 4px; padding: 4px 6px; font-size: 0.78em; color: #6a1b9a; background: #fff;" title="Detour nearby road radius (meters)" />
               <span id="detourNearbyRoadRadiusValue" style="font-size: 0.78em; color: #6a1b9a; min-width: 54px; text-align: right;">0.2 km</span>
               <button type="button" id="detourNearbyRoadScanBtn" onclick="scanDetourNearbyRoads()" style="width: auto; margin-top: 0; padding: 6px 10px; font-size: 0.85em; background: #8e24aa; box-shadow: none;">Scan</button>
+              <button type="button" id="detourAutoRouteBtn" onclick="suggestDetourAutoRoute()" style="width: auto; margin-top: 0; padding: 6px 10px; font-size: 0.85em; background: #1565c0; box-shadow: none;" title="Auto-find shortest detour path via OSM road network">🗺️ Auto Route</button>
             </div>
+            <div id="detourAutoRouteSuggestions" style="display:none; margin-top:8px; background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:8px;"></div>
             <div id="detourSelectedRoadsSummary" style="font-size: 0.8em; color: #6a1b9a; margin: 0 0 8px 0;">Selected path: -</div>
             <div id="detourNearbyRoadsList" style="font-size: 0.85em; color: #4a148c; display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto;">
               <span style="color: #8e24aa;">Select a primary site/search, then scan.</span>
@@ -4814,7 +4751,7 @@
 
         <div id="detourManualVpdPanel" style="display: none; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
           <label style="color: #6a1b9a; font-weight: bold;">Manual Inputs for Selected Roads (when no nearby counter is found)</label>
-          <div style="font-size: 0.76em; color: #8e24aa; margin-top: 4px;">Choose a <strong>Base VPD method</strong> for each road: <strong>📡 Nearby Datapoints</strong> uses weighted reference counters; <strong>🚗 Trip Generation</strong> uses calculated VADT. Base VPD is editable when using Datapoints method.</div>
+          <div style="font-size: 0.76em; color: #8e24aa; margin-top: 4px;">Choose a <strong>Road VPD method</strong> for each road: <strong>📡 Nearby Datapoints</strong> calculates a weighted current-road VPD from the selected reference counters; <strong>🚗 Trip Generation</strong> uses calculated VADT. Datapoint mode is read-only and updates from the selected weights below.</div>
           <div id="detourManualVpdRows" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
 
@@ -4852,9 +4789,9 @@
               <label style="color: #6a1b9a; font-size: 0.78em;">Detour Length (km)</label>
               <input type="number" id="detourRouteLengthKm" value="0.4" step="0.1" min="0" oninput="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
             </div>
-            <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
-              <label style="color: #6a1b9a; font-size: 0.78em;">Average Speed (km/h)</label>
-              <input type="number" id="detourAvgSpeedKmh" value="55" step="1" min="1" oninput="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
+            <div style="background: #f8f2fb; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
+              <label style="color: #6a1b9a; font-size: 0.78em;">Average Speed (km/h) <span style="font-size: 0.85em; color: #8e24aa;">— auto from road speeds</span></label>
+              <input type="number" id="detourAvgSpeedKmh" value="55" step="1" min="1" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%; cursor: default;" />
             </div>
             <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
               <label style="color: #6a1b9a; font-size: 0.78em;"># Controlled Intersections</label>
@@ -4939,6 +4876,8 @@
     </details>
 
     
+
+    <div id="engineeringConflictWarnings" style="display:none; margin-bottom:12px; padding:10px 14px; background:#fff5f5; border-left:4px solid #e74c3c; border-radius:6px;"></div>
 
     <details class="card diag-card" id="selfDiagnosticsCard" style="display:none;">
       <summary style="cursor: pointer; font-size: 1em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">🧪 Internal Diagnostics (Hidden, Click to Expand)</summary>
@@ -5530,8 +5469,6 @@
   </div>
 
     <div class="copyright-footer">© 2026 Crompton Concepts. All rights reserved.</div>
-    </main>
-    </div><!-- end .dashboard-wrapper -->
 <script>
   const AUTH_SESSION_KEY = 'crompton_tia_auth';
   let loadingHintTimer = null;
@@ -6795,6 +6732,19 @@
       return String(text || '').replace(/\s+/g, ' ').trim();
     }
 
+    function normalizeTitleText(text) {
+      const cleaned = normalizeCellText(text)
+        .replace(/^🖨️\s*/u, '')
+        .replace(/^📊\s*/u, '')
+        .replace(/^📈\s*/u, '')
+        .replace(/^🛣️\s*/u, '')
+        .replace(/^🔄\s*/u, '')
+        .replace(/\s*\(Click to Expand\)$/i, '')
+        .replace(/\s*[-:]\s*Include in Print:\s*(Yes|No)$/i, '')
+        .trim();
+      return cleaned;
+    }
+
     function getCellPlainText(cellEl) {
       if (!cellEl) return '';
       const clone = cellEl.cloneNode(true);
@@ -6815,17 +6765,19 @@
 
     function findNearbyTableHeading(tableEl) {
       if (!tableEl) return '';
-      const headingSelector = 'h3, h4, h5, .table-title, .section-title, strong';
+      const headingSelector = 'h2, h3, h4, h5, .table-title, .section-title, .card-title';
       let node = tableEl;
       for (let depth = 0; depth < 4 && node; depth += 1) {
         let prev = node.previousElementSibling;
         while (prev) {
           if (prev.matches && prev.matches(headingSelector)) {
-            return normalizeCellText(prev.textContent);
+            const candidate = normalizeTitleText(prev.textContent);
+            if (candidate && !/include in print/i.test(candidate)) return candidate;
           }
           const nested = prev.querySelector ? prev.querySelector(headingSelector) : null;
           if (nested) {
-            return normalizeCellText(nested.textContent);
+            const candidate = normalizeTitleText(nested.textContent);
+            if (candidate && !/include in print/i.test(candidate)) return candidate;
           }
           prev = prev.previousElementSibling;
         }
@@ -6835,7 +6787,112 @@
       return '';
     }
 
+    function extractDirectionalCellParts(cellEl) {
+      if (!cellEl) return null;
+      const rows = Array.from(cellEl.querySelectorAll('.directional-row'));
+      if (!rows.length) return null;
+      const mapped = {};
+      rows.forEach((rowEl) => {
+        const labelEl = rowEl.querySelector('.direction-label');
+        const label = normalizeCellText(labelEl ? labelEl.textContent : '').toUpperCase();
+        const clone = rowEl.cloneNode(true);
+        clone.querySelectorAll('.direction-label').forEach((node) => node.remove());
+        const value = normalizeCellText(clone.textContent || '');
+        if (label && value) mapped[label] = value;
+      });
+      return Object.keys(mapped).length ? mapped : null;
+    }
+
+    function extractDetourDirectionalTable(tableEl) {
+      const periodHeaders = Array.from(tableEl.querySelectorAll('thead th')).slice(2).map((cell) => getCellPlainText(cell));
+      const rows = [];
+      Array.from(tableEl.querySelectorAll('tbody tr')).forEach((rowEl) => {
+        const cellEls = Array.from(rowEl.querySelectorAll('th, td'));
+        if (cellEls.length < 3) return;
+        const road = getCellPlainText(cellEls[0]);
+        const metric = getCellPlainText(cellEls[1]);
+        const directionalValues = { D1: [], D2: [] };
+        let hasDirectionalData = false;
+
+        cellEls.slice(2).forEach((cellEl) => {
+          const parts = extractDirectionalCellParts(cellEl);
+          if (parts) {
+            directionalValues.D1.push(parts.D1 || '-');
+            directionalValues.D2.push(parts.D2 || '-');
+            hasDirectionalData = true;
+          } else {
+            const text = getCellPlainText(cellEl) || '-';
+            directionalValues.D1.push(text);
+            directionalValues.D2.push(text);
+          }
+        });
+
+        if (hasDirectionalData) {
+          rows.push([road, metric, 'D1', ...directionalValues.D1]);
+          rows.push([road, metric, 'D2', ...directionalValues.D2]);
+        } else {
+          rows.push([road, metric, '-', ...directionalValues.D1]);
+        }
+      });
+
+      return {
+        columns: ['Road', 'Metric', 'Direction', ...periodHeaders],
+        rows
+      };
+    }
+
+    function extractPostDiversionDirectionalTable(tableEl) {
+      const periodHeaders = Array.from(tableEl.querySelectorAll('thead th')).slice(1).map((cell) => getCellPlainText(cell));
+      const rows = [];
+
+      Array.from(tableEl.querySelectorAll('tbody tr')).forEach((rowEl) => {
+        const cellEls = Array.from(rowEl.querySelectorAll('th, td'));
+        if (cellEls.length < 2) return;
+        const metric = getCellPlainText(cellEls[0]);
+        const directionalValues = { D1: [], D2: [] };
+        let hasDirectionalData = false;
+
+        cellEls.slice(1).forEach((cellEl) => {
+          const parts = extractDirectionalCellParts(cellEl);
+          if (parts) {
+            directionalValues.D1.push(parts.D1 || '-');
+            directionalValues.D2.push(parts.D2 || '-');
+            hasDirectionalData = true;
+            return;
+          }
+
+          const text = getCellPlainText(cellEl);
+          const d1Match = text.match(/D1\s*:?[\s]*([^D]+?)(?=D2\s*:|$)/i);
+          const d2Match = text.match(/D2\s*:?[\s]*(.+)$/i);
+          if (d1Match || d2Match) {
+            directionalValues.D1.push(normalizeCellText(d1Match ? d1Match[1] : '-'));
+            directionalValues.D2.push(normalizeCellText(d2Match ? d2Match[1] : '-'));
+            hasDirectionalData = true;
+          } else {
+            directionalValues.D1.push(text || '-');
+            directionalValues.D2.push(text || '-');
+          }
+        });
+
+        if (hasDirectionalData) {
+          rows.push([metric, 'D1', ...directionalValues.D1]);
+          rows.push([metric, 'D2', ...directionalValues.D2]);
+        } else {
+          rows.push([metric, '-', ...directionalValues.D1]);
+        }
+      });
+
+      return {
+        columns: ['Metric', 'Direction', ...periodHeaders],
+        rows
+      };
+    }
+
     function extractStructuredTable(tableEl) {
+      if (!tableEl) return { columns: [], rows: [] };
+      if (tableEl.id === 'detourSegmentDetailedTable') return extractDetourDirectionalTable(tableEl);
+      if (tableEl.id === 'postDiversionTable') return extractPostDiversionDirectionalTable(tableEl);
+
       const headerCells = Array.from(tableEl.querySelectorAll('thead th'));
       const bodyRows = Array.from(tableEl.querySelectorAll('tbody tr'));
       const fallbackRows = bodyRows.length ? bodyRows : Array.from(tableEl.querySelectorAll('tr'));
@@ -6869,47 +6926,60 @@
 
     const tableEls = Array.from(document.querySelectorAll('table'))
       .filter((tableEl) => !tableEl.closest('.exclude-from-print'))
+      .filter((tableEl) => !tableEl.closest('#printCustomizationCard, #formulaTraceSection, #selfDiagnosticsCard'))
+      .filter((tableEl) => {
+        const tableId = String(tableEl.id || '');
+        if (['traceTable'].includes(tableId)) return false;
+        return true;
+      })
       .filter((tableEl) => {
         const rect = tableEl.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0;
       })
       .slice(0, maxTables);
 
-      const explicitTitleById = {
-        groupedTableD1: 'Grouped Directional Summary - D1',
-        groupedTableD2: 'Grouped Directional Summary - D2',
-        queueGroupedTableD1: 'Directional Queue Summary - D1',
-        queueGroupedTableD2: 'Directional Queue Summary - D2',
+    const explicitTitleById = {
+      groupedTableD1: 'Grouped Directional Summary - D1',
+      groupedTableD2: 'Grouped Directional Summary - D2',
+      queueGroupedTableD1: 'Directional Queue Summary - D1',
+      queueGroupedTableD2: 'Directional Queue Summary - D2',
         queueSwtSummaryTable: 'Directional Queue Summary - SWT',
-        vcrGroupedTableD1: 'Directional VCR Summary - D1',
-        vcrGroupedTableD2: 'Directional VCR Summary - D2',
+      vcrGroupedTableD1: 'Directional VCR Summary - D1',
+      vcrGroupedTableD2: 'Directional VCR Summary - D2',
         hourlyQueueTableD1: 'Hourly Queue Summary - D1',
         hourlyQueueTableD2: 'Hourly Queue Summary - D2',
         hourlyVcrTableD1: 'Hourly VCR Summary - D1',
         hourlyVcrTableD2: 'Hourly VCR Summary - D2',
-        detourSegmentDetailedTable: 'Detour Road Directional Capacity Summary',
-        postDiversionTable: 'Existing Road Status After Diversion'
-      };
+      detourSegmentDetailedTable: 'Detour Road Directional Capacity Summary',
+      postDiversionTable: 'Existing Road Status After Diversion'
+    };
 
     return tableEls.map((tableEl, idx) => {
       const card = tableEl.closest('.card');
-      const cardTitle = card ? (card.querySelector('h2, h3, .card-title')?.textContent || '').trim() : '';
-      const caption = (tableEl.querySelector('caption')?.textContent || '').trim();
+      const cardTitle = normalizeTitleText(card ? (card.querySelector('h2, h3, .card-title')?.textContent || '') : '');
+      const caption = normalizeTitleText(tableEl.querySelector('caption')?.textContent || '');
       const nearbyHeading = findNearbyTableHeading(tableEl);
-        const explicitTitle = explicitTitleById[String(tableEl.id || '')] || '';
-        const baseTitle = explicitTitle || caption || cardTitle || `Table ${idx + 1}`;
+      const explicitTitle = explicitTitleById[String(tableEl.id || '')] || '';
+      const baseTitle = explicitTitle || caption || cardTitle || `Table ${idx + 1}`;
       const title = nearbyHeading && nearbyHeading.toLowerCase() !== baseTitle.toLowerCase()
         ? `${baseTitle} - ${nearbyHeading}`
         : baseTitle;
       const structured = extractStructuredTable(tableEl);
 
-      if (/\bformula\b/i.test(title) && !structured.rows.some((row) => row.some((cell) => hasNumericValue(cell)))) {
+      const normalizedTitle = normalizeTitleText(title);
+      const columnSignature = structured.columns.map((col) => normalizeTitleText(col).toLowerCase()).join('|');
+
+      if (!structured.rows.length) return null;
+      if (/reference points beyond|excluded reference points|print customization|internal diagnostics|selected site details table/i.test(normalizedTitle)) return null;
+      if (columnSignature === '#|datapoint|vpd|dist|use|weight %') return null;
+
+      if (/\bformula\b/i.test(normalizedTitle) && !structured.rows.some((row) => row.some((cell) => hasNumericValue(cell)))) {
         return null;
       }
 
       return {
         table_id: String(tableEl.id || ''),
-        title,
+        title: normalizedTitle,
         columns: structured.columns,
         rows: structured.rows
       };
@@ -6917,7 +6987,76 @@
   }
 
   function collectChartImages(maxCharts = 1000) {
+    const reportChartTableIds = {
+      macroHourlyChart: ['analysis_parameters'],
+      hourlyQueueChart: ['hourlyQueueTableD1'],
+      hourlyVcrChart: ['hourlyVcrTableD1']
+    };
+
+    const reportChartTitles = {
+      macroHourlyChart: 'Hourly Traffic Profile - Peak Hour Analysis',
+      hourlyQueueChart: 'Queue Length (Hourly Basis)',
+      hourlyVcrChart: 'VCR (Hourly Basis)'
+    };
+
+    function getReportChartTableIds(canvasId) {
+      return Array.isArray(reportChartTableIds[canvasId]) ? reportChartTableIds[canvasId] : [];
+    }
+
+    function isReportEligibleCanvas(canvasEl) {
+      const canvasId = String(canvasEl && canvasEl.id || '').trim();
+      if (!canvasId || !Object.prototype.hasOwnProperty.call(reportChartTableIds, canvasId)) return false;
+      if (canvasId === 'managementVizCanvas') {
+        const templateEl = document.getElementById('vizTemplate');
+        return String(templateEl && templateEl.value || 'none').toLowerCase() !== 'none';
+      }
+      return true;
+    }
+
+    function canvasHasMeaningfulContent(canvasEl) {
+      try {
+        const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return true;
+        const width = Math.max(1, Number(canvasEl.width) || 0);
+        const height = Math.max(1, Number(canvasEl.height) || 0);
+        const imageData = ctx.getImageData(0, 0, width, height).data;
+        let nonTransparentSamples = 0;
+        const stride = Math.max(16, Math.floor(imageData.length / 4000));
+        for (let idx = 3; idx < imageData.length; idx += stride) {
+          if ((imageData[idx] || 0) > 0) {
+            nonTransparentSamples += 1;
+            if (nonTransparentSamples >= 10) return true;
+          }
+        }
+        return false;
+      } catch (_) {
+        return true;
+      }
+    }
+
+    function exportCanvasForReport(canvasEl) {
+      const width = Number(canvasEl && canvasEl.width) || 0;
+      const height = Number(canvasEl && canvasEl.height) || 0;
+      if (width <= 0 || height <= 0) return '';
+      try {
+        const scale = 2;
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = width * scale;
+        exportCanvas.height = height * scale;
+        const exportCtx = exportCanvas.getContext('2d');
+        if (!exportCtx) return canvasEl.toDataURL('image/png');
+        exportCtx.setTransform(scale, 0, 0, scale, 0, 0);
+        exportCtx.drawImage(canvasEl, 0, 0, width, height);
+        return exportCanvas.toDataURL('image/png');
+      } catch (_) {
+        return canvasEl.toDataURL('image/png');
+      }
+    }
+
     function getChartHeading(canvasEl, idx) {
+      const canvasId = String(canvasEl && canvasEl.id || '').trim();
+      if (reportChartTitles[canvasId]) return reportChartTitles[canvasId];
+
       const explicit = String(canvasEl.getAttribute('data-report-title') || '').trim();
       if (explicit) return explicit;
 
@@ -6954,24 +7093,125 @@
 
     const chartEls = Array.from(document.querySelectorAll('canvas'))
       .filter((canvasEl) => !canvasEl.closest('.exclude-from-print'))
+      .filter((canvasEl) => isReportEligibleCanvas(canvasEl))
       .filter((canvasEl) => Number(canvasEl.width) > 0 && Number(canvasEl.height) > 0)
       .slice(0, maxCharts);
 
     const charts = [];
     chartEls.forEach((canvasEl, idx) => {
       try {
-        const dataUrl = canvasEl.toDataURL('image/png');
+        if (!canvasHasMeaningfulContent(canvasEl)) return;
+        const dataUrl = exportCanvasForReport(canvasEl);
         if (!dataUrl || !dataUrl.startsWith('data:image/')) return;
         charts.push({
           title: getChartHeading(canvasEl, idx),
           image_data_url: dataUrl,
-          canvas_id: String(canvasEl.id || '').trim()
+          canvas_id: String(canvasEl.id || '').trim(),
+          table_ids: getReportChartTableIds(String(canvasEl.id || '').trim())
         });
       } catch (_) {
         // Canvas export can fail for tainted canvases; skip silently.
       }
     });
     return charts;
+  }
+
+  function prepareReportChartsForExport() {
+    if (window.Chart && typeof window.Chart.getChart === 'function') {
+      ['hourlyQueueChart', 'hourlyVcrChart', 'macroHourlyChart'].forEach((canvasId) => {
+        const chartInstance = window.Chart.getChart(canvasId);
+        if (!chartInstance) return;
+        try {
+          chartInstance.resize();
+          chartInstance.update('none');
+        } catch (_) {}
+      });
+    }
+  }
+
+  function collectSelectedSiteDetails() {
+    const mapLinkEl = document.getElementById('macroMapLink');
+    const rawMapHref = String(mapLinkEl && mapLinkEl.getAttribute('href') || '').trim();
+    const googleMapsUrl = rawMapHref && !/^javascript:/i.test(rawMapHref) ? rawMapHref : '';
+
+    const details = {
+      site_id: getElementValueOrText('macroDetailSiteId') || getElementValueOrText('macroSiteId') || '',
+      source: getElementValueOrText('macroDetailSource') || '',
+      road_name: getElementValueOrText('macroDetailRoadName') || '',
+      description: getElementValueOrText('macroDetailDescription') || '',
+      coordinates: getElementValueOrText('macroDetailCoords') || '',
+      google_maps_url: googleMapsUrl,
+      count_year: getElementValueOrText('macroDetailCountYear') || getElementValueOrText('baseYear') || '',
+      growth_rate: getElementValueOrText('macroDetailGrowthRate') || getElementValueOrText('macroGrowthRate') || '',
+      site_hv_percent: getElementValueOrText('macroDetailHV') || '',
+      data_quality: getElementValueOrText('macroDetailQuality') || '',
+      d1_direction: getElementValueOrText('macroDetailDirD1Label') || '',
+      d2_direction: getElementValueOrText('macroDetailDirD2Label') || '',
+      d1_vadt: getElementValueOrText('macroDetailD1') || '',
+      d2_vadt: getElementValueOrText('macroDetailD2') || '',
+      total_vadt: getElementValueOrText('macroDetailTotal') || '',
+      applied_d1_hv_percent: getElementValueOrText('D1_HVP') || '',
+      applied_d2_hv_percent: getElementValueOrText('D2_HVP') || '',
+      applied_d1_rt_percent: getElementValueOrText('D1_RTP') || '',
+      applied_d2_rt_percent: getElementValueOrText('D2_RTP') || ''
+    };
+
+    return Object.fromEntries(Object.entries(details).filter(([, value]) => String(value || '').trim() !== ''));
+  }
+
+  function getSeriesPeakDiagnostic(labels, values, labelText) {
+    const safeLabels = Array.isArray(labels) ? labels : [];
+    const safeValues = Array.isArray(values) ? values : [];
+    let bestIndex = -1;
+    let bestValue = -Infinity;
+    safeValues.forEach((value, index) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return;
+      if (numeric > bestValue) {
+        bestValue = numeric;
+        bestIndex = index;
+      }
+    });
+
+    if (bestIndex < 0 || !Number.isFinite(bestValue)) return null;
+    return {
+      label: String(labelText || '').trim(),
+      time_label: String(safeLabels[bestIndex] || `Hour ${bestIndex + 1}`),
+      value: bestValue,
+      index: bestIndex
+    };
+  }
+
+  function collectPeakDiagnostics() {
+    const queueLabels = lastHourlyQueueChartData && Array.isArray(lastHourlyQueueChartData.labels) ? lastHourlyQueueChartData.labels : [];
+    const vcrLabels = lastHourlyVcrChartData && Array.isArray(lastHourlyVcrChartData.labels) ? lastHourlyVcrChartData.labels : [];
+    const d1Queue = getSeriesPeakDiagnostic(queueLabels, lastHourlyQueueChartData && lastHourlyQueueChartData.d1Max, getElementValueOrText('hourlyQueueD1Title') || 'Direction 1');
+    const d2Queue = getSeriesPeakDiagnostic(queueLabels, lastHourlyQueueChartData && lastHourlyQueueChartData.d2Max, getElementValueOrText('hourlyQueueD2Title') || 'Direction 2');
+    const d1Vcr = getSeriesPeakDiagnostic(vcrLabels, lastHourlyVcrChartData && lastHourlyVcrChartData.d1Work, getElementValueOrText('hourlyVcrD1Title') || 'Direction 1');
+    const d2Vcr = getSeriesPeakDiagnostic(vcrLabels, lastHourlyVcrChartData && lastHourlyVcrChartData.d2Work, getElementValueOrText('hourlyVcrD2Title') || 'Direction 2');
+
+    const worstQueue = [d1Queue, d2Queue].filter(Boolean).sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))[0] || null;
+    const worstVcr = [d1Vcr, d2Vcr].filter(Boolean).sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))[0] || null;
+    const queueWaitMinutes = getSelectedHourlyQueueDurationMinutes();
+
+    return {
+      queue_wait_minutes: queueWaitMinutes,
+      queue_peak_time: worstQueue ? worstQueue.time_label : '',
+      queue_peak_direction: worstQueue ? worstQueue.label : '',
+      queue_peak_value_m: worstQueue && Number.isFinite(Number(worstQueue.value)) ? Math.round(Number(worstQueue.value)) : null,
+      d1_queue_peak_time: d1Queue ? d1Queue.time_label : '',
+      d1_queue_peak_value_m: d1Queue && Number.isFinite(Number(d1Queue.value)) ? Math.round(Number(d1Queue.value)) : null,
+      d2_queue_peak_time: d2Queue ? d2Queue.time_label : '',
+      d2_queue_peak_value_m: d2Queue && Number.isFinite(Number(d2Queue.value)) ? Math.round(Number(d2Queue.value)) : null,
+      los_peak_time: worstVcr ? worstVcr.time_label : '',
+      los_peak_direction: worstVcr ? worstVcr.label : '',
+      worst_hourly_vcr: worstVcr && Number.isFinite(Number(worstVcr.value)) ? Number(Number(worstVcr.value).toFixed(2)) : null,
+      worst_hourly_los: worstVcr && Number.isFinite(Number(worstVcr.value)) ? losLabel(Number(worstVcr.value)) : '',
+      d1_vcr_peak_time: d1Vcr ? d1Vcr.time_label : '',
+      d1_vcr_peak_value: d1Vcr && Number.isFinite(Number(d1Vcr.value)) ? Number(Number(d1Vcr.value).toFixed(2)) : null,
+      d2_vcr_peak_time: d2Vcr ? d2Vcr.time_label : '',
+      d2_vcr_peak_value: d2Vcr && Number.isFinite(Number(d2Vcr.value)) ? Number(Number(d2Vcr.value).toFixed(2)) : null
+    };
   }
 
   function buildAutoSummary({ roadMode, worstVcr, los, queuePeak, detourRecommended, notes }) {
@@ -6994,9 +7234,157 @@
     return summaryBits.join(' ');
   }
 
-  function buildEditableReportPayload() {
+  function isDetourReportTable(table) {
+    const tableId = String(table && table.table_id || '').trim();
+    const title = String(table && table.title || '').trim().toLowerCase();
+    return tableId === 'detourSegmentDetailedTable'
+      || tableId === 'postDiversionTable'
+      || tableId === 'syntheticVpdCalculated'
+      || tableId === 'syntheticRoadCapacity'
+      || tableId === 'syntheticEstimatedDelay'
+      || title.includes('detour')
+      || title.includes('diversion');
+  }
+
+  /**
+   * Build synthetic report tables for VPD Calculated, Road Capacity Summary, and Estimated Delay
+   * from the last calculateDetourOverlay() snapshot stored in window._lastDetourCalcSnapshot.
+   */
+  function buildSyntheticDetourTables() {
+    var snap = window._lastDetourCalcSnapshot;
+    if (!snap || !Array.isArray(snap.roads) || !snap.roads.length) return [];
+
+    var tables = [];
+    var gf = snap.growthFactor || 1;
+    var gfStr = gf !== 1 ? gf.toFixed(3) : '1.000';
+
+    // 1. VPD Calculated table — one row per detour road
+    var vpdRows = snap.roads.map(function(road) {
+      var designYearVpd = Math.round(road.baseVpd * gf);
+      var totalVpd = designYearVpd + snap.divertedVpdTotal;
+      return [
+        road.name,
+        String(road.baseVpd),
+        gfStr,
+        String(designYearVpd),
+        String(snap.divertedVpdTotal),
+        String(totalVpd)
+      ];
+    });
+    tables.push({
+      table_id: 'syntheticVpdCalculated',
+      title: 'Detour VPD Calculated',
+      columns: ['Detour Road', 'Base VADT (vpd)', 'Growth Factor', 'Design Year VADT (vpd)', 'Diverted Traffic (vpd)', 'Total VPD on Detour'],
+      rows: vpdRows
+    });
+
+    // 2. Detour Road Capacity Summary — per-road parameters
+    var capRows = [];
+    snap.roads.forEach(function(road) {
+      var surplusVph = road.totalCapacity - convertDailyVpdTo80thHourly(road.baseVpd + snap.divertedVpdTotal);
+      capRows.push(
+        [road.name + ' - Posted Speed (km/h)', String(road.speedLimitKmh), ''],
+        [road.name + ' - Lanes', String(road.laneCount), ''],
+        [road.name + ' - Total Two-Way Capacity (vph)', String(road.totalCapacity), road.laneCount + ' lanes \u00D7 ' + road.perLaneCapacity + ' vph/lane'],
+        [road.name + ' - Remaining Surplus Capacity (vph)', String(surplusVph), surplusVph < 0 ? 'Over capacity' : 'Within limits'],
+        [road.name + ' - Worst Period VCR', road.maxNewVcr.toFixed(2), road.worstPeriod + ' (' + road.worstDirection + ')']
+      );
+    });
+    tables.push({
+      table_id: 'syntheticRoadCapacity',
+      title: 'Detour Road Capacity Summary',
+      columns: ['Parameter', 'Value', 'Notes'],
+      rows: capRows
+    });
+
+    // 3. Estimated Delay — Detour route
+    var d = snap.delay || {};
+    var delayMin = d.estimatedDelayMin || 0;
+    var delayClass = delayMin <= 1 ? 'Minor (< 1 min)' : (delayMin <= 5 ? 'Moderate (1-5 min)' : 'Significant (> 5 min)');
+    tables.push({
+      table_id: 'syntheticEstimatedDelay',
+      title: 'Estimated Delay - Detour route',
+      columns: ['Parameter', 'Value'],
+      rows: [
+        ['Detour Route Length (km)', String(d.detourLengthKm || 0)],
+        ['Average Travel Speed on Detour (km/h)', String(d.avgSpeedKmh || 0)],
+        ['Travel Time (seconds)', String(Math.round(d.travelTimeSec || 0))],
+        ['Total Time incl. Intersections (seconds)', String(Math.round(d.totalTimeSec || 0))],
+        ['Estimated Additional Travel Time (min)', String(delayMin)],
+        ['Delay Classification', delayClass]
+      ]
+    });
+
+    return tables;
+  }
+
+  function buildReportTablesForDetourRoutes(visibleTables) {
+    const tables = Array.isArray(visibleTables) ? visibleTables : [];
+    ensureDetourRouteScenarios();
+    saveActiveDetourRouteScenario();
+
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+
+    // Single route (or no scenarios): add synthetic tables alongside the visible ones
+    if (scenarios.length <= 1) {
+      const syntheticTables = buildSyntheticDetourTables();
+      return [...tables, ...syntheticTables];
+    }
+
+    const nonDetourTables = tables.filter((table) => !isDetourReportTable(table));
+    const originalIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
+    const originalState = captureCurrentDetourRouteState();
+    const routeTables = [];
+
+    scenarios.forEach((scenario, index) => {
+      applyDetourRouteState(scenario || {}, { skipScan: true });
+      calculateDetourOverlay();
+      const scenarioTables = collectVisibleTables().filter((table) => isDetourReportTable(table));
+      const syntheticTables = buildSyntheticDetourTables();
+      const allDetourTables = [...scenarioTables, ...syntheticTables];
+      allDetourTables.forEach((table) => {
+        routeTables.push({
+          ...table,
+          title: `${table.title} - Detour Route ${index + 1}`
+        });
+      });
+    });
+
+    window.activeDetourRouteIndex = originalIndex;
+    applyDetourRouteState(originalState, { skipScan: true });
+    calculateDetourOverlay();
+    renderDetourRouteScenarioManager();
+
+    return [...nonDetourTables, ...routeTables];
+  }
+
+  async function buildEditableReportPayload() {
+    // Temporarily unhide all chart containers to ensure Chart.js renders them with valid dimensions
+    const hiddenContainers = [];
+    const chartIds = ['queueChartView', 'vcrChartView', 'hourlyQueueChartView', 'hourlyVcrChartView', 'vizCanvasContainer', 'scenarioTableWrap'];
+
+    chartIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && window.getComputedStyle(el).display === 'none') {
+        hiddenContainers.push({ el, origDisplay: el.style.display });
+        el.style.display = 'block';
+      }
+    });
+
+    // Force a resize event so Chart.js recalculates dimensions for the newly visible canvases
+    if (hiddenContainers.length > 0) {
+      window.dispatchEvent(new Event('resize'));
+      // Wait briefly for Chart.js animations/resizing to complete
+      await new Promise(r => setTimeout(r, 250));
+    }
+
+    prepareReportChartsForExport();
+    await new Promise(r => setTimeout(r, 150));
+
     const rawCalc = getRawCalculationSnapshot();
     const primaryChart = capturePrimaryChartImageBase64('myChartCanvasId');
+    const selectedSiteDetails = collectSelectedSiteDetails();
+    const peakDiagnostics = collectPeakDiagnostics();
 
     const reportAddress = typeof getReportAddressForPrint === 'function'
       ? String(getReportAddressForPrint() || '').trim()
@@ -7035,15 +7423,23 @@
     if (vcrRiskText && vcrRiskText !== '-') notes.push(vcrRiskText);
     if (pedDelayText && pedDelayText !== '-') notes.push(`Pedestrian: ${pedDelayText}`);
 
+    const visibleTables = collectVisibleTables();
+    const detourRouteCount = getDetourRouteScenarioCount();
+    const reportTables = buildReportTablesForDetourRoutes(visibleTables);
+    if (detourRouteCount > 1) {
+      notes.push(`Detour report includes ${detourRouteCount} route-specific sections exported from the detour scenario manager.`);
+    }
+
     const roadMode = getElementValueOrText('roadOperationMode') || 'TWO-WAY';
     const detourRecommended = Number.isFinite(queuePeak) && queuePeak >= 120;
 
-    return {
+    const payload = {
       project: {
         name: title,
         location,
         report_date: new Date().toISOString().slice(0, 10),
-        prepared_by: 'TIA + QUEUE Web App'
+        prepared_by: "Planner's Name",
+        cc_number: 'CC0000'
       },
       inputs: {
         road_operation_mode: roadMode,
@@ -7078,15 +7474,24 @@
         worst_vcr: rawCalc.worstVcr,
         d1_queue_peak_m: rawCalc.d1QueuePeak,
         d2_queue_peak_m: rawCalc.d2QueuePeak,
-        queue_peak_m: rawCalc.queuePeak
+        queue_peak_m: rawCalc.queuePeak,
+        detour_route_count: detourRouteCount
       },
       chart_image: primaryChart.base64,
       chart_image_canvas_id: primaryChart.canvasId,
       chart_image_data_url: primaryChart.dataUrl,
       inputs_snapshot: collectInputSnapshot(),
-      tables: collectVisibleTables(),
+      selected_site_details: selectedSiteDetails,
+      peak_diagnostics: peakDiagnostics,
+      tables: reportTables,
       charts: collectChartImages()
     };
+
+    hiddenContainers.forEach(({ el, origDisplay }) => {
+      el.style.display = origDisplay;
+    });
+
+    return payload;
   }
 
   function openBrowserEditableReportFallback(reasonText = '') {
@@ -7106,6 +7511,7 @@
       `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and check/download <code>report_service.py</code>.`,
       `If <code>report_service.py</code> is still missing, click <strong>Download Report-Service</strong> or use the raw link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a>.`,
       `Optional: Download <code>logo.jpeg</code> from <a href="${logoDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a> and save it in the same folder for branding.`,
+      'Set <code>GEMINI_API_KEY</code> in the same Command Prompt before starting the report service if you want Gemini-generated executive summary notes.',
       'Confirm the import-check command prints <code>import ok</code>.',
       'If you see "Could not import module report_service", re-run the download/check commands and confirm the file name is exactly <code>report_service.py</code>.',
       'Keep that Command Prompt window running (do not close it).',
@@ -7129,6 +7535,7 @@
       'dir report_service.py',
       'python -m venv .venv',
       '.\\.venv\\Scripts\\activate',
+      'set GEMINI_API_KEY=PASTE_YOUR_GEMINI_KEY_HERE',
       'python -m pip install --upgrade pip',
       'python -m pip install fastapi uvicorn python-docx jinja2 pydantic',
       'python -c "import os, pathlib; p=pathlib.Path(\'report_service.py\'); print(\'cwd=\', os.getcwd()); print(\'exists=\', p.exists()); print(\'size=\', p.stat().st_size if p.exists() else 0)"',
@@ -7202,15 +7609,33 @@
 
   async function buildShortEditableReportPayload() {
     const body = document.body;
-    if (!body) return buildEditableReportPayload();
+    if (!body) return await buildEditableReportPayload();
 
     const hadShortMode = body.classList.contains('report-mode-short');
     if (!hadShortMode) body.classList.add('report-mode-short');
 
+    // Temporarily force-show detour and pedestrian cards so collectVisibleTables() can see them.
+    // The CSS rule body.report-mode-short #detourCard { display:none !important } would otherwise hide them.
+    const _forceShowIds = ['detourCard', 'pedestrianCard'];
+    const _savedCssText = {};
+    _forceShowIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && window.getComputedStyle(el).display === 'none') {
+        _savedCssText[id] = el.style.cssText;
+        el.style.setProperty('display', 'block', 'important');
+      }
+    });
+
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-    const payload = buildEditableReportPayload();
+    const payload = await buildEditableReportPayload();
     payload.report_variant = 'short';
+
+    // Restore original inline styles
+    Object.keys(_savedCssText).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.cssText = _savedCssText[id];
+    });
 
     if (!hadShortMode) body.classList.remove('report-mode-short');
     return payload;
@@ -7220,7 +7645,7 @@
     const normalizedMode = String(mode || 'detailed').toLowerCase() === 'short' ? 'short' : 'detailed';
     const payload = normalizedMode === 'short'
       ? await buildShortEditableReportPayload()
-      : buildEditableReportPayload();
+      : await buildEditableReportPayload();
 
     payload.report_variant = normalizedMode;
     const baseTitle = (payload && payload.project && payload.project.name) || 'TIA Report';
@@ -8561,7 +8986,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-      unlockApplication();
+      unlockApplication().catch(function(err) {
+        // Async unlock failed (e.g. data load error) — force-clear the blur so the
+        // app is still usable. Data may be unavailable but the UI won't stay locked.
+        console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+        document.body.classList.remove('app-locked');
+        loginGate.style.display = 'none';
+      });
       return;
     }
 
@@ -8681,6 +9112,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const closeBtn = document.getElementById('closePythonSetupBtn');
     const okBtn = document.getElementById('pythonSetupOkBtn');
     const copyBtn = document.getElementById('copyPythonSetupBtn');
+    const copyOpenCmdBtn = document.getElementById('copyOpenCmdBtn');
     const commandsEl = document.getElementById('pythonSetupCommands');
     if (!modal || !closeBtn || !okBtn || !copyBtn || !commandsEl) return;
 
@@ -8701,57 +9133,74 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     });
 
-    copyBtn.addEventListener('click', async () => {
+    const copyCommandsToClipboard = async () => {
       const text = String(commandsEl.textContent || '').trim();
-      if (!text) return;
+      if (!text) return false;
       try {
         await navigator.clipboard.writeText(text);
-        if (typeof showNotification === 'function') showNotification('Python setup commands copied.');
+        return true;
       } catch (_) {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        if (typeof showNotification === 'function') showNotification('Python setup commands copied.');
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          return true;
+        } catch (_2) { return false; }
       }
+    };
+
+    copyBtn.addEventListener('click', async () => {
+      const ok = await copyCommandsToClipboard();
+      if (typeof showNotification === 'function') showNotification(ok ? 'Python setup commands copied.' : 'Copy failed — select text manually.');
     });
+
+    if (copyOpenCmdBtn) {
+      copyOpenCmdBtn.addEventListener('click', async () => {
+        const ok = await copyCommandsToClipboard();
+        if (!ok) {
+          if (typeof showNotification === 'function') showNotification('Could not copy — please copy manually, then open CMD.');
+          return;
+        }
+        // Open Command Prompt via a .bat launcher written to a data URI
+        // Browsers can't spawn cmd.exe directly, but we can use a protocol trick:
+        // Use a dummy "cmd://" URI or open a .bat download + show instructions.
+        // Most reliable cross-browser approach: open a file:/// URI that is cmd.exe, or
+        // fall back to showing a helper notification with paste instructions.
+        try {
+          // Try to open CMD via ms-msdt or file URI (only works in some browsers/OS)
+          const cmdLink = document.createElement('a');
+          cmdLink.href = 'file:///C:/Windows/System32/cmd.exe';
+          cmdLink.target = '_blank';
+          cmdLink.rel = 'noopener';
+          document.body.appendChild(cmdLink);
+          cmdLink.click();
+          document.body.removeChild(cmdLink);
+        } catch (_) { /* ignore */ }
+        if (typeof showNotification === 'function') {
+          showNotification('Commands copied! Open Command Prompt and press Ctrl+V to paste.', 6000);
+        }
+        // Also show a persistent hint inside the modal
+        const hintEl = document.getElementById('cmdOpenHint');
+        if (hintEl) {
+          hintEl.style.display = 'block';
+        }
+      });
+    }
   }
 
-  // ── Developer mode: bypass login gate entirely ───────────────────────────────
-  // index_developer.html is a local-only dev build. Pre-set the auth session key
-  // so setupLoginGate() immediately calls unlockApplication() without showing the
-  // login form. Remove this block if login is ever needed in the dev build.
+  /* DEV-BYPASS-BLOCK */
+  // Developer build only: bypass login gate entirely.
+  // Pre-set auth session key and synchronously remove the app-locked blur so
+  // the UI is immediately usable regardless of async data-loading failures.
   sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  // ── Split-panel dashboard toggle ─────────────────────────────────────────────
-  function toggleDashboardMode() {
-    var isOn = document.body.classList.toggle('dashboard-mode');
-    localStorage.setItem('dev_dashboard_mode', isOn ? '1' : '0');
-    var btn = document.getElementById('splitViewToggleBtn');
-    if (btn) {
-      btn.textContent = isOn ? '⊟ Split View' : '⬜ Split View';
-      btn.style.background = isOn ? '#0f6674' : '';
-      btn.style.color = isOn ? '#fff' : '';
-    }
-  }
-  // Restore last preference (default: off)
   (function() {
-    var saved = localStorage.getItem('dev_dashboard_mode');
-    if (saved === '1') {
-      document.body.classList.add('dashboard-mode');
-      var btn = document.getElementById('splitViewToggleBtn');
-      if (btn) {
-        btn.textContent = '⊟ Split View';
-        btn.style.background = '#0f6674';
-        btn.style.color = '#fff';
-      }
-    }
+    document.body.classList.remove('app-locked');
+    var _g = document.getElementById('loginGate');
+    if (_g) _g.style.display = 'none';
   })();
-  // ─────────────────────────────────────────────────────────────────────────────
-
   setupLoginGate();
   setupLogoutButton();
   setupContactDeveloperButton();
@@ -8966,12 +9415,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // 1. Fix Chronological Sorting & Excel Date Error
     // Maps the "10-12" string back to 11:00-12:00 and orders the array sequentially
     sortChronologically: function(data) {
-      const chronologicalOrder = [
-        "0-1", "1-2", "2-3", "3-4", "4-5", "5-6", "6-7", "7-8", "8-9", "9-10", 
-        "10-11", "10-12", "12-13", "13-14", "14-15", "15-16", "16-17", "17-18", 
-        "18-19", "19-20", "20-21", "21-22", "22-23", "23-24"
-      ];
-      return data.sort((a, b) => chronologicalOrder.indexOf(a.hour) - chronologicalOrder.indexOf(b.hour));
+      // Parse the start-hour from an "H-H" label, handling the Excel date-corruption
+      // quirk where "11-12" is auto-converted to "10-12" (Oct → 10, Dec → 12 drop).
+      // Both "11-12" (clean data) and "10-12" (Excel-mangled data) must sort as hour 11.
+      const parseStartHour = function(hour) {
+        const s = String(hour || '');
+        const parts = s.split('-');
+        if (parts.length < 2) return -1;
+        const lo = parseInt(parts[0], 10);
+        const hi = parseInt(parts[1], 10);
+        if (isNaN(lo) || isNaN(hi)) return -1;
+        // Excel turns "11-12" into "10-12" (October to December date literal).
+        // Detect this: lo=10, hi=12, gap=2 instead of the normal gap=1.
+        if (lo === 10 && hi === 12) return 11;
+        return lo;
+      };
+      return data.sort((a, b) => parseStartHour(a.hour) - parseStartHour(b.hour));
     },
 
     // 2. Base Volumetric Processing & Smoothing
@@ -8984,8 +9443,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     // 3. Heavy Vehicle (HV) Proportioning
     calculateAdjustedLightVehicles: function(totalVolume, hvPercentage) {
-      const hvVolume = totalVolume * (hvPercentage / 100);
-      return Math.ceil(totalVolume - hvVolume);
+      // Round HV first, then derive LV as the strict remainder so LV + HV = totalVolume exactly.
+      const hvVolume = Math.round(totalVolume * (hvPercentage / 100));
+      return Math.max(0, totalVolume - hvVolume);
     },
 
     // 4. Deterministic Growth Modeling (CAGR)
@@ -8995,12 +9455,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return Math.ceil(projected);
     },
 
-    // 5. Theoretical Capacity & Absolute Floor
-    calculateCapacity: function(dailyTotal, lanes) {
-      // 0.12 is the standard K-Factor peak multiplier 
-      const kFactorVolume = Math.ceil((0.12 * dailyTotal) / lanes);
-      // Enforces absolute capacity floor of 500 vph/lane for remote outback corridors
-      return kFactorVolume <= 500? 500 : kFactorVolume; 
+    // 5. Physical Per-Lane Capacity (vph/lane) by Road Classification
+    // Based on Austroads Guide to Road Design Part 3 & TMR Road Planning and Design Manual.
+    // These are FIXED infrastructure values — independent of traffic demand.
+    PHYSICAL_LANE_CAPACITY_VPH: {
+      'freeway':       1800,  // Motorway / freeway (uninterrupted flow, e.g. M1, Gateway)
+      'multi_lane':    1600,  // Multi-lane divided arterial (≥2 lanes each way)
+      'arterial':      1500,  // Urban arterial 60–80 km/h (e.g. main state road)
+      'sub_arterial':  1200,  // Sub-arterial / collector 50–60 km/h
+      'local':          900,  // Local street / residential ≤50 km/h
+      'rural_highway': 1000,  // Rural two-lane undivided highway
+    },
+    calculateCapacity: function(roadClassKey) {
+      // Returns physical per-lane capacity in vph based on road classification.
+      // Road class is selected by the user in the "Road Classification (Capacity)" dropdown.
+      const key = String(roadClassKey || 'arterial').toLowerCase().replace(/[\s\-]/g, '_');
+      return this.PHYSICAL_LANE_CAPACITY_VPH[key] || this.PHYSICAL_LANE_CAPACITY_VPH['arterial'];
     },
 
     // 6. Volume-to-Capacity Ratio (VCR)
@@ -9009,10 +9479,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     },
 
     // 7. Spatial Shockwaves (Queue Length Estimation)
-    calculateQueueLength: function(hourlyVolumePerLane, waitTimeMinutes) {
+    calculateQueueLength: function(hourlyVolumePerLane, waitTimeMinutes, physicalCapacityPerLane) {
+      // physicalCapacityPerLane (vph/lane): effective discharge capacity during the restriction.
+      // Pass 0 (or omit) for a complete Stop/Go blockage (no discharge at all).
+      // For partial restrictions / signalised approaches, pass the available throughput
+      // capacity so only the excess demand above capacity accumulates as queue.
+      // Net overflow model: Q = max(0, v - c) * t * vehicle_spacing
+      const c = Math.max(0, Number(physicalCapacityPerLane) || 0);
+      const netHourlyPerLane = Math.max(0, hourlyVolumePerLane - c);
       // 7.6 is the constant derived for average vehicle length + jam density gap + heavy vehicle mix
-      const vehicleLengthConstant = 7.6; 
-      return (hourlyVolumePerLane * (waitTimeMinutes / 60)) * vehicleLengthConstant;
+      const vehicleLengthConstant = 7.6;
+      return (netHourlyPerLane * (waitTimeMinutes / 60)) * vehicleLengthConstant;
     }
   };
 
@@ -9533,6 +10010,52 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (/collector/.test(raw)) return 'collector';
     if (/local|residential/.test(raw)) return 'local';
     return raw;
+  }
+
+  // Road-class smart defaults: {hvPct, growthRate, label}
+  // Based on Austroads Guide to Traffic Engineering Practice / TMR typical ranges
+  const ROAD_CLASS_SMART_DEFAULTS = {
+    'tmr':         { hvPct: 12, growthRate: 3.0, label: 'State / Arterial Highway' },
+    'motorway':    { hvPct: 14, growthRate: 3.5, label: 'Motorway / Freeway' },
+    'highway':     { hvPct: 12, growthRate: 3.0, label: 'Highway' },
+    'arterial':    { hvPct: 8,  growthRate: 2.5, label: 'Urban Arterial' },
+    'collector':   { hvPct: 5,  growthRate: 2.0, label: 'Collector' },
+    'local':       { hvPct: 3,  growthRate: 1.5, label: 'Local / Residential' },
+    'industrial':  { hvPct: 18, growthRate: 2.5, label: 'Industrial Access' },
+    'rural':       { hvPct: 15, growthRate: 2.5, label: 'Rural Road' },
+  };
+
+  function getSmartDefaultsForSite(site) {
+    if (!site) return null;
+    const rc = String(site.road_class_raw || site.road_class || '').toLowerCase().trim();
+    const rn = String(site.road_name || site.description || '').toLowerCase();
+    // Match most specific rule first
+    if (/motorway|freeway|m\d+/.test(rc) || /motorway|freeway/.test(rn)) return ROAD_CLASS_SMART_DEFAULTS['motorway'];
+    if (/highway|state|a\d+/.test(rc) || /highway/.test(rn)) return ROAD_CLASS_SMART_DEFAULTS['highway'];
+    if (/arterial/.test(rc) || /arterial/.test(rn)) return ROAD_CLASS_SMART_DEFAULTS['arterial'];
+    if (/industrial/.test(rn) || /industrial/.test(rc)) return ROAD_CLASS_SMART_DEFAULTS['industrial'];
+    if (/rural/.test(rc) || /rural/.test(rn)) return ROAD_CLASS_SMART_DEFAULTS['rural'];
+    if (/collector/.test(rc)) return ROAD_CLASS_SMART_DEFAULTS['collector'];
+    if (/local|residential/.test(rc)) return ROAD_CLASS_SMART_DEFAULTS['local'];
+    if (rc === 'tmr') return ROAD_CLASS_SMART_DEFAULTS['tmr'];
+    return null;
+  }
+
+  function showSmartSuggestBadge(anchorEl, suggestedValue, label, onAccept) {
+    // Use nearest .input-group ancestor so badge renders below the field, not
+    // inside a flex row (e.g. .input-wrapper).  Fall back to parentElement.
+    const container = anchorEl.closest('.input-group') || anchorEl.parentElement;
+    const existingBadge = container && container.querySelector('.smart-suggest-badge');
+    if (existingBadge) existingBadge.remove();
+    const badge = document.createElement('div');
+    badge.className = 'smart-suggest-badge';
+    badge.style.cssText = 'display:flex; align-items:center; gap:6px; margin-top:5px; padding:4px 8px; background:#e8f0fe; border:1px solid #90caf9; border-radius:6px; font-size:0.75em; color:#1565c0;';
+    badge.innerHTML = `<span>💡 Suggested for <strong>${label}</strong>: <strong>${suggestedValue}</strong></span><button type="button" style="margin-left:auto; padding:2px 8px; border-radius:10px; border:1px solid #1565c0; background:#1565c0; color:#fff; font-size:0.9em; cursor:pointer; white-space:nowrap;">Apply</button><button type="button" style="padding:2px 6px; border-radius:10px; border:1px solid #90caf9; background:#fff; color:#1565c0; font-size:0.9em; cursor:pointer;">✕</button>`;
+    const applyBtn = badge.querySelectorAll('button')[0];
+    const dismissBtn = badge.querySelectorAll('button')[1];
+    applyBtn.addEventListener('click', () => { onAccept(); badge.remove(); });
+    dismissBtn.addEventListener('click', () => badge.remove());
+    container.appendChild(badge);
   }
 
   function normalizeDayOfWeek(value) {
@@ -10098,11 +10621,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   async function getAllRoadsFromMap(lat, lon, radiusMeters = 200) {
-    // Overpass QL query: find all ways with a 'highway' and 'name' tag within the radius
+    // Overpass QL query: find all ways with a 'highway' and 'name' tag within the radius, with centroid
     const query = `
       [out:json][timeout:15];
       way(around:${radiusMeters},${lat},${lon})[highway][name];
-      out tags;
+      out center tags;
     `;
 
     const safeLat = Number(lat);
@@ -10113,10 +10636,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     try {
       const data = await fetchOverpassJson(query, { cacheKey, ttlMs: OVERPASS_CACHE_TTL_MS });
-      const uniqueRoads = new Set();
 
-      // Extract unique road names + maxspeed from the OSM tags
+      // Extract unique road names + maxspeed + centroid from the OSM tags
       const roadSpeedMap = new Map();
+      const roadCentroidMap = new Map(); // road name → {lat, lon}
       if (data && data.elements) {
         data.elements.forEach(el => {
           if (el.tags && el.tags.name) {
@@ -10127,9 +10650,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             } else if (!roadSpeedMap.get(rname) && rspeed) {
               roadSpeedMap.set(rname, rspeed);
             }
+            if (!roadCentroidMap.has(rname) && el.center && Number.isFinite(Number(el.center.lat)) && Number.isFinite(Number(el.center.lon))) {
+              roadCentroidMap.set(rname, { lat: Number(el.center.lat), lon: Number(el.center.lon) });
+            }
           }
         });
       }
+      // Store road centroids globally for use in VPD estimation distance calculations
+      if (!window.detourRoadCentroids) window.detourRoadCentroids = {};
+      roadCentroidMap.forEach((centroid, name) => { window.detourRoadCentroids[name] = centroid; });
       localFallbackRoads.forEach(n => { if (!roadSpeedMap.has(n)) roadSpeedMap.set(n, null); });
       return Array.from(roadSpeedMap.entries())
         .map(([name, speed]) => ({ name, speed }))
@@ -11484,8 +12013,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (laneNoAadt && laneNoAadt > 0) {
           totalLanes = totalLanes || laneNoAadt;
           if (!d1Lanes && !d2Lanes) {
-            d1Lanes = Math.max(1, Math.ceil(laneNoAadt / 2));
-            d2Lanes = Math.max(1, Math.floor(laneNoAadt / 2));
+            d1Lanes = laneNoAadt <= 1 ? 1 : Math.ceil(laneNoAadt / 2);
+            d2Lanes = laneNoAadt <= 1 ? 0 : Math.max(1, Math.floor(laneNoAadt / 2));
           }
         }
       }
@@ -11770,12 +12299,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const pmIdx = Number.isFinite(pmHour) && pmHour >= 0 && pmHour < 24 ? pmHour : 17;
 
         if (amPeak > 0) {
-          site.directions_weekday['GAZETTAL'][amIdx] = Math.max(site.directions_weekday['GAZETTAL'][amIdx], Math.round(amPeak * 0.5));
-          site.directions_weekday['AGAINST GAZETTAL'][amIdx] = Math.max(site.directions_weekday['AGAINST GAZETTAL'][amIdx], Math.round(amPeak * 0.5));
+          // AM peak is predominantly inbound: ~60 % D1 (GAZETTAL), ~40 % D2.
+          site.directions_weekday['GAZETTAL'][amIdx] = Math.max(site.directions_weekday['GAZETTAL'][amIdx], Math.round(amPeak * 0.6));
+          site.directions_weekday['AGAINST GAZETTAL'][amIdx] = Math.max(site.directions_weekday['AGAINST GAZETTAL'][amIdx], Math.round(amPeak * 0.4));
         }
         if (pmPeak > 0) {
-          site.directions_weekday['GAZETTAL'][pmIdx] = Math.max(site.directions_weekday['GAZETTAL'][pmIdx], Math.round(pmPeak * 0.5));
-          site.directions_weekday['AGAINST GAZETTAL'][pmIdx] = Math.max(site.directions_weekday['AGAINST GAZETTAL'][pmIdx], Math.round(pmPeak * 0.5));
+          // PM peak is predominantly outbound: ~40 % D1, ~60 % D2 (AGAINST GAZETTAL).
+          site.directions_weekday['GAZETTAL'][pmIdx] = Math.max(site.directions_weekday['GAZETTAL'][pmIdx], Math.round(pmPeak * 0.4));
+          site.directions_weekday['AGAINST GAZETTAL'][pmIdx] = Math.max(site.directions_weekday['AGAINST GAZETTAL'][pmIdx], Math.round(pmPeak * 0.6));
         }
       }
 
@@ -11795,22 +12326,48 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         ? site.directions_weekday['AGAINST GAZETTAL'].map(v => Math.max(0, Number(v) || 0))
         : new Array(24).fill(0);
 
-      const gazSum = gazData.reduce((a, b) => a + b, 0);
-      const agSum = agData.reduce((a, b) => a + b, 0);
-      const hasGaz = gazSum > 0;
-      const hasAg = agSum > 0;
-      if (hasGaz && hasAg) return;
+      // Require at least 6 measured non-zero hours to treat an array as genuine
+      // directional hourly data (same threshold used in getDirectionalHourlySource).
+      const MIN_MEASURED_HOURS = 6;
+      const hasSufficientHours = (arr) => arr.filter(v => v > 0).length >= MIN_MEASURED_HOURS;
+      const hasSuffGaz = hasSufficientHours(gazData);
+      const hasSuffAg = hasSufficientHours(agData);
+
+      // Both directions already have adequate measured hourly profiles — nothing to do.
+      if (hasSuffGaz && hasSuffAg) return;
 
       const d1Daily = Math.max(0, Number(site.d1_vadt) || 0);
       const d2Daily = Math.max(0, Number(site.d2_vadt) || 0);
       const totalDaily = Math.max(0, Number(site.vadt) || (d1Daily + d2Daily));
       if (totalDaily <= 0) return;
 
-      const baseShape = hasGaz ? gazData : (hasAg ? agData : buildSyntheticHourlyFromDaily(totalDaily, 1));
+      const dirDailyTotal = d1Daily + d2Daily;
+
+      if (!hasSuffGaz && !hasSuffAg) {
+        // Neither direction has sufficient measured hourly data (e.g. Brisbane, Logan,
+        // Ipswich, Toowoomba).  Apply direction-specific AM/PM-biased synthetic profiles
+        // so that D1 (GAZETTAL / inbound) peaks in the morning and D2 (AGAINST GAZETTAL
+        // / outbound) peaks in the evening, rather than both getting an identical shape.
+        const d1Eff = dirDailyTotal > 0 ? d1Daily : totalDaily * 0.5;
+        const d2Eff = dirDailyTotal > 0 ? d2Daily : totalDaily * 0.5;
+        const synthD1 = buildSyntheticHourlyFromDaily(d1Eff, 1);   // AM-biased
+        const synthD2 = buildSyntheticHourlyFromDaily(d2Eff, 2);   // PM-biased
+        site.directions_weekday['GAZETTAL'] = synthD1;
+        site.directions_weekday['AGAINST GAZETTAL'] = synthD2;
+        site.directions['GAZETTAL'] = synthD1.slice();
+        site.directions['AGAINST GAZETTAL'] = synthD2.slice();
+        if (!site.direction_split_mode || String(site.direction_split_mode).toLowerCase() === 'unknown' || String(site.direction_split_mode).toLowerCase() === 'fallback_50_50') {
+          site.direction_split_mode = 'synthetic_directional';
+        }
+        return;
+      }
+
+      // Exactly one direction has sufficient measured data.  Redistribute the
+      // total daily volume proportionally using that direction's shape as the template.
+      const baseShape = hasSuffGaz ? gazData : agData;
       const baseShapeTotal = baseShape.reduce((a, b) => a + (Number(b) || 0), 0);
       if (baseShapeTotal <= 0) return;
 
-      const dirDailyTotal = d1Daily + d2Daily;
       const d1Share = dirDailyTotal > 0 ? (d1Daily / dirDailyTotal) : 0.5;
 
       const redistributedD1 = new Array(24).fill(0);
@@ -12529,6 +13086,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         growthLabel.style.color = '#c30000';
         growthLabel.innerHTML = 'Growth Rate (% p.a.) (default 2.5%, editable)';
       }
+      // Smart suggest: if road class gives a better default, show a badge
+      const _smartDef = getSmartDefaultsForSite(data);
+      if (_smartDef && growthEl && Math.abs(_smartDef.growthRate - 2.5) >= 0.1) {
+        showSmartSuggestBadge(growthEl, `${_smartDef.growthRate}% (${_smartDef.label})`, 'Growth Rate', () => {
+          growthEl.value = _smartDef.growthRate;
+          growthEl.dispatchEvent(new Event('change'));
+        });
+      }
     }
     
     // Auto-fill HVP if available in DB and visually mark it as database-driven
@@ -12562,6 +13127,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (hvpLabel) {
         hvpLabel.style.color = '#c30000';
         hvpLabel.innerHTML = 'HV (%) *';
+      }
+      // Smart suggest HV% from road class when no DB value
+      const _hvSmartDef = getSmartDefaultsForSite(data);
+      if (_hvSmartDef && hvpEl) {
+        showSmartSuggestBadge(hvpEl, `${_hvSmartDef.hvPct}% (${_hvSmartDef.label})`, 'HV%', () => {
+          hvpEl.value = _hvSmartDef.hvPct;
+          hvpEl.readOnly = false;
+          hvpEl.dispatchEvent(new Event('change'));
+        });
       }
     }
     
@@ -12632,7 +13206,30 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         d2LanesLabel.innerHTML = 'D2 Lanes *';
       }
     }
-    
+
+    // Auto-infer road capacity classification from road name / source
+    const rcClassEl = document.getElementById('roadCapacityClass');
+    if (rcClassEl) {
+      const inferredClass = inferRoadCapacityClass(data.road_name || '', data.source || '');
+      const rcWrapper = rcClassEl.closest('div');
+      const rcLabel = rcWrapper ? rcWrapper.querySelector('label') : null;
+      if (inferredClass) {
+        rcClassEl.value = inferredClass;
+        rcClassEl.style.border = '1px solid #81c784';
+        rcClassEl.style.backgroundColor = '#f1f8f6';
+        rcClassEl.style.color = '#1b5e20';
+        if (rcWrapper) { rcWrapper.style.background = '#e8f5e9'; rcWrapper.style.border = '1px solid #81c784'; }
+        if (rcLabel) rcLabel.innerHTML = 'Road Classification (inferred)';
+      } else {
+        rcClassEl.value = 'arterial';
+        rcClassEl.style.border = '1px solid #e57373';
+        rcClassEl.style.backgroundColor = '#fff5f5';
+        rcClassEl.style.color = '#b71c1c';
+        if (rcWrapper) { rcWrapper.style.background = '#ffebee'; rcWrapper.style.border = '1px solid #ef9a9a'; }
+        if (rcLabel) rcLabel.innerHTML = 'Road Classification (Cap.) *';
+      }
+    }
+
     syncVisibility();
     focusMacroSiteOnMap(siteId);
     updateAssumptionsPanel(data);
@@ -14267,7 +14864,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   const ids = [
     'RTR','DTCA','DHVPA','DRTPA','VADT','D1_VADT','D2_VADT','HVP','RTP','D1_HVP','D2_HVP','D1_RTP','D2_RTP','D1_Lanes','D2_Lanes',
-    'roadOperationMode','oneWayActiveDirection','laneClosureCount','macroOpeningYear','macroGrowthRate','macroTerrainType'
+    'roadOperationMode','oneWayActiveDirection','laneClosureCount','macroOpeningYear','macroGrowthRate','macroTerrainType','roadCapacityClass'
   ];
   function txt(id){
     const el = document.getElementById(id);
@@ -14555,39 +15152,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return totalVadt;
   }
 
-  function calculateDV(direction, directionalDaily, site, totalProjectedAadt) {
-    const source = String(site ? site.source : '').toUpperCase();
-    const dirKey = direction === 1 ? 'GAZETTAL' : 'AGAINST GAZETTAL';
-    const isTmrStyle = isTmrStyleSource(site, dirKey);
+  // Infers road capacity classification from road name and/or data source.
+  // Returns a key matching TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH, or null if no match.
+  function inferRoadCapacityClass(roadName, source) {
+    const n = String(roadName || '').toLowerCase();
+    if (/motorway|freeway|\bm\d+\b|gateway mwy|logan mwy|ipswich mwy|bruce fwy/.test(n)) return 'freeway';
+    if (/\bhighway\b|\bhwy\b|state route|national route|pacific hwy|bruce hwy|gateway/.test(n)) return 'rural_highway';
+    if (/multi.?lane|divided|arterial|state road/.test(n)) return 'arterial';
+    if (/sub.?arterial|collector|boulevard|blvd|avenue|ave\b/.test(n)) return 'sub_arterial';
+    if (/\bstreet\b|\bst\b|\bclose\b|\bcourt\b|\bplace\b|\bcrescent\b|\bdrive\b/.test(n)) return 'local';
+    return null;
+  }
 
-    const dirLanes = Math.max(1, num(`D${direction}_Lanes`));
-    const totalLanes = Math.max(1, num('D1_Lanes') + num('D2_Lanes'));
-    
-    if (isTmrStyle) {
-      // Anchor capacity to the site's measured directional VADT (fixed reference), so VCR
-      // denominator stays fixed while the demand numerator changes with user-entered volume.
-      let measuredDirDaily = directionalDaily; // fallback to projected volume
-      if (site) {
-        const siteDir = Number(direction === 1 ? site.d1_vadt : site.d2_vadt) || 0;
-        if (siteDir > 0) {
-          measuredDirDaily = siteDir;
-        } else if (site.directions_weekday && Array.isArray(site.directions_weekday[dirKey])) {
-          const hourlySum = site.directions_weekday[dirKey].reduce((s, v) => s + Math.max(0, Number(v) || 0), 0);
-          if (hourlySum > 0) measuredDirDaily = hourlySum;
-        }
-      }
-      return TMRCalculator.calculateCapacity(measuredDirDaily, dirLanes);
-    } else if (source === 'IPSWICH') {
-      const measuredVadt = Math.max(0, Number(site && site.vadt) || 0) || Math.max(0, Number(totalProjectedAadt) || 0);
-      const dynamicCapacity = Math.ceil((0.15 * measuredVadt) / 2);
-      return Math.max(IPSWICH_CONSTANTS.CAPACITY_FLOOR, dynamicCapacity);
-    } else if (source === 'GOLD COAST') {
-      const refCap = getDesignCapacityReferenceDailyVolume(totalProjectedAadt, site);
-      return Math.max(500, Math.ceil((0.15 * refCap) / 2));
-    } else {
-      const refCap = getDesignCapacityReferenceDailyVolume(totalProjectedAadt, site);
-      return Math.max(500, numberRoundUp((0.15 * refCap) / totalLanes, 0));
-    }
+  function calculateDV(direction, directionalDaily, site, totalProjectedAadt) {
+    // Returns physical per-lane capacity (vph/lane) for the V/C ratio denominator.
+    // Capacity is defined by road infrastructure classification — NOT by traffic demand.
+    // The road class is selected by the user in the "Road Classification (Capacity)" dropdown.
+    const roadCapClassEl = document.getElementById('roadCapacityClass');
+    const roadCapClass = roadCapClassEl ? (roadCapClassEl.value || 'arterial') : 'arterial';
+    return TMRCalculator.calculateCapacity(roadCapClass);
   }
 
   // --- SOURCE-AWARE PEAK/OFF-PEAK CALCULATION ENGINE ---
@@ -14672,7 +15255,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const scaledTotal = rawVol * scale;
         const hv = numberRoundUp(scaledTotal * hvPct, 0);
         const rt = numberRoundUp(scaledTotal * rtPct, 0);
-        const lv = numberRoundUp(scaledTotal - (scaledTotal * hvPct) - (scaledTotal * rtPct), 0);
+        // Derive lv as the strict remainder after allocating rounded hv and rt
+        // so that lv + hv + rt === scaledTotal (mass conservation).
+        const lv = Math.max(0, scaledTotal - hv - rt);
         return { lv, hv, rt, total: lv + hv + rt };
       };
 
@@ -15600,14 +16185,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     };
   }
 
-  function queueForDurationMinutes(total5, hvPct, rtPct, isRtr, durationMinutes) {
+  function queueForDurationMinutes(total5, hvPct, rtPct, isRtr, durationMinutes, physicalCapacityPerLane) {
+    // physicalCapacityPerLane (vph/lane): effective discharge capacity during the restriction.
+    // Omit or pass 0 for a complete Stop/Go blockage (same behaviour as queueFromFiveMinute).
+    // For partial restrictions (lane closures, signalised approaches), pass the reduced
+    // capacity so only the net overflow above capacity contributes to queue growth.
+    // Net overflow model: netArrivals = max(0, arrival_rate − capacity_rate)
+    const cap5 = Math.max(0, Number(physicalCapacityPerLane) || 0) / 12; // vph → 5-min equivalent
+    const netTotal5 = Math.max(0, total5 - cap5); // vehicles per 5-min that cannot discharge
+
     const minutes = Math.max(1, Math.min(60, numberRoundUp(durationMinutes, 0) || 2));
-    const hv = total5 * hvPct;
-    const rt = total5 * rtPct;
-    const lv = Math.max(0, total5 - hv - rt);
+    const hv = netTotal5 * hvPct;
+    const rt = netTotal5 * rtPct;
+    const lv = Math.max(0, netTotal5 - hv - rt);
     const factor = isRtr ? 1.5 : 1;
 
-    // Aligned spacing
+    // Aligned spacing (LV: 8 m, HV: 24 m, RT: 69 m)
     const minRatio = minutes / 5;
     const q = ((lv * (8 * minRatio)) + (hv * (24 * minRatio)) + (rt * (69 * minRatio))) * factor;
     return numberRoundUp(q, 0);
@@ -16816,6 +17409,106 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (runBtn) runBtn.addEventListener('click', runSelfDiagnostics);
   }
 
+  function checkEngineeringConflicts() {
+    const roadModeEl = document.getElementById('roadOperationMode');
+    const d2VadtEl   = document.getElementById('D2_VADT');
+    const hvPercentEl = document.getElementById('hvPercent');
+    const warningsDiv = document.getElementById('engineeringConflictWarnings');
+    if (!warningsDiv) return;
+
+    const roadMode  = roadModeEl  ? (roadModeEl.value  || '').toUpperCase() : '';
+    const d2Vadt    = d2VadtEl    ? (parseFloat(d2VadtEl.value)    || 0) : 0;
+    const hvPercent = hvPercentEl ? (parseFloat(hvPercentEl.value) || 0) : 0;
+
+    const warnings = [];
+
+    // Rule 1: One-Way Road Conflict
+    if (roadMode === 'ONE-WAY' && d2Vadt > 0) {
+      warnings.push(`<strong>Geometric Conflict:</strong> Road mode is ONE-WAY, but Direction 2 volume is ${d2Vadt} vpd. Opposing flow is not permitted.`);
+    }
+
+    // Rule 2: High HV% Warning
+    if (hvPercent > 25) {
+      warnings.push(`<strong>Capacity Warning:</strong> Heavy Vehicle percentage (${hvPercent}%) is exceptionally high. Ensure this is an industrial route.`);
+    }
+
+    if (warnings.length > 0) {
+      warningsDiv.style.display = 'block';
+      warningsDiv.innerHTML = `<h4 style="margin:0 0 6px 0; color:#c0392b; font-size:0.95em;">&#9888; Engineering Diagnostics</h4>`
+        + warnings.map(w => `<p style="margin:4px 0; font-size:0.88em; color:#5d4037;">${w}</p>`).join('');
+    } else {
+      warningsDiv.style.display = 'none';
+      warningsDiv.innerHTML = '';
+    }
+  }
+
+  function setupEngineeringConflictListeners() {
+    const ids = ['roadOperationMode', 'D2_VADT', 'hvPercent'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', checkEngineeringConflicts);
+    });
+    // Run once on load to catch pre-filled values
+    checkEngineeringConflicts();
+  }
+
+  function drawQueueSimulation(queueLengthMeters, hvPercent) {
+    const canvas = document.getElementById('queueCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // Sync canvas resolution to its rendered CSS width
+    canvas.width = canvas.offsetWidth || 600;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Road
+    ctx.fillStyle = '#7f8c8d';
+    ctx.fillRect(0, canvas.height / 2 - 20, canvas.width, 40);
+
+    // Stop line (red)
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(canvas.width - 50, canvas.height / 2 - 22, 5, 44);
+
+    const carLength = 6;   // metres
+    const hvLength  = 12;  // metres
+    const gap       = 2;   // metres between vehicles
+    const pxPerM    = Math.min(3, (canvas.width - 60) / Math.max(queueLengthMeters, 1));
+
+    let currentLength = 0;
+    let drawX = canvas.width - 55;
+
+    // Seed a stable random so the visual is consistent on re-render
+    let seed = Math.floor(queueLengthMeters * 100 + hvPercent);
+    const seededRand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
+
+    while (currentLength < queueLengthMeters) {
+      const isHV = (seededRand() * 100) < hvPercent;
+      const vehLength = isHV ? hvLength : carLength;
+      if (currentLength + vehLength > queueLengthMeters) break;
+
+      const pixelWidth = vehLength * pxPerM;
+      drawX -= (pixelWidth + gap * pxPerM);
+      if (drawX < 0) break;
+
+      ctx.fillStyle = isHV ? '#f39c12' : '#ecf0f1';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(drawX, canvas.height / 2 - 10, pixelWidth, 20, 3) : ctx.rect(drawX, canvas.height / 2 - 10, pixelWidth, 20);
+      ctx.fill();
+
+      currentLength += (vehLength + gap);
+    }
+
+    // Legend
+    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = '#ecf0f1';
+    ctx.fillText(`Peak Queue: ${queueLengthMeters.toFixed(0)} m`, 8, 18);
+    ctx.fillStyle = '#f39c12';
+    ctx.fillText(`\u25a0 Heavy Vehicles (${hvPercent}%)`, 8, 34);
+    ctx.fillStyle = '#ecf0f1';
+    ctx.fillText(`\u25a0 Passenger Cars`, 8, 50);
+  }
+
+
   function maxValid(values){
     const nums = values.filter(v => Number.isFinite(v) && v >= 0);
     return nums.length ? Math.max(...nums) : null;
@@ -17516,6 +18209,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     };
     renderQueueCharts(lastQueueChartData);
 
+    // Peak Queue Visualizer — use worst-case q15 across all periods and directions
+    {
+      const allQ15 = ['AM','OP','PM','EV'].flatMap(k => [
+        (queuePeriodD1[k] || {}).q15 || 0,
+        (queuePeriodD2[k] || {}).q15 || 0
+      ]);
+      const peakQ15 = Math.max(...allQ15);
+      const hvPct = parseFloat((document.getElementById('HVP') || {}).value) || 0;
+      const vizWrap = document.getElementById('queueVisualizerWrap');
+      if (vizWrap) {
+        if (peakQ15 > 0) {
+          vizWrap.style.display = 'block';
+          drawQueueSimulation(peakQ15, hvPct);
+        } else {
+          vizWrap.style.display = 'none';
+        }
+      }
+    }
+
     const vcrGroupedBodyD2 = document.getElementById('vcrGroupedBodyD2');
     if (vcrGroupedBodyD2) {
       const d2ScenRows = d2CloseScenarios.map(sc => {
@@ -17680,10 +18392,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d1Vol = Number(d1Hour.total) || 0;
         const d2Vol = Number(d2Hour.total) || 0;
         const d1RawQueue = selectedHourlyQueueKey === 'custom'
-          ? queueForDurationMinutes((Number(d1Hour.perLane) || 0) / 12, d1HvPct, d1RtPct, isRtrActive, selectedHourlyQueueCustomMinutes)
+          ? queueForDurationMinutes((Number(d1Hour.perLane) || 0) / 12, d1HvPct, d1RtPct, isRtrActive, selectedHourlyQueueCustomMinutes, dv1)
           : (d1Hour.queue && d1Hour.queue[selectedHourlyQueueKey]);
         const d2RawQueue = selectedHourlyQueueKey === 'custom'
-          ? queueForDurationMinutes((Number(d2Hour.perLane) || 0) / 12, d2HvPct, d2RtPct, isRtrActive, selectedHourlyQueueCustomMinutes)
+          ? queueForDurationMinutes((Number(d2Hour.perLane) || 0) / 12, d2HvPct, d2RtPct, isRtrActive, selectedHourlyQueueCustomMinutes, dv2)
           : (d2Hour.queue && d2Hour.queue[selectedHourlyQueueKey]);
         const d1MaxQueue = normalizeHourlyQueueToVehicleLength(d1RawQueue, d1Vol, true);
         const d2MaxQueue = normalizeHourlyQueueToVehicleLength(d2RawQueue, d2Vol, true);
@@ -18115,19 +18827,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     let peakVolStr = '';
 
     if (isTmrStyle) {
-      dvFormulaStr = `max(500, ROUNDUP(0.12 * Projected_Directional_Volume / Lanes))`;
+      dvFormulaStr = `Physical per-lane capacity (vph/lane) from Road Classification dropdown`;
       peakVolStr = 'Measured hourly profile scaled to target daily volume';
     } else if (sourceText === 'IPSWICH') {
-      dvFormulaStr = `max(500, ROUNDUP(0.12 * Projected_AADT / Total_Lanes))`;
+      dvFormulaStr = `Physical per-lane capacity (vph/lane) from Road Classification dropdown`;
       peakVolStr = 'Peak = 12.78% of Daily, Off-Peak = 45% of Peak';
     } else if (sourceText === 'GOLD COAST') {
-      dvFormulaStr = `max(500, ROUNDUP(0.15 * ReferenceCapacity / 2))`;
+      dvFormulaStr = `Physical per-lane capacity (vph/lane) from Road Classification dropdown`;
       peakVolStr = 'Peak = 15% * 85% of Daily, Off-Peak = 48.55% of Peak';
     } else if (sourceText === 'BRISBANE' || sourceText === 'LOGAN' || sourceText === 'TOOWOOMBA' || sourceText === 'NSW') {
-      dvFormulaStr = `max(500, ROUNDUP(0.15 * ReferenceCapacity / Total_Lanes))`;
+      dvFormulaStr = `Physical per-lane capacity (vph/lane) from Road Classification dropdown`;
       peakVolStr = 'Peak = 12% * 85% of Daily, Off-Peak = 45% of Peak';
     } else {
-      dvFormulaStr = `max(500, ROUNDUP(0.15 * ReferenceCapacity / Total_Lanes))`;
+      dvFormulaStr = `Physical per-lane capacity (vph/lane) from Road Classification dropdown`;
       peakVolStr = 'Peak = 60% * 85% of Daily, OP/EV = 15% * 85% of Daily';
     }
 
@@ -18137,6 +18849,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const traceRows = [
       ['Data Source Pattern', displayedSource],
+      ['Road Classification (Cap.)', txt('roadCapacityClass') + ` → ${dv1} vph/lane`],
       ['DV Formula Applied', dvFormulaStr],
       ['Peak Distribution Logic', peakVolStr],
       ['DTCA Path', dtca === 'YES' ? 'Directional VADT (D1_VADT / D2_VADT)' : '50/50 split from VADT'],
@@ -19032,8 +19745,179 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   window.selectedPedDetourRoadNames = window.selectedPedDetourRoadNames || [];
   window.lastDetourPrimaryContextKey = window.lastDetourPrimaryContextKey || '';
   window.detourManualRoadInputs = window.detourManualRoadInputs || {};
+  window.detourOsmRoadSpeeds = window.detourOsmRoadSpeeds || {};
   window.detourManualPanelRoads = window.detourManualPanelRoads || [];
+  window.detourRouteScenarios = window.detourRouteScenarios || [];
+  window.detourRouteCount = Math.max(1, Number(window.detourRouteCount) || 1);
+  window.activeDetourRouteIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
   window.lastSearchedAddress = window.lastSearchedAddress || '';
+
+  const DETOUR_ROUTE_STATE_FIELD_IDS = [
+    'detourDiversionRate',
+    'detourClosureType',
+    'detourClosedDirection',
+    'detourHvRouteSuitabilityConfirmed',
+    'detourNearbyRoadRadius',
+    'detourNearbyRoadRadiusInput',
+    'detourLaneWidth',
+    'detourLateralClearance',
+    'detourGradeType',
+    'detourBaseLaneCapacity',
+    'detourRouteLengthKm',
+    'detourAvgSpeedKmh',
+    'detourControlledIntCount',
+    'detourUncontrolledIntCount',
+    'detourControlledDelaySec',
+    'detourUncontrolledDelaySec'
+  ];
+
+  function cloneDetourRouteStateData(value, fallback) {
+    try {
+      return JSON.parse(JSON.stringify(value == null ? fallback : value));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function captureCurrentDetourRouteState() {
+    const controlValues = {};
+    DETOUR_ROUTE_STATE_FIELD_IDS.forEach((fieldId) => {
+      const el = document.getElementById(fieldId);
+      if (!el) return;
+      controlValues[fieldId] = el.type === 'checkbox' ? !!el.checked : String(el.value || '');
+    });
+
+    return {
+      selectedTrafficDetourRoadNames: cloneDetourRouteStateData(window.selectedTrafficDetourRoadNames || [], []),
+      selectedDetourSiteIds: cloneDetourRouteStateData(window.selectedDetourSiteIds || [], []),
+      selectedDetourSiteId: window.selectedDetourSiteId || null,
+      detourManualRoadInputs: cloneDetourRouteStateData(window.detourManualRoadInputs || {}, {}),
+      detourManualPanelRoads: cloneDetourRouteStateData(window.detourManualPanelRoads || [], []),
+      controlValues
+    };
+  }
+
+  function applyDetourRouteState(routeState, options = {}) {
+    const state = routeState || {};
+    const controlValues = state.controlValues || {};
+
+    DETOUR_ROUTE_STATE_FIELD_IDS.forEach((fieldId) => {
+      const el = document.getElementById(fieldId);
+      if (!el || !Object.prototype.hasOwnProperty.call(controlValues, fieldId)) return;
+      if (el.type === 'checkbox') {
+        el.checked = !!controlValues[fieldId];
+      } else {
+        el.value = String(controlValues[fieldId] == null ? '' : controlValues[fieldId]);
+      }
+    });
+
+    window.selectedTrafficDetourRoadNames = cloneDetourRouteStateData(state.selectedTrafficDetourRoadNames || [], []);
+    window.selectedDetourSiteIds = cloneDetourRouteStateData(state.selectedDetourSiteIds || [], []);
+    window.selectedDetourSiteId = state.selectedDetourSiteId || (window.selectedDetourSiteIds[0] || null);
+    window.detourManualRoadInputs = cloneDetourRouteStateData(state.detourManualRoadInputs || {}, {});
+    window.detourManualPanelRoads = cloneDetourRouteStateData(state.detourManualPanelRoads || window.selectedTrafficDetourRoadNames || [], []);
+
+    updateDetourNearbyRoadRadiusLabel();
+    updateDetourClosureUi();
+    updateTrafficSelectedRoadsSummary();
+
+    if (!(options && options.skipScan)) {
+      const coords = getDetourPrimaryCoordinates();
+      if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lon)) {
+        scanDetourNearbyRoads(coords.lat, coords.lon);
+      }
+    }
+  }
+
+  function getDetourRouteScenarioCount() {
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+    return Math.max(1, scenarios.length || Number(window.detourRouteCount) || 1);
+  }
+
+  function saveActiveDetourRouteScenario() {
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+    const activeIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
+    scenarios[activeIndex] = captureCurrentDetourRouteState();
+    window.detourRouteScenarios = scenarios;
+    window.detourRouteCount = Math.max(1, scenarios.length);
+  }
+
+  function ensureDetourRouteScenarios(count = null) {
+    const requestedCount = Math.max(1, Math.min(10, Math.round(Number(count != null ? count : getDetourRouteScenarioCount()) || 1)));
+    const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios.slice() : [];
+    const activeState = captureCurrentDetourRouteState();
+    const activeIndex = Math.max(0, Math.min(requestedCount - 1, Number(window.activeDetourRouteIndex) || 0));
+
+    if (!scenarios.length) {
+      scenarios.push(cloneDetourRouteStateData(activeState, activeState));
+    } else {
+      scenarios[Math.max(0, Number(window.activeDetourRouteIndex) || 0)] = cloneDetourRouteStateData(activeState, activeState);
+    }
+
+    while (scenarios.length < requestedCount) {
+      scenarios.push(cloneDetourRouteStateData(activeState, activeState));
+    }
+    scenarios.length = requestedCount;
+
+    window.detourRouteScenarios = scenarios;
+    window.detourRouteCount = requestedCount;
+    window.activeDetourRouteIndex = activeIndex;
+    return scenarios;
+  }
+
+  function renderDetourRouteScenarioManager() {
+    const summaryEl = document.getElementById('detourRouteScenarioSummary');
+    const tabsEl = document.getElementById('detourRouteScenarioTabs');
+    if (!summaryEl || !tabsEl) return;
+
+    const scenarios = ensureDetourRouteScenarios();
+    const activeIndex = Math.max(0, Math.min(scenarios.length - 1, Number(window.activeDetourRouteIndex) || 0));
+    scenarios[activeIndex] = captureCurrentDetourRouteState();
+    window.detourRouteScenarios = scenarios;
+
+    summaryEl.textContent = `${scenarios.length} route${scenarios.length === 1 ? '' : 's'} configured. Active route: ${activeIndex + 1}.`;
+    tabsEl.innerHTML = '';
+
+    scenarios.forEach((scenario, index) => {
+      const selectedRoads = Array.isArray(scenario && scenario.selectedTrafficDetourRoadNames)
+        ? scenario.selectedTrafficDetourRoadNames.map((value) => String(value || '').trim()).filter(Boolean)
+        : [];
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = `width:auto; margin:0; padding:7px 10px; border-radius:8px; border:1px solid ${index === activeIndex ? '#6a1b9a' : '#d1c4e9'}; background:${index === activeIndex ? '#6a1b9a' : '#ffffff'}; color:${index === activeIndex ? '#ffffff' : '#4a148c'}; box-shadow:none;`;
+      btn.textContent = `Route ${index + 1}${selectedRoads.length ? `: ${selectedRoads.join(' >> ')}` : ''}`;
+      btn.addEventListener('click', () => setActiveDetourRouteScenario(index));
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function setActiveDetourRouteScenario(routeIndex) {
+    const scenarios = ensureDetourRouteScenarios();
+    const nextIndex = Math.max(0, Math.min(scenarios.length - 1, Number(routeIndex) || 0));
+    saveActiveDetourRouteScenario();
+    window.activeDetourRouteIndex = nextIndex;
+    applyDetourRouteState(window.detourRouteScenarios[nextIndex] || {}, { skipScan: false });
+    calculateDetourOverlay();
+    renderDetourRouteScenarioManager();
+  }
+  window.setActiveDetourRouteScenario = setActiveDetourRouteScenario;
+
+  function configureDetourRouteCount() {
+    const currentCount = getDetourRouteScenarioCount();
+    const response = window.prompt(
+      'Number of detour routes to analyse?\n\nIf the number is greater than 1, the current detour scenario will be duplicated so each route keeps its own path, weights, and detour inputs.',
+      String(currentCount)
+    );
+    if (response === null) return;
+
+    const parsed = Math.round(Number(response));
+    const safeCount = Number.isFinite(parsed) ? Math.max(1, Math.min(10, parsed)) : currentCount;
+    ensureDetourRouteScenarios(safeCount);
+    renderDetourRouteScenarioManager();
+    calculateDetourOverlay();
+  }
+  window.configureDetourRouteCount = configureDetourRouteCount;
+  setTimeout(renderDetourRouteScenarioManager, 0);
 
   const QUICK_TIA_HISTORY_KEY = 'quickTiaAddressHistory';
 
@@ -19247,6 +20131,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (typeof window.refreshDetourRoadPreviewMap === 'function') {
       window.refreshDetourRoadPreviewMap();
     }
+
+    renderDetourRouteScenarioManager();
   }
 
   function getDetourManualRoadKey(roadName) {
@@ -19259,12 +20145,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const key = getDetourManualRoadKey(roadName);
     if (!key) return null;
     const existing = window.detourManualRoadInputs[key] || {};
+    const osmSpeed = (window.detourOsmRoadSpeeds && window.detourOsmRoadSpeeds[String(roadName || existing.roadName || '').trim()]) || null;
+    const defaultSpeed = osmSpeed || 60;
+    // Allow OSM speed to override only if the current value came from the hardcoded default (not user-set)
+    const shouldUseOsm = osmSpeed && (!existing.speedLimitSource || existing.speedLimitSource === 'default');
     const normalized = {
       roadName: String(roadName || existing.roadName || '').trim(),
       baseVpd: Number(existing.baseVpd) || 0,
       baseVpdManual: !!existing.baseVpdManual,
       lanes: Math.max(1, Number(existing.lanes) || 2),
-      speedLimitKmh: existing.speedLimitKmh != null ? Math.max(10, Math.min(130, Number(existing.speedLimitKmh) || 60)) : 60,
+      speedLimitKmh: shouldUseOsm ? osmSpeed : (existing.speedLimitKmh != null ? Math.max(10, Math.min(130, Number(existing.speedLimitKmh) || defaultSpeed)) : defaultSpeed),
+      speedLimitSource: shouldUseOsm ? 'osm' : (existing.speedLimitSource || (osmSpeed ? 'osm' : 'default')),
       vpdMethod: existing.vpdMethod || 'datapoints',
       tripGenVpd: (existing && typeof existing.tripGenVpd === 'object' && existing.tripGenVpd) ? existing.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 },
       tripGenCalcState: (existing && typeof existing.tripGenCalcState === 'object' && existing.tripGenCalcState) ? existing.tripGenCalcState : { landUse: 'custom', qty: '', rate: '', amPct: '10.0', pmPct: '10.0' },
@@ -19278,8 +20169,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function estimateDetourRoadBaseVpd(roadName, centerLat, centerLon, manualRefPercents = null, manualRefEnabled = null, excludeSiteIds = null) {
-    const lat = Number(centerLat);
-    const lon = Number(centerLon);
+    // Use road-specific centroid from OSM scan if available, so distances are measured from
+    // the road itself rather than the project center — giving meaningful per-road weights.
+    const roadCentroid = window.detourRoadCentroids && window.detourRoadCentroids[roadName];
+    const lat = Number(roadCentroid ? roadCentroid.lat : centerLat);
+    const lon = Number(roadCentroid ? roadCentroid.lon : centerLon);
     const radius = 5000;
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
       return { baseVpd: 0, source: 'No primary location', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [] };
@@ -19364,12 +20258,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return sum + percent;
     }, 0);
 
-    // Use user-entered percentages directly: Base VPD = sum((%/100) * reference VPD).
+    // Use user-entered percentages directly: Base VPD = sum((%/100) × reference VPD).
+    // Each weight expresses "my road carries this fraction of the reference counter's volume".
+    // Normalizing by totalWeightPercent would cancel out the user's intent (e.g. 10% on a 28k
+    // counter should give 2,825 vpd, not scale back up to 28,252).
     const weightedAvgVADT = Math.round(adjustedSum);
-    const finalAvgVADT = Math.max(0, Math.round(weightedAvgVADT));
+    const finalAvgVADT = Math.max(0, weightedAvgVADT);
 
     return {
       baseVpd: finalAvgVADT,
+      weightedVolumeSum: Math.max(0, Math.round(adjustedSum)),
+      totalWeightPercent: Math.max(0, Number(totalWeightPercent.toFixed(2))),
       source: sameRoadSites.length ? 'Estimated (same-road references)' : 'Estimated (nearby references)',
       refsCount: refs.length,
       areaType: 'User weighted only',
@@ -19434,9 +20333,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const safeKeyId = key.replace(/[^a-z0-9]/gi, '_');
       const _tgData = (inputData && inputData.tripGenVpd) ? inputData.tripGenVpd : {};
       const _totalTgVpd = ['EAST', 'WEST', 'NORTH', 'SOUTH'].reduce((s, d) => s + Math.max(0, Number(_tgData[d]) || 0), 0);
+      const weightedVolumeSum = Math.max(0, Math.round(Number(estimateMeta.weightedVolumeSum) || 0));
+      const activeWeightPercent = Math.max(0, Number(estimateMeta.totalWeightPercent) || 0);
 
       const row = document.createElement('div');
-      row.style.cssText = 'display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr 0.7fr; gap: 8px; align-items: end; background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;';
+      row.style.cssText = 'display: grid; grid-template-columns: 1.15fr 0.78fr 0.82fr 0.8fr 0.62fr 0.62fr; gap: 8px; align-items: end; background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;';
       row.innerHTML = `
         <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #e1bee7; margin-bottom: 2px; flex-wrap: wrap;">
           <span style="font-size: 0.75em; font-weight: 700; color: #4a148c; white-space: nowrap;">⚙️ Base VPD Method:</span>
@@ -19449,14 +20350,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Road</label>
           <input type="text" value="${roadName.replace(/"/g, '&quot;')}" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%;" />
-          <div style="font-size: 0.72em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">${hasEstimate ? `${String(estimateMeta.source || 'Estimated')} • ${Number(estimateMeta.refsCount) || 0} refs • user-entered % only` : 'No reference counters within 5 km to estimate Base VPD.'}</div>
+          <div style="font-size: 0.72em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">${hasEstimate ? `${String(estimateMeta.source || 'Estimated')} • ${Number(estimateMeta.refsCount) || 0} refs • ${numberRoundUp(activeWeightPercent, 0)}% active selected` : 'No reference counters within 5 km to estimate road VPD.'}</div>
         </div>
         <div data-datapoints-section="${safeKeyAttr}" style="${vpdMethod === 'tripgen' ? 'display:none;' : ''}">
-          <label style="color: ${hasEstimate ? '#6a1b9a' : '#c62828'}; font-size: 0.75em;">Datapoints Base VPD (Editable)</label>
-          <input type="number" class="detour-base-vpd-display" data-detour-base-key="${key}" data-detour-manual-key="${key}" data-detour-manual-field="baseVpd" value="${baseEstimate}" min="0" step="1" style="border: 1px solid ${hasEstimate ? '#ce93d8' : '#e53935'}; background: #fff; width: 100%;" />
+          <label style="color: ${hasEstimate ? '#6a1b9a' : '#c62828'}; font-size: 0.75em;">Weighted Volume Sum (% × VPD)</label>
+          <input type="text" class="detour-weighted-volume-display" data-detour-weight-key="${key}" value="${weightedVolumeSum.toLocaleString()}" readonly style="border: 1px solid ${hasEstimate ? '#ce93d8' : '#e53935'}; background: #f8f2fb; width: 100%;" />
+          <div style="font-size: 0.71em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">Raw selected share before normalization.</div>
         </div>
-        <div data-tripgen-section="${safeKeyAttr}" style="${vpdMethod === 'tripgen' ? '' : 'display:none;'}">
-          <label style="color: #2a4045; font-size: 0.75em;">🚗 Trip Gen Base VPD (resolved)</label>
+        <div data-datapoints-section="${safeKeyAttr}" style="${vpdMethod === 'tripgen' ? 'display:none;' : ''}">
+          <label style="color: ${hasEstimate ? '#6a1b9a' : '#c62828'}; font-size: 0.75em;">Current Road VPD (Used for Capacity)</label>
+          <input type="text" class="detour-base-vpd-display" data-detour-base-key="${key}" value="${baseEstimate.toLocaleString()}" readonly style="border: 1px solid ${hasEstimate ? '#ce93d8' : '#e53935'}; background: #f8f2fb; width: 100%;" />
+          <div style="font-size: 0.71em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">Normalized by active selected weight.</div>
+        </div>
+        <div data-tripgen-section="${safeKeyAttr}" style="${vpdMethod === 'tripgen' ? 'grid-column: span 2;' : 'display:none;'}">
+          <label style="color: #2a4045; font-size: 0.75em;">🚗 Current Road VPD (Trip Gen Resolved)</label>
           <div style="border: 1px solid ${_totalTgVpd > 0 ? '#66bb6a' : '#ffb300'}; background: ${_totalTgVpd > 0 ? '#e8f5e9' : '#fff8e1'}; border-radius: 4px; padding: 6px 8px; font-size: 0.9em; font-weight: 700; color: ${_totalTgVpd > 0 ? '#1b5e20' : '#856404'}; text-align: center;">${_totalTgVpd > 0 ? _totalTgVpd.toLocaleString() + ' vpd' : '— run calculator above'}</div>
         </div>
         <div>
@@ -19466,6 +20373,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Lanes *</label>
           <input type="number" data-detour-manual-key="${key}" data-detour-manual-field="lanes" min="1" max="10" step="1" value="${Math.max(1, Number(inputData.lanes) || 2)}" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
+        </div>
+        <div>
+          <label style="color: ${inputData.speedLimitSource === 'default' ? '#c62828' : '#6a1b9a'}; font-size: 0.75em;">Speed Limit *</label>
+          <input type="number" data-detour-manual-key="${key}" data-detour-manual-field="speedLimitKmh" min="10" max="130" step="5" value="${Math.max(10, Number(inputData.speedLimitKmh) || 60)}" style="border: 1px solid ${inputData.speedLimitSource === 'default' ? '#e53935' : '#ce93d8'}; background: ${inputData.speedLimitSource === 'default' ? '#fff3f0' : '#fff'}; width: 100%;" />
+          <div style="font-size: 0.71em; color: ${inputData.speedLimitSource === 'osm' ? '#2e7d32' : (inputData.speedLimitSource === 'user' ? '#1565c0' : '#c62828')}; margin-top: 2px;">${inputData.speedLimitSource === 'osm' ? '🗺️ From OSM' : (inputData.speedLimitSource === 'user' ? '✏️ User entered' : '⚠️ No data — please enter')}</div>
         </div>
       `;
 
@@ -19555,7 +20467,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         const refsTitle = document.createElement('div');
         refsTitle.style.cssText = 'font-size: 0.76em; color: #6a1b9a; font-weight: 700; margin-bottom: 6px;';
-        refsTitle.textContent = 'Nearby datapoints weight (%) — Base VPD uses only user-entered % values';
+        refsTitle.textContent = 'Nearby datapoints weight (%) — weighted volume sum uses selected % values; current road VPD normalizes by the active selected total.';
         refsWrap.appendChild(refsTitle);
 
         const totalBadge = document.createElement('div');
@@ -19661,7 +20573,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         let value = Number(inputEl.value);
         if (!Number.isFinite(value)) value = 0;
         if (field === 'lanes') value = Math.max(1, Math.round(value));
-        if (field === 'speedLimitKmh') value = Math.max(10, Math.min(130, Math.round(value)));
+        if (field === 'speedLimitKmh') {
+          value = Math.max(10, Math.min(130, Math.round(value)));
+          existing.speedLimitSource = 'user';
+        }
         if (field.startsWith('tripGen_')) {
           const dir = field.substring(8);
           if (!existing.tripGenVpd) existing.tripGenVpd = { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 };
@@ -19737,8 +20652,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       window.detourManualRoadInputs[manualKey] = existing;
 
       if (options && options.liveOnly) {
+        const weightedDisplayEl = bodyEl.querySelector(`.detour-weighted-volume-display[data-detour-weight-key="${manualKey}"]`);
         const baseDisplayEl = bodyEl.querySelector(`.detour-base-vpd-display[data-detour-base-key="${manualKey}"]`);
-        if (baseDisplayEl) baseDisplayEl.value = String(Math.max(0, Math.round(existing.baseVpd || 0)));
+        if (weightedDisplayEl) weightedDisplayEl.value = Math.max(0, Math.round(Number(estimate.weightedVolumeSum) || 0)).toLocaleString();
+        if (baseDisplayEl) baseDisplayEl.value = Math.max(0, Math.round(existing.baseVpd || 0)).toLocaleString();
         calculateDetourOverlay();
         return;
       }
@@ -19759,6 +20676,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const existing = window.detourManualRoadInputs[key] || getDetourManualRoadInput(roadName) || { lanes: 2 };
       if (!existing.refPercents || typeof existing.refPercents !== 'object') existing.refPercents = {};
       existing.refPercents[siteId] = value;
+      existing.baseVpdManual = false;
       window.detourManualRoadInputs[key] = existing;
 
       updateDetourRefWeightTotalBadge(key);
@@ -19775,6 +20693,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const existing = window.detourManualRoadInputs[key] || getDetourManualRoadInput(roadName) || { lanes: 2 };
       if (!existing.refEnabled || typeof existing.refEnabled !== 'object') existing.refEnabled = {};
       existing.refEnabled[siteId] = isEnabled;
+  existing.baseVpdManual = false;
       window.detourManualRoadInputs[key] = existing;
 
       const sliderEl = bodyEl.querySelector(`.detour-ref-weight-slider[data-detour-manual-key="${key}"][data-ref-siteid="${siteId}"]`);
@@ -20060,6 +20979,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       window.selectedTrafficDetourRoadNames = [];
     }
 
+    // Store OSM speed limits globally so they can be used as defaults for detour roads
+    if (!window.detourOsmRoadSpeeds) window.detourOsmRoadSpeeds = {};
+    roads.forEach(roadItem => {
+      if (typeof roadItem === 'object' && roadItem.name && roadItem.speed) {
+        const parsed = parseInt(String(roadItem.speed), 10);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          window.detourOsmRoadSpeeds[roadItem.name] = parsed;
+        }
+      }
+    });
+
     const selected = new Set(Array.isArray(window.selectedTrafficDetourRoadNames) ? window.selectedTrafficDetourRoadNames : []);
     roads.forEach(roadItem => {
       const road = typeof roadItem === 'string' ? roadItem : roadItem.name;
@@ -20171,6 +21101,203 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   window.scanDetourNearbyRoads = scanDetourNearbyRoads;
   window.scanPedNearbyRoads = scanPedNearbyRoads;
+
+  // ── Auto-Route: suggest ordered detour segments via OSM road network ──────
+  async function suggestDetourAutoRoute() {
+    const suggestEl = document.getElementById('detourAutoRouteSuggestions');
+    const btn = document.getElementById('detourAutoRouteBtn');
+    const coords = getDetourPrimaryCoordinates();
+    if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lon)) {
+      if (suggestEl) { suggestEl.style.display = 'block'; suggestEl.innerHTML = '<span style="color:#c62828;">Select a primary site first.</span>'; }
+      return;
+    }
+
+    if (suggestEl) { suggestEl.style.display = 'block'; suggestEl.innerHTML = '<span style="color:#1565c0;">🔍 Querying OSM road network…</span>'; }
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Routing…'; }
+
+    try {
+      const pLat = coords.lat, pLon = coords.lon;
+      const radiusM = Math.max(2000, getDetourNearbyRoadRadiusMeters());
+
+      // Fetch road network graph via Overpass
+      const query = `[out:json][timeout:20];way(around:${radiusM},${pLat},${pLon})[highway][name];out tags center geom 300;`;
+      const cacheKey = `autoroute:${Number(pLat).toFixed(4)},${Number(pLon).toFixed(4)}:${radiusM}`;
+      const data = await fetchOverpassJson(query, { cacheKey, ttlMs: OVERPASS_CACHE_TTL_MS });
+      const elements = Array.isArray(data && data.elements) ? data.elements : [];
+
+      if (!elements.length) {
+        suggestEl.innerHTML = '<span style="color:#c62828;">No road data from OSM — try increasing scan radius.</span>';
+        return;
+      }
+
+      // Build node → road-name edges from OSM ways
+      const nameToNodes = new Map(); // roadName → Set of node coords [lat,lon]
+      const nodeToNames = new Map(); // "lat,lon" key → Set of road names (intersection detector)
+      const roadCentres = new Map(); // roadName → {lat, lon, dist}
+
+      elements.forEach(e => {
+        const name = e && e.tags && e.tags.name;
+        if (!name) return;
+        const std = standardizeRoadName(name);
+        if (!std) return;
+        const cLat = e.center ? Number(e.center.lat) : NaN;
+        const cLon = e.center ? Number(e.center.lon) : NaN;
+        if (!Number.isFinite(cLat) || !Number.isFinite(cLon)) return;
+        const dist = haversineDistance(pLat, pLon, cLat, cLon);
+        if (!roadCentres.has(std) || dist < roadCentres.get(std).dist) {
+          roadCentres.set(std, { lat: cLat, lon: cLon, dist, name });
+        }
+        // Register geometry nodes
+        if (Array.isArray(e.geometry)) {
+          e.geometry.forEach(pt => {
+            const key = `${Number(pt.lat).toFixed(5)},${Number(pt.lon).toFixed(5)}`;
+            if (!nodeToNames.has(key)) nodeToNames.set(key, new Set());
+            nodeToNames.get(key).add(std);
+          });
+        }
+        if (!nameToNodes.has(std)) nameToNodes.set(std, new Set());
+        if (Array.isArray(e.geometry)) {
+          e.geometry.forEach(pt => nameToNodes.get(std).add(`${Number(pt.lat).toFixed(5)},${Number(pt.lon).toFixed(5)}`));
+        }
+      });
+
+      // Find intersecting roads: two roads share ≥1 node
+      const roadIntersects = (a, b) => {
+        const nodesA = nameToNodes.get(a);
+        if (!nodesA) return false;
+        const nodesB = nameToNodes.get(b);
+        if (!nodesB) return false;
+        for (const n of nodesA) { if (nodesB.has(n)) return true; }
+        return false;
+      };
+
+      // Get primary road name (the closed road to avoid)
+      let primaryRoadStd = '';
+      if (window.detourPrimaryOverride && window.detourPrimaryOverride.road) {
+        primaryRoadStd = standardizeRoadName(window.detourPrimaryOverride.road);
+      } else if (selectedMacroSite && macroSitesData[selectedMacroSite]) {
+        primaryRoadStd = standardizeRoadName(macroSitesData[selectedMacroSite].road_name || macroSitesData[selectedMacroSite].description);
+      }
+
+      // Sort roads by distance from primary site
+      const allRoads = Array.from(roadCentres.entries())
+        .filter(([std]) => std !== primaryRoadStd)
+        .sort(([, a], [, b]) => a.dist - b.dist);
+
+      if (!allRoads.length) {
+        suggestEl.innerHTML = '<span style="color:#c62828;">No alternate roads found nearby.</span>';
+        return;
+      }
+
+      // BFS: find top 3 routes (ordered lists of road names) from primary → any nearby road
+      // Strategy: greedily pick roads that intersect the previous road and move away from origin
+      const buildRoute = (startStd, maxLegs = 4) => {
+        const visited = new Set([startStd, primaryRoadStd]);
+        const route = [startStd];
+        let curStd = startStd;
+        for (let i = 0; i < maxLegs - 1; i++) {
+          // find closest unvisited road that intersects current road
+          let nextBest = null;
+          let nextBestDist = Infinity;
+          for (const [std, centre] of allRoads) {
+            if (visited.has(std)) continue;
+            if (!roadIntersects(curStd, std)) continue;
+            // prefer road that is farther from primary (moving away = forming a loop)
+            if (centre.dist < nextBestDist) {
+              nextBestDist = centre.dist;
+              nextBest = std;
+            }
+          }
+          if (!nextBest) break;
+          visited.add(nextBest);
+          route.push(nextBest);
+          curStd = nextBest;
+        }
+        return route;
+      };
+
+      // Build 3 candidate starting roads (closest, second, third)
+      const candidates = allRoads.slice(0, 6);
+      const routes = [];
+      const seenSigs = new Set();
+      for (const [startStd] of candidates) {
+        if (routes.length >= 3) break;
+        const route = buildRoute(startStd, 4);
+        if (route.length < 2) continue;
+        const sig = route.join('|');
+        if (seenSigs.has(sig)) continue;
+        seenSigs.add(sig);
+        // Estimate total length
+        const totalDist = route.reduce((acc, std) => acc + (roadCentres.get(std) ? roadCentres.get(std).dist : 0), 0);
+        routes.push({ route, totalDist });
+      }
+
+      if (!routes.length) {
+        suggestEl.innerHTML = '<span style="color:#c62828;">Could not find connected alternate paths. Try increasing scan radius.</span>';
+        return;
+      }
+
+      // Render route suggestions
+      let html = `<div style="font-weight:700; color:#1565c0; margin-bottom:6px; font-size:0.85em;">🗺️ ${routes.length} Auto-Suggested Detour Route${routes.length > 1 ? 's' : ''}</div>`;
+      routes.forEach((r, idx) => {
+        const distKm = (r.totalDist / 1000).toFixed(1);
+        const roadLabels = r.route.map(std => {
+          const c = roadCentres.get(std);
+          return c ? c.name : std;
+        });
+        html += `<div style="background:#fff; border:1px solid #90caf9; border-radius:6px; padding:8px; margin-bottom:6px;">
+          <div style="font-weight:700; color:#0d47a1; font-size:0.82em; margin-bottom:4px;">Route ${idx + 1} — ~${distKm} km radius</div>
+          <div style="font-size:0.8em; color:#37474f; margin-bottom:6px;">${roadLabels.map((n, i) => `<span style="background:#e3f2fd; padding:1px 6px; border-radius:10px; margin-right:2px;">${i + 1}. ${n}</span>`).join(' → ')}</div>
+          <button type="button" data-route-idx="${idx}" class="detour-auto-apply-btn" style="padding:3px 12px; border-radius:999px; border:1px solid #1565c0; background:#1565c0; color:#fff; font-size:0.78em; cursor:pointer;">Apply This Route</button>
+        </div>`;
+      });
+      suggestEl.innerHTML = html;
+
+      // Bind Apply buttons
+      suggestEl.querySelectorAll('.detour-auto-apply-btn').forEach(applyBtn => {
+        applyBtn.addEventListener('click', () => {
+          const idx = Number(applyBtn.dataset.routeIdx);
+          const r = routes[idx];
+          if (!r) return;
+          // Map road names back to counter IDs if available
+          const primaryIdToSkip = (window.detourPrimaryOverride && window.detourPrimaryOverride.siteId) || selectedMacroSite || null;
+          const newSelIds = [];
+          const newSelNames = [];
+          r.route.forEach(std => {
+            const c = roadCentres.get(std);
+            if (!c) return;
+            // try to find a matching counter
+            let bestId = null;
+            let bestScore = 0;
+            Object.entries(macroSitesData).forEach(([id, s]) => {
+              if (id === primaryIdToSkip) return;
+              const sStd = standardizeRoadName(s.road_name || s.description || '');
+              if (sStd !== std) return;
+              const dist = haversineDistance(c.lat, c.lon, Number(s.latitude), Number(s.longitude));
+              const score = 1 / (1 + dist);
+              if (score > bestScore) { bestScore = score; bestId = id; }
+            });
+            if (bestId) newSelIds.push(bestId);
+            newSelNames.push(c.name);
+          });
+          window.selectedDetourSiteIds = newSelIds;
+          window.selectedDetourSiteId = newSelIds[0] || null;
+          window.selectedTrafficDetourRoadNames = newSelNames;
+          updateTrafficSelectedRoadsSummary();
+          populateDetourDropdown();
+          calculateDetourOverlay();
+          if (typeof showNotification === 'function') showNotification(`Route ${idx + 1} applied: ${newSelNames.join(' → ')}`);
+        });
+      });
+
+    } catch (err) {
+      if (suggestEl) suggestEl.innerHTML = `<span style="color:#c62828;">Auto-route failed: ${err && err.message ? err.message : 'network error'}.</span>`;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🗺️ Auto Route'; }
+    }
+  }
+  window.suggestDetourAutoRoute = suggestDetourAutoRoute;
+  // ─────────────────────────────────────────────────────────────────────────
 
   async function populateDetourDropdown() {
     const listEl = document.getElementById('detourListContainer');
@@ -20732,8 +21859,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function deriveDirectionalLanes(totalLanes, seedD1 = 1, seedD2 = 1) {
     const safeTotal = Math.max(1, Math.round(Number(totalLanes) || 1));
     if (safeTotal <= 1) {
-      // Keep engine-safe minimum for bidirectional math paths.
-      return { d1Lanes: 1, d2Lanes: 1 };
+      // Single-lane bidirectional road: each direction gets half the lane capacity.
+      return { d1Lanes: 0.5, d2Lanes: 0.5 };
     }
 
     const s1 = Math.max(0, Number(seedD1) || 0);
@@ -20775,7 +21902,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     summaryEl.style.display = 'block';
-    summaryEl.innerHTML = '<div style="font-weight: 700; color: #4a148c; margin-bottom: 12px; font-size: 1rem;">📊 Detour Road Capacity Summary</div><div style="font-size: 0.78em; color: #7b1fa2; margin-top: -6px; margin-bottom: 10px;">Status uses hourly demand basis. Daily diverted VPD is converted to 80th highest-hour volume for card checks.</div>';
+  summaryEl.innerHTML = '<div style="font-weight: 700; color: #4a148c; margin-bottom: 12px; font-size: 1rem;">📊 Detour Road Capacity Summary</div><div style="font-size: 0.78em; color: #7b1fa2; margin-top: -6px; margin-bottom: 10px;">For datapoint mode, <strong>Weighted Volume Sum</strong> is the raw selected share (% × VPD). <strong>Current Road VPD Used for Capacity</strong> is the normalized value adopted in the model. Daily diverted VPD is converted to 80th highest-hour volume for the capacity checks below.</div>';
 
     // 2. Render Box-like output
     const container = document.createElement('div');
@@ -20809,8 +21936,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const card = document.createElement('div');
       card.className = 'detour-card';
       const roadInputData = getDetourManualRoadInput(roadName) || {};
+      const estimateMeta = roadInputData.estimateMeta || {};
       const speedLimitKmh = Math.max(10, Number(roadInputData.speedLimitKmh) || 60);
+      const speedSource = roadInputData.speedLimitSource || 'default';
+      const speedSourceLabel = speedSource === 'osm' ? '🗺️ OSM' : (speedSource === 'user' ? '✏️ User' : '⚠️ Default');
       const vpdMethodUsed = (roadInputData && roadInputData.vpdMethod) || 'datapoints';
+      const weightedVolumeSum = Math.max(0, Math.round(Number(estimateMeta.weightedVolumeSum) || 0));
+      const activeWeightPercent = Math.max(0, Number(estimateMeta.totalWeightPercent) || 0);
+      const laneCount = Math.max(1, Number(model.laneCount) || 1);
+      const perLaneCapacity = Math.max(0, Number(model.perLaneCapacity) || 0);
       const capInputs = model.capacityInputs || {};
       const capBaseLaneCapacity = Number(capInputs.baseLaneCapacity);
       const capLaneWidth = Number(capInputs.laneWidth);
@@ -20822,16 +21956,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         : '<span style="font-size:0.72em; color:#4a148c; background:#f3e5f5; border:1px solid #ce93d8; border-radius:8px; padding:1px 6px; margin-left:4px;">📡 Datapoints</span>';
       card.innerHTML = `
         <h4>🛣️ ${roadName}</h4>
-        <p><strong>Legal Speed Limit:</strong> ${speedLimitKmh} km/h</p>
-        <p><strong>Base VPD</strong>${methodBadge}<strong>:</strong> ${baseVpd.toLocaleString()} vpd</p>
-        <p><strong>Base Peak Hour (80th):</strong> ${basePeakHourVol.toLocaleString()} vph</p>
-        <p><strong>Target Year Diverted VPD:</strong> +${divertedVpd.toLocaleString()} vpd</p>
-        <p><strong>Target Year Diverted Peak Hour (80th):</strong> +${divertedPeakHourVol.toLocaleString()} vph</p>
-        <p><strong>Total Demand VPD (Base + Target):</strong> ${totalDemandVpd.toLocaleString()} vpd</p>
-        <p><strong>Total Demand Peak Hour (80th):</strong> ${totalDemandPeakHourVol.toLocaleString()} vph</p>
-        <p><strong>Total Road Capacity:</strong> ${totalCapacity.toLocaleString()} vph</p>
+        <p><strong>Legal Speed Limit:</strong> ${speedLimitKmh} km/h <span style="font-size:0.8em; color:${speedSource === 'default' ? '#c62828' : '#8e24aa'};">(${speedSourceLabel})</span></p>
+        ${vpdMethodUsed === 'tripgen' ? '' : `<p><strong>Weighted Volume Sum (% × VPD):</strong> ${weightedVolumeSum.toLocaleString()} vpd</p>`}
+        ${vpdMethodUsed === 'tripgen' ? '' : `<p><strong>Active Selected Weight:</strong> ${numberRoundUp(activeWeightPercent, 0)}%</p>`}
+        <p><strong>Current Road VPD Used for Capacity</strong>${methodBadge}<strong>:</strong> ${baseVpd.toLocaleString()} vpd</p>
+        <p><strong>Current Road Peak Hour (80th):</strong> ${basePeakHourVol.toLocaleString()} vph</p>
+        <p><strong>Added Diverted Demand (Target Year):</strong> +${divertedVpd.toLocaleString()} vpd</p>
+        <p><strong>Added Diverted Peak Hour (80th):</strong> +${divertedPeakHourVol.toLocaleString()} vph</p>
+        <p><strong>Total Assessed Demand VPD:</strong> ${totalDemandVpd.toLocaleString()} vpd</p>
+        <p><strong>Total Assessed Peak Hour (80th):</strong> ${totalDemandPeakHourVol.toLocaleString()} vph</p>
+        <p><strong>Capacity Basis:</strong> ${laneCount} lanes × ${numberRoundUp(perLaneCapacity, 0)} vph/lane = ${totalCapacity.toLocaleString()} vph total</p>
         <p><strong>Worst Direction Capacity:</strong> ${worstDirectionalCapacity > 0 ? `${worstDirectionalCapacity.toLocaleString()} vph${worstDirection !== '-' ? ` (${worstDirection})` : ''}` : '-'}</p>
-        <p><strong>Capacity Inputs:</strong> Base ${Number.isFinite(capBaseLaneCapacity) ? numberRoundUp(capBaseLaneCapacity, 0) : '-'} vph/lane, ${Number.isFinite(capLaneWidth) ? numberRoundUp(capLaneWidth, 2) : '-'}m lane, ${Number.isFinite(capClearance) ? numberRoundUp(capClearance, 2) : '-'}m clearance, HV ${Number.isFinite(capHvPct) ? numberRoundUp(capHvPct, 1) : '-'}%, ${capGradeType}</p>
+        <p><strong>Capacity Inputs Applied:</strong> base ${Number.isFinite(capBaseLaneCapacity) ? numberRoundUp(capBaseLaneCapacity, 0) : '-'} vph/lane, ${Number.isFinite(capLaneWidth) ? numberRoundUp(capLaneWidth, 2) : '-'}m lane, ${Number.isFinite(capClearance) ? numberRoundUp(capClearance, 2) : '-'}m clearance, HV ${Number.isFinite(capHvPct) ? numberRoundUp(capHvPct, 1) : '-'}%, ${capGradeType}</p>
         <p><strong>Worst Period VCR:</strong> ${numberRoundUp(maxNewVcr, 2)}${worstPeriod !== '-' ? ` (${worstPeriod})` : ''}</p>
         <p><strong>Worst Direction Hourly V/C:</strong> ${numberRoundUp(statusVcr, 2)}</p>
         <p style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e1ded8;"><strong>${statusEmoji} Directional Capacity Status:</strong> ${statusText}</p>
@@ -20860,15 +21996,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     bannerEl.style.display = 'block';
-    let html = '<div style="font-weight:700; color:#1b5e20; margin-bottom:8px; font-size:0.9em;">📋 Resolved Base VPD (active method per road) — used for VCR calculation</div>';
+    let html = '<div style="font-weight:700; color:#1b5e20; margin-bottom:8px; font-size:0.9em;">📋 Road VPD adopted in detour capacity checks</div>';
+    html += '<div style="font-size:0.78em; color:#2e7d32; margin-bottom:8px;">Datapoint mode shows both the raw weighted volume sum and the normalized current-road VPD used in VCR/capacity calculations.</div>';
     html += '<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px;">';
 
     uniqueRoads.forEach(model => {
       const roadName = model.roadName;
       const roadInput = getDetourManualRoadInput(roadName) || {};
+      const estimateMeta = roadInput.estimateMeta || {};
       const vpdMethod = (roadInput && roadInput.vpdMethod) || 'datapoints';
       const baseVpd = Math.max(0, Number(model.baseVpd) || 0);
       const basePeakHour = convertDailyVpdTo80thHourly(baseVpd);
+      const weightedVolumeSum = Math.max(0, Math.round(Number(estimateMeta.weightedVolumeSum) || 0));
+      const activeWeightPercent = Math.max(0, Number(estimateMeta.totalWeightPercent) || 0);
       const isTrip = vpdMethod === 'tripgen';
       const methodLabel = isTrip ? '🚗 Trip Generation' : '📡 Nearby Datapoints';
       const borderColor = isTrip ? '#a5d6a7' : '#ce93d8';
@@ -20878,8 +22018,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div style="background:${bgColor}; border:1px solid ${borderColor}; border-radius:6px; padding:8px;">
           <div style="font-size:0.72em; font-weight:700; color:${labelColor}; margin-bottom:3px;">${methodLabel}</div>
           <div style="font-size:0.73em; color:#555; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${roadName}">🛣️ ${roadName}</div>
-          <div style="font-size:1.05em; font-weight:700; color:#2e7d32;">${baseVpd.toLocaleString()} <span style="font-size:0.75em; font-weight:400; color:#555;">vpd</span></div>
-          <div style="font-size:0.78em; color:#388e3c; margin-top:2px;">80th hr peak: ${basePeakHour.toLocaleString()} vph</div>
+          ${isTrip ? '' : `<div style="font-size:0.76em; color:${labelColor};">Weighted sum: ${weightedVolumeSum.toLocaleString()} vpd</div>`}
+          ${isTrip ? '' : `<div style="font-size:0.76em; color:${labelColor};">Active selected weight: ${numberRoundUp(activeWeightPercent, 0)}%</div>`}
+          <div style="font-size:1.05em; font-weight:700; color:#2e7d32; margin-top:${isTrip ? '0' : '4px'};">${baseVpd.toLocaleString()} <span style="font-size:0.75em; font-weight:400; color:#555;">vpd used</span></div>
+          <div style="font-size:0.78em; color:#388e3c; margin-top:2px;">80th hr peak used: ${basePeakHour.toLocaleString()} vph</div>
         </div>
       `;
     });
@@ -21070,6 +22212,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const estimatedBase = Math.max(0, Number(estimate.baseVpd) || 0);
         const matchedCounterBase = Math.max(0, Number(matchedSite.vadt) || 0);
         const resolvedBase = estimatedBase > 0 ? estimatedBase : matchedCounterBase;
+        // Only preserve old baseVpd if it was explicitly set by the user (manual override).
+        // Previously, any positive safeBaseVpd (even from a stale auto-estimate) was kept,
+        // preventing updated estimates from taking effect when user adjusts reference weights.
         const keepManualMatched = !!existingManual.baseVpdManual && safeBaseVpd > 0;
         window.detourManualRoadInputs[key] = {
           ...existingManual,
@@ -21226,8 +22371,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const profile = buildManualDetourProfile(baseVpd);
         const d1Profile = profile.map(value => Math.max(0, (Number(value) || 0) * 0.5));
         const d2Profile = profile.map(value => Math.max(0, (Number(value) || 0) * 0.5));
-        const d1Lanes = Math.max(1, Math.ceil(lanes / 2));
-        const d2Lanes = Math.max(1, Math.floor(lanes / 2));
+        const d1Lanes = lanes <= 1 ? 0.5 : Math.ceil(lanes / 2);
+        const d2Lanes = lanes <= 1 ? 0.5 : Math.max(1, Math.floor(lanes / 2));
         const perLaneCapacity = calculateDetourCapacity(detourLaneWidth, detourLateralClearance, detourCapacityHvPercent, detourGradeType, detourBaseLaneCapacity);
         const totalCapacity = Math.round(perLaneCapacity * lanes);
         detourModels.push({
@@ -21288,7 +22433,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     const detourLengthKm = Math.max(0, Number(document.getElementById('detourRouteLengthKm') && document.getElementById('detourRouteLengthKm').value) || 0);
-    const detourAvgSpeedKmh = Math.max(1, Number(document.getElementById('detourAvgSpeedKmh') && document.getElementById('detourAvgSpeedKmh').value) || 55);
+
+    // Compute average speed from individual road speed limits
+    const roadSpeedValues = validDetourModels.map(m => {
+      const ri = getDetourManualRoadInput(m.roadName);
+      return ri ? Math.max(10, Number(ri.speedLimitKmh) || 60) : 60;
+    });
+    const computedAvgSpeed = roadSpeedValues.length
+      ? Math.round(roadSpeedValues.reduce((s, v) => s + v, 0) / roadSpeedValues.length)
+      : 55;
+    const detourAvgSpeedKmh = Math.max(1, computedAvgSpeed);
+    // Sync the UI input to reflect the computed average
+    const avgSpeedEl = document.getElementById('detourAvgSpeedKmh');
+    if (avgSpeedEl) avgSpeedEl.value = String(detourAvgSpeedKmh);
+
     const controlledInts = Math.max(0, Number(document.getElementById('detourControlledIntCount') && document.getElementById('detourControlledIntCount').value) || 0);
     const uncontrolledInts = Math.max(0, Number(document.getElementById('detourUncontrolledIntCount') && document.getElementById('detourUncontrolledIntCount').value) || 0);
     const controlledDelaySec = Math.max(0, Number(document.getElementById('detourControlledDelaySec') && document.getElementById('detourControlledDelaySec').value) || 60);
@@ -21428,8 +22586,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (addedD1 > debugAddedD1) debugAddedD1 = addedD1;
         if (addedD2 > debugAddedD2) debugAddedD2 = addedD2;
 
-        const d1Lanes = Math.max(1, Number(model.d1Lanes) || Math.ceil((Number(model.laneCount) || 1) / 2));
-        const d2Lanes = Math.max(1, Number(model.d2Lanes) || Math.floor((Number(model.laneCount) || 1) / 2));
+        const _mc = Number(model.laneCount) || 1;
+        const d1Lanes = Number(model.d1Lanes) > 0 ? Number(model.d1Lanes) : (_mc <= 1 ? 0.5 : Math.ceil(_mc / 2));
+        const d2Lanes = Number(model.d2Lanes) > 0 ? Number(model.d2Lanes) : (_mc <= 1 ? 0.5 : Math.max(1, Math.floor(_mc / 2)));
 
         const perLaneCapacity = Math.max(1, Number(model.perLaneCapacity) || Math.round((Number(model.totalCapacity) || 0) / Math.max(1, Number(model.laneCount) || 1)) || 1);
         const d1Capacity = Math.max(1, Math.round(perLaneCapacity * d1Lanes));
@@ -21488,6 +22647,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (!segmentResultsByRoad.has(segmentKey)) {
             segmentResultsByRoad.set(segmentKey, {
               roadName: String(model.roadName || '').trim() || 'Detour road',
+              laneCount: Number(model.laneCount) || 2,
               periods: {}
             });
           }
@@ -21531,11 +22691,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       orderedRoadResults.forEach((roadResult) => {
         const roadLabel = String(roadResult.roadName || 'Detour road');
+        const isSingleLane = (roadResult.laneCount || 2) <= 1;
 
         const baseDetailRow = document.createElement('tr');
         baseDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">Base Direction LOS</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
+          if (isSingleLane) {
+            return `<td data-label="${p.key}">${formatVCR(result.baseVcr)}</td>`;
+          }
           return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D1</span>${formatVCR(result.baseD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D2</span>${formatVCR(result.baseD2Vcr)}</div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(baseDetailRow);
@@ -21544,6 +22708,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         addedDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">Added Diverted Vol</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
+          if (isSingleLane) {
+            return `<td data-label="${p.key}" style="color: #6a1b9a;">+${Math.round(result.addedD1 + result.addedD2).toLocaleString()} vph</td>`;
+          }
           return `<td data-label="${p.key}" style="color: #6a1b9a;"><div class="directional-stack"><div class="directional-row"><span class="direction-label">D1</span><span>+${Math.round(result.addedD1).toLocaleString()} vph</span></div><div class="directional-row"><span class="direction-label">D2</span><span>+${Math.round(result.addedD2).toLocaleString()} vph</span></div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(addedDetailRow);
@@ -21552,6 +22719,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         newDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">New Direction LOS</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
+          if (isSingleLane) {
+            return `<td data-label="${p.key}">${formatVCR(result.newVcr)}</td>`;
+          }
           return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D1</span>${formatVCR(result.updatedD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D2</span>${formatVCR(result.updatedD2Vcr)}</div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(newDetailRow);
@@ -21627,6 +22797,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       warningText.style.color = '#2e7d32';
     }
 
+    // Warn about roads with default (unknown) speed limits
+    const roadsWithDefaultSpeed = validDetourModels
+      .map(m => { const ri = getDetourManualRoadInput(m.roadName); return (ri && ri.speedLimitSource === 'default') ? m.roadName : null; })
+      .filter(Boolean);
+    if (roadsWithDefaultSpeed.length) {
+      warningText.innerHTML += `<br/>⚠️ <strong>Speed limit not confirmed</strong> for: <strong>${roadsWithDefaultSpeed.join(', ')}</strong>. Using default 60 km/h — please enter the correct speed limit in the road panel above.`;
+    }
+
     // --- POST-DIVERSION TABLE: Remaining traffic on the existing work zone road ---
     const postDivBody = document.getElementById('postDiversionBody');
     const postDivHeadRow = document.getElementById('postDiversionHeadRow');
@@ -21649,10 +22827,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const workZoneLanes = Math.max(1, closedDirLanes - laneClosures);
       const existingRoadCapacity = detourBaseLaneCapacity * workZoneLanes;
 
+      const d1PrimaryLanes = Math.max(1, Number(num('D1_Lanes')) || 1);
+      const d2PrimaryLanes = Math.max(1, Number(num('D2_Lanes')) || 1);
       let remainingVolRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Remaining Volume (vph)</td>';
       let remainingLosRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Revised Direction LOS</td>';
-      let remainingLosRow = '<tr><td style="font-weight:bold; text-align:left; padding:5px 8px;">Revised LOS</td>';
 
+      periodResults.forEach(r => {
         const baseD1 = Math.max(0, Number(r.maxPrimaryD1) || 0);
         const baseD2 = Math.max(0, Number(r.maxPrimaryD2) || 0);
         const remainingD1 = closureType === 'oneway'
@@ -21674,18 +22854,59 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         remainingVolRow += `<td style="padding:5px 8px;"><div class="directional-stack"><div class="directional-row"><span class="direction-label">D1</span><span>${Math.round(remainingD1).toLocaleString()} vph</span></div><div class="directional-row"><span class="direction-label">D2</span><span>${Math.round(remainingD2).toLocaleString()} vph</span></div></div></td>`;
         remainingLosRow += `<td style="padding:5px 8px;"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#00897b;">D1</span>${formatVCR(revisedD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#00897b;">D2</span>${formatVCR(revisedD2Vcr)}</div></div></td>`;
-        remainingVcrRow += `<td style="padding:5px 8px;">${revisedVcr.toFixed(3)}</td>`;
-        remainingLosRow += `<td style="padding:5px 8px;">${formatVCR(revisedVcr)}</td>`;
       });
 
       remainingVolRow += '</tr>';
-      remainingVcrRow += '</tr>';
       remainingLosRow += '</tr>';
-      postDivBody.innerHTML = remainingVolRow + remainingVcrRow + remainingLosRow;
+      postDivBody.innerHTML = remainingVolRow + remainingLosRow;
       postDivResultsPanel.style.display = 'block';
     }
 
     syncPedestrianDetourFromTraffic({ skipRecalc: true });
+
+    // Store calculation snapshot for report synthetic table generation
+    const _growthCtx = (typeof getCurrentGrowthProjectionContext === 'function') ? getCurrentGrowthProjectionContext() : null;
+    const _growthPct = (_growthCtx && Number.isFinite(Number(_growthCtx.growthRatePct))) ? Number(_growthCtx.growthRatePct) : (Number(getNumberFromElement('macroGrowthRate')) || 0);
+    const _baseYr = Number(getElementValueOrText('baseYear')) || new Date().getFullYear();
+    const _openYr = Number(getElementValueOrText('macroOpeningYear')) || _baseYr;
+    const _yearSpan = Math.max(0, _openYr - _baseYr);
+    const _gf = _yearSpan > 0 && _growthPct > 0 ? Math.pow(1 + _growthPct / 100, _yearSpan) : 1;
+    window._lastDetourCalcSnapshot = {
+      roads: validDetourModels.map(function(model) {
+        var ri = getDetourManualRoadInput(model.roadName) || {};
+        var rk = getDetourManualRoadKey(model.roadName) || model.roadName;
+        var rs = roadCapacityStatusByKey[rk] || {};
+        return {
+          name: model.roadName || 'Detour road',
+          baseVpd: Math.round(model.baseVpd || 0),
+          totalCapacity: Math.round(model.totalCapacity || 0),
+          laneCount: model.laneCount || 1,
+          perLaneCapacity: Math.round(model.perLaneCapacity || 0),
+          speedLimitKmh: Math.max(10, Number(ri.speedLimitKmh) || 60),
+          maxNewVcr: Number(rs.maxNewVcr) || 0,
+          worstDirection: rs.worstDirection || '-',
+          worstPeriod: rs.worstPeriod || '-',
+          worstDirectionalCapacity: Math.round(rs.worstDirectionalCapacity || 0)
+        };
+      }),
+      divertedVpdTotal: divertedVpdTotal,
+      inputVadt: inputVadt,
+      inputD1Vadt: inputD1Vadt,
+      inputD2Vadt: inputD2Vadt,
+      diversionRatePct: diversionRatePct,
+      closureType: closureType,
+      closedDirection: closedDirection,
+      growthFactor: Number(_gf.toFixed(4)),
+      growthPct: _growthPct,
+      displayRoadName: displayRoadName,
+      delay: {
+        detourLengthKm: detourLengthKm,
+        avgSpeedKmh: detourAvgSpeedKmh,
+        estimatedDelayMin: estimatedDelayMin,
+        travelTimeSec: Math.round(travelTimeSec * 100) / 100,
+        totalTimeSec: Math.round(totalTimeSec * 100) / 100
+      }
+    };
 
     applyGlobalFormulaAnnotations();
   }
@@ -22433,6 +23654,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   setupOptionalFeaturePrintToggles();
   setupInlineSectionPrintBadges();
   setupDiagnosticsPanel();
+  setupEngineeringConflictListeners();
   setupGlobalPrintCustomization();
   setVcrView('table');
   setQueueView('table');
@@ -22846,8 +24068,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Average queue length (vehicles waiting)
     const avgQueue = (pw * rho) / (1 - rho) * lanes;
     
-    // 95th percentile queue
-    const p95Queue = avgQueue + Math.sqrt(avgQueue * 2);
+    // 95th percentile queue — exact M/M/c geometric tail inversion.
+    // In M/M/c, the steady-state queue CDF is P(Nq ≤ k) = 1 − Pw·ρ^k (Gross & Harris §3.4).
+    // This follows from the geometric tail of the conditional queue distribution,
+    // which is much heavier than a Poisson/normal approximation under high utilisation.
+    // Invert at the 95th percentile:  Pw·ρ^k ≤ 0.05  →  k ≥ ln(0.05/Pw) / ln(ρ)
+    let p95Queue;
+    if (pw <= 0.05 || rho <= 0) {
+      // Erlang-C ≤ 0.05: fewer than 5% of arrivals ever wait — p95 queue is zero.
+      p95Queue = 0;
+    } else {
+      p95Queue = Math.ceil(Math.log(0.05 / pw) / Math.log(rho));
+    }
     
     // Level of Service based on utilization
     let los = 'A';
@@ -22858,7 +24090,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     
     return {
       avgQueue: Math.round(avgQueue * 10) / 10,
-      p95Queue: Math.round(p95Queue * 10) / 10,
+      p95Queue: p95Queue,
       los: los,
       utilization: Math.round(rho * 1000) / 10
     };

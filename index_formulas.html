@@ -8991,7 +8991,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-      unlockApplication();
+      unlockApplication().catch(function(err) {
+        // Async unlock failed (e.g. data load error) — force-clear the blur so the
+        // app is still usable. Data may be unavailable but the UI won't stay locked.
+        console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+        document.body.classList.remove('app-locked');
+        loginGate.style.display = 'none';
+      });
       return;
     }
 
