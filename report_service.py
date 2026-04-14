@@ -1395,6 +1395,7 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   )
 
 
+def _build_short_detour_section(tables: list[dict], route_count: int, analysis_map: dict) -> str:
   """Build the complete Section 5 Detour Analysis HTML for the short report."""
   # Separate detour tables from non-detour tables.
   detour_tables = [

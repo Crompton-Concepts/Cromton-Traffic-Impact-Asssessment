@@ -4449,6 +4449,11 @@
           <canvas id="queueChartD1" class="chart-canvas-300"></canvas>
         </div>
       </div>
+
+      <div id="queueVisualizerWrap" class="simulation-container" style="display:none; background:#2c3e50; padding:15px; border-radius:8px; margin-top:16px;">
+        <h4 style="color:#ecf0f1; margin:0 0 10px 0;">Peak Queue Visualizer</h4>
+        <canvas id="queueCanvas" width="600" height="150" style="background:#34495e; border-radius:4px; width:100%;"></canvas>
+      </div>
     </div>
 
     <div class="card">
@@ -4864,6 +4869,8 @@
     </details>
 
     
+
+    <div id="engineeringConflictWarnings" style="display:none; margin-bottom:12px; padding:10px 14px; background:#fff5f5; border-left:4px solid #e74c3c; border-radius:6px;"></div>
 
     <details class="card diag-card" id="selfDiagnosticsCard" style="display:none;">
       <summary style="cursor: pointer; font-size: 1em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">🧪 Internal Diagnostics (Hidden, Click to Expand)</summary>
@@ -17204,6 +17211,106 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (runBtn) runBtn.addEventListener('click', runSelfDiagnostics);
   }
 
+  function checkEngineeringConflicts() {
+    const roadModeEl = document.getElementById('roadOperationMode');
+    const d2VadtEl   = document.getElementById('D2_VADT');
+    const hvPercentEl = document.getElementById('hvPercent');
+    const warningsDiv = document.getElementById('engineeringConflictWarnings');
+    if (!warningsDiv) return;
+
+    const roadMode  = roadModeEl  ? (roadModeEl.value  || '').toUpperCase() : '';
+    const d2Vadt    = d2VadtEl    ? (parseFloat(d2VadtEl.value)    || 0) : 0;
+    const hvPercent = hvPercentEl ? (parseFloat(hvPercentEl.value) || 0) : 0;
+
+    const warnings = [];
+
+    // Rule 1: One-Way Road Conflict
+    if (roadMode === 'ONE-WAY' && d2Vadt > 0) {
+      warnings.push(`<strong>Geometric Conflict:</strong> Road mode is ONE-WAY, but Direction 2 volume is ${d2Vadt} vpd. Opposing flow is not permitted.`);
+    }
+
+    // Rule 2: High HV% Warning
+    if (hvPercent > 25) {
+      warnings.push(`<strong>Capacity Warning:</strong> Heavy Vehicle percentage (${hvPercent}%) is exceptionally high. Ensure this is an industrial route.`);
+    }
+
+    if (warnings.length > 0) {
+      warningsDiv.style.display = 'block';
+      warningsDiv.innerHTML = `<h4 style="margin:0 0 6px 0; color:#c0392b; font-size:0.95em;">&#9888; Engineering Diagnostics</h4>`
+        + warnings.map(w => `<p style="margin:4px 0; font-size:0.88em; color:#5d4037;">${w}</p>`).join('');
+    } else {
+      warningsDiv.style.display = 'none';
+      warningsDiv.innerHTML = '';
+    }
+  }
+
+  function setupEngineeringConflictListeners() {
+    const ids = ['roadOperationMode', 'D2_VADT', 'hvPercent'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', checkEngineeringConflicts);
+    });
+    // Run once on load to catch pre-filled values
+    checkEngineeringConflicts();
+  }
+
+  function drawQueueSimulation(queueLengthMeters, hvPercent) {
+    const canvas = document.getElementById('queueCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // Sync canvas resolution to its rendered CSS width
+    canvas.width = canvas.offsetWidth || 600;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Road
+    ctx.fillStyle = '#7f8c8d';
+    ctx.fillRect(0, canvas.height / 2 - 20, canvas.width, 40);
+
+    // Stop line (red)
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(canvas.width - 50, canvas.height / 2 - 22, 5, 44);
+
+    const carLength = 6;   // metres
+    const hvLength  = 12;  // metres
+    const gap       = 2;   // metres between vehicles
+    const pxPerM    = Math.min(3, (canvas.width - 60) / Math.max(queueLengthMeters, 1));
+
+    let currentLength = 0;
+    let drawX = canvas.width - 55;
+
+    // Seed a stable random so the visual is consistent on re-render
+    let seed = Math.floor(queueLengthMeters * 100 + hvPercent);
+    const seededRand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
+
+    while (currentLength < queueLengthMeters) {
+      const isHV = (seededRand() * 100) < hvPercent;
+      const vehLength = isHV ? hvLength : carLength;
+      if (currentLength + vehLength > queueLengthMeters) break;
+
+      const pixelWidth = vehLength * pxPerM;
+      drawX -= (pixelWidth + gap * pxPerM);
+      if (drawX < 0) break;
+
+      ctx.fillStyle = isHV ? '#f39c12' : '#ecf0f1';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(drawX, canvas.height / 2 - 10, pixelWidth, 20, 3) : ctx.rect(drawX, canvas.height / 2 - 10, pixelWidth, 20);
+      ctx.fill();
+
+      currentLength += (vehLength + gap);
+    }
+
+    // Legend
+    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = '#ecf0f1';
+    ctx.fillText(`Peak Queue: ${queueLengthMeters.toFixed(0)} m`, 8, 18);
+    ctx.fillStyle = '#f39c12';
+    ctx.fillText(`\u25a0 Heavy Vehicles (${hvPercent}%)`, 8, 34);
+    ctx.fillStyle = '#ecf0f1';
+    ctx.fillText(`\u25a0 Passenger Cars`, 8, 50);
+  }
+
+
   function maxValid(values){
     const nums = values.filter(v => Number.isFinite(v) && v >= 0);
     return nums.length ? Math.max(...nums) : null;
@@ -17903,6 +18010,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       d2Label
     };
     renderQueueCharts(lastQueueChartData);
+
+    // Peak Queue Visualizer — use worst-case q15 across all periods and directions
+    {
+      const allQ15 = ['AM','OP','PM','EV'].flatMap(k => [
+        (queuePeriodD1[k] || {}).q15 || 0,
+        (queuePeriodD2[k] || {}).q15 || 0
+      ]);
+      const peakQ15 = Math.max(...allQ15);
+      const hvPct = parseFloat((document.getElementById('HVP') || {}).value) || 0;
+      const vizWrap = document.getElementById('queueVisualizerWrap');
+      if (vizWrap) {
+        if (peakQ15 > 0) {
+          vizWrap.style.display = 'block';
+          drawQueueSimulation(peakQ15, hvPct);
+        } else {
+          vizWrap.style.display = 'none';
+        }
+      }
+    }
 
     const vcrGroupedBodyD2 = document.getElementById('vcrGroupedBodyD2');
     if (vcrGroupedBodyD2) {
@@ -23285,6 +23411,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   setupOptionalFeaturePrintToggles();
   setupInlineSectionPrintBadges();
   setupDiagnosticsPanel();
+  setupEngineeringConflictListeners();
   setupGlobalPrintCustomization();
   setVcrView('table');
   setQueueView('table');
