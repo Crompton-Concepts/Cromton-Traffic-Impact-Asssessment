@@ -9411,7 +9411,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const GITHUB_DATASET_MANIFEST_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/dataset_manifest.json';
   const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v4:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-  const GITHUB_FETCH_TIMEOUT_MS = 60000;
+  const GITHUB_FETCH_TIMEOUT_MS = 8000;
+  const SHOULD_PREFER_LOCAL_DATA = (
+    window.location.protocol === 'file:'
+    || window.location.hostname === 'localhost'
+    || window.location.hostname === '127.0.0.1'
+  );
   const DATASET_MANIFEST_CACHE_KEY = 'crompton_tia_dataset_manifest_sig_v1';
   const DATASET_MANIFEST_LOCAL_URL = './dataset_manifest.json';
   const githubRefreshInflight = new Map();
@@ -11567,11 +11572,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   async function syncDatasetCacheWithManifest() {
     let manifest = null;
-    try {
-      manifest = await fetchJsonNoCache(GITHUB_DATASET_MANIFEST_URL);
-    } catch (_) {
+    const manifestSources = SHOULD_PREFER_LOCAL_DATA
+      ? [DATASET_MANIFEST_LOCAL_URL, GITHUB_DATASET_MANIFEST_URL]
+      : [GITHUB_DATASET_MANIFEST_URL, DATASET_MANIFEST_LOCAL_URL];
+
+    for (const manifestUrl of manifestSources) {
       try {
-        manifest = await fetchJsonNoCache(DATASET_MANIFEST_LOCAL_URL);
+        manifest = await fetchJsonNoCache(manifestUrl);
+        if (manifest) break;
       } catch (_) {
         manifest = null;
       }
@@ -11632,6 +11640,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   async function fetchDatasetWithFallback(primaryUrl, fallbackUrl, sourceLabel) {
+    if (SHOULD_PREFER_LOCAL_DATA && fallbackUrl && fallbackUrl !== primaryUrl) {
+      const localPreferred = await fetchGitHubData(fallbackUrl);
+      if (isGeoJsonFeatureCollection(localPreferred)) return localPreferred;
+    }
+
     const primary = await fetchGitHubData(primaryUrl);
     if (isGeoJsonFeatureCollection(primary)) return primary;
 
