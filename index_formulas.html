@@ -15273,10 +15273,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function getAustroadsCapacityProfile(direction, roadCapClass) {
     const baseCapacity = TMRCalculator.calculateCapacity(roadCapClass);
     const terrain = String(txt('macroTerrainType') || 'flat').toLowerCase();
-    const terrainFactor = AUSTROADS_TERRAIN_CAPACITY_FACTORS[terrain] || 1.0;
     const laneWidthFactor = getAustroadsLaneWidthFactor();
     const lateralFactor = getAustroadsLateralClearanceFactor();
 
+    // Austroads/HCM PCE values already capture the full terrain effect on
+    // heavy-vehicle operations.  A separate terrain factor is NOT applied
+    // because that would double-count the terrain penalty.  The terrain
+    // influence is embedded in the escalating E_T / E_R values below.
     const eqHv = terrain === 'mountainous' ? 4.0 : (terrain === 'rolling' ? 3.0 : 2.0);
     const eqRt = terrain === 'mountainous' ? 7.0 : (terrain === 'rolling' ? 5.0 : 3.0);
 
@@ -15290,17 +15293,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const adjustedCapacity = Math.max(
       500,
-      Math.round(baseCapacity * terrainFactor * laneWidthFactor * lateralFactor * hvFactor)
+      Math.round(baseCapacity * laneWidthFactor * lateralFactor * hvFactor)
     );
 
     return {
       baseCapacity,
       terrain,
-      terrainFactor,
       laneWidthFactor,
       lateralFactor,
       hvPct,
       rtPct,
+      eqHv,
+      eqRt,
       hvFactor,
       adjustedCapacity
     };
@@ -15595,15 +15599,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function buildCapacityStepFormula(capacityProfile, lanes) {
-    if (!capacityProfile) return 'DV = base capacity × terrain × lane-width × lateral-clearance × HV/RT factor';
+    if (!capacityProfile) return 'DV = base capacity × lane-width × lateral-clearance × f<sub>HV</sub>';
     const laneCount = Math.max(1, Number(lanes) || 1);
     const base = Number(capacityProfile.baseCapacity) || 0;
-    const terrainFactor = Number(capacityProfile.terrainFactor) || 1;
     const laneWidthFactor = Number(capacityProfile.laneWidthFactor) || 1;
     const lateralFactor = Number(capacityProfile.lateralFactor) || 1;
     const hvFactor = Number(capacityProfile.hvFactor) || 1;
     const adjusted = Number(capacityProfile.adjustedCapacity) || 0;
-    return `DV = ${formatFormulaNumber(base)} × ${terrainFactor.toFixed(2)} × ${laneWidthFactor.toFixed(2)} × ${lateralFactor.toFixed(2)} × ${hvFactor.toFixed(2)} = ${formatFormulaNumber(adjusted)} vph/lane; directional = ${formatFormulaNumber(adjusted)} × ${laneCount} = ${formatFormulaNumber(adjusted * laneCount)} vph`;
+    // Show HV/RT factor at 4 dp so the displayed arithmetic is verifiable
+    return `DV = ${formatFormulaNumber(base)} × ${laneWidthFactor.toFixed(2)} × ${lateralFactor.toFixed(2)} × ${hvFactor.toFixed(4)} = ${formatFormulaNumber(adjusted)} vph/lane; directional = ${formatFormulaNumber(adjusted)} × ${laneCount} = ${formatFormulaNumber(adjusted * laneCount)} vph`;
   }
 
   function buildBaseVcrStep(hourlyTotal, lanes, dv, result) {
