@@ -10,7 +10,7 @@ from nsw_hourly_profile_fill import generate_hourly_profiles
 # CONFIGURATION 
 # ==========================================
 # Your exact folder location
-FOLDER_PATH = r"C:\Users\Sanju\OneDrive - CromptonConcepts\Sharepoint - Documents\Clients\Application development\Apps\Cromton Traffic Impact Asssessment\NSW"
+FOLDER_PATH = r"D:\Crompton Labs\Application development\Apps\Traffic Impact Asssessment\NSW"
 
 # The exact name of your station reference file
 STATION_REF_FILENAME = "road_traffic_counts_station_reference.csv"
