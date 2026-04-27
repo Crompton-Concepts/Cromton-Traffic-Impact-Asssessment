@@ -12505,8 +12505,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d1OpenLaneExpr = d1Metrics.lanes > 1 ? `${d1Metrics.lanes} - ${d1Metrics.lanes - d1OpenLanes}` : '1';
     const d2OpenLaneExpr = d2Metrics.lanes > 1 ? `${d2Metrics.lanes} - ${d2Metrics.lanes - d2OpenLanes}` : '1';
     const selectedClosureCount = getSelectedLaneClosureCount();
+    const contraflowSelected = isContraflowMode();
     const d1CloseScenarios = Array.from({ length: Math.max(0, d1Metrics.lanes - 1) }, (_, i) => ({ closureCount: i + 1, openLanes: d1Metrics.lanes - i - 1, values: {}, formulas: {} }));
     const d2CloseScenarios = Array.from({ length: Math.max(0, d2Metrics.lanes - 1) }, (_, i) => ({ closureCount: i + 1, openLanes: d2Metrics.lanes - i - 1, values: {}, formulas: {} }));
+    const formatClosureScenarioLabel = (closureCount, openLanes, { includeOpen = true } = {}) => {
+      const genericLabel = closureCount === 1
+        ? `1 Lane Closed${includeOpen ? ` (${openLanes} open)` : ''}`
+        : `${closureCount} Lanes Closed${includeOpen ? ` (${openLanes} open)` : ''}`;
+      if (contraflowSelected && closureCount === selectedClosureCount) {
+        return includeOpen
+          ? `Contraflow (1 lane each direction, ${openLanes} open)`
+          : 'Contraflow (1 lane each direction)';
+      }
+      return genericLabel;
+    };
     const laneClosureAssumptionNoteEl = document.getElementById('laneClosureAssumptionNote');
     if (laneClosureAssumptionNoteEl) {
       if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
@@ -12766,7 +12778,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d2QScaleFactor = d2Metrics.lanes > 1 ? (d2Metrics.lanes / d2OpenLanes) : 1;
         const queueScenRowsD2 = d2CloseScenarios.map(sc => {
           const isSel = sc.closureCount === selectedClosureCount;
-          const scenLbl = sc.closureCount === 1 ? `1 Lane Closed (${sc.openLanes} open)` : `${sc.closureCount} Lanes Closed (${sc.openLanes} open)`;
+          const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
           const sf = d2Metrics.lanes / sc.openLanes;
           return { label: isSel ? `★ ${scenLbl} — Per 5 min` : `${scenLbl} — Per 5 min`, values: ['AM','OP','PM','EV'].map(p => (queuePeriodD2[p].q5 || 0) * sf), highlighted: isSel };
         });
@@ -12817,7 +12829,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d1QScaleFactor = d1Metrics.lanes > 1 ? (d1Metrics.lanes / d1OpenLanes) : 1;
         const queueScenRowsD1 = d1CloseScenarios.map(sc => {
           const isSel = sc.closureCount === selectedClosureCount;
-          const scenLbl = sc.closureCount === 1 ? `1 Lane Closed (${sc.openLanes} open)` : `${sc.closureCount} Lanes Closed (${sc.openLanes} open)`;
+          const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
           const sf = d1Metrics.lanes / sc.openLanes;
           return { label: isSel ? `★ ${scenLbl} — Per 5 min` : `${scenLbl} — Per 5 min`, values: ['AM','OP','PM','EV'].map(p => (queuePeriodD1[p].q5 || 0) * sf), highlighted: isSel };
         });
@@ -12899,7 +12911,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vcrGroupedBodyD2 = document.getElementById('vcrGroupedBodyD2');
     if (vcrGroupedBodyD2) {
       const d2ScenRows = d2CloseScenarios.map(sc => {
-        const scenLabel = sc.closureCount === 1 ? `1 Lane Closed (${sc.openLanes} open)` : `${sc.closureCount} Lanes Closed (${sc.openLanes} open)`;
+        const scenLabel = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
         const isSel = sc.closureCount === selectedClosureCount;
         return { label: isSel ? `★ ${scenLabel}` : scenLabel, values: isD2Active ? sc.values : null, formula: sc.formulas, highlighted: isSel };
       });
@@ -12942,7 +12954,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vcrGroupedBodyD1 = document.getElementById('vcrGroupedBodyD1');
     if (vcrGroupedBodyD1) {
       const d1ScenRows = d1CloseScenarios.map(sc => {
-        const scenLabel = sc.closureCount === 1 ? `1 Lane Closed (${sc.openLanes} open)` : `${sc.closureCount} Lanes Closed (${sc.openLanes} open)`;
+        const scenLabel = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
         const isSel = sc.closureCount === selectedClosureCount;
         return { label: isSel ? `★ ${scenLabel}` : scenLabel, values: isD1Active ? sc.values : null, formula: sc.formulas, highlighted: isSel };
       });
@@ -13262,7 +13274,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         } else {
           d1CloseScenarios.forEach(sc => {
             const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
-            d1ThHtml += `<th>${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed</th>`;
+            d1ThHtml += `<th>${star}${formatClosureScenarioLabel(sc.closureCount, sc.openLanes, { includeOpen: false })}</th>`;
           });
         }
         d1VcrThead.innerHTML = d1ThHtml;
@@ -13275,7 +13287,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         } else {
           d2CloseScenarios.forEach(sc => {
             const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
-            d2ThHtml += `<th>${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed</th>`;
+            d2ThHtml += `<th>${star}${formatClosureScenarioLabel(sc.closureCount, sc.openLanes, { includeOpen: false })}</th>`;
           });
         }
         d2VcrThead.innerHTML = d2ThHtml;
@@ -13348,7 +13360,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           } else {
             d1CloseScenarios.forEach(sc => {
               const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
-              d1RowHtml += `<td class="hourly-vcr-cell" data-label="${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed"></td>`;
+              d1RowHtml += `<td class="hourly-vcr-cell" data-label="${star}${formatClosureScenarioLabel(sc.closureCount, sc.openLanes, { includeOpen: false })}"></td>`;
             });
           }
           trD1.innerHTML = d1RowHtml;
@@ -13359,7 +13371,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           } else {
             d1CloseScenarios.forEach((sc, idx) => {
               const scenVcr = dv1 > 0 ? (d1PerLane * d1Metrics.lanes / sc.openLanes) / dv1 : null;
-              const scenFormula = buildLaneClosureVcrStep(`${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed`, d1Hour.total, sc.openLanes, dv1, scenVcr);
+              const scenFormula = buildLaneClosureVcrStep(formatClosureScenarioLabel(sc.closureCount, sc.openLanes, { includeOpen: false }), d1Hour.total, sc.openLanes, dv1, scenVcr);
               setHourlyVcrLosCell(d1Cells[1 + idx], scenVcr, scenFormula);
               if (sc.closureCount === selectedClosureCount && d1Cells[1 + idx]) {
                 d1Cells[1 + idx].style.outline = '2px solid #1565C0';
@@ -13378,7 +13390,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           } else {
             d2CloseScenarios.forEach(sc => {
               const star = sc.closureCount === selectedClosureCount ? '★ ' : '';
-              d2RowHtml += `<td class="hourly-vcr-cell" data-label="${star}${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed"></td>`;
+              d2RowHtml += `<td class="hourly-vcr-cell" data-label="${star}${formatClosureScenarioLabel(sc.closureCount, sc.openLanes, { includeOpen: false })}"></td>`;
             });
           }
           trD2.innerHTML = d2RowHtml;
@@ -13389,7 +13401,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           } else {
             d2CloseScenarios.forEach((sc, idx) => {
               const scenVcr = dv2 > 0 ? (d2PerLane * d2Metrics.lanes / sc.openLanes) / dv2 : null;
-              const scenFormula = buildLaneClosureVcrStep(`${sc.closureCount} Lane${sc.closureCount > 1 ? 's' : ''} Closed`, d2Hour.total, sc.openLanes, dv2, scenVcr);
+              const scenFormula = buildLaneClosureVcrStep(formatClosureScenarioLabel(sc.closureCount, sc.openLanes, { includeOpen: false }), d2Hour.total, sc.openLanes, dv2, scenVcr);
               setHourlyVcrLosCell(d2Cells[1 + idx], scenVcr, scenFormula);
               if (sc.closureCount === selectedClosureCount && d2Cells[1 + idx]) {
                 d2Cells[1 + idx].style.outline = '2px solid #1565C0';
