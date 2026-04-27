@@ -9579,8 +9579,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return raw === 2 ? 2 : 1;
   }
 
+  function isContraflowMode() {
+    const el = document.getElementById('laneClosureCount');
+    return el ? el.value === 'contraflow' : false;
+  }
+
   function getEffectiveOpenLanes(totalLanes) {
     const lanes = Math.max(1, Math.round(Number(totalLanes) || 1));
+    // Contraflow: both directions reduced to 1 lane each
+    if (isContraflowMode()) return 1;
     if (lanes <= 1) return 1;
     if (lanes === 2) return 1;
     const closureCount = getSelectedLaneClosureCount();
@@ -9589,6 +9596,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function getLaneClosureLabel() {
+    if (isContraflowMode()) return 'Contraflow (1 lane each direction)';
     return getSelectedLaneClosureCount() >= 2 ? 'Two Lane Closure' : 'Single Lane Closure';
   }
 
@@ -9609,6 +9617,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       twoLaneOption.disabled = !allowTwo;
       twoLaneOption.textContent = allowTwo ? 'Two Lane Closure' : 'Two Lane Closure (requires >3 lanes)';
       if (!allowTwo && Number(selectEl.value) === 2) selectEl.value = '1';
+    }
+
+    const contraflowOption = selectEl.querySelector('option[value="contraflow"]');
+    if (contraflowOption) {
+      const allowContraflow = d1 >= 2 && d2 >= 2;
+      contraflowOption.disabled = !allowContraflow;
+      contraflowOption.textContent = allowContraflow
+        ? 'Contraflow (1 lane each direction)'
+        : 'Contraflow (requires ≥2 lanes each direction)';
+      if (!allowContraflow && selectEl.value === 'contraflow') selectEl.value = '1';
     }
   }
 
