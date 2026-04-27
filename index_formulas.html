@@ -17318,6 +17318,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vcrD1Html = cloneTableForTgs('vcrGroupedTableD1');
     const vcrRiskText = getValue('vcrRiskBadge') || '-';
     const queueRiskText = getValue('queueRiskBadge') || '-';
+    const worstRiskPeriodMatch = vcrRiskText.match(/High Risk Period:\s*([^•]+)/i);
+    const queueRiskPeriodMatch = queueRiskText.match(/High Risk Period:\s*([^•]+)/i);
+    const worstRiskPeriod = worstRiskPeriodMatch ? cleanText(worstRiskPeriodMatch[1]) : '-';
+    const queueRiskPeriod = queueRiskPeriodMatch ? cleanText(queueRiskPeriodMatch[1]) : '-';
+    const worstDirectionText = Number.isFinite(worstVcr) && worstVcr > 1 ? 'Capacity intervention required' : 'Operations remain manageable';
+    const recommendedAction = Number.isFinite(worstVcr)
+      ? (worstVcr > 1
+        ? `Avoid ${worstRiskPeriod !== '-' ? worstRiskPeriod : 'peak'} lane closures unless staged traffic controls or reversible flow are provided.`
+        : `Current closure setup is broadly workable; monitor ${worstRiskPeriod !== '-' ? worstRiskPeriod : 'peak'} operations during implementation.`)
+      : 'Review live VCR and queue outputs before confirming the closure staging plan.';
 
     const html = `
 <div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:1.5px solid #6b7280; padding:12px; background:#fff; max-width:1280px;">
@@ -17377,7 +17387,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     </div>
   </div>
 
-  <div style="display:grid; grid-template-columns: 1fr 300px; gap:12px; margin-bottom:8px;">
+  <div style="display:grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.8fr) 300px; gap:12px; margin-bottom:8px; align-items:stretch;">
     <div style="border:1px solid #9ca3af; padding:8px;">
       <div style="font-weight:700; font-size:12px; margin-bottom:4px;">Notes</div>
       <ol style="margin:4px 0 0 18px; padding:0; font-size:10.8px; line-height:1.35; color:#1f2937;">
@@ -17387,6 +17397,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <li>Lane setup used in this sheet: D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), closure mode ${escapeHtml(laneClosureMode)}.</li>
         <li>Time buckets align with app defaults: AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00.</li>
       </ol>
+    </div>
+
+    <div style="border:1px solid #9ca3af; padding:8px; background:linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);">
+      <div style="font-weight:800; font-size:12px; margin-bottom:6px; color:#0f172a;">Key Findings</div>
+      <div style="display:grid; grid-template-columns: 1fr; gap:6px; font-size:10.8px; color:#111827;">
+        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Worst Period</span>${escapeHtml(worstRiskPeriod)}</div>
+        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Peak Queue Period</span>${escapeHtml(queueRiskPeriod)}</div>
+        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Worst VCR / LOS</span>${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</div>
+        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Peak Queue</span>${escapeHtml(queuePeakText)}</div>
+        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Action Summary</span>${escapeHtml(worstDirectionText)}</div>
+      </div>
+      <div style="margin-top:8px; padding:8px; border:1px solid #c2410c; background:#fff7ed; color:#7c2d12; font-size:10.8px; line-height:1.35;">
+        <div style="font-weight:800; margin-bottom:3px;">Recommended Action</div>
+        <div>${escapeHtml(recommendedAction)}</div>
+      </div>
     </div>
 
     <div style="border:1px solid #9ca3af; padding:8px;">
