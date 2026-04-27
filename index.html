@@ -17196,6 +17196,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const cloneTableForTgs = (tableId) => {
       const table = document.getElementById(tableId);
       if (!table) return '';
+      const losPalette = {
+        'vcr-los-a': { background: '#2e7d32', color: '#ffffff', border: '#1b5e20' },
+        'vcr-los-b': { background: '#8bc34a', color: '#111827', border: '#689f38' },
+        'vcr-los-c': { background: '#ffeb3b', color: '#111827', border: '#f9a825' },
+        'vcr-los-d': { background: '#ffb300', color: '#111827', border: '#ef6c00' },
+        'vcr-los-e': { background: '#f57c00', color: '#ffffff', border: '#d84315' },
+        'vcr-los-f': { background: '#c62828', color: '#ffffff', border: '#8e0000' }
+      };
       const clone = table.cloneNode(true);
       clone.removeAttribute('id');
       clone.querySelectorAll('.formula-inline, .report-remove-x, .report-remove-part-btn').forEach((el) => el.remove());
@@ -17237,6 +17245,31 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         cell.style.backgroundColor = '#ffffff';
         cell.style.fontWeight = '700';
         cell.style.color = '#000000';
+      });
+      clone.querySelectorAll('.vcr-badge').forEach((badge) => {
+        badge.style.display = 'inline-flex';
+        badge.style.alignItems = 'center';
+        badge.style.justifyContent = 'center';
+        badge.style.gap = '4px';
+        badge.style.padding = '5px 8px';
+        badge.style.borderRadius = '999px';
+        badge.style.fontWeight = '800';
+        badge.style.fontSize = '10px';
+        badge.style.letterSpacing = '0.01em';
+        badge.style.lineHeight = '1.15';
+
+        const losClass = Array.from(badge.classList).find((className) => losPalette[className]);
+        const palette = losClass ? losPalette[losClass] : null;
+        if (palette) {
+          badge.style.backgroundColor = palette.background;
+          badge.style.color = palette.color;
+          badge.style.border = `1px solid ${palette.border}`;
+        }
+
+        badge.querySelectorAll('span').forEach((child) => {
+          child.style.color = 'inherit';
+          child.style.opacity = '0.92';
+        });
       });
       clone.style.width = '100%';
       clone.style.borderCollapse = 'collapse';
@@ -17291,34 +17324,34 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   <div style="font-size:11px; color:#4b5563; text-align:right; margin-bottom:4px;">Generated ${escapeHtml(generatedAt)}</div>
 
   <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:10px; margin-bottom:10px;">
-    <table style="width:100%; border-collapse:collapse;">
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;">
       <tr>
-        <th colspan="5" style="text-align:left; background:#e5e7eb; border:1px solid #9ca3af; padding:6px; font-size:12px;">Count Location: ${escapeHtml(title)} - Site ${escapeHtml(siteId)}</th>
+        <th colspan="5" style="text-align:left; background:#475569; color:#ffffff; border:1.5px solid #334155; padding:10px 12px; font-size:13px; font-weight:900; letter-spacing:0.01em;">Count Location: ${escapeHtml(title)} - Site ${escapeHtml(siteId)}</th>
       </tr>
       <tr>
-        <th style="border:1px solid #9ca3af; padding:4px; font-size:11px; background:#f3f4f6;">Period</th>
-        <th style="border:1px solid #9ca3af; padding:4px; font-size:11px; background:#f3f4f6;">From</th>
-        <th style="border:1px solid #9ca3af; padding:4px; font-size:11px; background:#f3f4f6;">To</th>
-        <th style="border:1px solid #9ca3af; padding:4px; font-size:11px; background:#f3f4f6;">Hrs</th>
-        <th style="border:1px solid #9ca3af; padding:4px; font-size:11px; background:#f3f4f6;">Notes</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#475569; color:#ffffff; font-weight:900; text-align:center;">Period</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#475569; color:#ffffff; font-weight:900; text-align:center;">From</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#475569; color:#ffffff; font-weight:900; text-align:center;">To</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#475569; color:#ffffff; font-weight:900; text-align:center;">Hrs</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#475569; color:#ffffff; font-weight:900; text-align:center;">Notes</th>
       </tr>
-      <tr><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">AM</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">07:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">09:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">2</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">Morning peak</td></tr>
-      <tr><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">OP</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">09:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">16:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">7</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">Off-peak day</td></tr>
-      <tr><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">PM</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">16:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">18:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">2</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">Evening peak</td></tr>
-      <tr><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">EV</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">18:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">07:00</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">13</td><td style="border:1px solid #9ca3af; padding:4px; font-size:11px;">Night/off-peak</td></tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">AM</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Morning peak</td></tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">OP</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">7</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Off-peak day</td></tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">PM</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Evening peak</td></tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">EV</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">13</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Night/off-peak</td></tr>
     </table>
 
-    <table style="width:100%; border-collapse:collapse;">
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Year of Traffic Count</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(baseYear)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Current Year</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(targetYear)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Number of Years</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(yearDelta)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Growth Rate (% p.a.)</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(growthRate)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">HV %</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(hvPercent)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Lanes Direction 1</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(d1Lanes)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Lanes Direction 2</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(d2Lanes)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Worst VCR / LOS</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px; font-weight:700;">${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Peak Queue</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px; font-weight:700;">${escapeHtml(queuePeakText)}</td></tr>
-      <tr><th style="text-align:left; font-size:11px; background:#e5e7eb; border:1px solid #9ca3af; padding:4px 6px;">Work VCR Assumption</th><td style="border:1px solid #9ca3af; padding:4px 6px; font-size:11px;">${escapeHtml(laneClosureMode)}</td></tr>
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;">
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Year of Traffic Count</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(baseYear)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Current Year</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(targetYear)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Number of Years</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(yearDelta)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Growth Rate (% p.a.)</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(growthRate)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">HV %</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(hvPercent)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Lanes Direction 1</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(d1Lanes)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Lanes Direction 2</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(d2Lanes)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Worst VCR / LOS</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Peak Queue</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(queuePeakText)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#475569; color:#ffffff; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Work VCR Assumption</th><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(laneClosureMode)}</td></tr>
     </table>
   </div>
 
@@ -17358,12 +17391,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     <div style="border:1px solid #9ca3af; padding:8px;">
       <div style="font-weight:700; font-size:12px; margin-bottom:4px;">LOS Legend</div>
-      <div style="font-size:10.5px; border:1px solid #d1d5db; margin-bottom:3px; background:#dcfce7; padding:3px 6px;">LOS A (VCR <= 0.60)</div>
-      <div style="font-size:10.5px; border:1px solid #d1d5db; margin-bottom:3px; background:#d1fae5; padding:3px 6px;">LOS B (0.60 < VCR <= 0.70)</div>
-      <div style="font-size:10.5px; border:1px solid #d1d5db; margin-bottom:3px; background:#fef9c3; padding:3px 6px;">LOS C (0.70 < VCR <= 0.80)</div>
-      <div style="font-size:10.5px; border:1px solid #d1d5db; margin-bottom:3px; background:#ffedd5; padding:3px 6px;">LOS D (0.80 < VCR <= 0.90)</div>
-      <div style="font-size:10.5px; border:1px solid #d1d5db; margin-bottom:3px; background:#fee2e2; padding:3px 6px;">LOS E (0.90 < VCR <= 1.00)</div>
-      <div style="font-size:10.5px; border:1px solid #d1d5db; background:#fce7f3; padding:3px 6px;">LOS F (VCR > 1.00)</div>
+      <div style="font-size:10.5px; border:1px solid #1b5e20; margin-bottom:3px; background:#2e7d32; color:#ffffff; padding:4px 6px; font-weight:800;">LOS A (VCR <= 0.60)</div>
+      <div style="font-size:10.5px; border:1px solid #689f38; margin-bottom:3px; background:#8bc34a; color:#111827; padding:4px 6px; font-weight:800;">LOS B (0.60 < VCR <= 0.70)</div>
+      <div style="font-size:10.5px; border:1px solid #f9a825; margin-bottom:3px; background:#ffeb3b; color:#111827; padding:4px 6px; font-weight:800;">LOS C (0.70 < VCR <= 0.80)</div>
+      <div style="font-size:10.5px; border:1px solid #ef6c00; margin-bottom:3px; background:#ffb300; color:#111827; padding:4px 6px; font-weight:800;">LOS D (0.80 < VCR <= 0.90)</div>
+      <div style="font-size:10.5px; border:1px solid #d84315; margin-bottom:3px; background:#f57c00; color:#ffffff; padding:4px 6px; font-weight:800;">LOS E (0.90 < VCR <= 1.00)</div>
+      <div style="font-size:10.5px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:4px 6px; font-weight:800;">LOS F (VCR > 1.00)</div>
     </div>
   </div>
 </div>`;
@@ -17627,9 +17660,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           });
         }
         
+        const losPalette = {
+          'vcr-los-a': { background: '#2e7d32', color: '#ffffff', border: '#1b5e20' },
+          'vcr-los-b': { background: '#8bc34a', color: '#111827', border: '#689f38' },
+          'vcr-los-c': { background: '#ffeb3b', color: '#111827', border: '#f9a825' },
+          'vcr-los-d': { background: '#ffb300', color: '#111827', border: '#ef6c00' },
+          'vcr-los-e': { background: '#f57c00', color: '#ffffff', border: '#d84315' },
+          'vcr-los-f': { background: '#c62828', color: '#ffffff', border: '#8e0000' }
+        };
+
         const contentCanvas = await html2canvas(captureEl, {
           backgroundColor: '#ffffff',
-          scale: 3,
+          scale: 4,
           useCORS: true,
           logging: false,
           allowTaint: true,
@@ -17655,33 +17697,57 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
               td.style.fontWeight = '700';
               td.style.color = '#000000';
             });
+            clonedDocument.querySelectorAll('.vcr-badge').forEach((badge) => {
+              badge.style.display = 'inline-flex';
+              badge.style.alignItems = 'center';
+              badge.style.justifyContent = 'center';
+              badge.style.gap = '4px';
+              badge.style.padding = '5px 8px';
+              badge.style.borderRadius = '999px';
+              badge.style.fontWeight = '800';
+              badge.style.fontSize = '10px';
+              badge.style.lineHeight = '1.15';
+
+              const losClass = Array.from(badge.classList).find((className) => losPalette[className]);
+              const palette = losClass ? losPalette[losClass] : null;
+              if (palette) {
+                badge.style.backgroundColor = palette.background;
+                badge.style.color = palette.color;
+                badge.style.border = `1px solid ${palette.border}`;
+              }
+
+              badge.querySelectorAll('span').forEach((child) => {
+                child.style.color = 'inherit';
+                child.style.opacity = '0.92';
+              });
+            });
             clonedDocument.querySelectorAll('table').forEach((table) => {
-              table.style.backgroundColor = 'transparent';
+              table.style.backgroundColor = '#ffffff';
             });
           }
         });
 
-        // Export onto a true landscape canvas (wider than tall)
-        const pageWidth = 2480;
-        const pageHeight = 3508;
+        // Export onto a true A4 landscape canvas.
+        const pageWidth = 3508;
+        const pageHeight = 2480;
         const margin = 120;
         const drawWidth = pageWidth - (margin * 2);
         const drawHeight = pageHeight - (margin * 2);
 
         const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = pageHeight;  // Swap to ensure landscape output
-        exportCanvas.height = pageWidth;
+        exportCanvas.width = pageWidth;
+        exportCanvas.height = pageHeight;
         const ctx = exportCanvas.getContext('2d');
         if (!ctx) throw new Error('Canvas context not available');
 
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageHeight, pageWidth);
+        ctx.fillRect(0, 0, pageWidth, pageHeight);
 
-        const scale = Math.min(drawHeight / contentCanvas.width, drawWidth / contentCanvas.height);
+        const scale = Math.min(drawWidth / contentCanvas.width, drawHeight / contentCanvas.height);
         const targetW = Math.max(1, Math.round(contentCanvas.width * scale));
         const targetH = Math.max(1, Math.round(contentCanvas.height * scale));
-        const offsetX = Math.round((pageHeight - targetW) / 2);
-        const offsetY = Math.round((pageWidth - targetH) / 2);
+        const offsetX = Math.round((pageWidth - targetW) / 2);
+        const offsetY = Math.round((pageHeight - targetH) / 2);
 
         ctx.drawImage(contentCanvas, offsetX, offsetY, targetW, targetH);
         const dataUrl = exportCanvas.toDataURL('image/png');
