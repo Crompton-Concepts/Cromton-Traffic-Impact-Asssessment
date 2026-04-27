@@ -15289,6 +15289,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return el ? el.value === 'contraflow' : false;
   }
 
+  // In contraflow both directions share one physical carriageway.
+  // Use the lesser of the two per-lane capacities as the controlling constraint.
+  function getContraflowSharedDv(dvA, dvB) {
+    const a = Number(dvA) || 0;
+    const b = Number(dvB) || 0;
+    if (a > 0 && b > 0) return Math.min(a, b);
+    return Math.max(a, b); // fall back to whichever is non-zero
+  }
+
   function getEffectiveOpenLanes(totalLanes) {
     const lanes = Math.max(1, Math.round(Number(totalLanes) || 1));
     // Contraflow: both directions reduced to 1 lane each
@@ -19545,10 +19554,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d2BaseVcr = dv2 > 0 ? (d2Hour.perLane / dv2) : 0;
         
         let d1WorkVcr = 0, d2WorkVcr = 0;
-        if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
-        if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
-        if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
-          d1WorkVcr = d2WorkVcr = sharedDv > 0 ? ((d1Hour.perLane + d2Hour.perLane) / sharedDv) : 0;
+        if (isContraflowMode()) {
+          // Both directions share one physical carriageway; use the lesser per-lane capacity.
+          const cfDv = getContraflowSharedDv(dv1, dv2);
+          d1WorkVcr = cfDv > 0 ? (d1Hour.total / cfDv) : 0;
+          d2WorkVcr = cfDv > 0 ? (d2Hour.total / cfDv) : 0;
+        } else {
+          if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
+          if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
+          if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
+            d1WorkVcr = d2WorkVcr = sharedDv > 0 ? ((d1Hour.perLane + d2Hour.perLane) / sharedDv) : 0;
+          }
         }
 
         const d1WorkCap = d1WorkVcr > 0 ? (d1Hour.total / d1WorkVcr) : 0;
@@ -19760,13 +19776,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         let d1WorkVcr = null;
         let d2WorkVcr = null;
 
-        if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
-        if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
-
-        if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
-          const slrfHourly = sharedDv > 0 ? ((d1PerLane + d2PerLane) / sharedDv) : null;
-          d1WorkVcr = slrfHourly;
-          d2WorkVcr = slrfHourly;
+        if (isContraflowMode()) {
+          // Both directions share one physical carriageway; use the lesser per-lane capacity.
+          const cfDv = getContraflowSharedDv(dv1, dv2);
+          d1WorkVcr = cfDv > 0 ? (d1Hour.total / cfDv) : null;
+          d2WorkVcr = cfDv > 0 ? (d2Hour.total / cfDv) : null;
+        } else {
+          if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
+          if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
+          if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
+            const slrfHourly = sharedDv > 0 ? ((d1PerLane + d2PerLane) / sharedDv) : null;
+            d1WorkVcr = slrfHourly;
+            d2WorkVcr = slrfHourly;
+          }
         }
 
         const rowValues = [d1BaseVcr, d1WorkVcr, d2BaseVcr, d2WorkVcr].filter(v => Number.isFinite(v));
@@ -19795,9 +19817,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d1Closed = Math.max(1, d1Metrics.lanes - getEffectiveOpenLanes(d1Metrics.lanes));
         const d2Closed = Math.max(1, d2Metrics.lanes - getEffectiveOpenLanes(d2Metrics.lanes));
         const laneClosureLabel = getLaneClosureLabel();
-        const f1Work = d1Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d1WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d1Metrics.lanes)} open)`, d1Hour.total, getEffectiveOpenLanes(d1Metrics.lanes), dv1, d1WorkVcr);
+        const _cfDv = isContraflowMode() ? getContraflowSharedDv(dv1, dv2) : null;
+        const f1Work = d1Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d1WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d1Metrics.lanes)} open)`, d1Hour.total, getEffectiveOpenLanes(d1Metrics.lanes), _cfDv || dv1, d1WorkVcr);
         const f2Base = buildBaseVcrStep(d2Hour.total, d2Metrics.lanes, dv2, d2BaseVcr);
-        const f2Work = d2Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d2WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d2Metrics.lanes)} open)`, d2Hour.total, getEffectiveOpenLanes(d2Metrics.lanes), dv2, d2WorkVcr);
+        const f2Work = d2Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d2WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d2Metrics.lanes)} open)`, d2Hour.total, getEffectiveOpenLanes(d2Metrics.lanes), _cfDv || dv2, d2WorkVcr);
 
         setHourlyVcrLosCell(vcrCells[0], d1BaseVcr, f1Base);
         setHourlyVcrLosCell(vcrCells[1], d1WorkVcr, f1Work);
@@ -20683,12 +20706,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     let d1WorkVcr = 0;
     let d2WorkVcr = 0;
-    if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
-    if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
-    if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
-      const sharedWorkVcr = sharedDv > 0 ? ((v1 + v2) / sharedDv) : 0;
-      d1WorkVcr = sharedWorkVcr;
-      d2WorkVcr = sharedWorkVcr;
+    if (isContraflowMode()) {
+      // Both directions share one physical carriageway; use the lesser per-lane capacity.
+      const cfDv = getContraflowSharedDv(dv1, dv2);
+      d1WorkVcr = cfDv > 0 ? (v1 / cfDv) : 0;
+      d2WorkVcr = cfDv > 0 ? (v2 / cfDv) : 0;
+    } else {
+      if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
+      if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
+      if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
+        const sharedWorkVcr = sharedDv > 0 ? ((v1 + v2) / sharedDv) : 0;
+        d1WorkVcr = sharedWorkVcr;
+        d2WorkVcr = sharedWorkVcr;
+      }
     }
 
     const d1WorkCap = d1WorkVcr > 0 ? (v1 / d1WorkVcr) : 0;
@@ -25060,6 +25090,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const fromChart = Number.isFinite(Number(hourlyD1Work && hourlyD1Work[h])) ? Number(hourlyD1Work[h]) : null;
       if (Number.isFinite(fromChart)) return fromChart;
       const vol1 = Number(gazData[h]) || 0;
+      if (isContraflowMode()) {
+        const cfDv = getContraflowSharedDv(dv1, dv2);
+        return cfDv > 0 ? (vol1 / cfDv) : 0;
+      }
       return d1Lanes > 1 ? ((vol1 / getEffectiveOpenLanes(d1Lanes)) / dv1) : (vol1 / dv1);
     });
 
@@ -25067,6 +25101,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const fromChart = Number.isFinite(Number(hourlyD2Work && hourlyD2Work[h])) ? Number(hourlyD2Work[h]) : null;
       if (Number.isFinite(fromChart)) return fromChart;
       const vol2 = Number(agData[h]) || 0;
+      if (isContraflowMode()) {
+        const cfDv = getContraflowSharedDv(dv1, dv2);
+        return cfDv > 0 ? (vol2 / cfDv) : 0;
+      }
       return d2Lanes > 1 ? ((vol2 / getEffectiveOpenLanes(d2Lanes)) / dv2) : (vol2 / dv2);
     });
 
