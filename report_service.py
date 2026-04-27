@@ -2367,7 +2367,7 @@ def editor_page(draft_id: str) -> str:
       const reader = new FileReader();
       reader.onload = function() {{
         try {{
-          const parsed = JSON.parse(String(reader.result || '{}'));
+          const parsed = JSON.parse(String(reader.result || '{{}}'));
           const appliedCount = applyEditsProfile(parsed);
           window.alert(`Applied ${{appliedCount}} text edit(s). Table values remain from the current recalculated data.`);
         }} catch (err) {{
