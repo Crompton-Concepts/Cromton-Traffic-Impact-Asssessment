@@ -4259,7 +4259,7 @@
               <option value="D1">D1 Carriageway Closed (D2 carriageway used 1+1)</option>
               <option value="D2" selected>D2 Carriageway Closed (D1 carriageway used 1+1)</option>
             </select>
-            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">The closed carriageway's VCR drops to 0 (no vehicles on that pavement). The open carriageway carries the combined demand on a 1+1 contraflow split, with per-lane capacity reduced to ≈ 85% per Austroads AGTTM Part 8 / HCM Ch. 10.</p>
+            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Both traffic directions (D1 and D2) share the open carriageway in a 1+1 contraflow arrangement. The combined demand VCR applies to both directions, with per-lane capacity reduced to ≈ 85% per Austroads AGTTM Part 8 / HCM Ch. 10.</p>
           </div>
           <div id="oneWayDirectionWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
             <label style="color: #c30000; font-weight: bold;">🧭 Active One-way Direction *</label>
@@ -19054,7 +19054,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const closed = getContraflowClosedCarriageway();
         const open = closed === 'D1' ? 'D2' : 'D1';
         laneClosureAssumptionNoteEl.textContent =
-          `Work VCR assumes: Contraflow — ${closed} carriageway closed (VCR = 0), ${open} carriageway operating 1+1 at ~85% per-lane capacity (AGTTM Part 8)`;
+          `Work VCR assumes: Contraflow — ${closed} carriageway closed for works, both D1 & D2 traffic sharing ${open} carriageway 1+1, combined VCR applies to both directions at ~85% per-lane capacity (AGTTM Part 8)`;
       } else if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
         laneClosureAssumptionNoteEl.textContent = 'Work VCR assumes: Single Lane Reversible Flow (both directions single-lane)';
       } else {
@@ -19082,17 +19082,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const openCap = cfDv > 0 ? (2 * cfDv * cfFactor) : 0;
         const combinedTotal = (Number(d1HourlyTotal) || 0) + (Number(d2HourlyTotal) || 0);
         const openVcr = openCap > 0 ? (combinedTotal / openCap) : null;
-        if (isContraflowClosedDirection(1)) {
-          slcD1[p] = 0;
-          slcD1Formula[p] = buildContraflowClosedStep();
-          slcD2[p] = openVcr;
-          slcD2Formula[p] = buildContraflowOpenStep(d1HourlyTotal, d2HourlyTotal, cfDv, cfFactor, openVcr);
-        } else {
-          slcD1[p] = openVcr;
-          slcD1Formula[p] = buildContraflowOpenStep(d1HourlyTotal, d2HourlyTotal, cfDv, cfFactor, openVcr);
-          slcD2[p] = 0;
-          slcD2Formula[p] = buildContraflowClosedStep();
-        }
+        // Real contraflow: both directions share the open carriageway — neither is stopped
+        slcD1[p] = openVcr;
+        slcD1Formula[p] = buildContraflowOpenStep(d1HourlyTotal, d2HourlyTotal, cfDv, cfFactor, openVcr);
+        slcD2[p] = openVcr;
+        slcD2Formula[p] = buildContraflowOpenStep(d1HourlyTotal, d2HourlyTotal, cfDv, cfFactor, openVcr);
         slrf[p] = null;
         slrfFormula[p] = '';
       } else {
@@ -19653,8 +19647,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const openCap = cfDv > 0 ? (2 * cfDv * cfFactor) : 0;
           const combinedVol = (Number(d1Hour.total) || 0) + (Number(d2Hour.total) || 0);
           const openVcr = openCap > 0 ? (combinedVol / openCap) : 0;
-          if (isContraflowClosedDirection(1)) { d1WorkVcr = 0; d2WorkVcr = openVcr; }
-          else                                { d1WorkVcr = openVcr; d2WorkVcr = 0; }
+          d1WorkVcr = openVcr; d2WorkVcr = openVcr;
         } else {
           if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
           if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
@@ -19879,8 +19872,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const openCap = cfDv > 0 ? (2 * cfDv * cfFactor) : 0;
           const combinedVol = (Number(d1Hour.total) || 0) + (Number(d2Hour.total) || 0);
           const openVcr = openCap > 0 ? (combinedVol / openCap) : null;
-          if (isContraflowClosedDirection(1)) { d1WorkVcr = 0;       d2WorkVcr = openVcr; }
-          else                                { d1WorkVcr = openVcr; d2WorkVcr = 0;       }
+          d1WorkVcr = openVcr; d2WorkVcr = openVcr;
         } else {
           if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
           if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
@@ -19921,12 +19913,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const _cfFactor = getContraflowLaneCapacityFactor();
         let f1Work, f2Work;
         if (isContraflowMode()) {
-          f1Work = isContraflowClosedDirection(1)
-            ? buildContraflowClosedStep()
-            : buildContraflowOpenStep(d1Hour.total, d2Hour.total, _cfDv, _cfFactor, d1WorkVcr);
-          f2Work = isContraflowClosedDirection(2)
-            ? buildContraflowClosedStep()
-            : buildContraflowOpenStep(d1Hour.total, d2Hour.total, _cfDv, _cfFactor, d2WorkVcr);
+          f1Work = buildContraflowOpenStep(d1Hour.total, d2Hour.total, _cfDv, _cfFactor, d1WorkVcr);
+          f2Work = buildContraflowOpenStep(d1Hour.total, d2Hour.total, _cfDv, _cfFactor, d2WorkVcr);
         } else {
           f1Work = d1Metrics.lanes === 1
             ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d1WorkVcr)
@@ -20844,8 +20832,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const cfDv = getContraflowSharedDv(dv1, dv2);
       const openCap = cfDv > 0 ? (2 * cfDv * cfFactor) : 0;
       const openVcr = openCap > 0 ? ((v1 + v2) / openCap) : 0;
-      if (isContraflowClosedDirection(1)) { d1WorkVcr = 0;       d2WorkVcr = openVcr; }
-      else                                { d1WorkVcr = openVcr; d2WorkVcr = 0;       }
+      d1WorkVcr = openVcr; d2WorkVcr = openVcr;
     } else {
       if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
       if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
@@ -25218,7 +25205,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (Number.isFinite(fromChart)) return fromChart;
       const vol1 = Number(gazData[h]) || 0;
       if (isContraflowMode()) {
-        if (isContraflowClosedDirection(1)) return 0;
         const vol2 = Number(agData[h]) || 0;
         return openCapWW > 0 ? ((vol1 + vol2) / openCapWW) : 0;
       }
@@ -25230,7 +25216,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (Number.isFinite(fromChart)) return fromChart;
       const vol2 = Number(agData[h]) || 0;
       if (isContraflowMode()) {
-        if (isContraflowClosedDirection(2)) return 0;
         const vol1 = Number(gazData[h]) || 0;
         return openCapWW > 0 ? ((vol1 + vol2) / openCapWW) : 0;
       }
