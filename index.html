@@ -20679,7 +20679,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Red phase duration for D1 = D2 Green + 2x Clearance
     const red1 = g2 + totalClearance;
     const red2 = g1 + totalClearance;
-    
+
+    // Resolve directional metrics & per-lane Austroads capacities BEFORE the shockwave
+    // queue calculation — sat1/sat2 and d1Metrics/d2Metrics are needed for q/s ratios.
+    const dtca = txt('DTCA').toUpperCase();
+    const d1DailyBase = dtca === 'YES' ? num('D1_VADT') : num('VADT') / 2;
+    const d2DailyBase = dtca === 'YES' ? num('D2_VADT') : num('VADT') / 2;
+    const growthProjectionContext = getCurrentGrowthProjectionContext();
+    const growthFactor = growthProjectionContext.growthFactor;
+    const d1Daily = Math.round((Number(d1DailyBase) || 0) * growthFactor);
+    const d2Daily = Math.round((Number(d2DailyBase) || 0) * growthFactor);
+    const projectedTotal = Math.round((num('VADT') || 0) * growthFactor);
+
+    const d1Metrics = calcDirectionMetrics(1, d1Daily, site, projectedTotal);
+    const d2Metrics = calcDirectionMetrics(2, d2Daily, site, projectedTotal);
+    const dv1 = calculateDV(1, d1Daily, site, projectedTotal);
+    const dv2 = calculateDV(2, d2Daily, site, projectedTotal);
+    const maxDv = Math.max(dv1, dv2);
+    const sharedDv = Math.max(1, (dv1 > 0 && dv2 > 0) ? Math.min(dv1, dv2) : maxDv);
+
     // Shockwave amplification: max back-of-queue = arrivals-during-red / (1 − q/s)
     // q = per-lane arrival flow (vph), s = per-lane saturation flow (vph)
     // At low saturation this ≈ 1 (no change); at high saturation it can be 2-3× larger.
@@ -20714,22 +20732,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Calculate SWT Queues (Capacity derived from work-zone VCR method)
     const approachSpeed = Number(document.getElementById('srNormSpeed').value) || 60;
     const isRtrActive = txt('RTR').toUpperCase() === 'YES';
-
-    const dtca = txt('DTCA').toUpperCase();
-    const d1DailyBase = dtca === 'YES' ? num('D1_VADT') : num('VADT') / 2;
-    const d2DailyBase = dtca === 'YES' ? num('D2_VADT') : num('VADT') / 2;
-    const growthProjectionContext = getCurrentGrowthProjectionContext();
-    const growthFactor = growthProjectionContext.growthFactor;
-    const d1Daily = Math.round((Number(d1DailyBase) || 0) * growthFactor);
-    const d2Daily = Math.round((Number(d2DailyBase) || 0) * growthFactor);
-    const projectedTotal = Math.round((num('VADT') || 0) * growthFactor);
-
-    const d1Metrics = calcDirectionMetrics(1, d1Daily, site, projectedTotal);
-    const d2Metrics = calcDirectionMetrics(2, d2Daily, site, projectedTotal);
-    const dv1 = calculateDV(1, d1Daily, site, projectedTotal);
-    const dv2 = calculateDV(2, d2Daily, site, projectedTotal);
-    const maxDv = Math.max(dv1, dv2);
-    const sharedDv = Math.max(1, (dv1 > 0 && dv2 > 0) ? Math.min(dv1, dv2) : maxDv);
 
     const d1PerLane = d1Metrics.lanes > 0 ? (v1 / d1Metrics.lanes) : 0;
     const d2PerLane = d2Metrics.lanes > 0 ? (v2 / d2Metrics.lanes) : 0;
