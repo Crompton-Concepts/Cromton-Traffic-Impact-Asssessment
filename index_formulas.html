@@ -4251,7 +4251,7 @@
               <option value="2">Two Lane Closure</option>
               <option value="contraflow">Contraflow (1 lane each direction)</option>
             </select>
-            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Shown only when a direction has more than 2 lanes. Contraflow requires ≥2 lanes in each direction: all lanes in one direction closed, opposite direction split 1+1.</p>
+            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Shown when a direction has more than 2 lanes, or when both directions have ≥2 lanes for Contraflow. Contraflow closes one direction and splits the opposite direction 1+1.</p>
           </div>
           <div id="oneWayDirectionWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
             <label style="color: #c30000; font-weight: bold;">🧭 Active One-way Direction *</label>
@@ -15313,7 +15313,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const selectEl = document.getElementById('laneClosureCount');
     if (!wrap || !selectEl) return;
 
-    const show = maxLanes > 2;
+    const allowContraflow = d1 >= 2 && d2 >= 2;
+    const show = maxLanes > 2 || allowContraflow;
     wrap.style.display = show ? '' : 'none';
 
     const twoLaneOption = selectEl.querySelector('option[value="2"]');
@@ -15326,7 +15327,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const contraflowOption = selectEl.querySelector('option[value="contraflow"]');
     if (contraflowOption) {
-      const allowContraflow = d1 >= 2 && d2 >= 2;
       contraflowOption.disabled = !allowContraflow;
       contraflowOption.textContent = allowContraflow
         ? 'Contraflow (1 lane each direction)'

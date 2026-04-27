@@ -9608,7 +9608,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const selectEl = document.getElementById('laneClosureCount');
     if (!wrap || !selectEl) return;
 
-    const show = maxLanes > 2;
+    const allowContraflow = d1 >= 2 && d2 >= 2;
+    const show = maxLanes > 2 || allowContraflow;
     wrap.style.display = show ? '' : 'none';
 
     const twoLaneOption = selectEl.querySelector('option[value="2"]');
@@ -9621,7 +9622,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const contraflowOption = selectEl.querySelector('option[value="contraflow"]');
     if (contraflowOption) {
-      const allowContraflow = d1 >= 2 && d2 >= 2;
       contraflowOption.disabled = !allowContraflow;
       contraflowOption.textContent = allowContraflow
         ? 'Contraflow (1 lane each direction)'
