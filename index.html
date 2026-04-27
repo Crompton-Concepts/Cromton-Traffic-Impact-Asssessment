@@ -4533,6 +4533,50 @@
       <p class="table-note">* Design capacity uses Austroads/TMR practical per-lane capacity adjusted for terrain, geometry and HV/RT mix, with a minimum of 500 vph/lane.</p>
     </div>
 
+    <div style="margin:0 0 16px 0;">
+      <button
+        type="button"
+        id="generateTgsTiaBtn"
+        style="display:block; width:100%; padding:16px 24px; background:#00695c; border:2px solid #004d40; border-radius:8px; color:#ffffff; font-size:1.1em; font-weight:900; letter-spacing:0.03em; cursor:pointer; text-align:center; box-shadow:0 2px 8px rgba(0,105,92,0.25); transition:background 0.15s;"
+        onmouseover="this.style.background='#004d40'"
+        onmouseout="this.style.background='#00695c'"
+        onclick="copyTgsTiaSheet(this)">
+        &#9654;&nbsp; Generate TGS TIA Sheet
+      </button>
+      <div id="tgsTiaPreviewWrap" style="display:none; border:1.5px solid #90a4ae; border-radius:8px; padding:10px; background:#f8fafc; margin:10px 0 0 0;">
+        <div class="table-actions" style="justify-content:space-between; margin:0 0 8px 0;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button
+              type="button"
+              id="copyTgsTiaPreviewBtn"
+              class="copy-table-btn"
+              style="background:#1d4ed8; border-color:#1e40af;"
+              onclick="copyTgsTiaSheetPreview(this)">
+              Copy Preview to Clipboard
+            </button>
+            <button
+              type="button"
+              id="downloadTgsTiaImageBtn"
+              class="copy-table-btn"
+              style="background:#7c3aed; border-color:#6d28d9;"
+              onclick="downloadTgsTiaSheetImage(this)">
+              Download as Image
+            </button>
+            <button
+              type="button"
+              id="toggleTgsTiaEditBtn"
+              class="copy-table-btn"
+              style="background:#b45309; border-color:#92400e;"
+              onclick="toggleTgsTiaEditMode(this)">
+              Enable Edit Mode
+            </button>
+          </div>
+          <span id="tgsTiaPreviewStatus" style="font-size:11px; color:#334155; font-weight:600;">Preview not generated yet.</span>
+        </div>
+        <div id="tgsTiaPreviewHost" style="max-height:520px; overflow:auto; border:1px solid #cbd5e1; background:#ffffff; padding:8px;"></div>
+      </div>
+    </div>
+
 <details class="card" id="hourlyEstimateCard" open>
   <summary style="cursor: pointer; font-size: 1.2em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">HOURLY ESTIMATE</summary>
       <p style="margin: 6px 0 12px 0; font-size: 0.86em; color: #37474f; background: #f1f8ff; border: 1px solid #bbdefb; border-radius: 6px; padding: 8px 10px;">
@@ -4873,52 +4917,6 @@
       </div>
     </div>
 
-    <div style="margin:16px 0;">
-      <button
-        type="button"
-        id="generateTgsTiaBtn"
-        style="display:block; width:100%; padding:16px 24px; background:#00695c; border:2px solid #004d40; border-radius:8px; color:#ffffff; font-size:1.1em; font-weight:900; letter-spacing:0.03em; cursor:pointer; text-align:center; box-shadow:0 2px 8px rgba(0,105,92,0.25); transition:background 0.15s;"
-        onmouseover="this.style.background='#004d40'"
-        onmouseout="this.style.background='#00695c'"
-        onclick="copyTgsTiaSheet(this)">
-        &#9654;&nbsp; Generate TGS TIA Sheet
-      </button>
-      <div id="tgsTiaPreviewWrap" style="display:none; border:1.5px solid #90a4ae; border-radius:8px; padding:10px; background:#f8fafc; margin:10px 0 0 0;">
-        <div class="table-actions" style="justify-content:space-between; margin:0 0 8px 0;">
-          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <button
-              type="button"
-              id="copyTgsTiaPreviewBtn"
-              class="copy-table-btn"
-              style="background:#1d4ed8; border-color:#1e40af;"
-              onclick="copyTgsTiaSheetPreview(this)">
-              Copy Preview to Clipboard
-            </button>
-            <button
-              type="button"
-              id="downloadTgsTiaImageBtn"
-              class="copy-table-btn"
-              style="background:#7c3aed; border-color:#6d28d9;"
-              onclick="downloadTgsTiaSheetImage(this)">
-              Download as Image
-            </button>
-            <button
-              type="button"
-              id="toggleTgsTiaEditBtn"
-              class="copy-table-btn"
-              style="background:#b45309; border-color:#92400e;"
-              onclick="toggleTgsTiaEditMode(this)">
-              Enable Edit Mode
-            </button>
-          </div>
-          <span id="tgsTiaPreviewStatus" style="font-size:11px; color:#334155; font-weight:600;">Preview not generated yet.</span>
-        </div>
-        <div id="tgsTiaPreviewHost" style="max-height:520px; overflow:auto; border:1px solid #cbd5e1; background:#ffffff; padding:8px;"></div>
-      </div>
-    </div>
-
-
-
     <details class="card" id="formulaTraceSection">
       <summary style="cursor: pointer; font-size: 1.2em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">Formula Trace</summary>
       <button id="formulaTraceRemoveBtn" type="button" class="report-remove-x report-remove-section-btn hide-print" title="Remove Formula Trace from report" aria-label="Remove Formula Trace from report" onclick="if(window.confirm('Remove Formula Trace from this report view?')){ document.getElementById('formulaTraceSection')?.classList.add('report-section-excluded'); }">✕</button>
@@ -4975,9 +4973,41 @@
         style="display:block; width:100%; padding:14px 24px; background:#7b1fa2; border:2px solid #6a1b9a; border-radius:8px; color:#ffffff; font-size:1.0em; font-weight:900; letter-spacing:0.02em; cursor:pointer; text-align:center; box-shadow:0 2px 8px rgba(123,31,162,0.25); transition:background 0.15s;"
         onmouseover="this.style.background='#6a1b9a'"
         onmouseout="this.style.background='#7b1fa2'"
-        onclick="copyTgsTiaSheet(this, { detourOnly: true })">
+        onclick="copyTgsTiaSheet(this, { detourOnly: true, previewMode: 'detour' })">
         &#9654;&nbsp; Generate Detour TIA Sheet
       </button>
+      <div id="detourTiaPreviewWrap" style="display:none; border:1.5px solid #ce93d8; border-radius:8px; padding:10px; background:#fcf7ff; margin:10px 0 0 0;">
+        <div class="table-actions" style="justify-content:space-between; margin:0 0 8px 0;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button
+              type="button"
+              id="copyDetourTiaPreviewBtn"
+              class="copy-table-btn"
+              style="background:#7b1fa2; border-color:#6a1b9a;"
+              onclick="copyDetourTiaSheetPreview(this)">
+              Copy Preview to Clipboard
+            </button>
+            <button
+              type="button"
+              id="downloadDetourTiaImageBtn"
+              class="copy-table-btn"
+              style="background:#5e35b1; border-color:#4527a0;"
+              onclick="downloadDetourTiaSheetImage(this)">
+              Download as Image
+            </button>
+            <button
+              type="button"
+              id="toggleDetourTiaEditBtn"
+              class="copy-table-btn"
+              style="background:#b45309; border-color:#92400e;"
+              onclick="toggleDetourTiaEditMode(this)">
+              Enable Edit Mode
+            </button>
+          </div>
+          <span id="detourTiaPreviewStatus" style="font-size:11px; color:#6a1b9a; font-weight:600;">Detour preview not generated yet.</span>
+        </div>
+        <div id="detourTiaPreviewHost" style="max-height:520px; overflow:auto; border:1px solid #d1c4e9; background:#ffffff; padding:8px;"></div>
+      </div>
     </div>
 
     <details class="card print-custom-card" id="printCustomizationCard">
@@ -17390,6 +17420,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function copyTgsTiaSheet(button, options = {}) {
+        const getTiaPreviewContext = (mode) => {
+          const resolvedMode = String(mode || '').toLowerCase() === 'detour' ? 'detour' : 'tgs';
+          if (resolvedMode === 'detour') {
+            return {
+              mode: 'detour',
+              wrapId: 'detourTiaPreviewWrap',
+              hostId: 'detourTiaPreviewHost',
+              statusId: 'detourTiaPreviewStatus',
+              htmlKey: 'lastDetourTiaSheetHtml',
+              textKey: 'lastDetourTiaSheetText',
+              editModeKey: 'detourTiaEditMode'
+            };
+          }
+          return {
+            mode: 'tgs',
+            wrapId: 'tgsTiaPreviewWrap',
+            hostId: 'tgsTiaPreviewHost',
+            statusId: 'tgsTiaPreviewStatus',
+            htmlKey: 'lastTgsTiaSheetHtml',
+            textKey: 'lastTgsTiaSheetText',
+            editModeKey: 'tgsTiaEditMode'
+          };
+        };
     const escapeHtml = (value) => String(value || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -17730,22 +17783,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 </div>`;
     const detourHtml = buildDetourSheetsForTgs();
     const detourOnlyMode = !!(options && options.detourOnly);
+    const previewMode = String((options && options.previewMode) || (detourOnlyMode ? 'detour' : 'tgs')).toLowerCase() === 'detour' ? 'detour' : 'tgs';
+    const previewContext = getTiaPreviewContext(previewMode);
     const html = detourOnlyMode ? detourHtml : `${baseHtml}${detourHtml}`;
-    window.lastTgsTiaSheetHtml = html;
+    window[previewContext.htmlKey] = html;
     const temp = document.createElement('div');
     temp.innerHTML = html;
-    window.lastTgsTiaSheetText = cleanText(temp.textContent || '');
+    window[previewContext.textKey] = cleanText(temp.textContent || '');
 
-    const previewWrap = document.getElementById('tgsTiaPreviewWrap');
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+    const previewWrap = document.getElementById(previewContext.wrapId);
+    const previewHost = document.getElementById(previewContext.hostId);
+    const previewStatus = document.getElementById(previewContext.statusId);
     const autoRefresh = !!(options && options.autoRefresh);
 
     if (previewHost) {
       previewHost.innerHTML = html;
     }
 
-    setTgsPreviewEditable(Boolean(window.tgsTiaEditMode));
+    setTgsPreviewEditable(Boolean(window[previewContext.editModeKey]), previewContext.mode);
 
     if (previewWrap) {
       previewWrap.style.display = 'block';
@@ -17762,9 +17817,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const original = button
       ? button.textContent
-      : (detourOnlyMode ? 'Generate Detour TIA Sheet' : 'Generate TGS TIA Sheet');
+      : (previewContext.mode === 'detour' ? 'Generate Detour TIA Sheet' : 'Generate TGS TIA Sheet');
     if (button && !(options && options.silentButton)) {
-      button.textContent = detourOnlyMode ? 'Detour Sheet Updated' : 'Preview Updated';
+      button.textContent = previewContext.mode === 'detour' ? 'Detour Sheet Updated' : 'Preview Updated';
       setTimeout(() => {
         button.textContent = original;
       }, 1300);
@@ -17777,8 +17832,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
-  function getCurrentTgsPreviewPayload() {
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
+  function getCurrentTgsPreviewPayload(mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+    const htmlKey = isDetour ? 'lastDetourTiaSheetHtml' : 'lastTgsTiaSheetHtml';
+    const textKey = isDetour ? 'lastDetourTiaSheetText' : 'lastTgsTiaSheetText';
     const node = previewHost ? previewHost.firstElementChild : null;
     if (node) {
       const html = String(node.outerHTML || '');
@@ -17786,13 +17844,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return { html, plainText };
     }
     return {
-      html: String(window.lastTgsTiaSheetHtml || ''),
-      plainText: String(window.lastTgsTiaSheetText || '')
+      html: String(window[htmlKey] || ''),
+      plainText: String(window[textKey] || '')
     };
   }
 
-  function setTgsPreviewEditable(enabled) {
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
+  function setTgsPreviewEditable(enabled, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
     if (!previewHost) return;
 
     // Table cells, list items, note card body spans, direction/section labels
@@ -17821,12 +17880,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
   }
 
-  function toggleTgsTiaEditMode(button) {
-    window.tgsTiaEditMode = !window.tgsTiaEditMode;
-    const enabled = Boolean(window.tgsTiaEditMode);
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+  function toggleTgsTiaEditMode(button, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const editModeKey = isDetour ? 'detourTiaEditMode' : 'tgsTiaEditMode';
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
+    window[editModeKey] = !window[editModeKey];
+    const enabled = Boolean(window[editModeKey]);
 
-    setTgsPreviewEditable(enabled);
+    setTgsPreviewEditable(enabled, isDetour ? 'detour' : 'tgs');
 
     if (button) {
       button.textContent = enabled ? 'Disable Edit Mode' : 'Enable Edit Mode';
@@ -17845,11 +17906,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
-  function copyTgsTiaSheetPreview(button) {
-    const payload = getCurrentTgsPreviewPayload();
+  function toggleDetourTiaEditMode(button) {
+    toggleTgsTiaEditMode(button, 'detour');
+  }
+
+  function copyTgsTiaSheetPreview(button, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const payload = getCurrentTgsPreviewPayload(isDetour ? 'detour' : 'tgs');
     const html = String(payload.html || '');
     const plainText = String(payload.plainText || '');
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
 
     if (!html && !plainText) {
       if (previewStatus) {
@@ -17926,6 +17992,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     })();
   }
 
+  function copyDetourTiaSheetPreview(button) {
+    copyTgsTiaSheetPreview(button, 'detour');
+  }
+
   function ensureHtml2CanvasLoaded() {
     if (typeof window.html2canvas === 'function') {
       return Promise.resolve(window.html2canvas);
@@ -17960,9 +18030,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return window.__html2canvasLoadingPromise;
   }
 
-  function downloadTgsTiaSheetImage(button) {
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+  function downloadTgsTiaSheetImage(button, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
 
     if (!previewHost || !previewHost.firstElementChild) {
       if (previewStatus) {
@@ -18152,7 +18223,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           .replace(/[^a-z0-9]+/g, '_')
           .replace(/^_+|_+$/g, '')
           .slice(0, 64) || 'tia_sheet';
-        const fileName = `${safeTitle}_tgs_sheet.png`;
+        const fileName = `${safeTitle}_${isDetour ? 'detour_tia_sheet' : 'tgs_sheet'}.png`;
 
         const link = document.createElement('a');
         link.href = dataUrl;
@@ -18186,6 +18257,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
       }
     })();
+  }
+
+  function downloadDetourTiaSheetImage(button) {
+    downloadTgsTiaSheetImage(button, 'detour');
   }
 
   let tgsPreviewAutoRefreshTimer = null;
