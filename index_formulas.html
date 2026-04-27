@@ -17318,15 +17318,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vcrD1Html = cloneTableForTgs('vcrGroupedTableD1');
     const vcrRiskText = getValue('vcrRiskBadge') || '-';
     const queueRiskText = getValue('queueRiskBadge') || '-';
-    const projectName = getValue('printSiteName') || title;
-    const drawingRef = getValue('macroSiteId') || getValue('printCounterId') || '-';
-    const preparedBy = getValue('preparedBy') || getValue('consultantName') || 'TIA Calculator';
-    const revisionRef = getValue('revision') || getValue('drawingRevision') || 'Rev A';
-    const issueDate = new Date().toLocaleDateString('en-AU', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
 
     const html = `
 <div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:1.5px solid #6b7280; padding:12px; background:#fff; max-width:1280px; width:100%; box-sizing:border-box;">
@@ -17388,30 +17379,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   <div style="display:grid; grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); gap:12px; margin-bottom:8px; align-items:stretch;">
     <div style="border:1px solid #9ca3af; padding:8px;">
-      <div style="font-weight:700; font-size:12px; margin-bottom:4px;">Notes</div>
-      <ol style="margin:4px 0 0 18px; padding:0; font-size:10.8px; line-height:1.35; color:#1f2937;">
-        <li>Output generated from current TIA inputs and calculated tables for direct inclusion in TGS layouts.</li>
-        <li>Worst VCR observed: ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). VCR alert: ${escapeHtml(vcrRiskText)}.</li>
-        <li>Peak queue adopted from live calculator: ${escapeHtml(queuePeakText)}. Queue alert: ${escapeHtml(queueRiskText)}.</li>
-        <li>Lane setup used in this sheet: D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), closure mode ${escapeHtml(laneClosureMode)}.</li>
-        <li>Time buckets align with app defaults: AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00.</li>
-      </ol>
+      <div style="font-weight:800; font-size:12px; margin-bottom:6px;">Notes & Application Guidance</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px 10px; font-size:10.5px; line-height:1.32; color:#1f2937;">
+        <div style="border:1px solid #d7dee3; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Use Of Output</span>Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div>
+        <div style="border:1px solid #d7dee3; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Worst Capacity Condition</span>Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div>
+        <div style="border:1px solid #d7dee3; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Queue Interpretation</span>Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div>
+        <div style="border:1px solid #d7dee3; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Closure Assumption</span>Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.</div>
+        <div style="border:1px solid #d7dee3; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Assessment Periods</span>AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div>
+        <div style="border:1px solid #d7dee3; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Design Check</span>Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div>
+      </div>
     </div>
 
-    <div style="display:grid; grid-template-rows: auto auto; gap:8px; align-items:start;">
-      <div style="border:1px solid #9ca3af; padding:8px; background:#f8fafc;">
-        <div style="font-weight:800; font-size:12px; margin-bottom:6px; color:#0f172a;">Project / Revision</div>
-        <div style="display:grid; grid-template-columns: 88px 1fr; gap:4px 6px; font-size:10.5px; line-height:1.25; color:#111827;">
-          <div style="font-weight:800; color:#475569;">Project</div><div>${escapeHtml(projectName)}</div>
-          <div style="font-weight:800; color:#475569;">Drawing No.</div><div>${escapeHtml(drawingRef)}</div>
-          <div style="font-weight:800; color:#475569;">Revision</div><div>${escapeHtml(revisionRef)}</div>
-          <div style="font-weight:800; color:#475569;">Prepared By</div><div>${escapeHtml(preparedBy)}</div>
-          <div style="font-weight:800; color:#475569;">Issue Date</div><div>${escapeHtml(issueDate)}</div>
-          <div style="font-weight:800; color:#475569;">Closure</div><div>${escapeHtml(laneClosureMode)}</div>
-        </div>
-      </div>
-
-      <div style="border:1px solid #9ca3af; padding:8px;">
+    <div style="border:1px solid #9ca3af; padding:8px; align-self:start;">
         <div style="font-weight:700; font-size:12px; margin-bottom:4px;">LOS Legend</div>
         <div style="font-size:10.2px; border:1px solid #1b5e20; margin-bottom:3px; background:#2e7d32; color:#ffffff; padding:3px 6px; font-weight:800;">LOS A (VCR <= 0.60)</div>
         <div style="font-size:10.2px; border:1px solid #689f38; margin-bottom:3px; background:#8bc34a; color:#111827; padding:3px 6px; font-weight:800;">LOS B (0.60 < VCR <= 0.70)</div>
@@ -17419,7 +17398,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div style="font-size:10.2px; border:1px solid #ef6c00; margin-bottom:3px; background:#ffb300; color:#111827; padding:3px 6px; font-weight:800;">LOS D (0.80 < VCR <= 0.90)</div>
         <div style="font-size:10.2px; border:1px solid #d84315; margin-bottom:3px; background:#f57c00; color:#ffffff; padding:3px 6px; font-weight:800;">LOS E (0.90 < VCR <= 1.00)</div>
         <div style="font-size:10.2px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:3px 6px; font-weight:800;">LOS F (VCR > 1.00)</div>
-      </div>
     </div>
   </div>
 </div>`;
