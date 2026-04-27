@@ -17205,9 +17205,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         cell.style.fontSize = '11px';
         cell.style.verticalAlign = 'top';
       });
+      clone.querySelectorAll('thead').forEach((head) => {
+        head.style.display = 'table-header-group';
+        head.style.visibility = 'visible';
+      });
       clone.querySelectorAll('thead th').forEach((cell) => {
         cell.style.background = '#eceff1';
-        cell.style.fontWeight = '700';
+        cell.style.color = '#0f172a';
+        cell.style.fontWeight = '800';
+        cell.style.display = 'table-cell';
+        cell.style.visibility = 'visible';
+        cell.style.textAlign = 'center';
+        cell.style.borderBottom = '2px solid #64748b';
+      });
+      clone.querySelectorAll('tbody th, .rowhead').forEach((cell) => {
+        cell.style.fontWeight = '800';
+        cell.style.color = '#111827';
       });
       clone.style.width = '100%';
       clone.style.borderCollapse = 'collapse';
@@ -17334,10 +17347,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       <div style="font-size:10.5px; border:1px solid #d1d5db; margin-bottom:3px; background:#fee2e2; padding:3px 6px;">LOS E (0.90 < VCR <= 1.00)</div>
       <div style="font-size:10.5px; border:1px solid #d1d5db; background:#fce7f3; padding:3px 6px;">LOS F (VCR > 1.00)</div>
     </div>
-  </div>
-
-  <div style="margin-top:8px; font-size:10px; color:#6b7280; border-top:1px dashed #9ca3af; padding-top:6px;">
-    Prepared from live TIA calculator outputs for direct paste into TGS design pages.
   </div>
 </div>`;
     window.lastTgsTiaSheetHtml = html;
@@ -17582,14 +17591,37 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         const html2canvas = await ensureHtml2CanvasLoaded();
         const captureEl = previewHost.firstElementChild;
-        const canvas = await html2canvas(captureEl, {
+        const contentCanvas = await html2canvas(captureEl, {
           backgroundColor: '#ffffff',
           scale: 2,
           useCORS: true,
           logging: false
         });
 
-        const dataUrl = canvas.toDataURL('image/png');
+        // Export onto an A4 landscape canvas so the saved image follows page layout conventions.
+        const pageWidth = 3508;
+        const pageHeight = 2480;
+        const margin = 120;
+        const drawWidth = pageWidth - (margin * 2);
+        const drawHeight = pageHeight - (margin * 2);
+
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = pageWidth;
+        exportCanvas.height = pageHeight;
+        const ctx = exportCanvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context not available');
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, pageWidth, pageHeight);
+
+        const scale = Math.min(drawWidth / contentCanvas.width, drawHeight / contentCanvas.height);
+        const targetW = Math.max(1, Math.round(contentCanvas.width * scale));
+        const targetH = Math.max(1, Math.round(contentCanvas.height * scale));
+        const offsetX = Math.round((pageWidth - targetW) / 2);
+        const offsetY = Math.round((pageHeight - targetH) / 2);
+
+        ctx.drawImage(contentCanvas, offsetX, offsetY, targetW, targetH);
+        const dataUrl = exportCanvas.toDataURL('image/png');
         const safeTitle = String((typeof getReportAddressForPrint === 'function' ? getReportAddressForPrint() : 'tia_sheet') || 'tia_sheet')
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '_')
