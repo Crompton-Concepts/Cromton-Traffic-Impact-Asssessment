@@ -17318,19 +17318,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vcrD1Html = cloneTableForTgs('vcrGroupedTableD1');
     const vcrRiskText = getValue('vcrRiskBadge') || '-';
     const queueRiskText = getValue('queueRiskBadge') || '-';
-    const worstRiskPeriodMatch = vcrRiskText.match(/High Risk Period:\s*([^•]+)/i);
-    const queueRiskPeriodMatch = queueRiskText.match(/High Risk Period:\s*([^•]+)/i);
-    const worstRiskPeriod = worstRiskPeriodMatch ? cleanText(worstRiskPeriodMatch[1]) : '-';
-    const queueRiskPeriod = queueRiskPeriodMatch ? cleanText(queueRiskPeriodMatch[1]) : '-';
-    const worstDirectionText = Number.isFinite(worstVcr) && worstVcr > 1 ? 'Capacity intervention required' : 'Operations remain manageable';
-    const recommendedAction = Number.isFinite(worstVcr)
-      ? (worstVcr > 1
-        ? `Avoid ${worstRiskPeriod !== '-' ? worstRiskPeriod : 'peak'} lane closures unless staged traffic controls or reversible flow are provided.`
-        : `Current closure setup is broadly workable; monitor ${worstRiskPeriod !== '-' ? worstRiskPeriod : 'peak'} operations during implementation.`)
-      : 'Review live VCR and queue outputs before confirming the closure staging plan.';
+    const projectName = getValue('printSiteName') || title;
+    const drawingRef = getValue('macroSiteId') || getValue('printCounterId') || '-';
+    const preparedBy = getValue('preparedBy') || getValue('consultantName') || 'TIA Calculator';
+    const revisionRef = getValue('revision') || getValue('drawingRevision') || 'Rev A';
+    const issueDate = new Date().toLocaleDateString('en-AU', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
 
     const html = `
-<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:1.5px solid #6b7280; padding:12px; background:#fff; max-width:1280px;">
+<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:1.5px solid #6b7280; padding:12px; background:#fff; max-width:1280px; width:100%; box-sizing:border-box;">
   <div style="font-size:11px; color:#4b5563; text-align:right; margin-bottom:4px;">Generated ${escapeHtml(generatedAt)}</div>
 
   <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:10px; margin-bottom:10px;">
@@ -17387,7 +17386,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     </div>
   </div>
 
-  <div style="display:grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.8fr) 300px; gap:12px; margin-bottom:8px; align-items:stretch;">
+  <div style="display:grid; grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); gap:12px; margin-bottom:8px; align-items:stretch;">
     <div style="border:1px solid #9ca3af; padding:8px;">
       <div style="font-weight:700; font-size:12px; margin-bottom:4px;">Notes</div>
       <ol style="margin:4px 0 0 18px; padding:0; font-size:10.8px; line-height:1.35; color:#1f2937;">
@@ -17399,29 +17398,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       </ol>
     </div>
 
-    <div style="border:1px solid #9ca3af; padding:8px; background:linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);">
-      <div style="font-weight:800; font-size:12px; margin-bottom:6px; color:#0f172a;">Key Findings</div>
-      <div style="display:grid; grid-template-columns: 1fr; gap:6px; font-size:10.8px; color:#111827;">
-        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Worst Period</span>${escapeHtml(worstRiskPeriod)}</div>
-        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Peak Queue Period</span>${escapeHtml(queueRiskPeriod)}</div>
-        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Worst VCR / LOS</span>${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</div>
-        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Peak Queue</span>${escapeHtml(queuePeakText)}</div>
-        <div style="border:1px solid #cbd5e1; padding:6px 7px; background:#ffffff;"><span style="display:block; font-weight:800; color:#475569; margin-bottom:2px;">Action Summary</span>${escapeHtml(worstDirectionText)}</div>
+    <div style="display:grid; grid-template-rows: auto auto; gap:8px; align-items:start;">
+      <div style="border:1px solid #9ca3af; padding:8px; background:#f8fafc;">
+        <div style="font-weight:800; font-size:12px; margin-bottom:6px; color:#0f172a;">Project / Revision</div>
+        <div style="display:grid; grid-template-columns: 88px 1fr; gap:4px 6px; font-size:10.5px; line-height:1.25; color:#111827;">
+          <div style="font-weight:800; color:#475569;">Project</div><div>${escapeHtml(projectName)}</div>
+          <div style="font-weight:800; color:#475569;">Drawing No.</div><div>${escapeHtml(drawingRef)}</div>
+          <div style="font-weight:800; color:#475569;">Revision</div><div>${escapeHtml(revisionRef)}</div>
+          <div style="font-weight:800; color:#475569;">Prepared By</div><div>${escapeHtml(preparedBy)}</div>
+          <div style="font-weight:800; color:#475569;">Issue Date</div><div>${escapeHtml(issueDate)}</div>
+          <div style="font-weight:800; color:#475569;">Closure</div><div>${escapeHtml(laneClosureMode)}</div>
+        </div>
       </div>
-      <div style="margin-top:8px; padding:8px; border:1px solid #c2410c; background:#fff7ed; color:#7c2d12; font-size:10.8px; line-height:1.35;">
-        <div style="font-weight:800; margin-bottom:3px;">Recommended Action</div>
-        <div>${escapeHtml(recommendedAction)}</div>
-      </div>
-    </div>
 
-    <div style="border:1px solid #9ca3af; padding:8px;">
-      <div style="font-weight:700; font-size:12px; margin-bottom:4px;">LOS Legend</div>
-      <div style="font-size:10.5px; border:1px solid #1b5e20; margin-bottom:3px; background:#2e7d32; color:#ffffff; padding:4px 6px; font-weight:800;">LOS A (VCR <= 0.60)</div>
-      <div style="font-size:10.5px; border:1px solid #689f38; margin-bottom:3px; background:#8bc34a; color:#111827; padding:4px 6px; font-weight:800;">LOS B (0.60 < VCR <= 0.70)</div>
-      <div style="font-size:10.5px; border:1px solid #f9a825; margin-bottom:3px; background:#ffeb3b; color:#111827; padding:4px 6px; font-weight:800;">LOS C (0.70 < VCR <= 0.80)</div>
-      <div style="font-size:10.5px; border:1px solid #ef6c00; margin-bottom:3px; background:#ffb300; color:#111827; padding:4px 6px; font-weight:800;">LOS D (0.80 < VCR <= 0.90)</div>
-      <div style="font-size:10.5px; border:1px solid #d84315; margin-bottom:3px; background:#f57c00; color:#ffffff; padding:4px 6px; font-weight:800;">LOS E (0.90 < VCR <= 1.00)</div>
-      <div style="font-size:10.5px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:4px 6px; font-weight:800;">LOS F (VCR > 1.00)</div>
+      <div style="border:1px solid #9ca3af; padding:8px;">
+        <div style="font-weight:700; font-size:12px; margin-bottom:4px;">LOS Legend</div>
+        <div style="font-size:10.2px; border:1px solid #1b5e20; margin-bottom:3px; background:#2e7d32; color:#ffffff; padding:3px 6px; font-weight:800;">LOS A (VCR <= 0.60)</div>
+        <div style="font-size:10.2px; border:1px solid #689f38; margin-bottom:3px; background:#8bc34a; color:#111827; padding:3px 6px; font-weight:800;">LOS B (0.60 < VCR <= 0.70)</div>
+        <div style="font-size:10.2px; border:1px solid #f9a825; margin-bottom:3px; background:#ffeb3b; color:#111827; padding:3px 6px; font-weight:800;">LOS C (0.70 < VCR <= 0.80)</div>
+        <div style="font-size:10.2px; border:1px solid #ef6c00; margin-bottom:3px; background:#ffb300; color:#111827; padding:3px 6px; font-weight:800;">LOS D (0.80 < VCR <= 0.90)</div>
+        <div style="font-size:10.2px; border:1px solid #d84315; margin-bottom:3px; background:#f57c00; color:#ffffff; padding:3px 6px; font-weight:800;">LOS E (0.90 < VCR <= 1.00)</div>
+        <div style="font-size:10.2px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:3px 6px; font-weight:800;">LOS F (VCR > 1.00)</div>
+      </div>
     </div>
   </div>
 </div>`;
@@ -17658,6 +17656,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     };
 
     (async () => {
+      let captureEl = null;
+      let originalCaptureWidth = '';
+      let originalCaptureMaxWidth = '';
+      let originalCaptureMargin = '';
       try {
         setButtonState('Rendering...', 0);
         if (previewStatus) {
@@ -17666,10 +17668,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
 
         const html2canvas = await ensureHtml2CanvasLoaded();
-        const captureEl = previewHost.firstElementChild;
+        captureEl = previewHost.firstElementChild;
+        originalCaptureWidth = captureEl ? captureEl.style.width : '';
+        originalCaptureMaxWidth = captureEl ? captureEl.style.maxWidth : '';
+        originalCaptureMargin = captureEl ? captureEl.style.margin : '';
         
         // Ensure tables are fully visible and headers have proper styling before capture
         if (captureEl) {
+          captureEl.style.width = '2200px';
+          captureEl.style.maxWidth = 'none';
+          captureEl.style.margin = '0';
           captureEl.querySelectorAll('table').forEach((table) => {
             table.style.breakInside = 'avoid';
             table.querySelectorAll('thead').forEach((thead) => {
@@ -17746,11 +17754,23 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
                 child.style.opacity = '0.92';
               });
             });
+            const clonedRoot = clonedDocument.body.firstElementChild;
+            if (clonedRoot) {
+              clonedRoot.style.width = '2200px';
+              clonedRoot.style.maxWidth = 'none';
+              clonedRoot.style.margin = '0';
+            }
             clonedDocument.querySelectorAll('table').forEach((table) => {
               table.style.backgroundColor = '#ffffff';
             });
           }
         });
+
+        if (captureEl) {
+          captureEl.style.width = originalCaptureWidth;
+          captureEl.style.maxWidth = originalCaptureMaxWidth;
+          captureEl.style.margin = originalCaptureMargin;
+        }
 
         // Export onto a true A4 landscape canvas.
         const pageWidth = 3508;
@@ -17796,6 +17816,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           previewStatus.style.color = '#0f766e';
         }
       } catch (_err) {
+        if (captureEl) {
+          captureEl.style.width = originalCaptureWidth;
+          captureEl.style.maxWidth = originalCaptureMaxWidth;
+          captureEl.style.margin = originalCaptureMargin;
+        }
         setButtonState('Download Failed');
         if (previewStatus) {
           previewStatus.textContent = 'Image download failed. Try again after preview fully loads.';
