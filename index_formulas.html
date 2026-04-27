@@ -5524,7 +5524,12 @@
       <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 Short Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
+      <button class="print-btn" type="button" onclick="triggerPythonEditsProfileLoad()" style="background: linear-gradient(135deg, #00695c 0%, #00897b 100%); font-size: 0.86em; padding: 8px 12px; white-space: nowrap;">📂 Load Python Edits JSON</button>
+      <button class="print-btn" type="button" onclick="downloadLoadedPythonEditsProfile()" style="background: linear-gradient(135deg, #37474f 0%, #455a64 100%); font-size: 0.86em; padding: 8px 12px; white-space: nowrap;">💾 Download Loaded Edits</button>
+      <button class="print-btn" type="button" onclick="clearLoadedPythonEditsProfile()" style="background: linear-gradient(135deg, #8d6e63 0%, #6d4c41 100%); font-size: 0.86em; padding: 8px 12px; white-space: nowrap;">🧹 Clear Edits</button>
+      <input type="file" id="pythonEditsProfileInput" accept=".json,application/json" style="display:none;" onchange="loadPythonEditsProfileFromInput(event)">
     </div>
+    <div id="pythonEditsProfileStatus" style="margin-top:6px; font-size:0.8em; color:#455a64;">Python edits profile: not loaded.</div>
   </div>
 
     <div class="copyright-footer">© 2026 Crompton Concepts. All rights reserved.</div>
@@ -6621,6 +6626,111 @@
   }
 
   const REPORT_SERVICE_BASE_URL = 'http://127.0.0.1:8060';
+  const PYTHON_EDITS_PROFILE_KEY = 'tia_python_edits_profile_v1';
+  window.loadedPythonEditsProfile = null;
+
+  function isValidPythonEditsProfile(profile) {
+    return Boolean(
+      profile
+      && typeof profile === 'object'
+      && String(profile.schema || '') === 'tia-python-edit-profile-v1'
+      && Array.isArray(profile.entries)
+    );
+  }
+
+  function updatePythonEditsProfileStatus() {
+    const statusEl = document.getElementById('pythonEditsProfileStatus');
+    if (!statusEl) return;
+
+    const profile = window.loadedPythonEditsProfile;
+    if (!isValidPythonEditsProfile(profile)) {
+      statusEl.textContent = 'Python edits profile: not loaded.';
+      return;
+    }
+
+    const projectName = String(profile.project_name || '').trim() || 'Unknown project';
+    const entryCount = Array.isArray(profile.entries) ? profile.entries.length : 0;
+    const exportedAt = String(profile.exported_at || '').trim();
+    const stamp = exportedAt ? `, exported ${new Date(exportedAt).toLocaleString()}` : '';
+    statusEl.textContent = `Python edits profile loaded: ${projectName} (${entryCount} text edits${stamp}).`;
+  }
+
+  function triggerPythonEditsProfileLoad() {
+    const input = document.getElementById('pythonEditsProfileInput');
+    if (input) input.click();
+  }
+
+  function loadPythonEditsProfileFromInput(event) {
+    const input = event && event.target;
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || '{}'));
+        if (!isValidPythonEditsProfile(parsed)) {
+          alert('Invalid edits JSON. Please select a file exported from Python report editor.');
+          return;
+        }
+        window.loadedPythonEditsProfile = parsed;
+        localStorage.setItem(PYTHON_EDITS_PROFILE_KEY, JSON.stringify(parsed));
+        updatePythonEditsProfileStatus();
+        alert(`Loaded Python edits profile (${parsed.entries.length} text edits).`);
+      } catch (_) {
+        alert('Could not parse edits JSON file.');
+      } finally {
+        input.value = '';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function downloadLoadedPythonEditsProfile() {
+    const profile = window.loadedPythonEditsProfile;
+    if (!isValidPythonEditsProfile(profile)) {
+      alert('No Python edits profile is loaded.');
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.href = url;
+    link.download = `tia-python-edits-loaded-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function clearLoadedPythonEditsProfile() {
+    window.loadedPythonEditsProfile = null;
+    localStorage.removeItem(PYTHON_EDITS_PROFILE_KEY);
+    updatePythonEditsProfileStatus();
+  }
+
+  (function restorePythonEditsProfileFromStorage() {
+    try {
+      const raw = localStorage.getItem(PYTHON_EDITS_PROFILE_KEY);
+      if (!raw) {
+        updatePythonEditsProfileStatus();
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (!isValidPythonEditsProfile(parsed)) {
+        localStorage.removeItem(PYTHON_EDITS_PROFILE_KEY);
+        updatePythonEditsProfileStatus();
+        return;
+      }
+      window.loadedPythonEditsProfile = parsed;
+      updatePythonEditsProfileStatus();
+    } catch (_) {
+      localStorage.removeItem(PYTHON_EDITS_PROFILE_KEY);
+      updatePythonEditsProfileStatus();
+    }
+  })();
 
   function getElementValueOrText(id) {
     const el = document.getElementById(id);
@@ -7708,6 +7818,9 @@
       : await buildEditableReportPayload();
 
     payload.report_variant = normalizedMode;
+    if (isValidPythonEditsProfile(window.loadedPythonEditsProfile)) {
+      payload.editor_edits_profile = window.loadedPythonEditsProfile;
+    }
     const baseTitle = (payload && payload.project && payload.project.name) || 'TIA Report';
     const title = normalizedMode === 'short'
       ? `${baseTitle} - Short Report`

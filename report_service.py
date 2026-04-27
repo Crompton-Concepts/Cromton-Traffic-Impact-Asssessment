@@ -1982,8 +1982,10 @@ def editor_page(draft_id: str) -> str:
     .wide-table th, .wide-table td {{ padding: 7px 6px; word-break: break-word; }}
 
     /* Interactive Elements & Editor Styles */
-    .toolbar {{ display: flex; justify-content: flex-end; margin-bottom: 20px; }}
+    .toolbar {{ display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }}
     .btn {{ background: var(--accent); color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; }}
+    .btn.secondary {{ background: #0f766e; }}
+    .btn.ghost {{ background: #475569; }}
     .no-print {{ display: block; }}
     .section-controls {{ display: flex; justify-content: flex-end; margin: 4px 0 8px; }}
     .mini-btn {{ background: #9a3412; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }}
@@ -2049,6 +2051,9 @@ def editor_page(draft_id: str) -> str:
 <body>
   <div class=\"toolbar\" style=\"max-width: 210mm; margin: 20px auto 0;\">
     <button class=\"btn\" onclick=\"window.print()\">🖨️ Print to PDF</button>
+    <button class=\"btn secondary\" onclick=\"downloadEditsProfile()\">💾 Download Edits JSON</button>
+    <label for=\"editsProfileInput\" class=\"btn ghost\" style=\"display:inline-flex; align-items:center;\">📂 Load Edits JSON</label>
+    <input id=\"editsProfileInput\" type=\"file\" accept=\".json,application/json\" style=\"display:none;\" onchange=\"loadEditsProfileFromInput(event)\" />
   </div>
 
   <main class=\"document-wrapper\">
@@ -2258,6 +2263,122 @@ def editor_page(draft_id: str) -> str:
       }});
     }}
 
+    function _buildNodePath(node, stopNode) {{
+      if (!node || !(node instanceof Element)) return '';
+      const segments = [];
+      let current = node;
+      while (current && current !== stopNode) {{
+        const parent = current.parentElement;
+        if (!parent) break;
+        const siblings = Array.from(parent.children).filter((child) => child.tagName === current.tagName);
+        const idx = Math.max(0, siblings.indexOf(current));
+        segments.push(current.tagName.toLowerCase() + ':' + idx);
+        current = parent;
+      }}
+      return segments.reverse().join('/');
+    }}
+
+    function _resolveNodePath(path, stopNode) {{
+      if (!path || !stopNode) return null;
+      const segments = String(path).split('/').filter(Boolean);
+      let cursor = stopNode;
+      for (const segment of segments) {{
+        const parts = segment.split(':');
+        if (parts.length !== 2) return null;
+        const tag = parts[0].toUpperCase();
+        const index = Number(parts[1]);
+        if (!Number.isFinite(index) || index < 0) return null;
+        const matches = Array.from(cursor.children).filter((child) => child.tagName === tag);
+        if (!matches[index]) return null;
+        cursor = matches[index];
+      }}
+      return cursor;
+    }}
+
+    function _isNarrativeEditableTarget(el) {{
+      if (!(el instanceof HTMLElement)) return false;
+      if (!el.isContentEditable) return false;
+      if (el.closest('.toolbar') || el.closest('.section-controls')) return false;
+      if (el.closest('#toc-content')) return false;
+      if (el.matches('td, th')) return false;
+      return true;
+    }}
+
+    function _collectNarrativeEditEntries() {{
+      const root = document.querySelector('main.document-wrapper');
+      if (!root) return [];
+      const candidates = Array.from(root.querySelectorAll('[contenteditable="true"]')).filter(_isNarrativeEditableTarget);
+      return candidates.map((el) => {{
+        const path = _buildNodePath(el, root);
+        return {{
+          path,
+          html: el.innerHTML,
+          text: el.textContent || ''
+        }};
+      }}).filter((item) => item.path);
+    }}
+
+    function downloadEditsProfile() {{
+      const payload = getEmbeddedReportPayload() || {{}};
+      const profile = {{
+        schema: 'tia-python-edit-profile-v1',
+        exported_at: new Date().toISOString(),
+        project_name: (payload.project && payload.project.name) || '',
+        report_variant: payload.report_variant || '',
+        entries: _collectNarrativeEditEntries()
+      }};
+
+      const blob = new Blob([JSON.stringify(profile, null, 2)], {{ type: 'application/json' }});
+      const link = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
+      link.download = `tia-python-edits-${{stamp}}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    }}
+
+    function applyEditsProfile(profile) {{
+      if (!profile || profile.schema !== 'tia-python-edit-profile-v1' || !Array.isArray(profile.entries)) {{
+        throw new Error('Invalid edits profile format.');
+      }}
+      const root = document.querySelector('main.document-wrapper');
+      if (!root) throw new Error('Report root not found.');
+
+      let applied = 0;
+      profile.entries.forEach((entry) => {{
+        if (!entry || !entry.path) return;
+        const target = _resolveNodePath(entry.path, root);
+        if (!target || !_isNarrativeEditableTarget(target)) return;
+        target.innerHTML = String(entry.html || '');
+        applied += 1;
+      }});
+      refreshToc();
+      return applied;
+    }}
+
+    function loadEditsProfileFromInput(event) {{
+      const input = event && event.target;
+      const file = input && input.files && input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function() {{
+        try {{
+          const parsed = JSON.parse(String(reader.result || '{}'));
+          const appliedCount = applyEditsProfile(parsed);
+          window.alert(`Applied ${{appliedCount}} text edit(s). Table values remain from the current recalculated data.`);
+        }} catch (err) {{
+          window.alert(`Could not load edits JSON: ${{(err && err.message) || 'Unknown error'}}`);
+        }} finally {{
+          input.value = '';
+        }}
+      }};
+      reader.readAsText(file);
+    }}
+
     // Track the last focused cell so row/col operations act at the selection point.
     let _lastFocusedCell = null;
     document.addEventListener('focusin', function(e) {{
@@ -2432,6 +2553,14 @@ def editor_page(draft_id: str) -> str:
     document.addEventListener("DOMContentLoaded", function() {{
       {hydrate_js_call}
       enableStrongEditability();
+      const payload = getEmbeddedReportPayload();
+      if (payload && payload.editor_edits_profile) {{
+        try {{
+          applyEditsProfile(payload.editor_edits_profile);
+        }} catch (_err) {{
+          // Ignore invalid profile payloads and continue loading the report.
+        }}
+      }}
       refreshToc();
       bindTocAutoRefresh();
     }});
