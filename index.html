@@ -4480,9 +4480,17 @@
         </div>
       </div>
 
-      <div id="queueVisualizerWrap" class="simulation-container" style="display:none; background:#2c3e50; padding:15px; border-radius:8px; margin-top:16px;">
-        <h4 style="color:#ecf0f1; margin:0 0 10px 0;">Peak Queue Visualizer</h4>
-        <canvas id="queueCanvas" width="600" height="150" style="background:#34495e; border-radius:4px; width:100%;"></canvas>
+      <div id="queueVisualizerWrap" class="simulation-container" style="display:none; background:#ffffff; border: 1px solid #c7d4db; padding:15px; border-radius:8px; margin-top:16px; position:relative;">
+        <h4 style="color:#1f5e63; margin:0 0 10px 0;"><i class="fa-solid fa-satellite"></i> Geographic Peak Queue Visualizer</h4>
+        <p style="font-size:0.85em; color:#555; margin-top:-5px; margin-bottom:10px;">Simulating exact physical queue reach on the active satellite map.</p>
+
+        <div id="geoQueueMap" style="height: 300px; width: 100%; border-radius: 4px; border: 2px solid #e1ded8; z-index:1;"></div>
+
+        <div style="position:absolute; top: 75px; left: 25px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; border: 1px solid #ccc; z-index:400; box-shadow: 0 2px 5px rgba(0,0,0,0.2); pointer-events:none;">
+            <div style="font-weight:bold; color:#d32f2f; font-size:14px;" id="geoQueueText">Peak Queue: 0m</div>
+            <div style="font-size:12px; color:#e67e22; margin-top:4px;">■ Heavy Vehicles</div>
+            <div style="font-size:12px; color:#3498db;">■ Passenger Cars</div>
+        </div>
       </div>
     </div>
 
@@ -17803,8 +17811,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ? 'page-break-before: always; break-before: page; margin-top: 24px;'
           : 'margin-top: 18px;';
 
+        const routeSlug = routeLabel
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .slice(0, 64) || `detour_route_${routeIndex + 1}`;
+
         return `
-<div style="${pageBreak} font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #7e22ce; padding:14px; background:#f8f2fb; max-width:1280px; width:100%; box-sizing:border-box;">
+      <div class="detour-tia-sheet" data-route-index="${routeIndex}" data-route-slug="${escapeHtml(routeSlug)}" data-route-label="${escapeHtml(routeLabel)}" style="${pageBreak} font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #7e22ce; padding:14px; background:#f8f2fb; max-width:1280px; width:100%; box-sizing:border-box;">
   <div style="font-weight:900; font-size:16px; color:#4a148c; margin-bottom:10px; border-bottom:2px solid #8e24aa; padding-bottom:6px;">Detour Analysis Sheet — ${escapeHtml(routeLabel)}</div>
   <div style="font-weight:900; font-size:12px; margin: 0 0 6px 0; color:#4a148c;">Detour Route</div>
   ${routeSummaryHtml}
@@ -17989,6 +18003,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     if (previewHost) {
       previewHost.innerHTML = html;
+      if (previewContext.mode === 'detour') {
+        const detourSheets = Array.from(previewHost.querySelectorAll(':scope > .detour-tia-sheet'));
+        detourSheets.forEach((sheetEl, sheetIndex) => {
+          const routeLabel = String(sheetEl.getAttribute('data-route-label') || `Detour Route ${sheetIndex + 1}`);
+          const controls = document.createElement('div');
+          controls.className = 'detour-sheet-download-row';
+          controls.style.cssText = 'display:flex; justify-content:flex-end; gap:8px; margin:10px 0 6px 0;';
+
+          const buttonEl = document.createElement('button');
+          buttonEl.type = 'button';
+          buttonEl.className = 'copy-table-btn';
+          buttonEl.style.background = '#6d28d9';
+          buttonEl.style.borderColor = '#5b21b6';
+          buttonEl.textContent = `Download ${routeLabel} Image`;
+          buttonEl.addEventListener('click', () => downloadDetourTiaSheetImage(buttonEl, sheetIndex));
+
+          controls.appendChild(buttonEl);
+          previewHost.insertBefore(controls, sheetEl);
+        });
+      }
     }
 
     setTgsPreviewEditable(Boolean(window[previewContext.editModeKey]), previewContext.mode);
@@ -18029,9 +18063,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const htmlKey = isDetour ? 'lastDetourTiaSheetHtml' : 'lastTgsTiaSheetHtml';
     const textKey = isDetour ? 'lastDetourTiaSheetText' : 'lastTgsTiaSheetText';
     const node = previewHost ? previewHost.firstElementChild : null;
-    if (node) {
-      const html = String(node.outerHTML || '');
-      const plainText = String(node.textContent || '').replace(/\s+/g, ' ').trim();
+    if (previewHost && previewHost.children && previewHost.children.length > 0) {
+      const html = String(previewHost.innerHTML || '');
+      const plainText = String(previewHost.textContent || '').replace(/\s+/g, ' ').trim();
       return { html, plainText };
     }
     return {
@@ -18221,7 +18255,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return window.__html2canvasLoadingPromise;
   }
 
-  function downloadTgsTiaSheetImage(button, mode = 'tgs') {
+  function downloadTgsTiaSheetImage(button, mode = 'tgs', specificSheetIndex = null) {
     const isDetour = String(mode || '').toLowerCase() === 'detour';
     const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
     const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
@@ -18250,6 +18284,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let originalCaptureWidth = '';
       let originalCaptureMaxWidth = '';
       let originalCaptureMargin = '';
+      let originalHostMaxHeight = '';
+      let originalHostOverflow = '';
+      let originalSheetStyles = new Map();
       try {
         setButtonState('Rendering...', 0);
         if (previewStatus) {
@@ -18258,23 +18295,32 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
 
         const html2canvas = await ensureHtml2CanvasLoaded();
-        captureEl = previewHost.firstElementChild;
-        originalCaptureWidth = captureEl ? captureEl.style.width : '';
-        originalCaptureMaxWidth = captureEl ? captureEl.style.maxWidth : '';
-        originalCaptureMargin = captureEl ? captureEl.style.margin : '';
+        const allCaptureElements = isDetour
+          ? Array.from(previewHost.querySelectorAll(':scope > .detour-tia-sheet'))
+          : [previewHost.firstElementChild].filter(Boolean);
+        const captureElements = Number.isInteger(specificSheetIndex) && specificSheetIndex >= 0
+          ? [allCaptureElements[specificSheetIndex]].filter(Boolean)
+          : allCaptureElements;
+        if (!captureElements.length) {
+          throw new Error('No preview sheets available for capture.');
+        }
 
         // Remove scroll clipping on the host so html2canvas sees the full content
-        const originalHostMaxHeight = previewHost.style.maxHeight;
-        const originalHostOverflow = previewHost.style.overflow;
+        originalHostMaxHeight = previewHost.style.maxHeight;
+        originalHostOverflow = previewHost.style.overflow;
         previewHost.style.maxHeight = 'none';
         previewHost.style.overflow = 'visible';
 
-        // Ensure tables are fully visible and headers have proper styling before capture
-        if (captureEl) {
-          captureEl.style.width = '2200px';
-          captureEl.style.maxWidth = 'none';
-          captureEl.style.margin = '0';
-          captureEl.querySelectorAll('table').forEach((table) => {
+        captureElements.forEach((sheetEl) => {
+          originalSheetStyles.set(sheetEl, {
+            width: sheetEl.style.width,
+            maxWidth: sheetEl.style.maxWidth,
+            margin: sheetEl.style.margin
+          });
+          sheetEl.style.width = '2200px';
+          sheetEl.style.maxWidth = 'none';
+          sheetEl.style.margin = '0';
+          sheetEl.querySelectorAll('table').forEach((table) => {
             table.style.breakInside = 'avoid';
             table.querySelectorAll('thead').forEach((thead) => {
               thead.style.display = 'table-header-group';
@@ -18287,7 +18333,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
               th.style.opacity = '1';
             });
           });
-        }
+        });
         
         const losPalette = {
           'vcr-los-a': { background: '#2e7d32', color: '#ffffff', border: '#1b5e20' },
@@ -18298,130 +18344,155 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           'vcr-los-f': { background: '#c62828', color: '#ffffff', border: '#8e0000' }
         };
 
-        const contentCanvas = await html2canvas(captureEl, {
-          backgroundColor: '#ffffff',
-          scale: 4,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          onclone: (clonedDocument) => {
-            // Ensure bold styling is applied to cloned document
-            clonedDocument.querySelectorAll('thead th').forEach((th) => {
-              th.style.display = 'table-cell';
-              th.style.visibility = 'visible';
-              th.style.opacity = '1';
-              th.style.fontWeight = '900';
-              th.style.backgroundColor = '#ffffff';
-              th.style.color = '#000000';
-              th.style.fontSize = '13px';
-              th.style.borderBottom = '2px solid #000000';
-            });
-            clonedDocument.querySelectorAll('tbody th, .rowhead').forEach((th) => {
-              th.style.fontWeight = '900';
-              th.style.backgroundColor = '#ffffff';
-              th.style.color = '#000000';
-              th.style.fontSize = '12px';
-            });
-            clonedDocument.querySelectorAll('tbody td').forEach((td) => {
-              td.style.fontWeight = '700';
-              td.style.color = '#000000';
-            });
-            clonedDocument.querySelectorAll('.vcr-badge').forEach((badge) => {
-              badge.style.display = 'inline-flex';
-              badge.style.alignItems = 'center';
-              badge.style.justifyContent = 'center';
-              badge.style.gap = '4px';
-              badge.style.padding = '5px 8px';
-              badge.style.borderRadius = '999px';
-              badge.style.fontWeight = '800';
-              badge.style.fontSize = '10px';
-              badge.style.lineHeight = '1.15';
-
-              const losClass = Array.from(badge.classList).find((className) => losPalette[className]);
-              const palette = losClass ? losPalette[losClass] : null;
-              if (palette) {
-                badge.style.backgroundColor = palette.background;
-                badge.style.color = palette.color;
-                badge.style.border = `1px solid ${palette.border}`;
-              }
-
-              badge.querySelectorAll('span, div').forEach((child) => {
-                child.style.color = 'inherit';
-                child.style.opacity = '1';
-              });
-            });
-
-            // Force all text-bearing elements to have explicit visible colors.
-            // This catches anything that only inherits color via CSS classes (not inline styles)
-            // which html2canvas can miss when capturing an isolated subtree.
-            clonedDocument.querySelectorAll('div, p, li, label').forEach((el) => {
-              if (!el.style.color) {
-                el.style.color = '#111827';
-              }
-            });
-
-            // Force caption/label divs inside the two direction panels
-            clonedDocument.querySelectorAll('div[style*="font-weight:800"], div[style*="font-weight: 800"], div[style*="font-weight:700"], div[style*="font-weight: 700"]').forEach((el) => {
-              if (!el.style.color) el.style.color = '#0f172a';
-              el.style.opacity = '1';
-            });
-
-            const clonedRoot = clonedDocument.getElementById('tgsTiaPreviewHost');
-            const clonedSheet = clonedRoot ? clonedRoot.firstElementChild : clonedDocument.body.firstElementChild;
-            if (clonedSheet) {
-              clonedSheet.style.width = '2200px';
-              clonedSheet.style.maxWidth = 'none';
-              clonedSheet.style.margin = '0';
-            }
-            clonedDocument.querySelectorAll('table').forEach((table) => {
-              table.style.backgroundColor = '#ffffff';
-            });
-          }
-        });
-
-        if (captureEl) {
-          captureEl.style.width = originalCaptureWidth;
-          captureEl.style.maxWidth = originalCaptureMaxWidth;
-          captureEl.style.margin = originalCaptureMargin;
-        }
-
-        // Export onto a true A4 landscape canvas.
-        const pageWidth = 3508;
-        const pageHeight = 2480;
-        const margin = 120;
-        const drawWidth = pageWidth - (margin * 2);
-        const drawHeight = pageHeight - (margin * 2);
-
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = pageWidth;
-        exportCanvas.height = pageHeight;
-        const ctx = exportCanvas.getContext('2d');
-        if (!ctx) throw new Error('Canvas context not available');
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageWidth, pageHeight);
-
-        const scale = Math.min(drawWidth / contentCanvas.width, drawHeight / contentCanvas.height);
-        const targetW = Math.max(1, Math.round(contentCanvas.width * scale));
-        const targetH = Math.max(1, Math.round(contentCanvas.height * scale));
-        const offsetX = Math.round((pageWidth - targetW) / 2);
-        const offsetY = Math.round((pageHeight - targetH) / 2);
-
-        ctx.drawImage(contentCanvas, offsetX, offsetY, targetW, targetH);
-        const dataUrl = exportCanvas.toDataURL('image/png');
         const safeTitle = String((typeof getReportAddressForPrint === 'function' ? getReportAddressForPrint() : 'tia_sheet') || 'tia_sheet')
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '_')
           .replace(/^_+|_+$/g, '')
           .slice(0, 64) || 'tia_sheet';
-        const fileName = `${safeTitle}_${isDetour ? 'detour_tia_sheet' : 'tgs_sheet'}.png`;
 
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const renderClonedSheetCanvas = async (sheetIndex) => {
+          const sheetEl = captureElements[sheetIndex];
+          captureEl = sheetEl;
+          originalCaptureWidth = sheetEl ? sheetEl.style.width : '';
+          originalCaptureMaxWidth = sheetEl ? sheetEl.style.maxWidth : '';
+          originalCaptureMargin = sheetEl ? sheetEl.style.margin : '';
+
+          const contentCanvas = await html2canvas(sheetEl, {
+            backgroundColor: '#ffffff',
+            scale: 4,
+            useCORS: true,
+            logging: false,
+            allowTaint: true,
+            onclone: (clonedDocument) => {
+              clonedDocument.querySelectorAll('thead th').forEach((th) => {
+                th.style.display = 'table-cell';
+                th.style.visibility = 'visible';
+                th.style.opacity = '1';
+                th.style.fontWeight = '900';
+                th.style.backgroundColor = '#ffffff';
+                th.style.color = '#000000';
+                th.style.fontSize = '13px';
+                th.style.borderBottom = '2px solid #000000';
+              });
+              clonedDocument.querySelectorAll('tbody th, .rowhead').forEach((th) => {
+                th.style.fontWeight = '900';
+                th.style.backgroundColor = '#ffffff';
+                th.style.color = '#000000';
+                th.style.fontSize = '12px';
+              });
+              clonedDocument.querySelectorAll('tbody td').forEach((td) => {
+                td.style.fontWeight = '700';
+                td.style.color = '#000000';
+              });
+              clonedDocument.querySelectorAll('.vcr-badge').forEach((badge) => {
+                badge.style.display = 'inline-flex';
+                badge.style.alignItems = 'center';
+                badge.style.justifyContent = 'center';
+                badge.style.gap = '4px';
+                badge.style.padding = '5px 8px';
+                badge.style.borderRadius = '999px';
+                badge.style.fontWeight = '800';
+                badge.style.fontSize = '10px';
+                badge.style.lineHeight = '1.15';
+
+                const losClass = Array.from(badge.classList).find((className) => losPalette[className]);
+                const palette = losClass ? losPalette[losClass] : null;
+                if (palette) {
+                  badge.style.backgroundColor = palette.background;
+                  badge.style.color = palette.color;
+                  badge.style.border = `1px solid ${palette.border}`;
+                }
+
+                badge.querySelectorAll('span, div').forEach((child) => {
+                  child.style.color = 'inherit';
+                  child.style.opacity = '1';
+                });
+              });
+
+              clonedDocument.querySelectorAll('div, p, li, label').forEach((el) => {
+                if (!el.style.color) {
+                  el.style.color = '#111827';
+                }
+              });
+
+              clonedDocument.querySelectorAll('div[style*="font-weight:800"], div[style*="font-weight: 800"], div[style*="font-weight:700"], div[style*="font-weight: 700"]').forEach((el) => {
+                if (!el.style.color) el.style.color = '#0f172a';
+                el.style.opacity = '1';
+              });
+
+              const clonedHost = clonedDocument.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+              let clonedSheet = null;
+              if (clonedHost) {
+                clonedSheet = isDetour
+                  ? clonedHost.querySelectorAll(':scope > .detour-tia-sheet')[sheetIndex] || clonedHost.firstElementChild
+                  : clonedHost.firstElementChild;
+              }
+              if (!clonedSheet) {
+                clonedSheet = clonedDocument.body.firstElementChild;
+              }
+              if (clonedSheet) {
+                clonedSheet.style.width = '2200px';
+                clonedSheet.style.maxWidth = 'none';
+                clonedSheet.style.margin = '0';
+              }
+              clonedDocument.querySelectorAll('table').forEach((table) => {
+                table.style.backgroundColor = '#ffffff';
+              });
+            }
+          });
+
+          const pageWidth = 3508;
+          const pageHeight = 2480;
+          const margin = 120;
+          const drawWidth = pageWidth - (margin * 2);
+          const drawHeight = pageHeight - (margin * 2);
+
+          const exportCanvas = document.createElement('canvas');
+          exportCanvas.width = pageWidth;
+          exportCanvas.height = pageHeight;
+          const ctx = exportCanvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas context not available');
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageWidth, pageHeight);
+
+          const scale = Math.min(drawWidth / contentCanvas.width, drawHeight / contentCanvas.height);
+          const targetW = Math.max(1, Math.round(contentCanvas.width * scale));
+          const targetH = Math.max(1, Math.round(contentCanvas.height * scale));
+          const offsetX = Math.round((pageWidth - targetW) / 2);
+          const offsetY = Math.round((pageHeight - targetH) / 2);
+
+          ctx.drawImage(contentCanvas, offsetX, offsetY, targetW, targetH);
+          return exportCanvas.toDataURL('image/png');
+        };
+
+        const downloadCount = captureElements.length;
+        const baseSheetIndex = Number.isInteger(specificSheetIndex) && specificSheetIndex >= 0 ? specificSheetIndex : 0;
+        for (let idx = 0; idx < captureElements.length; idx += 1) {
+          const sheetEl = captureElements[idx];
+          const sheetIndex = baseSheetIndex + idx;
+          const dataUrl = await renderClonedSheetCanvas(sheetIndex);
+          const routeSlug = String(sheetEl && sheetEl.getAttribute('data-route-slug') || `route_${sheetIndex + 1}`)
+            .toLowerCase()
+            .replace(/[^a-z0-9_]+/g, '_')
+            .replace(/^_+|_+$/g, '') || `route_${sheetIndex + 1}`;
+          const fileName = isDetour
+            ? `${safeTitle}_detour_tia_sheet_${String(sheetIndex + 1).padStart(2, '0')}_${routeSlug}.png`
+            : `${safeTitle}_tgs_sheet.png`;
+
+          const link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
+        originalSheetStyles.forEach((styleState, sheetEl) => {
+          sheetEl.style.width = styleState.width;
+          sheetEl.style.maxWidth = styleState.maxWidth;
+          sheetEl.style.margin = styleState.margin;
+        });
 
         // Restore host scroll container
         previewHost.style.maxHeight = originalHostMaxHeight;
@@ -18429,15 +18500,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         setButtonState('Downloaded');
         if (previewStatus) {
-          previewStatus.textContent = `Downloaded image: ${fileName}`;
+          previewStatus.textContent = isDetour
+            ? (downloadCount === 1
+              ? 'Downloaded selected detour route image.'
+              : `Downloaded ${downloadCount} detour route image${downloadCount === 1 ? '' : 's'}.`)
+            : 'Downloaded image: tgs sheet.';
           previewStatus.style.color = '#0f766e';
         }
       } catch (_err) {
-        if (captureEl) {
-          captureEl.style.width = originalCaptureWidth;
-          captureEl.style.maxWidth = originalCaptureMaxWidth;
-          captureEl.style.margin = originalCaptureMargin;
-        }
+        originalSheetStyles.forEach((styleState, sheetEl) => {
+          sheetEl.style.width = styleState.width;
+          sheetEl.style.maxWidth = styleState.maxWidth;
+          sheetEl.style.margin = styleState.margin;
+        });
         // Restore host scroll container on error too
         previewHost.style.maxHeight = originalHostMaxHeight;
         previewHost.style.overflow = originalHostOverflow;
@@ -18450,8 +18525,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     })();
   }
 
-  function downloadDetourTiaSheetImage(button) {
-    downloadTgsTiaSheetImage(button, 'detour');
+  function downloadDetourTiaSheetImage(button, specificSheetIndex = null) {
+    downloadTgsTiaSheetImage(button, 'detour', specificSheetIndex);
   }
 
   let tgsPreviewAutoRefreshTimer = null;
@@ -19037,263 +19112,141 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     checkEngineeringConflicts();
   }
 
-  // Keep track of the animation frame globally so we can cancel it when updating
-  window.queueAnimFrameId = null;
+  let geoQueueMapInstance = null;
+  let geoQueueLayer = null;
+  let geoQueueAnimFrameId = null;
 
-  function drawQueueSimulation(queueLengthMeters, hvPercent) {
-    const canvas = document.getElementById('queueCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  // Helper: Calculate GPS coordinate given a distance and bearing
+  function getDestinationPoint(lat, lon, distanceMeters, bearingDegrees) {
+    const R = 6371000; // Earth Radius
+    const brng = bearingDegrees * Math.PI / 180;
+    const lat1 = lat * Math.PI / 180;
+    const lon1 = lon * Math.PI / 180;
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(distanceMeters / R) + Math.cos(lat1) * Math.sin(distanceMeters / R) * Math.cos(brng));
+    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(distanceMeters / R) * Math.cos(lat1), Math.cos(distanceMeters / R) - Math.sin(lat1) * Math.sin(lat2));
+    return [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI];
+  }
 
-    // 1. Cancel any existing animation loop
-    if (window.queueAnimFrameId) {
-      cancelAnimationFrame(window.queueAnimFrameId);
+  function drawGeographicQueueSimulation(queueLengthMeters, hvPercent, lat, lon, travelBearing) {
+    const wrap = document.getElementById('queueVisualizerWrap');
+    if (!wrap || !lat || !lon) {
+       if (wrap) wrap.style.display = 'none';
+       return;
+    }
+    wrap.style.display = 'block';
+    document.getElementById('geoQueueText').textContent = `Peak Queue: ${Math.round(queueLengthMeters)}m`;
+
+    // 1. Initialize Map once
+    if (!geoQueueMapInstance) {
+        geoQueueMapInstance = L.map('geoQueueMap', {
+            zoomControl: false, scrollWheelZoom: false, doubleClickZoom: false, dragging: false
+        });
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(geoQueueMapInstance);
+        geoQueueLayer = L.layerGroup().addTo(geoQueueMapInstance);
     }
 
-    // 2. Handle High-DPI screens for crisp graphics
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+    // Clear existing loop/markers
+    if (geoQueueAnimFrameId) cancelAnimationFrame(geoQueueAnimFrameId);
+    geoQueueLayer.clearLayers();
 
-    const W = rect.width;
-    const H = rect.height;
+    // 2. Setup Geometry
+    // Traffic queues form backwards from the intersection (opposite to travel bearing)
+    const queueBearing = (travelBearing + 180) % 360;
+    const startPt = [lat, lon];
+    const endPt = getDestinationPoint(lat, lon, queueLengthMeters, queueBearing);
 
-    // 3. Simulation Constants
-    const CAR_LEN = 6;
-    const HV_LEN = 12;
-    const GAP = 2;
-    // Dynamic scaling so the queue always fits on screen
-    const PX_PER_M = Math.min(4, (W - 80) / Math.max(queueLengthMeters, 15));
-    const STOP_LINE_X = W - 60;
-    const ROAD_Y = H / 2;
+    geoQueueMapInstance.fitBounds([startPt, endPt], { padding: [50, 50] });
+    try { geoQueueMapInstance.invalidateSize(); } catch (_) {}
 
-    // 4. Generate the Queue lineup based on exact math
+    // Draw the extent of the queue zone (red highlight)
+    L.polyline([startPt, endPt], { color: 'rgba(231, 76, 60, 0.4)', weight: 14, lineCap: 'round' }).addTo(geoQueueLayer);
+    L.circleMarker(startPt, { radius: 6, fillColor: '#e74c3c', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(geoQueueLayer); // Stopline
+
+    // 3. Generate Vehicles
     const vehicles = [];
-    let currentLength = 0;
-    let targetQueueX = STOP_LINE_X;
+    let currentLen = 0;
+    const CAR_LEN = 6, HV_LEN = 12, GAP = 2;
+    const maxVisualQueue = Math.min(queueLengthMeters, 600); // Cap visual markers to prevent map lag on huge queues
 
-    // Seeded random so the queue composition doesn't flicker wildly on re-renders
-    let seed = Math.floor(queueLengthMeters * 100 + hvPercent);
+    // Stable random distribution based on HV%
+    let seed = Math.floor(queueLengthMeters + hvPercent);
     const seededRand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
 
-    const carColors = ['#ecf0f1', '#bdc3c7', '#e74c3c', '#3498db', '#2c3e50', '#95a5a6'];
+    while (currentLen < maxVisualQueue) {
+        const isHV = (seededRand() * 100) < hvPercent;
+        const vLen = isHV ? HV_LEN : CAR_LEN;
+        if (currentLen + vLen > maxVisualQueue) break;
 
-    while (currentLength < queueLengthMeters) {
-      const isHV = (seededRand() * 100) < hvPercent;
-      const vehLength = isHV ? HV_LEN : CAR_LEN;
-      if (currentLength + vehLength > queueLengthMeters) break;
+        const targetDist = currentLen + (vLen / 2);
+        const targetFraction = queueLengthMeters > 0 ? (targetDist / queueLengthMeters) : 0;
 
-      const pxWidth = vehLength * PX_PER_M;
-      targetQueueX -= (pxWidth + GAP * PX_PER_M);
+        // Render HTML top-down cars rotating towards travel bearing
+        const iconHtml = `<div style="width:${isHV ? 24 : 12}px; height:8px; background:${isHV ? '#e67e22' : '#3498db'}; border:1px solid #fff; border-radius:2px; transform: rotate(${travelBearing}deg); box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`;
 
-      vehicles.push({
-        type: isHV ? 'hv' : 'car',
-        length: pxWidth,
-        targetX: targetQueueX, // Where it stops in the queue
-        x: -100 - (vehicles.length * (40 * PX_PER_M)), // Spawn off-screen left, staggered
-        speed: 0,
-        maxSpeed: 20 * PX_PER_M, // Scaled speed
-        accel: 0.5 * PX_PER_M,
-        color: isHV ? '#f39c12' : carColors[Math.floor(seededRand() * carColors.length)],
-        idleOffset: seededRand() * Math.PI * 2 // Random start phase for idle vibration
-      });
+        const marker = L.marker(startPt, {
+            icon: L.divIcon({ className: '', html: iconHtml, iconSize: [isHV ? 24 : 12, 8], iconAnchor: [isHV ? 12 : 6, 4] })
+        }).addTo(geoQueueLayer);
 
-      currentLength += (vehLength + GAP);
-    }
-
-    // Reverse so the front car is first in the array (easiest for car-following math)
-    vehicles.reverse();
-
-    // 5. Animation State Machine
-    let phase = 'RED_FORMING';
-    let phaseTimer = 0;
-    let lastTime = performance.now();
-
-    // Helper: Draw Top-Down Vehicles
-    function drawVehicle(ctx, veh, isStopped) {
-      ctx.save();
-      // Simulate slight engine vibration when stopped
-      const vibration = isStopped ? Math.sin(performance.now() / 50 + veh.idleOffset) * 0.5 : 0;
-      ctx.translate(veh.x, ROAD_Y + vibration);
-
-      // Drop shadow
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
-      ctx.shadowBlur = 4;
-      ctx.shadowOffsetY = 2;
-
-      if (veh.type === 'hv') {
-        // Truck Trailer
-        ctx.fillStyle = '#9e9e9e';
-        ctx.fillRect(0, -8, veh.length - (4 * PX_PER_M), 16);
-        // Truck Cab
-        ctx.fillStyle = veh.color;
-        ctx.fillRect(veh.length - (3.5 * PX_PER_M), -7, 3.5 * PX_PER_M, 14);
-        // Windshield
-        ctx.fillStyle = '#212121';
-        ctx.fillRect(veh.length - (1.5 * PX_PER_M), -5, 1 * PX_PER_M, 10);
-      } else {
-        // Passenger Car Body
-        ctx.fillStyle = veh.color;
-        ctx.beginPath();
-        // Draw rounded rectangle manually for broader browser compatibility
-        const r = 2; const w = veh.length; const h = 12; const y = -6;
-        ctx.moveTo(r, y); ctx.lineTo(w - r, y); ctx.quadraticCurveTo(w, y, w, y + r);
-        ctx.lineTo(w, y + h - r); ctx.quadraticCurveTo(w, y + h, w - r, y + h);
-        ctx.lineTo(r, y + h); ctx.quadraticCurveTo(0, y + h, 0, y + h - r);
-        ctx.lineTo(0, y + r); ctx.quadraticCurveTo(0, y, r, y);
-        ctx.fill();
-
-        // Windshield & Rear window
-        ctx.fillStyle = '#212121';
-        ctx.fillRect(veh.length * 0.65, -4, veh.length * 0.15, 8); // Front
-        ctx.fillRect(veh.length * 0.15, -4, veh.length * 0.10, 8); // Rear
-      }
-
-      // Brake lights if decelerating or stopped
-      if (isStopped || veh.speed < veh.maxSpeed * 0.8) {
-        ctx.shadowColor = 'transparent';
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(0, -5, 2, 3);
-        ctx.fillRect(0, 2, 2, 3);
-      }
-
-      ctx.restore();
-    }
-
-    // 6. Main Animation Loop
-    function renderFrame(now) {
-      const dt = Math.min((now - lastTime) / 1000, 0.1); // cap delta time
-      lastTime = now;
-      phaseTimer += dt;
-
-      // --- State Machine ---
-      let lightColor = '#e74c3c'; // Red
-
-      if (phase === 'RED_FORMING' && phaseTimer > 5) {
-        phase = 'GREEN_CLEARING';
-        phaseTimer = 0;
-      } else if (phase === 'GREEN_CLEARING' && phaseTimer > 4) {
-        phase = 'RESETTING';
-        phaseTimer = 0;
-      } else if (phase === 'RESETTING') {
-        // Instantly reset positions to loop the animation smoothly
-        vehicles.forEach((v, i) => {
-          v.x = -100 - (i * (40 * PX_PER_M));
-          v.speed = 0;
+        vehicles.push({
+            marker: marker,
+            targetF: targetFraction, // Where it stops (0.0 is intersection, 1.0 is back of queue)
+            currentF: 1.0 + (vehicles.length * 0.05), // Spawn staggered off the back
+            speed: 0,
+            maxSpeed: 0.15,
+            accel: 0.1
         });
-        phase = 'RED_FORMING';
-        phaseTimer = 0;
-      }
-
-      if (phase === 'GREEN_CLEARING') {
-        lightColor = '#2ecc71'; // Green
-      }
-
-      // --- Physics & Car Following ---
-      vehicles.forEach((veh, i) => {
-        let desiredX = W + 200; // Drive off screen
-
-        if (phase === 'RED_FORMING') {
-          desiredX = veh.targetX;
-        }
-
-        // Don't hit the car in front
-        if (i > 0) {
-          const carAhead = vehicles[i - 1];
-          const safeDist = carAhead.x - veh.length - (GAP * PX_PER_M);
-          if (safeDist < desiredX) desiredX = safeDist;
-        }
-
-        const distToTarget = desiredX - veh.x;
-
-        // Kinematics
-        if (distToTarget > 2) {
-          // Accelerate
-          veh.speed = Math.min(veh.speed + veh.accel, veh.maxSpeed);
-          // Brake if getting close to target
-          if (distToTarget < veh.speed * 0.5) {
-            veh.speed = Math.max(distToTarget * 2, 0);
-          }
-        } else {
-          // Stop
-          veh.speed = 0;
-          veh.x = desiredX;
-        }
-
-        veh.x += veh.speed * dt;
-      });
-
-      // --- Drawing ---
-      ctx.clearRect(0, 0, W, H);
-
-      // Environment: Grass
-      ctx.fillStyle = '#27ae60';
-      ctx.fillRect(0, 0, W, H);
-
-      // Environment: Road
-      ctx.fillStyle = '#34495e';
-      ctx.fillRect(0, ROAD_Y - 25, W, 50);
-
-      // Road Lines
-      ctx.strokeStyle = '#ecf0f1';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, ROAD_Y - 25); ctx.lineTo(W, ROAD_Y - 25); // Top edge
-      ctx.moveTo(0, ROAD_Y + 25); ctx.lineTo(W, ROAD_Y + 25); // Bottom edge
-      ctx.stroke();
-
-      // Center Dashed Line
-      ctx.setLineDash([15, 15]);
-      ctx.beginPath();
-      ctx.moveTo(0, ROAD_Y); ctx.lineTo(STOP_LINE_X, ROAD_Y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Stop Line
-      ctx.fillStyle = '#bdc3c7';
-      ctx.fillRect(STOP_LINE_X, ROAD_Y - 25, 6, 25);
-
-      // Traffic Light Post
-      ctx.fillStyle = '#2c3e50';
-      ctx.fillRect(STOP_LINE_X + 2, ROAD_Y - 45, 4, 20);
-      ctx.fillStyle = '#111';
-      ctx.fillRect(STOP_LINE_X - 2, ROAD_Y - 55, 12, 12);
-      // Light Bulb
-      ctx.fillStyle = lightColor;
-      ctx.beginPath();
-      ctx.arc(STOP_LINE_X + 4, ROAD_Y - 49, 4, 0, Math.PI * 2);
-      ctx.fill();
-      // Light Glow
-      ctx.shadowColor = lightColor;
-      ctx.shadowBlur = 10;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Draw Vehicles
-      vehicles.forEach(veh => {
-        if (veh.x > -50 && veh.x < W + 50) {
-          drawVehicle(ctx, veh, veh.speed < 0.1);
-        }
-      });
-
-      // Legend / UI Overlay
-      ctx.fillStyle = 'rgba(26, 37, 47, 0.85)';
-      ctx.fillRect(10, 10, 180, 65);
-      ctx.fillStyle = '#ecf0f1';
-      ctx.font = 'bold 12px Arial';
-      ctx.fillText(`Peak Queue: ${queueLengthMeters.toFixed(0)} m`, 20, 28);
-      ctx.fillStyle = '#f39c12';
-      ctx.fillText(`\u25a0 Heavy Vehicles (${hvPercent}%)`, 20, 46);
-      ctx.fillStyle = '#ecf0f1';
-      ctx.fillText(`\u25a0 Passenger Cars`, 20, 64);
-
-      window.queueAnimFrameId = requestAnimationFrame(renderFrame);
+        currentLen += (vLen + GAP);
     }
 
-    // Start the loop
-    window.queueAnimFrameId = requestAnimationFrame(renderFrame);
+    // 4. Run Animation Loop (Red -> Green cycle)
+    let phase = 'RED', phaseTimer = 0, lastTime = performance.now();
+
+    function renderFrame(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+        phaseTimer += dt;
+
+        // Cycle logic
+        if (phase === 'RED' && phaseTimer > 6) { phase = 'GREEN'; phaseTimer = 0; }
+        else if (phase === 'GREEN' && phaseTimer > 5) { phase = 'RESET'; phaseTimer = 0; }
+        else if (phase === 'RESET') {
+            vehicles.forEach((v, i) => { v.currentF = 1.0 + (i * 0.05); v.speed = 0; });
+            phase = 'RED'; phaseTimer = 0;
+        }
+
+        vehicles.forEach((v, i) => {
+            let desiredF = -0.2; // Move through intersection when green
+
+            if (phase === 'RED') {
+                desiredF = v.targetF;
+            }
+
+            // Car Following logic
+            if (i > 0) {
+                const safeF = vehicles[i - 1].currentF + (queueLengthMeters > 0 ? (8 / queueLengthMeters) : 0); // 8m gap
+                if (safeF > desiredF) desiredF = safeF;
+            }
+
+            const distToTarget = v.currentF - desiredF;
+
+            if (distToTarget > 0.01) {
+                v.speed = Math.min(v.speed + v.accel * dt, v.maxSpeed);
+                if (distToTarget < (v.speed * 1.5)) v.speed = Math.max(distToTarget * 0.8, 0); // braking
+                v.currentF -= v.speed * dt;
+            } else {
+                v.speed = 0;
+                v.currentF = desiredF;
+            }
+
+            // Convert fraction back to Map Coordinates
+            const curLat = startPt[0] + (endPt[0] - startPt[0]) * v.currentF;
+            const curLon = startPt[1] + (endPt[1] - startPt[1]) * v.currentF;
+            v.marker.setLatLng([curLat, curLon]);
+        });
+
+        geoQueueAnimFrameId = requestAnimationFrame(renderFrame);
+    }
+    geoQueueAnimFrameId = requestAnimationFrame(renderFrame);
   }
 
 
@@ -20040,11 +19993,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ]);
       const peakQ15 = Math.max(...allQ15);
       const hvPct = parseFloat((document.getElementById('HVP') || {}).value) || 0;
+
+      // Determine Map Context and travel bearing for simulation alignment
+      let qLat = null, qLon = null, travelBearing = 0;
+      if (site && Number.isFinite(Number(site.latitude))) {
+          qLat = Number(site.latitude);
+          qLon = Number(site.longitude);
+
+          const d1Max = Math.max(...['AM','OP','PM','EV'].map(k => (queuePeriodD1[k] || {}).q15 || 0));
+          const d2Max = Math.max(...['AM','OP','PM','EV'].map(k => (queuePeriodD2[k] || {}).q15 || 0));
+          const worstLabel = (d1Max >= d2Max) ? site.d1_direction_label : site.d2_direction_label;
+          travelBearing = getDirectionLabelBearing(worstLabel) || 0;
+      } else if (window.selectedTiaData && Number.isFinite(Number(window.selectedTiaData.lat))) {
+          qLat = Number(window.selectedTiaData.lat);
+          qLon = Number(window.selectedTiaData.lon);
+      }
+
       const vizWrap = document.getElementById('queueVisualizerWrap');
       if (vizWrap) {
-        if (peakQ15 > 0) {
-          vizWrap.style.display = 'block';
-          drawQueueSimulation(peakQ15, hvPct);
+        if (peakQ15 > 0 && qLat && qLon) {
+          drawGeographicQueueSimulation(peakQ15, hvPct, qLat, qLon, travelBearing);
         } else {
           vizWrap.style.display = 'none';
         }
