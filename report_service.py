@@ -1900,7 +1900,8 @@ def editor_page(draft_id: str) -> str:
 
     notes_html = _render_notes(notes)
     engineering_obs_html = _render_engineering_observations(notes)
-    tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+    raw_tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+    tables = [table for table in raw_tables if isinstance(table, dict)]
     table_analysis_map = {
       _normalize_title_key(item.get("title")): item
       for item in executive_content.get("table_analyses", [])
