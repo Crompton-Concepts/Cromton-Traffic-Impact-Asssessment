@@ -11061,9 +11061,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let best = null;
       const radii = [80, 180, 300];
 
+      const isStrongPreferredRoadMatch = (preferredStd, candidateRoadName) => {
+        const candidateStd = standardizeRoadName(candidateRoadName || '');
+        if (!preferredStd || !candidateStd) return false;
+        if (preferredStd === candidateStd) return true;
+        const overlap = tokenOverlapScore(preferredStd, candidateStd);
+        return overlap >= 0.6;
+      };
+
       for (let i = 0; i < radii.length; i++) {
         const radius = radii[i];
-        const query = `[out:json][timeout:12];way(around:${radius},${safeLat},${safeLon})[highway];out tags center 120;`;
+        const query = prefRoad
+          ? `[out:json][timeout:12];way(around:${radius},${safeLat},${safeLon})[highway][name];out tags center 120;`
+          : `[out:json][timeout:12];way(around:${radius},${safeLat},${safeLon})[highway];out tags center 120;`;
         const data = await fetchOverpassJson(query, {
           cacheKey: `${overpassCacheKey}:r${radius}`,
           ttlMs: 2 * OVERPASS_CACHE_TTL_MS
@@ -11080,9 +11090,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (!oneWayInfo.isOneWay) return;
 
           const roadName = String(tags.name || '').trim();
+          if (prefRoad && !roadName) return;
           const distanceMeters = haversineDistance(safeLat, safeLon, centerLat, centerLon);
-          const sameRoad = prefRoad && roadName ? isSameRoad(prefRoad, roadName) : false;
-          const score = (sameRoad ? 3 : 0) + Math.max(0, 1 - (Math.min(distanceMeters, 350) / 350));
+          const sameRoad = prefRoad && roadName ? isStrongPreferredRoadMatch(prefRoad, roadName) : false;
+          const overlapScore = (prefRoad && roadName) ? tokenOverlapScore(prefRoad, roadName) : 0;
+          const score = (sameRoad ? 4 : 0) + overlapScore + Math.max(0, 1 - (Math.min(distanceMeters, 220) / 220));
 
           if (!best || score > best.score) {
             best = {
@@ -11096,11 +11108,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           }
         });
 
-        if (best && best.score >= 3) break;
+        if (best && best.score >= 4.5) break;
       }
 
       // Avoid false positives from nearby side streets when the user searched a named road.
-      const result = (prefRoad && best && !best.sameRoad) ? null : (best || null);
+      const result = (prefRoad && best && (!best.sameRoad || Number(best.distanceMeters) > 180)) ? null : (best || null);
       if (result) {
         cache.set(cacheKey, result);
       } else {
