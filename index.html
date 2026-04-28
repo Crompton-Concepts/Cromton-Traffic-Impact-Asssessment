@@ -13290,8 +13290,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const el = document.getElementById('macroDetailSource');
       if (!el) return;
       const source = String(sourceValue || 'N/A').trim();
-      const classSuffix = source.toLowerCase().replace(/\s+/g, '-');
-      el.innerHTML = `<span class="source-pill source-${classSuffix}">${source}</span>`;
+      const classSuffix = source.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'na';
+      el.textContent = '';
+      const pill = document.createElement('span');
+      pill.className = `source-pill source-${classSuffix}`;
+      pill.textContent = source;
+      el.appendChild(pill);
     };
 
     const setQualityBadge = () => {
@@ -13320,7 +13324,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         cls = 'quality-estimated';
       }
 
-      el.innerHTML = `<span class="quality-pill ${cls}">${label}</span>`;
+      el.textContent = '';
+      const pill = document.createElement('span');
+      pill.className = `quality-pill ${cls}`;
+      pill.textContent = label;
+      el.appendChild(pill);
     };
 
     setText('macroDetailSiteId', siteId);
@@ -19029,60 +19037,263 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     checkEngineeringConflicts();
   }
 
+  // Keep track of the animation frame globally so we can cancel it when updating
+  window.queueAnimFrameId = null;
+
   function drawQueueSimulation(queueLengthMeters, hvPercent) {
     const canvas = document.getElementById('queueCanvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    // Sync canvas resolution to its rendered CSS width
-    canvas.width = canvas.offsetWidth || 600;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 1. Cancel any existing animation loop
+    if (window.queueAnimFrameId) {
+      cancelAnimationFrame(window.queueAnimFrameId);
+    }
 
-    // Road
-    ctx.fillStyle = '#7f8c8d';
-    ctx.fillRect(0, canvas.height / 2 - 20, canvas.width, 40);
+    // 2. Handle High-DPI screens for crisp graphics
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
 
-    // Stop line (red)
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(canvas.width - 50, canvas.height / 2 - 22, 5, 44);
+    const W = rect.width;
+    const H = rect.height;
 
-    const carLength = 6;   // metres
-    const hvLength  = 12;  // metres
-    const gap       = 2;   // metres between vehicles
-    const pxPerM    = Math.min(3, (canvas.width - 60) / Math.max(queueLengthMeters, 1));
+    // 3. Simulation Constants
+    const CAR_LEN = 6;
+    const HV_LEN = 12;
+    const GAP = 2;
+    // Dynamic scaling so the queue always fits on screen
+    const PX_PER_M = Math.min(4, (W - 80) / Math.max(queueLengthMeters, 15));
+    const STOP_LINE_X = W - 60;
+    const ROAD_Y = H / 2;
 
+    // 4. Generate the Queue lineup based on exact math
+    const vehicles = [];
     let currentLength = 0;
-    let drawX = canvas.width - 55;
+    let targetQueueX = STOP_LINE_X;
 
-    // Seed a stable random so the visual is consistent on re-render
+    // Seeded random so the queue composition doesn't flicker wildly on re-renders
     let seed = Math.floor(queueLengthMeters * 100 + hvPercent);
     const seededRand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
 
+    const carColors = ['#ecf0f1', '#bdc3c7', '#e74c3c', '#3498db', '#2c3e50', '#95a5a6'];
+
     while (currentLength < queueLengthMeters) {
       const isHV = (seededRand() * 100) < hvPercent;
-      const vehLength = isHV ? hvLength : carLength;
+      const vehLength = isHV ? HV_LEN : CAR_LEN;
       if (currentLength + vehLength > queueLengthMeters) break;
 
-      const pixelWidth = vehLength * pxPerM;
-      drawX -= (pixelWidth + gap * pxPerM);
-      if (drawX < 0) break;
+      const pxWidth = vehLength * PX_PER_M;
+      targetQueueX -= (pxWidth + GAP * PX_PER_M);
 
-      ctx.fillStyle = isHV ? '#f39c12' : '#ecf0f1';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(drawX, canvas.height / 2 - 10, pixelWidth, 20, 3) : ctx.rect(drawX, canvas.height / 2 - 10, pixelWidth, 20);
-      ctx.fill();
+      vehicles.push({
+        type: isHV ? 'hv' : 'car',
+        length: pxWidth,
+        targetX: targetQueueX, // Where it stops in the queue
+        x: -100 - (vehicles.length * (40 * PX_PER_M)), // Spawn off-screen left, staggered
+        speed: 0,
+        maxSpeed: 20 * PX_PER_M, // Scaled speed
+        accel: 0.5 * PX_PER_M,
+        color: isHV ? '#f39c12' : carColors[Math.floor(seededRand() * carColors.length)],
+        idleOffset: seededRand() * Math.PI * 2 // Random start phase for idle vibration
+      });
 
-      currentLength += (vehLength + gap);
+      currentLength += (vehLength + GAP);
     }
 
-    // Legend
-    ctx.font = 'bold 11px Arial';
-    ctx.fillStyle = '#ecf0f1';
-    ctx.fillText(`Peak Queue: ${queueLengthMeters.toFixed(0)} m`, 8, 18);
-    ctx.fillStyle = '#f39c12';
-    ctx.fillText(`\u25a0 Heavy Vehicles (${hvPercent}%)`, 8, 34);
-    ctx.fillStyle = '#ecf0f1';
-    ctx.fillText(`\u25a0 Passenger Cars`, 8, 50);
+    // Reverse so the front car is first in the array (easiest for car-following math)
+    vehicles.reverse();
+
+    // 5. Animation State Machine
+    let phase = 'RED_FORMING';
+    let phaseTimer = 0;
+    let lastTime = performance.now();
+
+    // Helper: Draw Top-Down Vehicles
+    function drawVehicle(ctx, veh, isStopped) {
+      ctx.save();
+      // Simulate slight engine vibration when stopped
+      const vibration = isStopped ? Math.sin(performance.now() / 50 + veh.idleOffset) * 0.5 : 0;
+      ctx.translate(veh.x, ROAD_Y + vibration);
+
+      // Drop shadow
+      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetY = 2;
+
+      if (veh.type === 'hv') {
+        // Truck Trailer
+        ctx.fillStyle = '#9e9e9e';
+        ctx.fillRect(0, -8, veh.length - (4 * PX_PER_M), 16);
+        // Truck Cab
+        ctx.fillStyle = veh.color;
+        ctx.fillRect(veh.length - (3.5 * PX_PER_M), -7, 3.5 * PX_PER_M, 14);
+        // Windshield
+        ctx.fillStyle = '#212121';
+        ctx.fillRect(veh.length - (1.5 * PX_PER_M), -5, 1 * PX_PER_M, 10);
+      } else {
+        // Passenger Car Body
+        ctx.fillStyle = veh.color;
+        ctx.beginPath();
+        // Draw rounded rectangle manually for broader browser compatibility
+        const r = 2; const w = veh.length; const h = 12; const y = -6;
+        ctx.moveTo(r, y); ctx.lineTo(w - r, y); ctx.quadraticCurveTo(w, y, w, y + r);
+        ctx.lineTo(w, y + h - r); ctx.quadraticCurveTo(w, y + h, w - r, y + h);
+        ctx.lineTo(r, y + h); ctx.quadraticCurveTo(0, y + h, 0, y + h - r);
+        ctx.lineTo(0, y + r); ctx.quadraticCurveTo(0, y, r, y);
+        ctx.fill();
+
+        // Windshield & Rear window
+        ctx.fillStyle = '#212121';
+        ctx.fillRect(veh.length * 0.65, -4, veh.length * 0.15, 8); // Front
+        ctx.fillRect(veh.length * 0.15, -4, veh.length * 0.10, 8); // Rear
+      }
+
+      // Brake lights if decelerating or stopped
+      if (isStopped || veh.speed < veh.maxSpeed * 0.8) {
+        ctx.shadowColor = 'transparent';
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(0, -5, 2, 3);
+        ctx.fillRect(0, 2, 2, 3);
+      }
+
+      ctx.restore();
+    }
+
+    // 6. Main Animation Loop
+    function renderFrame(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.1); // cap delta time
+      lastTime = now;
+      phaseTimer += dt;
+
+      // --- State Machine ---
+      let lightColor = '#e74c3c'; // Red
+
+      if (phase === 'RED_FORMING' && phaseTimer > 5) {
+        phase = 'GREEN_CLEARING';
+        phaseTimer = 0;
+      } else if (phase === 'GREEN_CLEARING' && phaseTimer > 4) {
+        phase = 'RESETTING';
+        phaseTimer = 0;
+      } else if (phase === 'RESETTING') {
+        // Instantly reset positions to loop the animation smoothly
+        vehicles.forEach((v, i) => {
+          v.x = -100 - (i * (40 * PX_PER_M));
+          v.speed = 0;
+        });
+        phase = 'RED_FORMING';
+        phaseTimer = 0;
+      }
+
+      if (phase === 'GREEN_CLEARING') {
+        lightColor = '#2ecc71'; // Green
+      }
+
+      // --- Physics & Car Following ---
+      vehicles.forEach((veh, i) => {
+        let desiredX = W + 200; // Drive off screen
+
+        if (phase === 'RED_FORMING') {
+          desiredX = veh.targetX;
+        }
+
+        // Don't hit the car in front
+        if (i > 0) {
+          const carAhead = vehicles[i - 1];
+          const safeDist = carAhead.x - veh.length - (GAP * PX_PER_M);
+          if (safeDist < desiredX) desiredX = safeDist;
+        }
+
+        const distToTarget = desiredX - veh.x;
+
+        // Kinematics
+        if (distToTarget > 2) {
+          // Accelerate
+          veh.speed = Math.min(veh.speed + veh.accel, veh.maxSpeed);
+          // Brake if getting close to target
+          if (distToTarget < veh.speed * 0.5) {
+            veh.speed = Math.max(distToTarget * 2, 0);
+          }
+        } else {
+          // Stop
+          veh.speed = 0;
+          veh.x = desiredX;
+        }
+
+        veh.x += veh.speed * dt;
+      });
+
+      // --- Drawing ---
+      ctx.clearRect(0, 0, W, H);
+
+      // Environment: Grass
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(0, 0, W, H);
+
+      // Environment: Road
+      ctx.fillStyle = '#34495e';
+      ctx.fillRect(0, ROAD_Y - 25, W, 50);
+
+      // Road Lines
+      ctx.strokeStyle = '#ecf0f1';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, ROAD_Y - 25); ctx.lineTo(W, ROAD_Y - 25); // Top edge
+      ctx.moveTo(0, ROAD_Y + 25); ctx.lineTo(W, ROAD_Y + 25); // Bottom edge
+      ctx.stroke();
+
+      // Center Dashed Line
+      ctx.setLineDash([15, 15]);
+      ctx.beginPath();
+      ctx.moveTo(0, ROAD_Y); ctx.lineTo(STOP_LINE_X, ROAD_Y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Stop Line
+      ctx.fillStyle = '#bdc3c7';
+      ctx.fillRect(STOP_LINE_X, ROAD_Y - 25, 6, 25);
+
+      // Traffic Light Post
+      ctx.fillStyle = '#2c3e50';
+      ctx.fillRect(STOP_LINE_X + 2, ROAD_Y - 45, 4, 20);
+      ctx.fillStyle = '#111';
+      ctx.fillRect(STOP_LINE_X - 2, ROAD_Y - 55, 12, 12);
+      // Light Bulb
+      ctx.fillStyle = lightColor;
+      ctx.beginPath();
+      ctx.arc(STOP_LINE_X + 4, ROAD_Y - 49, 4, 0, Math.PI * 2);
+      ctx.fill();
+      // Light Glow
+      ctx.shadowColor = lightColor;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Draw Vehicles
+      vehicles.forEach(veh => {
+        if (veh.x > -50 && veh.x < W + 50) {
+          drawVehicle(ctx, veh, veh.speed < 0.1);
+        }
+      });
+
+      // Legend / UI Overlay
+      ctx.fillStyle = 'rgba(26, 37, 47, 0.85)';
+      ctx.fillRect(10, 10, 180, 65);
+      ctx.fillStyle = '#ecf0f1';
+      ctx.font = 'bold 12px Arial';
+      ctx.fillText(`Peak Queue: ${queueLengthMeters.toFixed(0)} m`, 20, 28);
+      ctx.fillStyle = '#f39c12';
+      ctx.fillText(`\u25a0 Heavy Vehicles (${hvPercent}%)`, 20, 46);
+      ctx.fillStyle = '#ecf0f1';
+      ctx.fillText(`\u25a0 Passenger Cars`, 20, 64);
+
+      window.queueAnimFrameId = requestAnimationFrame(renderFrame);
+    }
+
+    // Start the loop
+    window.queueAnimFrameId = requestAnimationFrame(renderFrame);
   }
 
 
@@ -27561,7 +27772,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }).addTo(macroSearchMarkerLayer);
 
     // Add popup with label
-    marker.bindPopup(`<b>${label}</b>`, {
+    const popupLabel = document.createElement('b');
+    popupLabel.textContent = String(label || 'Selected location');
+    marker.bindPopup(popupLabel, {
       autoClose: false,
       closeButton: true
     }).openPopup();
@@ -27636,6 +27849,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function displayQuickTiaMultipleRefs(searchTerm, nearbyArray, centerLat, centerLon, isSameRoadMatch = false, options = {}) {
+    const escapeHtml = (value) => String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
     window.lastSearchedAddress = String(searchTerm || '').trim();
     const excludedRefs = Array.isArray(options && options.excludedRefs) ? options.excludedRefs : [];
     const exclusionSummary = String(options && options.exclusionSummary ? options.exclusionSummary : '').trim();
@@ -27775,11 +27995,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const row = document.createElement('div');
           row.style.cssText = 'padding:8px; border:1px solid #c8e6c9; border-radius:6px; background:#fff;';
           const safeRoad = String(bucket.road || `Road ${idx + 1}`);
+          const safeRoadKey = String(bucket.key || '').trim();
+          const safeWeight = Math.max(0, Math.min(100, bucket.autoWeight));
           row.innerHTML = `
-            <div style="font-size:0.82em; color:#1b5e20; font-weight:700; margin-bottom:4px;">${safeRoad}</div>
+            <div style="font-size:0.82em; color:#1b5e20; font-weight:700; margin-bottom:4px;">${escapeHtml(safeRoad)}</div>
             <div style="display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:8px;">
-              <input type="range" class="road-weight-slider" data-roadstd="${bucket.key}" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, bucket.autoWeight))}" style="width:100%;" />
-              <input type="number" class="road-weight" data-roadstd="${bucket.key}" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, bucket.autoWeight))}" style="width:62px; padding:2px 4px; border:1px solid #a5d6a7; border-radius:3px; font-size:0.82em;" />
+              <input type="range" class="road-weight-slider" data-roadstd="${escapeHtml(safeRoadKey)}" min="0" max="100" step="1" value="${safeWeight}" style="width:100%;" />
+              <input type="number" class="road-weight" data-roadstd="${escapeHtml(safeRoadKey)}" min="0" max="100" step="1" value="${safeWeight}" style="width:62px; padding:2px 4px; border:1px solid #a5d6a7; border-radius:3px; font-size:0.82em;" />
               <span style="font-size:0.78em; color:#33691e;">%</span>
             </div>
           `;
@@ -27827,20 +28049,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         : '<span style="margin-left: 6px; padding: 1px 6px; border-radius: 10px; background: #546e7a; color: #fff; font-size: 0.72em;">Nearby</span>';
       div.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <strong>${idx + 1}.</strong> ${site.road} ${matchBadge}
+          <strong>${idx + 1}.</strong> ${escapeHtml(site.road)} ${matchBadge}
           <span style="display:inline-flex; align-items:center; gap:8px;">
             <label style="font-size:0.78em; color:#37474f; display:inline-flex; align-items:center; gap:4px;">
-              <input type="checkbox" class="ref-include" data-siteid="${site.siteId}" checked /> Use
+              <input type="checkbox" class="ref-include" data-siteid="${escapeHtml(site.siteId)}" checked /> Use
             </label>
-            <button type="button" class="ref-remove" data-siteid="${site.siteId}" style="width:auto; margin:0; padding:2px 8px; font-size:0.74em; background:#ef5350; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:none;">Remove</button>
+            <button type="button" class="ref-remove" data-siteid="${escapeHtml(site.siteId)}" style="width:auto; margin:0; padding:2px 8px; font-size:0.74em; background:#ef5350; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:none;">Remove</button>
           </span>
         </div>
-        <small style="color: #666;">${sourceLabel} • <strong>${distanceText} ${site.direction} of address</strong> • ${site.vadt.toLocaleString()} VADT ${estimatedTag}</small>
-        ${site.vadt_is_estimated && site.vadt_estimate_note ? `<div style="margin-top:4px; font-size:0.74em; color:#e65100;">${site.vadt_estimate_note}</div>` : ''}
+        <small style="color: #666;">${escapeHtml(sourceLabel)} • <strong>${escapeHtml(distanceText)} ${escapeHtml(site.direction)} of address</strong> • ${Number(site.vadt || 0).toLocaleString()} VADT ${estimatedTag}</small>
+        ${site.vadt_is_estimated && site.vadt_estimate_note ? `<div style="margin-top:4px; font-size:0.74em; color:#e65100;">${escapeHtml(site.vadt_estimate_note)}</div>` : ''}
         <div style="margin-top: 6px; display: grid; grid-template-columns: 1fr auto auto auto auto; align-items: center; gap: 8px;">
           <span style="color: #333; font-size: 0.8em;">Distance Weighting:</span>
-          <input type="range" class="ref-weight-slider" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 100%; cursor: pointer;" />
-          <input type="number" class="ref-weight" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 62px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85em;" />
+          <input type="range" class="ref-weight-slider" data-siteid="${escapeHtml(site.siteId)}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 100%; cursor: pointer;" />
+          <input type="number" class="ref-weight" data-siteid="${escapeHtml(site.siteId)}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 62px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85em;" />
           <span style="font-size: 0.8em; color: #666;">%</span>
           <span style="font-size: 0.75em; color: #1f5e63; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 10px; padding: 1px 6px;">${site.typePercent}%</span>
         </div>
@@ -27921,7 +28143,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const excludedWrap = document.createElement('div');
       excludedWrap.style.cssText = 'margin-top:10px; padding:10px; border:1px solid #ffccbc; border-radius:6px; background:#fff3e0;';
       const summaryText = exclusionSummary || `${excludedRefsToShow.length} reference point(s) excluded: no connected route verified within 5km radius context.`;
-      excludedWrap.innerHTML = `<div style="font-weight:700; color:#bf360c; margin-bottom:6px;">Excluded Reference Points (Not Connected Within 5km Radius)</div><div style="font-size:0.84em; color:#5d4037; margin-bottom:6px;">${summaryText}</div>`;
+      excludedWrap.innerHTML = `<div style="font-weight:700; color:#bf360c; margin-bottom:6px;">Excluded Reference Points (Not Connected Within 5km Radius)</div><div style="font-size:0.84em; color:#5d4037; margin-bottom:6px;">${escapeHtml(summaryText)}</div>`;
 
       const list = document.createElement('div');
       list.style.cssText = 'display:grid; gap:6px;';
@@ -27932,7 +28154,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ? (distanceMeters < 1000 ? `${Math.round(distanceMeters)}m` : `${(distanceMeters / 1000).toFixed(1)}km`)
           : '-';
         row.style.cssText = 'padding:8px; border:1px solid #ffe0b2; border-radius:4px; background:#fffaf5;';
-        row.innerHTML = `<div style="font-weight:700; color:#6d4c41;">${idx + 1}. ${String((ref && ref.road) || 'Unnamed reference')}</div><div style="font-size:0.8em; color:#795548;">Distance: ${distanceLabel} | ${String((ref && ref.reason) || 'Excluded by accessibility logic.')}</div>`;
+        row.innerHTML = `<div style="font-weight:700; color:#6d4c41;">${idx + 1}. ${escapeHtml(String((ref && ref.road) || 'Unnamed reference'))}</div><div style="font-size:0.8em; color:#795548;">Distance: ${escapeHtml(distanceLabel)} | ${escapeHtml(String((ref && ref.reason) || 'Excluded by accessibility logic.'))}</div>`;
         list.appendChild(row);
       });
       excludedWrap.appendChild(list);
