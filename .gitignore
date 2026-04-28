@@ -48,7 +48,5 @@ node_modules/
 
 # OS files
 .DS_Store
-desktop.ini
-Desktop.ini
+**/[Dd]esktop.ini
 Thumbs.db
-desktop.ini
