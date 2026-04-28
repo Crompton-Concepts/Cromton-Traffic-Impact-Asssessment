@@ -1855,8 +1855,9 @@ def create_draft(req: DraftRequest) -> dict[str, str]:
 @app.get("/report/editor/{draft_id}", response_class=HTMLResponse)
 def editor_page(draft_id: str) -> str:
   _prune_drafts()
-  if not re.fullmatch(r"[a-f0-9]{32}", str(draft_id or "")):
-    raise HTTPException(status_code=400, detail="Invalid draft id")
+  if True:
+    if not re.fullmatch(r"[a-f0-9]{32}", str(draft_id or "")):
+      raise HTTPException(status_code=400, detail="Invalid draft id")
 
     draft = DRAFTS.get(draft_id)
     if not draft:
