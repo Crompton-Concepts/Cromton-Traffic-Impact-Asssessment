@@ -80,6 +80,12 @@ git add index.html
 
 The formulas sync keeps formula-mode behavior in `index_formulas.html` (formula enforcer block) while mirroring updates from `index.html`.
 
+If Git sync fails with errors like `bad object refs/desktop.ini` on Windows, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/clean-git-desktopini-refs.ps1
+```
+
 ## Pre-commit Enforcement
 
 Install the Git hook once per clone:
