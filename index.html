@@ -8672,6 +8672,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           formControls[el.id] = { type: type, value: String(el.value == null ? '' : el.value) };
         }
       });
+      // Capture named radio groups without IDs (e.g. trafficCalcMethod)
+      document.querySelectorAll('input[type="radio"][name]:not([id])').forEach(function(el) {
+        if (el.closest && el.closest('#loginGate')) return;
+        const key = '__radio__' + el.name + '__' + el.value;
+        formControls[key] = { type: 'radio', name: el.name, value: el.value, checked: el.checked };
+      });
 
       // Collect visible text content from output elements
       const outputElements = {};
@@ -8694,7 +8700,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       var snapshot = {
         kind: 'tia-session-snapshot',
-        version: '1.0',
+        version: '1.1',
         exportedAt: new Date().toISOString(),
         selectedMacroSite: selectedMacroSite || '',
         selectedTiaData: window.selectedTiaData || null,
@@ -8705,7 +8711,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           input: (function() { var el = document.getElementById('quickTiaInput') || document.getElementById('quickTiaSiteIdInput'); return el ? String(el.value || '') : ''; })(),
           lastSearchedAddress: String(window.lastSearchedAddress || ''),
           lastResolvedAddress: String(window.lastQuickTiaResolvedAddress || '')
-        }
+        },
+        localStorage: (function() {
+          var lsData = {};
+          try { var raw = localStorage.getItem(PYTHON_EDITS_PROFILE_KEY); if (raw) lsData.pythonEditsProfile = raw; } catch(_) {}
+          return lsData;
+        })()
       };
 
       var json = JSON.stringify(snapshot, null, 2);
@@ -8742,9 +8753,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           alert('Invalid session file. Please select a file exported with "Export Session JSON".');
           return;
         }
-        // Restore form controls
+        // Restore form controls (elements with IDs)
         var controls = snapshot.formControls || {};
         Object.keys(controls).forEach(function(id) {
+          if (id.startsWith('__radio__')) return; // handled separately below
           var el = document.getElementById(id);
           if (!el) return;
           var state = controls[id];
@@ -8755,8 +8767,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           } else {
             el.value = String(state.value == null ? '' : state.value);
           }
-          // Fire change event so dependent UI updates
+          // Fire both change and input events so all dependent handlers trigger
           try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch(_) {}
+          try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch(_) {}
+        });
+        // Restore named radio groups without IDs (e.g. trafficCalcMethod)
+        Object.keys(controls).forEach(function(key) {
+          if (!key.startsWith('__radio__')) return;
+          var state = controls[key];
+          if (!state || !state.name || state.value == null) return;
+          var el = document.querySelector('input[type="radio"][name="' + state.name + '"][value="' + state.value + '"]');
+          if (!el) return;
+          el.checked = !!state.checked;
+          if (state.checked) {
+            try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch(_) {}
+          }
         });
         // Restore output text elements
         var outputs = snapshot.outputElements || {};
@@ -8776,6 +8801,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (typeof selectMacroSite === 'function') selectMacroSite(snapshot.selectedMacroSite, { silent: true });
         }
         if (snapshot.manualTrafficGenData) window.manualTrafficGenData = snapshot.manualTrafficGenData;
+        // Restore localStorage state (python edits profile, etc.)
+        var lsData = snapshot.localStorage || {};
+        try { if (lsData.pythonEditsProfile) localStorage.setItem(PYTHON_EDITS_PROFILE_KEY, lsData.pythonEditsProfile); } catch(_) {}
         // Restore quick search display
         var qs = snapshot.quickSearch || {};
         if (qs.lastSearchedAddress) {
@@ -8785,12 +8813,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (dispEl && textEl) { textEl.textContent = qs.lastSearchedAddress; dispEl.style.display = 'block'; }
         }
         if (qs.lastResolvedAddress) window.lastQuickTiaResolvedAddress = qs.lastResolvedAddress;
+        // Trigger full recalculation after all values are restored
+        setTimeout(function() {
+          try { if (typeof toggleTrafficCalcMethod === 'function') toggleTrafficCalcMethod(); } catch(_) {}
+          try { if (typeof updateScenarioFields === 'function') updateScenarioFields(); } catch(_) {}
+          try { if (typeof calculateTripGeneration === 'function') calculateTripGeneration(); } catch(_) {}
+          try { if (typeof calculateAll === 'function') calculateAll(); } catch(_) {}
+          try { if (typeof updateTiaCalculations === 'function') updateTiaCalculations(); } catch(_) {}
+        }, 150);
         // Update status
         var statusEl = document.getElementById('tiaSnapshotStatus');
         if (statusEl) statusEl.textContent = 'Loaded: ' + file.name;
         if (typeof setAppStatusBanner === 'function') {
-          setAppStatusBanner('<strong>✓ Session imported.</strong> Click Calculate All Metrics to refresh outputs.', 'info');
-          setTimeout(function() { if (typeof clearAppStatusBanner === 'function') clearAppStatusBanner(); }, 4000);
+          setAppStatusBanner('<strong>✓ Session imported.</strong> Recalculating outputs from restored data...', 'info');
+          setTimeout(function() { if (typeof clearAppStatusBanner === 'function') clearAppStatusBanner(); }, 4500);
         }
       } catch(err) {
         alert('Import failed: ' + String(err && err.message ? err.message : err));
@@ -18563,7 +18599,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             maxWidth: sheetEl.style.maxWidth,
             margin: sheetEl.style.margin
           });
-          sheetEl.style.width = '2200px';
+          sheetEl.style.width = '2800px';
           sheetEl.style.maxWidth = 'none';
           sheetEl.style.margin = '0';
           sheetEl.querySelectorAll('table').forEach((table) => {
@@ -18677,7 +18713,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
                 clonedSheet = clonedDocument.body.firstElementChild;
               }
               if (clonedSheet) {
-                clonedSheet.style.width = '2200px';
+                clonedSheet.style.width = '2800px';
                 clonedSheet.style.maxWidth = 'none';
                 clonedSheet.style.margin = '0';
               }
@@ -18687,9 +18723,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             }
           });
 
-          const pageWidth = 3508;
-          const pageHeight = 2480;
-          const margin = 120;
+          const pageWidth = 9933;   // A1 landscape at 300 DPI (841 × 594 mm)
+          const pageHeight = 7016;
+          const margin = 200;
           const drawWidth = pageWidth - (margin * 2);
           const drawHeight = pageHeight - (margin * 2);
 
