@@ -50,3 +50,5 @@ node_modules/
 .DS_Store
 **/[Dd]esktop.ini
 Thumbs.db
+
+desktop.ini
