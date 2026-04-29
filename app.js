@@ -15074,6 +15074,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     updateTiaSnapshotStatus(lastLoadedTiaSnapshotMeta);
+
+    // Expose snapshot controls to global scope for onclick handlers
+    window.downloadTiaSessionSnapshot = downloadTiaSessionSnapshot;
   }
 
   function loadQuickTiaAddressHistory() {
