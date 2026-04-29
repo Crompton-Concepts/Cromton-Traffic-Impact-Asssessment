@@ -9111,6 +9111,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Load sites on page load
   document.addEventListener('DOMContentLoaded', async () => {
     initializeQuickTiaSearchHandlers();
+    initializeTiaSnapshotControls();
 
     // Global handler for any unhandled promise rejections (surface to UI)
     window.addEventListener('unhandledrejection', (ev) => {
@@ -14606,6 +14607,474 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   setTimeout(renderDetourRouteScenarioManager, 0);
 
   const QUICK_TIA_HISTORY_KEY = 'quickTiaAddressHistory';
+
+  const TIA_SESSION_SNAPSHOT_KIND = 'crompton-tia-session';
+  const TIA_SESSION_SNAPSHOT_VERSION = 1;
+  let lastLoadedTiaSnapshotMeta = null;
+
+  function cloneSerializable(value, fallback = null) {
+    try {
+      return JSON.parse(JSON.stringify(value == null ? fallback : value));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function getTiaSnapshotControlElements() {
+    return Array.from(document.querySelectorAll('input[id], select[id], textarea[id]')).filter((el) => {
+      if (!el || !el.id) return false;
+      if (el.id === 'tiaSnapshotImportInput') return false;
+      const type = String(el.type || '').toLowerCase();
+      if (type === 'file' || type === 'password' || type === 'submit' || type === 'button' || type === 'reset') return false;
+      if (el.closest && el.closest('#loginGate')) return false;
+      return true;
+    });
+  }
+
+  function collectTiaFormControlSnapshot() {
+    const controls = {};
+    getTiaSnapshotControlElements().forEach((el) => {
+      const type = String(el.type || '').toLowerCase();
+      if (type === 'checkbox' || type === 'radio') {
+        controls[el.id] = { type, checked: !!el.checked };
+      } else {
+        controls[el.id] = { type, value: String(el.value == null ? '' : el.value) };
+      }
+    });
+    return controls;
+  }
+
+  function applyTiaFormControlSnapshot(controls) {
+    const controlMap = controls && typeof controls === 'object' ? controls : {};
+    Object.entries(controlMap).forEach(([id, state]) => {
+      const el = document.getElementById(id);
+      if (!el || !state || typeof state !== 'object') return;
+      const type = String(state.type || el.type || '').toLowerCase();
+      if (type === 'checkbox' || type === 'radio') {
+        el.checked = !!state.checked;
+      } else if (Object.prototype.hasOwnProperty.call(state, 'value')) {
+        el.value = String(state.value == null ? '' : state.value);
+      }
+    });
+  }
+
+  function getQuickTiaSelectionMode() {
+    const searchValue = String((document.getElementById('macroSiteSearch') && document.getElementById('macroSiteSearch').value) || '').trim();
+    const useCalculatedBtn = document.getElementById('quickTiaUseCalculatedBtn');
+    const useCalculatedApplied = !!(useCalculatedBtn && /applied/i.test(String(useCalculatedBtn.textContent || '')));
+
+    if (selectedMacroSite && macroSitesData && macroSitesData[selectedMacroSite]) return 'macro-site';
+    if (window.selectedTiaData && window.selectedTiaData.type === 'exact') {
+      return searchValue && String(window.selectedTiaData.siteId || '').trim() === searchValue ? 'quick-exact-applied' : 'quick-exact';
+    }
+    if (window.selectedTiaData && window.selectedTiaData.type === 'references') {
+      return useCalculatedApplied ? 'quick-calculated-applied' : 'quick-calculated';
+    }
+    return 'manual-only';
+  }
+
+  function collectQuickReferenceUiState() {
+    if (!window.selectedTiaData || window.selectedTiaData.type !== 'references') return null;
+    const refStates = (Array.isArray(window.selectedTiaData.references) ? window.selectedTiaData.references : []).map((ref) => {
+      const siteId = String(ref && ref.siteId ? ref.siteId : '');
+      const weightInput = siteId ? document.querySelector(`.ref-weight[data-siteid="${siteId}"]`) : null;
+      const includeInput = siteId ? document.querySelector(`.ref-include[data-siteid="${siteId}"]`) : null;
+      return {
+        siteId,
+        included: includeInput ? !!includeInput.checked : true,
+        weight: weightInput ? Math.max(0, Math.min(100, Number(weightInput.value) || 0)) : Math.max(0, Math.min(100, Number(ref && ref.autoWeight) || 0))
+      };
+    });
+
+    const roadWeights = Array.from(document.querySelectorAll('.road-weight[data-roadstd]')).map((inputEl) => ({
+      roadStd: String(inputEl.getAttribute('data-roadstd') || '').trim(),
+      weight: Math.max(0, Math.min(100, Number(inputEl.value) || 0))
+    })).filter((entry) => entry.roadStd);
+
+    const selectedMethodEl = document.querySelector('input[name="trafficCalcMethod"]:checked');
+    return {
+      referenceStates: refStates,
+      roadWeights,
+      trafficCalcMethod: String((selectedMethodEl && selectedMethodEl.value) || 'weighted').trim()
+    };
+  }
+
+  function applyQuickReferenceUiState(referenceUiState) {
+    const state = referenceUiState && typeof referenceUiState === 'object' ? referenceUiState : {};
+    const refStates = Array.isArray(state.referenceStates) ? state.referenceStates : [];
+    refStates.forEach((refState) => {
+      const siteId = String(refState && refState.siteId ? refState.siteId : '').trim();
+      if (!siteId) return;
+      const includeInput = document.querySelector(`.ref-include[data-siteid="${siteId}"]`);
+      const sliderInput = document.querySelector(`.ref-weight-slider[data-siteid="${siteId}"]`);
+      const weightInput = document.querySelector(`.ref-weight[data-siteid="${siteId}"]`);
+      if (includeInput) {
+        includeInput.checked = !!refState.included;
+        const card = includeInput.closest('div[style*="padding: 10px"]');
+        if (card) card.style.opacity = includeInput.checked ? '1' : '0.55';
+      }
+      const safeWeight = Math.max(0, Math.min(100, Number(refState.weight) || 0));
+      if (sliderInput) sliderInput.value = String(safeWeight);
+      if (weightInput) weightInput.value = String(safeWeight);
+    });
+
+    const roadWeights = Array.isArray(state.roadWeights) ? state.roadWeights : [];
+    roadWeights.forEach((roadState) => {
+      const roadStd = String(roadState && roadState.roadStd ? roadState.roadStd : '').trim();
+      if (!roadStd) return;
+      const sliderInput = document.querySelector(`.road-weight-slider[data-roadstd="${roadStd}"]`);
+      const weightInput = document.querySelector(`.road-weight[data-roadstd="${roadStd}"]`);
+      const safeWeight = Math.max(0, Math.min(100, Number(roadState.weight) || 0));
+      if (sliderInput) sliderInput.value = String(safeWeight);
+      if (weightInput) weightInput.value = String(safeWeight);
+    });
+
+    const selectedMethod = String(state.trafficCalcMethod || '').trim();
+    if (selectedMethod) {
+      const radio = document.querySelector(`input[name="trafficCalcMethod"][value="${selectedMethod}"]`);
+      if (radio) radio.checked = true;
+    }
+    if (typeof toggleTrafficCalcMethod === 'function') {
+      try { toggleTrafficCalcMethod(); } catch (_) {}
+    }
+  }
+
+  function getTiaSnapshotFileName(snapshot) {
+    const stampSource = String(snapshot && snapshot.exportedAt ? snapshot.exportedAt : new Date().toISOString());
+    const stamp = stampSource.replace(/[:.]/g, '-');
+    const siteToken = String((document.getElementById('macroSiteSearch') && document.getElementById('macroSiteSearch').value) || (window.lastSearchedAddress || 'session'))
+      .trim()
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48)
+      || 'session';
+    return `tia-session-${siteToken}-${stamp}.json`;
+  }
+
+  function updateTiaSnapshotStatus(meta = null) {
+    const statusEl = document.getElementById('tiaSnapshotStatus');
+    if (!statusEl) return;
+    if (!meta) {
+      statusEl.textContent = 'No session file loaded';
+      return;
+    }
+    const baseLabel = meta.fileName ? `Loaded ${meta.fileName}` : 'Session ready';
+    const timeLabel = meta.exportedAt ? new Date(meta.exportedAt).toLocaleString() : '';
+    statusEl.textContent = timeLabel ? `${baseLabel} • ${timeLabel}` : baseLabel;
+  }
+
+  function setTiaSnapshotBusy(isBusy, statusText = '') {
+    const importBtn = document.getElementById('tiaSnapshotImportBtn');
+    const exportBtn = document.getElementById('tiaSnapshotExportBtn');
+    if (importBtn) importBtn.disabled = !!isBusy;
+    if (exportBtn) exportBtn.disabled = !!isBusy;
+    if (statusText) {
+      const statusEl = document.getElementById('tiaSnapshotStatus');
+      if (statusEl) statusEl.textContent = statusText;
+    } else if (!isBusy) {
+      updateTiaSnapshotStatus(lastLoadedTiaSnapshotMeta);
+    }
+  }
+
+  function announceTiaSnapshotStatus(message, type = 'info') {
+    if (typeof setAppStatusBanner === 'function') {
+      setAppStatusBanner(`<strong>${String(message || '').trim()}</strong>`, type);
+      return;
+    }
+    if (typeof showNotification === 'function') {
+      showNotification(String(message || '').trim());
+      return;
+    }
+    window.alert(String(message || '').trim());
+  }
+
+  function buildTiaSessionSnapshot() {
+    const selectedTiaData = cloneSerializable(window.selectedTiaData || null, null);
+    const referenceUiState = collectQuickReferenceUiState();
+    if (selectedTiaData && selectedTiaData.type === 'references' && referenceUiState) {
+      selectedTiaData.referenceUiState = referenceUiState;
+    }
+
+    return {
+      kind: TIA_SESSION_SNAPSHOT_KIND,
+      version: TIA_SESSION_SNAPSHOT_VERSION,
+      exportedAt: new Date().toISOString(),
+      dataScope: getQuickTiaSelectedState(),
+      selectionMode: getQuickTiaSelectionMode(),
+      selectedMacroSite: selectedMacroSite || '',
+      quickSearch: {
+        input: String((getQuickTiaInputElement() && getQuickTiaInputElement().value) || '').trim(),
+        searchAddress: String((document.getElementById('quickTiaSearchAddress') && document.getElementById('quickTiaSearchAddress').textContent) || '').trim(),
+        matchType: String((document.getElementById('quickTiaMatchType') && document.getElementById('quickTiaMatchType').textContent) || '').trim(),
+        matchRoad: String((document.getElementById('quickTiaMatchRoad') && document.getElementById('quickTiaMatchRoad').textContent) || '').trim(),
+        geoSource: String((document.getElementById('quickTiaGeoSource') && document.getElementById('quickTiaGeoSource').textContent) || '').trim(),
+        panelVisible: !!(document.getElementById('quickTiaPanel') && document.getElementById('quickTiaPanel').style.display !== 'none'),
+        isSameRoadMatch: /along same road/i.test(String((document.getElementById('quickTiaMatchType') && document.getElementById('quickTiaMatchType').textContent) || ''))
+      },
+      lastSearchedAddress: String(window.lastSearchedAddress || '').trim(),
+      lastQuickTiaResolvedAddress: String(window.lastQuickTiaResolvedAddress || '').trim(),
+      lastQuickTiaSearchLocation: cloneSerializable(window.lastQuickTiaSearchLocation || null, null),
+      selectedTiaData,
+      manualTrafficGenData: cloneSerializable(window.manualTrafficGenData || null, null),
+      customDirectionContext: cloneSerializable(customDirectionContext || null, null),
+      formControls: collectTiaFormControlSnapshot(),
+      quickHistory: loadQuickTiaAddressHistory(),
+      detour: {
+        detourPrimaryOverride: cloneSerializable(window.detourPrimaryOverride || null, null),
+        routeScenarios: cloneSerializable(window.detourRouteScenarios || [], []),
+        routeCount: Math.max(1, Number(window.detourRouteCount) || 1),
+        activeRouteIndex: Math.max(0, Number(window.activeDetourRouteIndex) || 0)
+      },
+      summary: {
+        rawCalc: typeof getRawCalculationSnapshot === 'function' ? getRawCalculationSnapshot() : {},
+        inputSnapshot: typeof collectInputSnapshot === 'function' ? collectInputSnapshot() : [],
+        selectedSiteDetails: typeof collectSelectedSiteDetails === 'function' ? collectSelectedSiteDetails() : {}
+      }
+    };
+  }
+
+  function downloadTiaSessionSnapshot() {
+    const snapshot = buildTiaSessionSnapshot();
+    const fileName = getTiaSnapshotFileName(snapshot);
+    const json = JSON.stringify(snapshot, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    lastLoadedTiaSnapshotMeta = {
+      fileName,
+      exportedAt: snapshot.exportedAt
+    };
+    updateTiaSnapshotStatus(lastLoadedTiaSnapshotMeta);
+    announceTiaSnapshotStatus('Session snapshot exported.', 'success');
+  }
+
+  function restoreQuickSearchDisplay(snapshot) {
+    const quick = snapshot && snapshot.quickSearch ? snapshot.quickSearch : {};
+    const quickInput = getQuickTiaInputElement();
+    if (quickInput && quick.input) quickInput.value = String(quick.input || '');
+
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el && value != null) el.textContent = String(value);
+    };
+
+    setText('quickTiaSearchAddress', quick.searchAddress || snapshot.lastQuickTiaResolvedAddress || snapshot.lastSearchedAddress || '-');
+    setText('quickTiaMatchType', quick.matchType || '-');
+    setText('quickTiaMatchRoad', quick.matchRoad || '-');
+    setText('quickTiaGeoSource', quick.geoSource || '-');
+
+    if (snapshot.lastSearchedAddress) {
+      const displayEl = document.getElementById('lastSearchedAddressDisplay');
+      const textEl = document.getElementById('lastSearchedAddressText');
+      if (displayEl && textEl) {
+        textEl.textContent = snapshot.lastSearchedAddress;
+        displayEl.style.display = 'block';
+      }
+    }
+
+    if (document.getElementById('quickTiaPanel')) {
+      document.getElementById('quickTiaPanel').style.display = quick.panelVisible ? 'block' : 'none';
+    }
+  }
+
+  function buildReferenceDisplayTuple(ref) {
+    const safeRef = ref && typeof ref === 'object' ? ref : {};
+    const siteId = String(safeRef.siteId || safeRef.id || '').trim();
+    return [
+      siteId,
+      macroSitesData[siteId] || {
+        road_name: safeRef.road,
+        description: safeRef.description,
+        vadt: Number(safeRef.vadt) || 0,
+        d1_vadt: Number(safeRef.d1_vadt) || 0,
+        d2_vadt: Number(safeRef.d2_vadt) || 0,
+        d1_direction_label: safeRef.d1_direction_label,
+        d2_direction_label: safeRef.d2_direction_label,
+        latitude: Number(safeRef.lat),
+        longitude: Number(safeRef.lon),
+        source: safeRef.source,
+        countYear: safeRef.countYear,
+        count_year: safeRef.countYear,
+        vadt_is_estimated: !!safeRef.vadt_is_estimated,
+        vadt_estimate_note: safeRef.vadt_estimate_note || ''
+      },
+      Number(safeRef.distance) || 0,
+      safeRef.direction || 'Nearby'
+    ];
+  }
+
+  async function restoreTiaSessionSnapshot(snapshot, meta = null) {
+    if (!snapshot || snapshot.kind !== TIA_SESSION_SNAPSHOT_KIND) {
+      throw new Error('This file is not a supported TIA session snapshot.');
+    }
+    if (Number(snapshot.version) > TIA_SESSION_SNAPSHOT_VERSION) {
+      throw new Error('This snapshot was created by a newer version of the app.');
+    }
+
+    setTiaSnapshotBusy(true, 'Loading saved session...');
+
+    try {
+      const stateScope = String(snapshot.dataScope || 'QLD').trim().toUpperCase() === 'NSW' ? 'NSW' : 'QLD';
+      const stateSelect = document.getElementById('quickTiaStateSelect');
+      if (stateSelect) stateSelect.value = stateScope;
+      requestedDataScope = stateScope;
+      if (typeof ensureSelectedStateDataLoaded === 'function') {
+        await ensureSelectedStateDataLoaded(true);
+      }
+
+      if (Array.isArray(snapshot.quickHistory) && snapshot.quickHistory.length) {
+        saveQuickTiaAddressHistory(snapshot.quickHistory);
+      }
+      renderQuickTiaAddressSuggestions('');
+
+      window.lastSearchedAddress = String(snapshot.lastSearchedAddress || '').trim();
+      window.lastQuickTiaResolvedAddress = String(snapshot.lastQuickTiaResolvedAddress || '').trim();
+      window.lastQuickTiaSearchLocation = cloneSerializable(snapshot.lastQuickTiaSearchLocation || null, null);
+      window.manualTrafficGenData = cloneSerializable(snapshot.manualTrafficGenData || null, null);
+      customDirectionContext = cloneSerializable(snapshot.customDirectionContext || null, null);
+      window.detourPrimaryOverride = cloneSerializable(snapshot.detour && snapshot.detour.detourPrimaryOverride || null, null);
+
+      restoreQuickSearchDisplay(snapshot);
+
+      selectedMacroSite = null;
+      if (snapshot.selectionMode === 'macro-site' && snapshot.selectedMacroSite && macroSitesData[snapshot.selectedMacroSite]) {
+        selectMacroSite(snapshot.selectedMacroSite);
+      }
+
+      const selectedSnapshot = cloneSerializable(snapshot.selectedTiaData || null, null);
+      if (selectedSnapshot && selectedSnapshot.type === 'exact') {
+        const fallbackSiteData = {
+          road_name: selectedSnapshot.road || selectedSnapshot.siteId || 'Custom Address',
+          description: selectedSnapshot.road || 'Custom Address',
+          vadt: Number(selectedSnapshot.vadt) || 0,
+          d1_vadt: Number(selectedSnapshot.d1_vadt) || 0,
+          d2_vadt: Number(selectedSnapshot.d2_vadt) || 0,
+          d1_direction_label: selectedSnapshot.d1_direction_label,
+          d2_direction_label: selectedSnapshot.d2_direction_label,
+          latitude: Number(selectedSnapshot.lat),
+          longitude: Number(selectedSnapshot.lon),
+          countYear: selectedSnapshot.countYear,
+          count_year: selectedSnapshot.countYear
+        };
+        displayQuickTiaExactMatch(selectedSnapshot.siteId || 'CUSTOM ADDRESS', macroSitesData[selectedSnapshot.siteId] || fallbackSiteData);
+        window.selectedTiaData = Object.assign(window.selectedTiaData || {}, selectedSnapshot);
+        if (snapshot.selectionMode === 'quick-exact-applied' && typeof useExactTIAData === 'function') {
+          useExactTIAData();
+        }
+      } else if (selectedSnapshot && selectedSnapshot.type === 'references') {
+        const refs = Array.isArray(selectedSnapshot.references) ? selectedSnapshot.references : [];
+        const nearbyArray = refs.map(buildReferenceDisplayTuple);
+        displayQuickTiaMultipleRefs(
+          selectedSnapshot.road || snapshot.quickSearch && snapshot.quickSearch.input || snapshot.lastSearchedAddress || 'Custom Address',
+          nearbyArray,
+          Number(selectedSnapshot.lat) || Number(snapshot.lastQuickTiaSearchLocation && snapshot.lastQuickTiaSearchLocation.lat) || 0,
+          Number(selectedSnapshot.lon) || Number(snapshot.lastQuickTiaSearchLocation && snapshot.lastQuickTiaSearchLocation.lon) || 0,
+          !!(snapshot.quickSearch && snapshot.quickSearch.isSameRoadMatch),
+          {
+            excludedRefs: Array.isArray(selectedSnapshot.excludedReferences) ? selectedSnapshot.excludedReferences : [],
+            exclusionSummary: selectedSnapshot.exclusionSummary || '',
+            connectedWithin5Count: Number(selectedSnapshot.connectedWithin5Count) || 0,
+            connectedBeyond5Count: Number(selectedSnapshot.connectedBeyond5Count) || 0,
+            excludedWithin5Count: Number(selectedSnapshot.excludedWithin5Count) || 0,
+            excludedBeyond5Count: Number(selectedSnapshot.excludedBeyond5Count) || 0
+          }
+        );
+        window.selectedTiaData = Object.assign(window.selectedTiaData || {}, selectedSnapshot);
+        applyQuickReferenceUiState(selectedSnapshot.referenceUiState || null);
+        if (typeof updateTiaCalculations === 'function') updateTiaCalculations();
+        if (snapshot.selectionMode === 'quick-calculated-applied' && typeof useCalculatedTIAData === 'function') {
+          useCalculatedTIAData();
+        }
+      } else if (selectedSnapshot) {
+        window.selectedTiaData = selectedSnapshot;
+      }
+
+      applyTiaFormControlSnapshot(snapshot.formControls || {});
+
+      if (snapshot.detour && Array.isArray(snapshot.detour.routeScenarios)) {
+        window.detourRouteScenarios = cloneSerializable(snapshot.detour.routeScenarios, []);
+        window.detourRouteCount = Math.max(1, Number(snapshot.detour.routeCount) || window.detourRouteScenarios.length || 1);
+        window.activeDetourRouteIndex = Math.max(0, Number(snapshot.detour.activeRouteIndex) || 0);
+        if (window.detourRouteScenarios.length) {
+          applyDetourRouteState(window.detourRouteScenarios[Math.min(window.activeDetourRouteIndex, window.detourRouteScenarios.length - 1)] || {}, { skipScan: true });
+        }
+        renderDetourRouteScenarioManager();
+      }
+
+      if (typeof updateTripGenerationReferenceSourceUi === 'function') updateTripGenerationReferenceSourceUi();
+      if (typeof updateDirectionalSelectionLabels === 'function') updateDirectionalSelectionLabels();
+      if (typeof syncOneWayModeUi === 'function') syncOneWayModeUi();
+      if (typeof syncVisibility === 'function') syncVisibility();
+      if (typeof updateAssumptionsPanel === 'function') updateAssumptionsPanel();
+      if (typeof populateDetourDropdown === 'function') populateDetourDropdown();
+      if (typeof calculateAll === 'function') calculateAll();
+
+      lastLoadedTiaSnapshotMeta = {
+        fileName: meta && meta.fileName ? meta.fileName : '',
+        exportedAt: snapshot.exportedAt || ''
+      };
+      updateTiaSnapshotStatus(lastLoadedTiaSnapshotMeta);
+      announceTiaSnapshotStatus('Session snapshot loaded.', 'success');
+    } finally {
+      setTiaSnapshotBusy(false);
+    }
+  }
+
+  async function importTiaSessionSnapshotFromFile(file) {
+    if (!file) return;
+    const fileText = await file.text();
+    let parsed = null;
+    try {
+      parsed = JSON.parse(fileText);
+    } catch (_) {
+      throw new Error('The selected file is not valid JSON.');
+    }
+    await restoreTiaSessionSnapshot(parsed, {
+      fileName: String(file.name || '').trim()
+    });
+  }
+
+  function initializeTiaSnapshotControls() {
+    if (window.__tiaSnapshotControlsInitialized) return;
+    window.__tiaSnapshotControlsInitialized = true;
+
+    const importBtn = document.getElementById('tiaSnapshotImportBtn');
+    const exportBtn = document.getElementById('tiaSnapshotExportBtn');
+    const importInput = document.getElementById('tiaSnapshotImportInput');
+
+    if (importBtn && importInput) {
+      importBtn.addEventListener('click', () => importInput.click());
+      importInput.addEventListener('change', async (event) => {
+        const file = event && event.target && event.target.files && event.target.files[0];
+        try {
+          await importTiaSessionSnapshotFromFile(file);
+        } catch (error) {
+          announceTiaSnapshotStatus(String(error && error.message ? error.message : error), 'error');
+          updateTiaSnapshotStatus(lastLoadedTiaSnapshotMeta);
+        } finally {
+          if (event && event.target) event.target.value = '';
+        }
+      });
+    }
+
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        try {
+          downloadTiaSessionSnapshot();
+        } catch (error) {
+          announceTiaSnapshotStatus(String(error && error.message ? error.message : error), 'error');
+        }
+      });
+    }
+
+    updateTiaSnapshotStatus(lastLoadedTiaSnapshotMeta);
+  }
 
   function loadQuickTiaAddressHistory() {
     try {

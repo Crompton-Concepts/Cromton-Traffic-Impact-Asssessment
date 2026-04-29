@@ -618,6 +618,102 @@
       font-weight: 600;
     }
 
+    .snapshot-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .snapshot-toolbar-copy {
+      flex: 1 1 280px;
+      min-width: 220px;
+    }
+
+    .snapshot-toolbar-copy p {
+      margin: 4px 0 0;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: #0d47a1;
+    }
+
+    .snapshot-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .snapshot-btn {
+      width: auto;
+      margin-top: 0;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.2px;
+      box-shadow: 0 6px 16px rgba(15, 47, 50, 0.16);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .snapshot-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(15, 47, 50, 0.2);
+    }
+
+    .snapshot-btn-import {
+      background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+      color: #ffffff;
+    }
+
+    .snapshot-btn-export {
+      background: linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%);
+      color: #ffffff;
+    }
+
+    .snapshot-status {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #35575b;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(21, 101, 192, 0.2);
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+    .snapshot-footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 640px) {
+      .snapshot-toolbar,
+      .snapshot-footer-actions {
+        align-items: stretch;
+      }
+
+      .snapshot-actions,
+      .snapshot-footer-actions {
+        width: 100%;
+      }
+
+      .snapshot-btn,
+      .snapshot-status {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+    }
+
     .contact-dev-link:hover {
       text-decoration: underline;
     }
@@ -3782,10 +3878,19 @@
 
     <!-- ===== QUICK TIA ADDRESS SEARCH (TOP) ===== -->
     <div class="card" id="quickSearchCard" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #1976d2;">
-      <h2 style="color: #1565c0; margin-top: 0;">🚗 Search Address</h2>
-      <p style="color: #0d47a1; margin: 0 0 12px 0; font-size: 0.95em;">
-        Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
-      </p>
+      <div class="snapshot-toolbar">
+        <div class="snapshot-toolbar-copy">
+          <h2 style="color: #1565c0; margin: 0;">🚗 Search Address</h2>
+          <p>
+            Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
+          </p>
+        </div>
+        <div class="snapshot-actions">
+          <button id="tiaSnapshotImportBtn" type="button" class="snapshot-btn snapshot-btn-import">Import Saved JSON</button>
+          <span id="tiaSnapshotStatus" class="snapshot-status">No session file loaded</span>
+          <input id="tiaSnapshotImportInput" type="file" accept="application/json,.json" style="display:none;" />
+        </div>
+      </div>
 
       <div style="display:grid; grid-template-columns:minmax(180px,240px) 1fr; gap:12px; align-items:end; margin-bottom:10px;">
         <div>
@@ -4321,6 +4426,9 @@
           🚀 Calculate All Metrics
         </button>
         <p class="field-help" style="text-align:center; margin-top:8px;">This updates directional summary, queue, VCR/LOS, optional diagnostics, and charts in one pass.</p>
+        <div class="snapshot-footer-actions">
+          <button id="tiaSnapshotExportBtn" type="button" class="snapshot-btn snapshot-btn-export">Export Current JSON</button>
+        </div>
       </div>
     </div>
 
