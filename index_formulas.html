@@ -5567,8 +5567,8 @@
     
 
     <div class="report-actions" style="display:flex; flex-wrap:nowrap; gap:4px; align-items:center; overflow-x:auto;">
-      <button class="print-btn" onclick="toggleReportMode(true, 'detailed')" style="background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📝 Detailed Report</button>
-      <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 Short Report</button>
+      <button class="print-btn" onclick="toggleReportMode(true, 'detailed')" style="background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📝 HTML Detailed Report</button>
+      <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 HTML Short Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
     </div>
@@ -7940,7 +7940,7 @@
     
     const reportContainer = document.querySelector('body.report-mode .container');
     if (!reportContainer) {
-      alert('Report mode is not active. Please click "Detailed Report" or "Short Report" first.');
+      alert('Report mode is not active. Please click "HTML Detailed Report" or "HTML Short Report" first.');
       return;
     }
 
