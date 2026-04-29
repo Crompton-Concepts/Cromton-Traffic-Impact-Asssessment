@@ -4426,9 +4426,6 @@
           🚀 Calculate All Metrics
         </button>
         <p class="field-help" style="text-align:center; margin-top:8px;">This updates directional summary, queue, VCR/LOS, optional diagnostics, and charts in one pass.</p>
-        <div class="snapshot-footer-actions">
-          <button id="tiaSnapshotExportBtn" type="button" class="snapshot-btn snapshot-btn-export">Export Current JSON</button>
-        </div>
       </div>
     </div>
 
@@ -5679,6 +5676,7 @@
       <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 HTML Short Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
+      <button id="tiaSnapshotExportBtn" type="button" class="snapshot-btn snapshot-btn-export" style="font-size: 0.88em; padding: 8px 14px;">💾 Export Session JSON</button>
     </div>
   </div>
 
