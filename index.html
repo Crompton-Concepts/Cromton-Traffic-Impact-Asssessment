@@ -3886,9 +3886,9 @@
           </p>
         </div>
         <div class="snapshot-actions">
-          <button id="tiaSnapshotImportBtn" type="button" class="snapshot-btn snapshot-btn-import">Import Saved JSON</button>
+          <button id="tiaSnapshotImportBtn" type="button" class="snapshot-btn snapshot-btn-import" onclick="document.getElementById('tiaSnapshotImportInput').click();">Import Saved JSON</button>
           <span id="tiaSnapshotStatus" class="snapshot-status">No session file loaded</span>
-          <input id="tiaSnapshotImportInput" type="file" accept="application/json,.json" style="display:none;" />
+          <input id="tiaSnapshotImportInput" type="file" accept="application/json,.json" style="display:none;" onchange="handleTiaSnapshotImport(this);" />
         </div>
       </div>
 
@@ -5671,12 +5671,12 @@
 
     
 
-    <div class="report-actions" style="display:flex; flex-wrap:nowrap; gap:4px; align-items:center; overflow-x:auto;">
+    <div class="report-actions" style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
       <button class="print-btn" onclick="toggleReportMode(true, 'detailed')" style="background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📝 HTML Detailed Report</button>
       <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 HTML Short Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
-      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" onclick="downloadTiaSessionSnapshot();" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap; flex-shrink: 0;">💾 Export Session JSON</button>
+      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" onclick="downloadTiaSessionSnapshot();" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">💾 Export Session JSON</button>
     </div>
   </div>
 
@@ -8729,6 +8729,78 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
   window.downloadTiaSessionSnapshot = downloadTiaSessionSnapshot;
+
+  // ===== SESSION SNAPSHOT IMPORT =====
+  function handleTiaSnapshotImport(inputEl) {
+    var file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var snapshot = JSON.parse(String(reader.result || '{}'));
+        if (!snapshot || snapshot.kind !== 'tia-session-snapshot') {
+          alert('Invalid session file. Please select a file exported with "Export Session JSON".');
+          return;
+        }
+        // Restore form controls
+        var controls = snapshot.formControls || {};
+        Object.keys(controls).forEach(function(id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          var state = controls[id];
+          if (!state) return;
+          var type = String(state.type || '').toLowerCase();
+          if (type === 'checkbox' || type === 'radio') {
+            el.checked = !!state.checked;
+          } else {
+            el.value = String(state.value == null ? '' : state.value);
+          }
+          // Fire change event so dependent UI updates
+          try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch(_) {}
+        });
+        // Restore output text elements
+        var outputs = snapshot.outputElements || {};
+        Object.keys(outputs).forEach(function(id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          if (typeof el.value === 'string') {
+            el.value = String(outputs[id]);
+          } else {
+            el.textContent = String(outputs[id]);
+          }
+        });
+        // Restore selectedTiaData and selectedMacroSite
+        if (snapshot.selectedTiaData) window.selectedTiaData = snapshot.selectedTiaData;
+        if (snapshot.selectedMacroSite) {
+          selectedMacroSite = snapshot.selectedMacroSite;
+          if (typeof selectMacroSite === 'function') selectMacroSite(snapshot.selectedMacroSite, { silent: true });
+        }
+        if (snapshot.manualTrafficGenData) window.manualTrafficGenData = snapshot.manualTrafficGenData;
+        // Restore quick search display
+        var qs = snapshot.quickSearch || {};
+        if (qs.lastSearchedAddress) {
+          window.lastSearchedAddress = qs.lastSearchedAddress;
+          var dispEl = document.getElementById('lastSearchedAddressDisplay');
+          var textEl = document.getElementById('lastSearchedAddressText');
+          if (dispEl && textEl) { textEl.textContent = qs.lastSearchedAddress; dispEl.style.display = 'block'; }
+        }
+        if (qs.lastResolvedAddress) window.lastQuickTiaResolvedAddress = qs.lastResolvedAddress;
+        // Update status
+        var statusEl = document.getElementById('tiaSnapshotStatus');
+        if (statusEl) statusEl.textContent = 'Loaded: ' + file.name;
+        if (typeof setAppStatusBanner === 'function') {
+          setAppStatusBanner('<strong>✓ Session imported.</strong> Click Calculate All Metrics to refresh outputs.', 'info');
+          setTimeout(function() { if (typeof clearAppStatusBanner === 'function') clearAppStatusBanner(); }, 4000);
+        }
+      } catch(err) {
+        alert('Import failed: ' + String(err && err.message ? err.message : err));
+      } finally {
+        try { inputEl.value = ''; } catch(_) {}
+      }
+    };
+    reader.readAsText(file);
+  }
+  window.handleTiaSnapshotImport = handleTiaSnapshotImport;
 
   function handleReportShareOutsideClick(event) {
     const shareWrap = document.getElementById('reportShareWrap');
