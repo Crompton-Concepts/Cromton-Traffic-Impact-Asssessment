@@ -5676,7 +5676,7 @@
       <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 HTML Short Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
-      <button id="tiaSnapshotExportBtn" type="button" class="snapshot-btn snapshot-btn-export" style="font-size: 0.88em; padding: 8px 14px;" onclick="downloadTiaSessionSnapshot();">💾 Export Session JSON</button>
+      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" onclick="downloadTiaSessionSnapshot();" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap; flex-shrink: 0;">💾 Export Session JSON</button>
     </div>
   </div>
 
@@ -8654,6 +8654,81 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   window.copyAISummaryToClipboard = copyAISummaryToClipboard;
   window.insertAISummaryToReport = insertAISummaryToReport;
   window.printFinalReport = printFinalReport;
+
+  // ===== SESSION SNAPSHOT EXPORT =====
+  function downloadTiaSessionSnapshot() {
+    try {
+      // Collect all form inputs
+      const formControls = {};
+      document.querySelectorAll('input[id], select[id], textarea[id]').forEach(function(el) {
+        if (!el || !el.id) return;
+        const type = String(el.type || '').toLowerCase();
+        if (type === 'file' || type === 'password' || type === 'submit' || type === 'button' || type === 'reset') return;
+        if (el.closest && el.closest('#loginGate')) return;
+        if (el.id === 'tiaSnapshotImportInput') return;
+        if (type === 'checkbox' || type === 'radio') {
+          formControls[el.id] = { type: type, checked: el.checked, value: el.value };
+        } else {
+          formControls[el.id] = { type: type, value: String(el.value == null ? '' : el.value) };
+        }
+      });
+
+      // Collect visible text content from output elements
+      const outputElements = {};
+      [
+        'macroDetailRoadName','macroDetailTotal','macroDetailD1','macroDetailD2',
+        'macroDetailSource','macroDetailCoords','macroDetailSiteId','macroDetailCountYear',
+        'macroDetailGrowthRate','macroDetailHV','macroDetailQuality',
+        'macroDetailDirD1Label','macroDetailDirD2Label',
+        'predictedVADT','predictedD1VADT','predictedD2VADT',
+        'kpiWorstVcr','kpiD1PeakQueue','kpiD2PeakQueue',
+        'queueRiskBadge','vcrRiskBadge',
+        'quickTiaSearchAddress','quickTiaMatchType','quickTiaMatchRoad','quickTiaGeoSource',
+        'lastSearchedAddressText'
+      ].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var val = (typeof el.value === 'string') ? el.value : (el.textContent || '');
+        if (val && String(val).trim()) outputElements[id] = String(val).trim();
+      });
+
+      var snapshot = {
+        kind: 'tia-session-snapshot',
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        selectedMacroSite: selectedMacroSite || '',
+        selectedTiaData: window.selectedTiaData || null,
+        manualTrafficGenData: window.manualTrafficGenData || null,
+        formControls: formControls,
+        outputElements: outputElements,
+        quickSearch: {
+          input: (function() { var el = document.getElementById('quickTiaInput') || document.getElementById('quickTiaSiteIdInput'); return el ? String(el.value || '') : ''; })(),
+          lastSearchedAddress: String(window.lastSearchedAddress || ''),
+          lastResolvedAddress: String(window.lastQuickTiaResolvedAddress || '')
+        }
+      };
+
+      var json = JSON.stringify(snapshot, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var stamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
+      var sitePart = String(selectedMacroSite || 'session').replace(/[^a-z0-9_-]+/gi, '_');
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'tia_session_' + sitePart + '_' + stamp + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      if (typeof setAppStatusBanner === 'function') {
+        setAppStatusBanner('<strong>✓ Session exported.</strong> Load it with Import Saved JSON to restore this state.', 'info');
+        setTimeout(function() { if (typeof clearAppStatusBanner === 'function') clearAppStatusBanner(); }, 3500);
+      }
+    } catch(err) {
+      alert('Export failed: ' + String(err && err.message ? err.message : err));
+    }
+  }
+  window.downloadTiaSessionSnapshot = downloadTiaSessionSnapshot;
 
   function handleReportShareOutsideClick(event) {
     const shareWrap = document.getElementById('reportShareWrap');
