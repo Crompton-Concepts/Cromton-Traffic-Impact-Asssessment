@@ -11007,6 +11007,74 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return weights.map(value => value / total);
   }
 
+  function getCurrentQuickReferenceParticipationFactor(refs) {
+    const safeRefs = Array.isArray(refs) ? refs : [];
+    if (!safeRefs.length) return 0;
+
+    const includeInputs = Array.from(document.querySelectorAll('#quickTiaRefList .ref-include'));
+    const includes = new Map();
+    includeInputs.forEach(input => {
+      const siteId = String((input && input.dataset && input.dataset.siteid) || '').trim();
+      if (!siteId) return;
+      includes.set(siteId, !!input.checked);
+    });
+
+    const sliderInputs = Array.from(document.querySelectorAll('#quickTiaRefList .ref-weight'));
+    const bySite = new Map();
+    sliderInputs.forEach(input => {
+      const siteId = String((input && input.dataset && input.dataset.siteid) || '').trim();
+      if (!siteId) return;
+      bySite.set(siteId, Math.max(0, Math.min(100, Number(input.value) || 0)));
+    });
+
+    const sumPercent = safeRefs.reduce((sum, ref) => {
+      const siteId = String((ref && ref.siteId) || '').trim();
+      if (!siteId) return sum;
+      const isIncluded = includes.has(siteId) ? includes.get(siteId) : true;
+      if (!isIncluded) return sum;
+      const sliderPercent = bySite.has(siteId)
+        ? bySite.get(siteId)
+        : Math.max(0, Math.min(100, Number(ref && ref.autoWeight) || 0));
+      return sum + sliderPercent;
+    }, 0);
+
+    return Math.max(0, Math.min(1, sumPercent / 100));
+  }
+
+  function getCurrentQuickReferencePercentSelections(refs) {
+    const safeRefs = Array.isArray(refs) ? refs : [];
+    if (!safeRefs.length) return [];
+
+    const includeInputs = Array.from(document.querySelectorAll('#quickTiaRefList .ref-include'));
+    const includes = new Map();
+    includeInputs.forEach(input => {
+      const siteId = String((input && input.dataset && input.dataset.siteid) || '').trim();
+      if (!siteId) return;
+      includes.set(siteId, !!input.checked);
+    });
+
+    const sliderInputs = Array.from(document.querySelectorAll('#quickTiaRefList .ref-weight'));
+    const bySite = new Map();
+    sliderInputs.forEach(input => {
+      const siteId = String((input && input.dataset && input.dataset.siteid) || '').trim();
+      if (!siteId) return;
+      bySite.set(siteId, Math.max(0, Math.min(100, Number(input.value) || 0)));
+    });
+
+    return safeRefs.map(ref => {
+      const siteId = String((ref && ref.siteId) || '').trim();
+      const included = siteId ? (includes.has(siteId) ? includes.get(siteId) : true) : false;
+      const percent = siteId && bySite.has(siteId)
+        ? bySite.get(siteId)
+        : Math.max(0, Math.min(100, Number(ref && ref.autoWeight) || 0));
+      return {
+        siteId,
+        included,
+        percent
+      };
+    });
+  }
+
   function buildWeightedHourlyFromReferences(direction, dailyTotal) {
     if (!window.selectedTiaData || window.selectedTiaData.type !== 'references') return null;
     const refs = Array.isArray(window.selectedTiaData.references) ? window.selectedTiaData.references : [];
@@ -21483,12 +21551,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!window.selectedTiaData || window.selectedTiaData.type !== 'references') return;
 
     const refs = window.selectedTiaData.references || [];
-    const normalizedWeights = getCurrentQuickReferenceWeights(refs);
-    const percentAdjustedMean = (key) => refs.reduce((sum, s, i) => {
-      const value = Number(s[key]) || 0;
-      const weight = Math.max(0, Number(normalizedWeights[i]) || 0);
-      return sum + (weight * value);
-    }, 0);
+    const percentSelections = getCurrentQuickReferencePercentSelections(refs);
+    const activeRefs = refs
+      .map((ref, i) => ({
+        ref,
+        selection: percentSelections[i] || { included: false, percent: 0 }
+      }))
+      .filter((entry) => entry.selection.included && Number(entry.selection.percent) > 0);
+    const selectedCount = activeRefs.length;
+
+    const percentAdjustedMean = (key) => {
+      if (!selectedCount) return 0;
+      const weightedSum = activeRefs.reduce((sum, entry) => {
+        const value = Number(entry.ref && entry.ref[key]) || 0;
+        const percent = Math.max(0, Math.min(100, Number(entry.selection && entry.selection.percent) || 0));
+        return sum + ((percent / 100) * value);
+      }, 0);
+      const weightTotal = activeRefs.reduce((sum, entry) => {
+        const percent = Math.max(0, Math.min(100, Number(entry.selection && entry.selection.percent) || 0));
+        return sum + (percent / 100);
+      }, 0);
+      if (!(weightTotal > 0)) return 0;
+      return weightedSum / weightTotal;
+    };
 
     const avgVadtRaw = percentAdjustedMean('vadt');
     const avgD1Raw = percentAdjustedMean('d1_vadt');
@@ -21545,7 +21630,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     document.getElementById('quickTiaCalcAdjVADT').textContent = finalAvgVADT.toLocaleString();
     document.getElementById('quickTiaCalcD1').textContent = finalAvgD1.toLocaleString();
     document.getElementById('quickTiaCalcD2').textContent = finalAvgD2.toLocaleString();
-    setFormulaBelow('quickTiaCalcAvgVADT', `Weighted Avg VADT = sum(weight_i * VADT_i) = ${weightedAvgVADT.toLocaleString()}`);
+    setFormulaBelow('quickTiaCalcAvgVADT', `Weighted Avg VADT = (sum((n_i% * VADT_i))) / sum(n_i%) = ${weightedAvgVADT.toLocaleString()} (N = ${selectedCount})`);
     if (isOneWay) {
       setFormulaBelow('quickTiaCalcAdjVADT', `One-way AADT = (Weighted Avg * area factor) * selected one-way % = (${weightedAvgVADT.toLocaleString()} * ${(areaTypeFactorPercent / 100).toFixed(2)}) * ${(oneWayPercent / 100).toFixed(2)} = ${finalAvgVADT.toLocaleString()}`);
       setFormulaBelow('quickTiaCalcD1', `Calculated D1 (one-way, selected ${oneWayDirection}) = ${finalAvgD1.toLocaleString()}`);
