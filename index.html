@@ -8653,6 +8653,108 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   window.insertAISummaryToReport = insertAISummaryToReport;
   window.printFinalReport = printFinalReport;
 
+  function cloneTiaSnapshotSerializable(value, fallback) {
+    try {
+      return JSON.parse(JSON.stringify(value == null ? fallback : value));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function collectQuickReferenceSnapshotState() {
+    if (!window.selectedTiaData || window.selectedTiaData.type !== 'references') return null;
+
+    const referenceStates = (Array.isArray(window.selectedTiaData.references) ? window.selectedTiaData.references : []).map(function(ref) {
+      const siteId = String(ref && ref.siteId ? ref.siteId : '').trim();
+      const includeInput = siteId ? document.querySelector('.ref-include[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]') : null;
+      const weightInput = siteId ? document.querySelector('.ref-weight[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]') : null;
+      return {
+        siteId: siteId,
+        included: includeInput ? !!includeInput.checked : true,
+        weight: weightInput ? Math.max(0, Math.min(100, Number(weightInput.value) || 0)) : Math.max(0, Math.min(100, Number(ref && ref.autoWeight) || 0))
+      };
+    });
+
+    const roadWeights = Array.from(document.querySelectorAll('#quickTiaRoadWeightList .road-weight')).map(function(inputEl) {
+      return {
+        roadStd: String(inputEl.getAttribute('data-roadstd') || '').trim(),
+        weight: Math.max(0, Math.min(100, Number(inputEl.value) || 0))
+      };
+    }).filter(function(entry) { return entry.roadStd; });
+
+    const selectedMethodEl = document.querySelector('input[name="trafficCalcMethod"]:checked');
+    return {
+      referenceStates: referenceStates,
+      roadWeights: roadWeights,
+      trafficCalcMethod: String((selectedMethodEl && selectedMethodEl.value) || 'weighted').trim()
+    };
+  }
+
+  function applyQuickReferenceSnapshotState(state) {
+    var safeState = state && typeof state === 'object' ? state : {};
+
+    (Array.isArray(safeState.referenceStates) ? safeState.referenceStates : []).forEach(function(refState) {
+      var siteId = String(refState && refState.siteId ? refState.siteId : '').trim();
+      if (!siteId) return;
+      var includeInput = document.querySelector('.ref-include[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]');
+      var sliderInput = document.querySelector('.ref-weight-slider[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]');
+      var weightInput = document.querySelector('.ref-weight[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]');
+      var safeWeight = Math.max(0, Math.min(100, Number(refState && refState.weight) || 0));
+      if (includeInput) {
+        includeInput.checked = !!refState.included;
+        var card = includeInput.closest('div[style*="padding: 10px"]');
+        if (card) card.style.opacity = includeInput.checked ? '1' : '0.55';
+      }
+      if (sliderInput) sliderInput.value = String(safeWeight);
+      if (weightInput) weightInput.value = String(safeWeight);
+    });
+
+    (Array.isArray(safeState.roadWeights) ? safeState.roadWeights : []).forEach(function(roadState) {
+      var roadStd = String(roadState && roadState.roadStd ? roadState.roadStd : '').trim();
+      if (!roadStd) return;
+      var sliderInput = document.querySelector('.road-weight-slider[data-roadstd="' + roadStd.replace(/"/g, '\\"') + '"]');
+      var weightInput = document.querySelector('.road-weight[data-roadstd="' + roadStd.replace(/"/g, '\\"') + '"]');
+      var safeWeight = Math.max(0, Math.min(100, Number(roadState && roadState.weight) || 0));
+      if (sliderInput) sliderInput.value = String(safeWeight);
+      if (weightInput) weightInput.value = String(safeWeight);
+    });
+
+    var selectedMethod = String(safeState.trafficCalcMethod || '').trim();
+    if (selectedMethod) {
+      var radio = document.querySelector('input[name="trafficCalcMethod"][value="' + selectedMethod.replace(/"/g, '\\"') + '"]');
+      if (radio) radio.checked = true;
+    }
+    if (typeof toggleTrafficCalcMethod === 'function') {
+      try { toggleTrafficCalcMethod(); } catch (_) {}
+    }
+  }
+
+  function buildReferenceDisplayTupleFromSnapshot(ref) {
+    var safeRef = ref && typeof ref === 'object' ? ref : {};
+    var siteId = String(safeRef.siteId || safeRef.id || '').trim();
+    return [
+      siteId,
+      macroSitesData[siteId] || {
+        road_name: safeRef.road,
+        description: safeRef.description,
+        vadt: Number(safeRef.vadt) || 0,
+        d1_vadt: Number(safeRef.d1_vadt) || 0,
+        d2_vadt: Number(safeRef.d2_vadt) || 0,
+        d1_direction_label: safeRef.d1_direction_label,
+        d2_direction_label: safeRef.d2_direction_label,
+        latitude: Number(safeRef.lat),
+        longitude: Number(safeRef.lon),
+        source: safeRef.source,
+        countYear: safeRef.countYear,
+        count_year: safeRef.countYear,
+        vadt_is_estimated: !!safeRef.vadt_is_estimated,
+        vadt_estimate_note: safeRef.vadt_estimate_note || ''
+      },
+      Number(safeRef.distance) || 0,
+      safeRef.direction || 'Nearby'
+    ];
+  }
+
   // ===== SESSION SNAPSHOT EXPORT =====
   function downloadTiaSessionSnapshot() {
     try {
@@ -8696,13 +8798,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (val && String(val).trim()) outputElements[id] = String(val).trim();
       });
 
+      var selectedTiaDataSnapshot = cloneTiaSnapshotSerializable(window.selectedTiaData || null, null);
+      var referenceUiState = collectQuickReferenceSnapshotState();
+      if (selectedTiaDataSnapshot && selectedTiaDataSnapshot.type === 'references' && referenceUiState) {
+        selectedTiaDataSnapshot.referenceUiState = referenceUiState;
+      }
+
       var snapshot = {
         kind: 'tia-session-snapshot',
         version: '1.1',
         exportedAt: new Date().toISOString(),
         selectedMacroSite: selectedMacroSite || '',
-        selectedTiaData: window.selectedTiaData || null,
-        manualTrafficGenData: window.manualTrafficGenData || null,
+        selectedTiaData: selectedTiaDataSnapshot,
+        manualTrafficGenData: cloneTiaSnapshotSerializable(window.manualTrafficGenData || null, null),
         formControls: formControls,
         outputElements: outputElements,
         quickSearch: {
@@ -8793,7 +8901,48 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           }
         });
         // Restore selectedTiaData and selectedMacroSite
-        if (snapshot.selectedTiaData) window.selectedTiaData = snapshot.selectedTiaData;
+        if (snapshot.selectedTiaData) {
+          var selectedSnapshot = cloneTiaSnapshotSerializable(snapshot.selectedTiaData, null);
+          window.selectedTiaData = selectedSnapshot;
+          if (selectedSnapshot && selectedSnapshot.type === 'exact' && typeof displayQuickTiaExactMatch === 'function') {
+            var exactFallback = {
+              road_name: selectedSnapshot.road || selectedSnapshot.siteId || 'Custom Address',
+              description: selectedSnapshot.road || 'Custom Address',
+              vadt: Number(selectedSnapshot.vadt) || 0,
+              d1_vadt: Number(selectedSnapshot.d1_vadt) || 0,
+              d2_vadt: Number(selectedSnapshot.d2_vadt) || 0,
+              d1_direction_label: selectedSnapshot.d1_direction_label,
+              d2_direction_label: selectedSnapshot.d2_direction_label,
+              latitude: Number(selectedSnapshot.lat),
+              longitude: Number(selectedSnapshot.lon),
+              countYear: selectedSnapshot.countYear,
+              count_year: selectedSnapshot.countYear
+            };
+            displayQuickTiaExactMatch(selectedSnapshot.siteId || 'CUSTOM ADDRESS', macroSitesData[selectedSnapshot.siteId] || exactFallback);
+            window.selectedTiaData = Object.assign(window.selectedTiaData || {}, selectedSnapshot);
+          } else if (selectedSnapshot && selectedSnapshot.type === 'references' && typeof displayQuickTiaMultipleRefs === 'function') {
+            var refs = Array.isArray(selectedSnapshot.references) ? selectedSnapshot.references : [];
+            var nearbyArray = refs.map(buildReferenceDisplayTupleFromSnapshot);
+            displayQuickTiaMultipleRefs(
+              selectedSnapshot.road || (snapshot.quickSearch && snapshot.quickSearch.input) || (snapshot.quickSearch && snapshot.quickSearch.lastSearchedAddress) || 'Custom Address',
+              nearbyArray,
+              Number(selectedSnapshot.lat) || 0,
+              Number(selectedSnapshot.lon) || 0,
+              /along same road/i.test(String((snapshot.outputElements && snapshot.outputElements.quickTiaMatchType) || '')),
+              {
+                excludedRefs: Array.isArray(selectedSnapshot.excludedReferences) ? selectedSnapshot.excludedReferences : [],
+                exclusionSummary: selectedSnapshot.exclusionSummary || '',
+                connectedWithin5Count: Number(selectedSnapshot.connectedWithin5Count) || 0,
+                connectedBeyond5Count: Number(selectedSnapshot.connectedBeyond5Count) || 0,
+                excludedWithin5Count: Number(selectedSnapshot.excludedWithin5Count) || 0,
+                excludedBeyond5Count: Number(selectedSnapshot.excludedBeyond5Count) || 0
+              }
+            );
+            window.selectedTiaData = Object.assign(window.selectedTiaData || {}, selectedSnapshot);
+            applyQuickReferenceSnapshotState(selectedSnapshot.referenceUiState || null);
+            try { if (typeof updateTiaCalculations === 'function') updateTiaCalculations(); } catch (_) {}
+          }
+        }
         if (snapshot.selectedMacroSite) {
           selectedMacroSite = snapshot.selectedMacroSite;
           if (typeof selectMacroSite === 'function') selectMacroSite(snapshot.selectedMacroSite, { silent: true });
@@ -17145,18 +17294,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadRaw.set(roadStd, Math.max(0, w));
     });
 
+    const roadTotal = Array.from(roadRaw.values()).reduce((sum, value) => sum + value, 0);
+    const normalizedRoadWeights = new Map();
+    roads.forEach(roadStd => {
+      const fallback = roads.length > 0 ? (1 / roads.length) : 0;
+      normalizedRoadWeights.set(
+        roadStd,
+        roadTotal > 0 ? ((roadRaw.get(roadStd) || 0) / roadTotal) : fallback
+      );
+    });
+
     const refBaseWeights = new Map();
     roads.forEach(roadStd => {
       const refsInRoad = refsByRoad.get(roadStd) || [];
-      refsInRoad.forEach(ref => {
+      const localRawWeights = refsInRoad.map(ref => {
         const siteId = String((ref && ref.siteId) || '').trim();
         const defaultLocalShare = refsInRoad.length > 0 ? (1 / refsInRoad.length) : 0;
-        const localWeight = bySite.has(siteId) ? bySite.get(siteId) : defaultLocalShare;
-        refBaseWeights.set(siteId, (roadRaw.get(roadStd) || 0) * Math.max(0, localWeight));
+        return {
+          siteId,
+          weight: bySite.has(siteId) ? bySite.get(siteId) : defaultLocalShare
+        };
+      });
+      const localTotal = localRawWeights.reduce((sum, entry) => sum + Math.max(0, Number(entry.weight) || 0), 0);
+
+      refsInRoad.forEach(ref => {
+        const siteId = String((ref && ref.siteId) || '').trim();
+        const localEntry = localRawWeights.find(entry => entry.siteId === siteId);
+        const fallbackLocalShare = refsInRoad.length > 0 ? (1 / refsInRoad.length) : 0;
+        const localWeight = localEntry ? Math.max(0, Number(localEntry.weight) || 0) : fallbackLocalShare;
+        const normalizedLocalWeight = localTotal > 0 ? (localWeight / localTotal) : fallbackLocalShare;
+        refBaseWeights.set(siteId, (normalizedRoadWeights.get(roadStd) || 0) * normalizedLocalWeight);
       });
     });
 
-    let weights = safeRefs.map(ref => {
+    const weights = safeRefs.map(ref => {
       const siteId = String((ref && ref.siteId) || '').trim();
       const base = refBaseWeights.has(siteId) ? refBaseWeights.get(siteId) : 0;
       const typeFactor = Math.max(0.3, Math.min(1.4, (Number(ref && ref.typePercent) || 100) / 100));
@@ -17168,10 +17339,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return safeRefs.map(() => 0);
     }
 
-    if (total > 1) {
-      return weights.map(value => value / total);
-    }
-    return weights;
+    return weights.map(value => value / total);
   }
 
   function buildWeightedHourlyFromReferences(direction, dailyTotal) {

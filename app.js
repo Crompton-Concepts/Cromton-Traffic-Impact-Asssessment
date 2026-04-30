@@ -10959,18 +10959,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadRaw.set(roadStd, Math.max(0, w));
     });
 
+    const roadTotal = Array.from(roadRaw.values()).reduce((sum, value) => sum + value, 0);
+    const normalizedRoadWeights = new Map();
+    roads.forEach(roadStd => {
+      const fallback = roads.length > 0 ? (1 / roads.length) : 0;
+      normalizedRoadWeights.set(
+        roadStd,
+        roadTotal > 0 ? ((roadRaw.get(roadStd) || 0) / roadTotal) : fallback
+      );
+    });
+
     const refBaseWeights = new Map();
     roads.forEach(roadStd => {
       const refsInRoad = refsByRoad.get(roadStd) || [];
-      refsInRoad.forEach(ref => {
+      const localRawWeights = refsInRoad.map(ref => {
         const siteId = String((ref && ref.siteId) || '').trim();
         const defaultLocalShare = refsInRoad.length > 0 ? (1 / refsInRoad.length) : 0;
-        const localWeight = bySite.has(siteId) ? bySite.get(siteId) : defaultLocalShare;
-        refBaseWeights.set(siteId, (roadRaw.get(roadStd) || 0) * Math.max(0, localWeight));
+        return {
+          siteId,
+          weight: bySite.has(siteId) ? bySite.get(siteId) : defaultLocalShare
+        };
+      });
+      const localTotal = localRawWeights.reduce((sum, entry) => sum + Math.max(0, Number(entry.weight) || 0), 0);
+
+      refsInRoad.forEach(ref => {
+        const siteId = String((ref && ref.siteId) || '').trim();
+        const localEntry = localRawWeights.find((entry) => entry.siteId === siteId);
+        const fallbackLocalShare = refsInRoad.length > 0 ? (1 / refsInRoad.length) : 0;
+        const localWeight = localEntry ? Math.max(0, Number(localEntry.weight) || 0) : fallbackLocalShare;
+        const normalizedLocalWeight = localTotal > 0 ? (localWeight / localTotal) : fallbackLocalShare;
+        refBaseWeights.set(siteId, (normalizedRoadWeights.get(roadStd) || 0) * normalizedLocalWeight);
       });
     });
 
-    let weights = safeRefs.map(ref => {
+    const weights = safeRefs.map(ref => {
       const siteId = String((ref && ref.siteId) || '').trim();
       const base = refBaseWeights.has(siteId) ? refBaseWeights.get(siteId) : 0;
       const typeFactor = Math.max(0.3, Math.min(1.4, (Number(ref && ref.typePercent) || 100) / 100));
@@ -10982,10 +11004,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return safeRefs.map(() => 0);
     }
 
-    if (total > 1) {
-      return weights.map(value => value / total);
-    }
-    return weights;
+    return weights.map(value => value / total);
   }
 
   function buildWeightedHourlyFromReferences(direction, dailyTotal) {
@@ -14883,6 +14902,44 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
+  function restoreSavedSelectedSiteDetails(summary) {
+    const details = summary && summary.selectedSiteDetails && typeof summary.selectedSiteDetails === 'object'
+      ? summary.selectedSiteDetails
+      : null;
+    if (!details || !Object.keys(details).length || typeof showCustomAddressDetails !== 'function') return;
+
+    const parseNumber = (value) => {
+      const parsed = Number(String(value == null ? '' : value).replace(/,/g, '').trim());
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+    const parseCoordinates = (value) => {
+      const match = String(value == null ? '' : value).match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+      if (!match) return { lat: null, lon: null };
+      return {
+        lat: Number(match[1]),
+        lon: Number(match[2])
+      };
+    };
+
+    const sourceText = `${details.site_id || ''} ${details.source || ''} ${details.description || ''}`.toLowerCase();
+    if (!/custom|address|weighted|reference|manual/i.test(sourceText)) return;
+
+    const coords = parseCoordinates(details.coordinates);
+    showCustomAddressDetails({
+      siteId: details.site_id || 'CUSTOM ADDRESS',
+      roadName: details.road_name || details.site_id || 'Custom Address',
+      description: details.description || 'Estimated from nearby reference counters',
+      countYear: details.count_year || 'N/A',
+      d1Label: details.d1_direction || 'Direction 1',
+      d2Label: details.d2_direction || 'Direction 2',
+      d1: parseNumber(details.d1_vadt),
+      d2: parseNumber(details.d2_vadt),
+      total: parseNumber(details.total_vadt),
+      lat: coords.lat,
+      lon: coords.lon
+    });
+  }
+
   function buildReferenceDisplayTuple(ref) {
     const safeRef = ref && typeof ref === 'object' ? ref : {};
     const siteId = String(safeRef.siteId || safeRef.id || '').trim();
@@ -15013,6 +15070,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (typeof syncVisibility === 'function') syncVisibility();
       if (typeof updateAssumptionsPanel === 'function') updateAssumptionsPanel();
       if (typeof populateDetourDropdown === 'function') populateDetourDropdown();
+      restoreSavedSelectedSiteDetails(snapshot.summary || null);
       if (typeof calculateAll === 'function') calculateAll();
 
       lastLoadedTiaSnapshotMeta = {

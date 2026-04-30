@@ -613,6 +613,102 @@
       font-weight: 600;
     }
 
+    .snapshot-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .snapshot-toolbar-copy {
+      flex: 1 1 280px;
+      min-width: 220px;
+    }
+
+    .snapshot-toolbar-copy p {
+      margin: 4px 0 0;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: #0d47a1;
+    }
+
+    .snapshot-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .snapshot-btn {
+      width: auto;
+      margin-top: 0;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.2px;
+      box-shadow: 0 6px 16px rgba(15, 47, 50, 0.16);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .snapshot-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(15, 47, 50, 0.2);
+    }
+
+    .snapshot-btn-import {
+      background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+      color: #ffffff;
+    }
+
+    .snapshot-btn-export {
+      background: linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%);
+      color: #ffffff;
+    }
+
+    .snapshot-status {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #35575b;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(21, 101, 192, 0.2);
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+    .snapshot-footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 640px) {
+      .snapshot-toolbar,
+      .snapshot-footer-actions {
+        align-items: stretch;
+      }
+
+      .snapshot-actions,
+      .snapshot-footer-actions {
+        width: 100%;
+      }
+
+      .snapshot-btn,
+      .snapshot-status {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+    }
+
     .contact-dev-link:hover {
       text-decoration: underline;
     }
@@ -3731,11 +3827,11 @@
           2. In the Command Prompt window, press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Ctrl + V</kbd> to paste and then press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Enter</kbd>.
         </div>
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px;">
-          <a id="downloadPythonBtn" href="https://apps.microsoft.com/detail/9NCVDN91XZQP" target="_blank" rel="noopener noreferrer" class="contact-dev-button" style="background:#1d4ed8; text-decoration:none; display:inline-flex; align-items:center;">Get Python from Microsoft Store</a>
-          <a id="downloadReportServiceBtn" href="https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/report_service.py" target="_blank" rel="noopener noreferrer" class="contact-dev-button" style="background:#0f766e; text-decoration:none; display:inline-flex; align-items:center;">Download Report-Service</a>
-          <button id="copyPythonSetupBtn" type="button" class="contact-dev-button" style="background:#166534;">Copy Commands</button>
-          <button id="copyOpenCmdBtn" type="button" class="contact-dev-button" style="background:#7c3aed;" title="Copy commands to clipboard and open Command Prompt — then paste with Ctrl+V">📋 Copy &amp; Open CMD</button>
-          <button id="pythonSetupOkBtn" type="button" class="contact-dev-button">OK</button>
+          <a id="downloadPythonBtn" href="https://apps.microsoft.com/detail/9NCVDN91XZQP" target="_blank" rel="noopener noreferrer" class="contact-dev-button" style="background:#1d4ed8; color:#ffffff; border-color:transparent; text-decoration:none; display:inline-flex; align-items:center;">Get Python from Microsoft Store</a>
+          <a id="downloadReportServiceBtn" href="https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/report_service.py" target="_blank" rel="noopener noreferrer" class="contact-dev-button" style="background:#0f766e; color:#ffffff; border-color:transparent; text-decoration:none; display:inline-flex; align-items:center;">Download Report-Service</a>
+          <button id="copyPythonSetupBtn" type="button" class="contact-dev-button" style="background:#166534; color:#ffffff; border-color:transparent;">Copy Commands</button>
+          <button id="copyOpenCmdBtn" type="button" class="contact-dev-button" style="background:#7c3aed; color:#ffffff; border-color:transparent;" title="Copy commands to clipboard and open Command Prompt — then paste with Ctrl+V">📋 Copy &amp; Open CMD</button>
+          <button id="pythonSetupOkBtn" type="button" class="contact-dev-button" style="background:#ffffff; color:#0f2f32; border-color:#cbd5e1;">OK</button>
         </div>
       </div>
     </div>
@@ -3777,10 +3873,19 @@
 
     <!-- ===== QUICK TIA ADDRESS SEARCH (TOP) ===== -->
     <div class="card" id="quickSearchCard" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #1976d2;">
-      <h2 style="color: #1565c0; margin-top: 0;">🚗 Search Address</h2>
-      <p style="color: #0d47a1; margin: 0 0 12px 0; font-size: 0.95em;">
-        Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
-      </p>
+      <div class="snapshot-toolbar">
+        <div class="snapshot-toolbar-copy">
+          <h2 style="color: #1565c0; margin: 0;">🚗 Search Address</h2>
+          <p>
+            Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
+          </p>
+        </div>
+        <div class="snapshot-actions">
+          <button id="tiaSnapshotImportBtn" type="button" class="snapshot-btn snapshot-btn-import" onclick="document.getElementById('tiaSnapshotImportInput').click();">Import Saved JSON</button>
+          <span id="tiaSnapshotStatus" class="snapshot-status">No session file loaded</span>
+          <input id="tiaSnapshotImportInput" type="file" accept="application/json,.json" style="display:none;" onchange="handleTiaSnapshotImport(this);" />
+        </div>
+      </div>
 
       <div style="display:grid; grid-template-columns:minmax(180px,240px) 1fr; gap:12px; align-items:end; margin-bottom:10px;">
         <div>
@@ -4475,10 +4580,6 @@
         </div>
       </div>
 
-      <div id="queueVisualizerWrap" class="simulation-container" style="display:none; background:#2c3e50; padding:15px; border-radius:8px; margin-top:16px;">
-        <h4 style="color:#ecf0f1; margin:0 0 10px 0;">Peak Queue Visualizer</h4>
-        <canvas id="queueCanvas" width="600" height="150" style="background:#34495e; border-radius:4px; width:100%;"></canvas>
-      </div>
     </div>
 
     <div class="card">
@@ -4526,6 +4627,50 @@
         </div>
       </div>
       <p class="table-note">* Design capacity uses Austroads/TMR practical per-lane capacity adjusted for terrain, geometry and HV/RT mix, with a minimum of 500 vph/lane.</p>
+    </div>
+
+    <div style="margin:0 0 16px 0;">
+      <button
+        type="button"
+        id="generateTgsTiaBtn"
+        style="display:block; width:100%; padding:16px 24px; background:#00695c; border:2px solid #004d40; border-radius:8px; color:#ffffff; font-size:1.1em; font-weight:900; letter-spacing:0.03em; cursor:pointer; text-align:center; box-shadow:0 2px 8px rgba(0,105,92,0.25); transition:background 0.15s;"
+        onmouseover="this.style.background='#004d40'"
+        onmouseout="this.style.background='#00695c'"
+        onclick="copyTgsTiaSheet(this)">
+        &#9654;&nbsp; Generate TGS TIA Sheet
+      </button>
+      <div id="tgsTiaPreviewWrap" style="display:none; border:1.5px solid #90a4ae; border-radius:8px; padding:10px; background:#f8fafc; margin:10px 0 0 0;">
+        <div class="table-actions" style="justify-content:space-between; margin:0 0 8px 0;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button
+              type="button"
+              id="copyTgsTiaPreviewBtn"
+              class="copy-table-btn"
+              style="background:#1d4ed8; border-color:#1e40af;"
+              onclick="copyTgsTiaSheetPreview(this)">
+              Copy Preview to Clipboard
+            </button>
+            <button
+              type="button"
+              id="downloadTgsTiaImageBtn"
+              class="copy-table-btn"
+              style="background:#7c3aed; border-color:#6d28d9;"
+              onclick="downloadTgsTiaSheetImage(this)">
+              Download as Image
+            </button>
+            <button
+              type="button"
+              id="toggleTgsTiaEditBtn"
+              class="copy-table-btn"
+              style="background:#b45309; border-color:#92400e;"
+              onclick="toggleTgsTiaEditMode(this)">
+              Enable Edit Mode
+            </button>
+          </div>
+          <span id="tgsTiaPreviewStatus" style="font-size:11px; color:#334155; font-weight:600;">Preview not generated yet.</span>
+        </div>
+        <div id="tgsTiaPreviewHost" style="max-height:520px; overflow:auto; border:1px solid #cbd5e1; background:#ffffff; padding:8px;"></div>
+      </div>
     </div>
 
 <details class="card" id="hourlyEstimateCard" open>
@@ -4866,61 +5011,6 @@
       </div>
     </div>
 
-    <div style="margin:16px 0;">
-      <button
-        type="button"
-        id="generateTgsTiaBtn"
-        style="display:block; width:100%; padding:16px 24px; background:#00695c; border:2px solid #004d40; border-radius:8px; color:#ffffff; font-size:1.1em; font-weight:900; letter-spacing:0.03em; cursor:pointer; text-align:center; box-shadow:0 2px 8px rgba(0,105,92,0.25); transition:background 0.15s;"
-        onmouseover="this.style.background='#004d40'"
-        onmouseout="this.style.background='#00695c'"
-        onclick="copyTgsTiaSheet(this)">
-        &#9654;&nbsp; Generate TGS TIA Sheet
-      </button>
-      <button
-        type="button"
-        id="generateDetourTgsTiaBtn"
-        style="display:block; width:100%; margin-top:8px; padding:14px 24px; background:#7b1fa2; border:2px solid #6a1b9a; border-radius:8px; color:#ffffff; font-size:1.0em; font-weight:900; letter-spacing:0.02em; cursor:pointer; text-align:center; box-shadow:0 2px 8px rgba(123,31,162,0.25); transition:background 0.15s;"
-        onmouseover="this.style.background='#6a1b9a'"
-        onmouseout="this.style.background='#7b1fa2'"
-        onclick="copyTgsTiaSheet(this, { detourOnly: true })">
-        &#9654;&nbsp; Generate Detour TIA Sheet
-      </button>
-      <div id="tgsTiaPreviewWrap" style="display:none; border:1.5px solid #90a4ae; border-radius:8px; padding:10px; background:#f8fafc; margin:10px 0 0 0;">
-        <div class="table-actions" style="justify-content:space-between; margin:0 0 8px 0;">
-          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <button
-              type="button"
-              id="copyTgsTiaPreviewBtn"
-              class="copy-table-btn"
-              style="background:#1d4ed8; border-color:#1e40af;"
-              onclick="copyTgsTiaSheetPreview(this)">
-              Copy Preview to Clipboard
-            </button>
-            <button
-              type="button"
-              id="downloadTgsTiaImageBtn"
-              class="copy-table-btn"
-              style="background:#7c3aed; border-color:#6d28d9;"
-              onclick="downloadTgsTiaSheetImage(this)">
-              Download as Image
-            </button>
-            <button
-              type="button"
-              id="toggleTgsTiaEditBtn"
-              class="copy-table-btn"
-              style="background:#b45309; border-color:#92400e;"
-              onclick="toggleTgsTiaEditMode(this)">
-              Enable Edit Mode
-            </button>
-          </div>
-          <span id="tgsTiaPreviewStatus" style="font-size:11px; color:#334155; font-weight:600;">Preview not generated yet.</span>
-        </div>
-        <div id="tgsTiaPreviewHost" style="max-height:520px; overflow:auto; border:1px solid #cbd5e1; background:#ffffff; padding:8px;"></div>
-      </div>
-    </div>
-
-
-
     <details class="card" id="formulaTraceSection">
       <summary style="cursor: pointer; font-size: 1.2em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">Formula Trace</summary>
       <button id="formulaTraceRemoveBtn" type="button" class="report-remove-x report-remove-section-btn hide-print" title="Remove Formula Trace from report" aria-label="Remove Formula Trace from report" onclick="if(window.confirm('Remove Formula Trace from this report view?')){ document.getElementById('formulaTraceSection')?.classList.add('report-section-excluded'); }">✕</button>
@@ -4969,6 +5059,50 @@
       </div>
       <p class="diag-note">Hidden panel: open with Ctrl+Shift+D or add ?debug=1 to URL.</p>
     </details>
+
+    <div style="margin: 0 0 12px 0;">
+      <button
+        type="button"
+        id="generateDetourTgsTiaBtn"
+        style="display:block; width:100%; padding:14px 24px; background:#7b1fa2; border:2px solid #6a1b9a; border-radius:8px; color:#ffffff; font-size:1.0em; font-weight:900; letter-spacing:0.02em; cursor:pointer; text-align:center; box-shadow:0 2px 8px rgba(123,31,162,0.25); transition:background 0.15s;"
+        onmouseover="this.style.background='#6a1b9a'"
+        onmouseout="this.style.background='#7b1fa2'"
+        onclick="copyTgsTiaSheet(this, { detourOnly: true, previewMode: 'detour' })">
+        &#9654;&nbsp; Generate Detour TIA Sheet
+      </button>
+      <div id="detourTiaPreviewWrap" style="display:none; border:1.5px solid #ce93d8; border-radius:8px; padding:10px; background:#fcf7ff; margin:10px 0 0 0;">
+        <div class="table-actions" style="justify-content:space-between; margin:0 0 8px 0;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button
+              type="button"
+              id="copyDetourTiaPreviewBtn"
+              class="copy-table-btn"
+              style="background:#7b1fa2; border-color:#6a1b9a;"
+              onclick="copyDetourTiaSheetPreview(this)">
+              Copy Preview to Clipboard
+            </button>
+            <button
+              type="button"
+              id="downloadDetourTiaImageBtn"
+              class="copy-table-btn"
+              style="background:#5e35b1; border-color:#4527a0;"
+              onclick="downloadDetourTiaSheetImage(this)">
+              Download as Image
+            </button>
+            <button
+              type="button"
+              id="toggleDetourTiaEditBtn"
+              class="copy-table-btn"
+              style="background:#b45309; border-color:#92400e;"
+              onclick="toggleDetourTiaEditMode(this)">
+              Enable Edit Mode
+            </button>
+          </div>
+          <span id="detourTiaPreviewStatus" style="font-size:11px; color:#6a1b9a; font-weight:600;">Detour preview not generated yet.</span>
+        </div>
+        <div id="detourTiaPreviewHost" style="max-height:520px; overflow:auto; border:1px solid #d1c4e9; background:#ffffff; padding:8px;"></div>
+      </div>
+    </div>
 
     <details class="card print-custom-card" id="printCustomizationCard">
       <summary style="cursor: pointer; font-size: 1em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">🖨️ Print Customization (All Sections & Tables) (Click to Expand)</summary>
@@ -5530,17 +5664,13 @@
 
     
 
-    <div class="report-actions" style="display:flex; flex-wrap:nowrap; gap:6px; align-items:center; overflow-x:auto;">
-      <button class="print-btn" onclick="toggleReportMode(true, 'detailed')" style="background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📝 Detailed Report</button>
-      <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 Short Report</button>
+    <div class="report-actions" style="display:flex; flex-wrap:nowrap; gap:10px; align-items:center; justify-content:center;">
+      <button class="print-btn" onclick="toggleReportMode(true, 'detailed')" style="background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📝 HTML Detailed Report</button>
+      <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 HTML Short Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
       <button class="print-btn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
-      <button class="print-btn" type="button" onclick="triggerPythonEditsProfileLoad()" style="background: linear-gradient(135deg, #00695c 0%, #00897b 100%); font-size: 0.86em; padding: 8px 12px; white-space: nowrap;">📂 Load Python Edits JSON</button>
-      <button class="print-btn" type="button" onclick="downloadLoadedPythonEditsProfile()" style="background: linear-gradient(135deg, #37474f 0%, #455a64 100%); font-size: 0.86em; padding: 8px 12px; white-space: nowrap;">💾 Download Loaded Edits</button>
-      <button class="print-btn" type="button" onclick="clearLoadedPythonEditsProfile()" style="background: linear-gradient(135deg, #8d6e63 0%, #6d4c41 100%); font-size: 0.86em; padding: 8px 12px; white-space: nowrap;">🧹 Clear Edits</button>
-      <input type="file" id="pythonEditsProfileInput" accept=".json,application/json" style="display:none;" onchange="loadPythonEditsProfileFromInput(event)">
+      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" onclick="downloadTiaSessionSnapshot();" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">💾 Export Session JSON</button>
     </div>
-    <div id="pythonEditsProfileStatus" style="margin-top:6px; font-size:0.8em; color:#455a64;">Python edits profile: not loaded.</div>
   </div>
 
     <div class="copyright-footer">© 2026 Crompton Concepts. All rights reserved.</div>
@@ -7824,6 +7954,9 @@
 
   async function openPythonEditableReport(mode = 'detailed') {
     const normalizedMode = String(mode || 'detailed').toLowerCase() === 'short' ? 'short' : 'detailed';
+    const setupModal = document.getElementById('pythonSetupModal');
+    if (setupModal) setupModal.style.display = 'none';
+
     const payload = normalizedMode === 'short'
       ? await buildShortEditableReportPayload()
       : await buildEditableReportPayload();
@@ -7836,12 +7969,6 @@
     const title = normalizedMode === 'short'
       ? `${baseTitle} - Short Report`
       : `${baseTitle} - Detailed Report`;
-
-    const serviceAvailable = await isPythonReportServiceAvailable();
-    if (!serviceAvailable) {
-      showPythonReportSetupInstructions(lastPythonServiceCheckReason || 'Python report service is offline.');
-      return;
-    }
 
     let response;
     try {
@@ -7869,6 +7996,7 @@
 
     const editorUrl = new URL(editorPath, REPORT_SERVICE_BASE_URL).toString();
     window.open(editorUrl, '_blank', 'noopener');
+    if (setupModal) setupModal.style.display = 'none';
   }
 
   // Backward-compatible alias: old JSON export action now opens the short Python report.
@@ -7911,7 +8039,7 @@
     
     const reportContainer = document.querySelector('body.report-mode .container');
     if (!reportContainer) {
-      alert('Report mode is not active. Please click "Detailed Report" or "Short Report" first.');
+      alert('Report mode is not active. Please click "HTML Detailed Report" or "HTML Short Report" first.');
       return;
     }
 
@@ -8458,13 +8586,33 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const summarySection = document.createElement('div');
     summarySection.className = 'ai-generated-summary';
     summarySection.style.cssText = 'background: #f0f9ff; border-left: 4px solid #2196f3; padding: 20px; margin: 20px 0; border-radius: 4px;';
-    summarySection.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="margin: 0; color: #1f5e63;">📋 Summary</h3>
-        <button onclick="this.parentElement.parentElement.remove()" class="report-remove-x" style="background: #e53935; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Remove</button>
-      </div>
-      <div class="report-editable" contenteditable="true" style="white-space: pre-wrap; line-height: 1.6;">${text}</div>
-    `;
+    const summaryHeader = document.createElement('div');
+    summaryHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;';
+
+    const heading = document.createElement('h3');
+    heading.style.cssText = 'margin: 0; color: #1f5e63;';
+    heading.textContent = '📋 Summary';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'report-remove-x';
+    removeBtn.style.cssText = 'background: #e53935; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', () => {
+      try { summarySection.remove(); } catch (_) {}
+    });
+
+    summaryHeader.appendChild(heading);
+    summaryHeader.appendChild(removeBtn);
+
+    const summaryBody = document.createElement('div');
+    summaryBody.className = 'report-editable';
+    summaryBody.setAttribute('contenteditable', 'true');
+    summaryBody.style.cssText = 'white-space: pre-wrap; line-height: 1.6;';
+    summaryBody.textContent = String(text || '');
+
+    summarySection.appendChild(summaryHeader);
+    summarySection.appendChild(summaryBody);
     
     // Insert at the beginning of the report
     const firstChild = container.firstElementChild;
@@ -8499,6 +8647,338 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   window.copyAISummaryToClipboard = copyAISummaryToClipboard;
   window.insertAISummaryToReport = insertAISummaryToReport;
   window.printFinalReport = printFinalReport;
+
+  function cloneTiaSnapshotSerializable(value, fallback) {
+    try {
+      return JSON.parse(JSON.stringify(value == null ? fallback : value));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function collectQuickReferenceSnapshotState() {
+    if (!window.selectedTiaData || window.selectedTiaData.type !== 'references') return null;
+
+    const referenceStates = (Array.isArray(window.selectedTiaData.references) ? window.selectedTiaData.references : []).map(function(ref) {
+      const siteId = String(ref && ref.siteId ? ref.siteId : '').trim();
+      const includeInput = siteId ? document.querySelector('.ref-include[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]') : null;
+      const weightInput = siteId ? document.querySelector('.ref-weight[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]') : null;
+      return {
+        siteId: siteId,
+        included: includeInput ? !!includeInput.checked : true,
+        weight: weightInput ? Math.max(0, Math.min(100, Number(weightInput.value) || 0)) : Math.max(0, Math.min(100, Number(ref && ref.autoWeight) || 0))
+      };
+    });
+
+    const roadWeights = Array.from(document.querySelectorAll('#quickTiaRoadWeightList .road-weight')).map(function(inputEl) {
+      return {
+        roadStd: String(inputEl.getAttribute('data-roadstd') || '').trim(),
+        weight: Math.max(0, Math.min(100, Number(inputEl.value) || 0))
+      };
+    }).filter(function(entry) { return entry.roadStd; });
+
+    const selectedMethodEl = document.querySelector('input[name="trafficCalcMethod"]:checked');
+    return {
+      referenceStates: referenceStates,
+      roadWeights: roadWeights,
+      trafficCalcMethod: String((selectedMethodEl && selectedMethodEl.value) || 'weighted').trim()
+    };
+  }
+
+  function applyQuickReferenceSnapshotState(state) {
+    var safeState = state && typeof state === 'object' ? state : {};
+
+    (Array.isArray(safeState.referenceStates) ? safeState.referenceStates : []).forEach(function(refState) {
+      var siteId = String(refState && refState.siteId ? refState.siteId : '').trim();
+      if (!siteId) return;
+      var includeInput = document.querySelector('.ref-include[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]');
+      var sliderInput = document.querySelector('.ref-weight-slider[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]');
+      var weightInput = document.querySelector('.ref-weight[data-siteid="' + siteId.replace(/"/g, '\\"') + '"]');
+      var safeWeight = Math.max(0, Math.min(100, Number(refState && refState.weight) || 0));
+      if (includeInput) {
+        includeInput.checked = !!refState.included;
+        var card = includeInput.closest('div[style*="padding: 10px"]');
+        if (card) card.style.opacity = includeInput.checked ? '1' : '0.55';
+      }
+      if (sliderInput) sliderInput.value = String(safeWeight);
+      if (weightInput) weightInput.value = String(safeWeight);
+    });
+
+    (Array.isArray(safeState.roadWeights) ? safeState.roadWeights : []).forEach(function(roadState) {
+      var roadStd = String(roadState && roadState.roadStd ? roadState.roadStd : '').trim();
+      if (!roadStd) return;
+      var sliderInput = document.querySelector('.road-weight-slider[data-roadstd="' + roadStd.replace(/"/g, '\\"') + '"]');
+      var weightInput = document.querySelector('.road-weight[data-roadstd="' + roadStd.replace(/"/g, '\\"') + '"]');
+      var safeWeight = Math.max(0, Math.min(100, Number(roadState && roadState.weight) || 0));
+      if (sliderInput) sliderInput.value = String(safeWeight);
+      if (weightInput) weightInput.value = String(safeWeight);
+    });
+
+    var selectedMethod = String(safeState.trafficCalcMethod || '').trim();
+    if (selectedMethod) {
+      var radio = document.querySelector('input[name="trafficCalcMethod"][value="' + selectedMethod.replace(/"/g, '\\"') + '"]');
+      if (radio) radio.checked = true;
+    }
+    if (typeof toggleTrafficCalcMethod === 'function') {
+      try { toggleTrafficCalcMethod(); } catch (_) {}
+    }
+  }
+
+  function buildReferenceDisplayTupleFromSnapshot(ref) {
+    var safeRef = ref && typeof ref === 'object' ? ref : {};
+    var siteId = String(safeRef.siteId || safeRef.id || '').trim();
+    return [
+      siteId,
+      macroSitesData[siteId] || {
+        road_name: safeRef.road,
+        description: safeRef.description,
+        vadt: Number(safeRef.vadt) || 0,
+        d1_vadt: Number(safeRef.d1_vadt) || 0,
+        d2_vadt: Number(safeRef.d2_vadt) || 0,
+        d1_direction_label: safeRef.d1_direction_label,
+        d2_direction_label: safeRef.d2_direction_label,
+        latitude: Number(safeRef.lat),
+        longitude: Number(safeRef.lon),
+        source: safeRef.source,
+        countYear: safeRef.countYear,
+        count_year: safeRef.countYear,
+        vadt_is_estimated: !!safeRef.vadt_is_estimated,
+        vadt_estimate_note: safeRef.vadt_estimate_note || ''
+      },
+      Number(safeRef.distance) || 0,
+      safeRef.direction || 'Nearby'
+    ];
+  }
+
+  // ===== SESSION SNAPSHOT EXPORT =====
+  function downloadTiaSessionSnapshot() {
+    try {
+      // Collect all form inputs
+      const formControls = {};
+      document.querySelectorAll('input[id], select[id], textarea[id]').forEach(function(el) {
+        if (!el || !el.id) return;
+        const type = String(el.type || '').toLowerCase();
+        if (type === 'file' || type === 'password' || type === 'submit' || type === 'button' || type === 'reset') return;
+        if (el.closest && el.closest('#loginGate')) return;
+        if (el.id === 'tiaSnapshotImportInput') return;
+        if (type === 'checkbox' || type === 'radio') {
+          formControls[el.id] = { type: type, checked: el.checked, value: el.value };
+        } else {
+          formControls[el.id] = { type: type, value: String(el.value == null ? '' : el.value) };
+        }
+      });
+      // Capture named radio groups without IDs (e.g. trafficCalcMethod)
+      document.querySelectorAll('input[type="radio"][name]:not([id])').forEach(function(el) {
+        if (el.closest && el.closest('#loginGate')) return;
+        const key = '__radio__' + el.name + '__' + el.value;
+        formControls[key] = { type: 'radio', name: el.name, value: el.value, checked: el.checked };
+      });
+
+      // Collect visible text content from output elements
+      const outputElements = {};
+      [
+        'macroDetailRoadName','macroDetailTotal','macroDetailD1','macroDetailD2',
+        'macroDetailSource','macroDetailCoords','macroDetailSiteId','macroDetailCountYear',
+        'macroDetailGrowthRate','macroDetailHV','macroDetailQuality',
+        'macroDetailDirD1Label','macroDetailDirD2Label',
+        'predictedVADT','predictedD1VADT','predictedD2VADT',
+        'kpiWorstVcr','kpiD1PeakQueue','kpiD2PeakQueue',
+        'queueRiskBadge','vcrRiskBadge',
+        'quickTiaSearchAddress','quickTiaMatchType','quickTiaMatchRoad','quickTiaGeoSource',
+        'lastSearchedAddressText'
+      ].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var val = (typeof el.value === 'string') ? el.value : (el.textContent || '');
+        if (val && String(val).trim()) outputElements[id] = String(val).trim();
+      });
+
+      var selectedTiaDataSnapshot = cloneTiaSnapshotSerializable(window.selectedTiaData || null, null);
+      var referenceUiState = collectQuickReferenceSnapshotState();
+      if (selectedTiaDataSnapshot && selectedTiaDataSnapshot.type === 'references' && referenceUiState) {
+        selectedTiaDataSnapshot.referenceUiState = referenceUiState;
+      }
+
+      var snapshot = {
+        kind: 'tia-session-snapshot',
+        version: '1.1',
+        exportedAt: new Date().toISOString(),
+        selectedMacroSite: selectedMacroSite || '',
+        selectedTiaData: selectedTiaDataSnapshot,
+        manualTrafficGenData: cloneTiaSnapshotSerializable(window.manualTrafficGenData || null, null),
+        formControls: formControls,
+        outputElements: outputElements,
+        quickSearch: {
+          input: (function() { var el = document.getElementById('quickTiaInput') || document.getElementById('quickTiaSiteIdInput'); return el ? String(el.value || '') : ''; })(),
+          lastSearchedAddress: String(window.lastSearchedAddress || ''),
+          lastResolvedAddress: String(window.lastQuickTiaResolvedAddress || '')
+        },
+        localStorage: (function() {
+          var lsData = {};
+          try { var raw = localStorage.getItem(PYTHON_EDITS_PROFILE_KEY); if (raw) lsData.pythonEditsProfile = raw; } catch(_) {}
+          return lsData;
+        })()
+      };
+
+      var json = JSON.stringify(snapshot, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var stamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
+      var sitePart = String(selectedMacroSite || 'session').replace(/[^a-z0-9_-]+/gi, '_');
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'tia_session_' + sitePart + '_' + stamp + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      if (typeof setAppStatusBanner === 'function') {
+        setAppStatusBanner('<strong>✓ Session exported.</strong> Load it with Import Saved JSON to restore this state.', 'info');
+        setTimeout(function() { if (typeof clearAppStatusBanner === 'function') clearAppStatusBanner(); }, 3500);
+      }
+    } catch(err) {
+      alert('Export failed: ' + String(err && err.message ? err.message : err));
+    }
+  }
+  window.downloadTiaSessionSnapshot = downloadTiaSessionSnapshot;
+
+  // ===== SESSION SNAPSHOT IMPORT =====
+  function handleTiaSnapshotImport(inputEl) {
+    var file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var snapshot = JSON.parse(String(reader.result || '{}'));
+        if (!snapshot || snapshot.kind !== 'tia-session-snapshot') {
+          alert('Invalid session file. Please select a file exported with "Export Session JSON".');
+          return;
+        }
+        // Restore form controls (elements with IDs)
+        var controls = snapshot.formControls || {};
+        Object.keys(controls).forEach(function(id) {
+          if (id.startsWith('__radio__')) return; // handled separately below
+          var el = document.getElementById(id);
+          if (!el) return;
+          var state = controls[id];
+          if (!state) return;
+          var type = String(state.type || '').toLowerCase();
+          if (type === 'checkbox' || type === 'radio') {
+            el.checked = !!state.checked;
+          } else {
+            el.value = String(state.value == null ? '' : state.value);
+          }
+          // Fire both change and input events so all dependent handlers trigger
+          try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch(_) {}
+          try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch(_) {}
+        });
+        // Restore named radio groups without IDs (e.g. trafficCalcMethod)
+        Object.keys(controls).forEach(function(key) {
+          if (!key.startsWith('__radio__')) return;
+          var state = controls[key];
+          if (!state || !state.name || state.value == null) return;
+          var el = document.querySelector('input[type="radio"][name="' + state.name + '"][value="' + state.value + '"]');
+          if (!el) return;
+          el.checked = !!state.checked;
+          if (state.checked) {
+            try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch(_) {}
+          }
+        });
+        // Restore output text elements
+        var outputs = snapshot.outputElements || {};
+        Object.keys(outputs).forEach(function(id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          if (typeof el.value === 'string') {
+            el.value = String(outputs[id]);
+          } else {
+            el.textContent = String(outputs[id]);
+          }
+        });
+        // Restore selectedTiaData and selectedMacroSite
+        if (snapshot.selectedTiaData) {
+          var selectedSnapshot = cloneTiaSnapshotSerializable(snapshot.selectedTiaData, null);
+          window.selectedTiaData = selectedSnapshot;
+          if (selectedSnapshot && selectedSnapshot.type === 'exact' && typeof displayQuickTiaExactMatch === 'function') {
+            var exactFallback = {
+              road_name: selectedSnapshot.road || selectedSnapshot.siteId || 'Custom Address',
+              description: selectedSnapshot.road || 'Custom Address',
+              vadt: Number(selectedSnapshot.vadt) || 0,
+              d1_vadt: Number(selectedSnapshot.d1_vadt) || 0,
+              d2_vadt: Number(selectedSnapshot.d2_vadt) || 0,
+              d1_direction_label: selectedSnapshot.d1_direction_label,
+              d2_direction_label: selectedSnapshot.d2_direction_label,
+              latitude: Number(selectedSnapshot.lat),
+              longitude: Number(selectedSnapshot.lon),
+              countYear: selectedSnapshot.countYear,
+              count_year: selectedSnapshot.countYear
+            };
+            displayQuickTiaExactMatch(selectedSnapshot.siteId || 'CUSTOM ADDRESS', macroSitesData[selectedSnapshot.siteId] || exactFallback);
+            window.selectedTiaData = Object.assign(window.selectedTiaData || {}, selectedSnapshot);
+          } else if (selectedSnapshot && selectedSnapshot.type === 'references' && typeof displayQuickTiaMultipleRefs === 'function') {
+            var refs = Array.isArray(selectedSnapshot.references) ? selectedSnapshot.references : [];
+            var nearbyArray = refs.map(buildReferenceDisplayTupleFromSnapshot);
+            displayQuickTiaMultipleRefs(
+              selectedSnapshot.road || (snapshot.quickSearch && snapshot.quickSearch.input) || (snapshot.quickSearch && snapshot.quickSearch.lastSearchedAddress) || 'Custom Address',
+              nearbyArray,
+              Number(selectedSnapshot.lat) || 0,
+              Number(selectedSnapshot.lon) || 0,
+              /along same road/i.test(String((snapshot.outputElements && snapshot.outputElements.quickTiaMatchType) || '')),
+              {
+                excludedRefs: Array.isArray(selectedSnapshot.excludedReferences) ? selectedSnapshot.excludedReferences : [],
+                exclusionSummary: selectedSnapshot.exclusionSummary || '',
+                connectedWithin5Count: Number(selectedSnapshot.connectedWithin5Count) || 0,
+                connectedBeyond5Count: Number(selectedSnapshot.connectedBeyond5Count) || 0,
+                excludedWithin5Count: Number(selectedSnapshot.excludedWithin5Count) || 0,
+                excludedBeyond5Count: Number(selectedSnapshot.excludedBeyond5Count) || 0
+              }
+            );
+            window.selectedTiaData = Object.assign(window.selectedTiaData || {}, selectedSnapshot);
+            applyQuickReferenceSnapshotState(selectedSnapshot.referenceUiState || null);
+            try { if (typeof updateTiaCalculations === 'function') updateTiaCalculations(); } catch (_) {}
+          }
+        }
+        if (snapshot.selectedMacroSite) {
+          selectedMacroSite = snapshot.selectedMacroSite;
+          if (typeof selectMacroSite === 'function') selectMacroSite(snapshot.selectedMacroSite, { silent: true });
+        }
+        if (snapshot.manualTrafficGenData) window.manualTrafficGenData = snapshot.manualTrafficGenData;
+        // Restore localStorage state (python edits profile, etc.)
+        var lsData = snapshot.localStorage || {};
+        try { if (lsData.pythonEditsProfile) localStorage.setItem(PYTHON_EDITS_PROFILE_KEY, lsData.pythonEditsProfile); } catch(_) {}
+        // Restore quick search display
+        var qs = snapshot.quickSearch || {};
+        if (qs.lastSearchedAddress) {
+          window.lastSearchedAddress = qs.lastSearchedAddress;
+          var dispEl = document.getElementById('lastSearchedAddressDisplay');
+          var textEl = document.getElementById('lastSearchedAddressText');
+          if (dispEl && textEl) { textEl.textContent = qs.lastSearchedAddress; dispEl.style.display = 'block'; }
+        }
+        if (qs.lastResolvedAddress) window.lastQuickTiaResolvedAddress = qs.lastResolvedAddress;
+        // Trigger full recalculation after all values are restored
+        setTimeout(function() {
+          try { if (typeof toggleTrafficCalcMethod === 'function') toggleTrafficCalcMethod(); } catch(_) {}
+          try { if (typeof updateScenarioFields === 'function') updateScenarioFields(); } catch(_) {}
+          try { if (typeof calculateTripGeneration === 'function') calculateTripGeneration(); } catch(_) {}
+          try { if (typeof calculateAll === 'function') calculateAll(); } catch(_) {}
+          try { if (typeof updateTiaCalculations === 'function') updateTiaCalculations(); } catch(_) {}
+        }, 150);
+        // Update status
+        var statusEl = document.getElementById('tiaSnapshotStatus');
+        if (statusEl) statusEl.textContent = 'Loaded: ' + file.name;
+        if (typeof setAppStatusBanner === 'function') {
+          setAppStatusBanner('<strong>✓ Session imported.</strong> Recalculating outputs from restored data...', 'info');
+          setTimeout(function() { if (typeof clearAppStatusBanner === 'function') clearAppStatusBanner(); }, 4500);
+        }
+      } catch(err) {
+        alert('Import failed: ' + String(err && err.message ? err.message : err));
+      } finally {
+        try { inputEl.value = ''; } catch(_) {}
+      }
+    };
+    reader.readAsText(file);
+  }
+  window.handleTiaSnapshotImport = handleTiaSnapshotImport;
 
   function handleReportShareOutsideClick(event) {
     const shareWrap = document.getElementById('reportShareWrap');
@@ -9075,13 +9555,42 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function setAppStatusBanner(message, type = 'warning') {
     const banner = document.getElementById('appStatusBanner');
     if (!banner) return;
+
+    const sanitizeStatusHtml = (raw) => {
+      const template = document.createElement('template');
+      template.innerHTML = String(raw || '');
+      const allowedTags = new Set(['STRONG', 'EM', 'B', 'I', 'CODE', 'BR', 'SPAN']);
+
+      const sanitizeNode = (node) => {
+        Array.from(node.childNodes || []).forEach((child) => {
+          if (child.nodeType === Node.COMMENT_NODE) {
+            child.remove();
+            return;
+          }
+          if (child.nodeType !== Node.ELEMENT_NODE) return;
+
+          const tag = String(child.tagName || '').toUpperCase();
+          if (!allowedTags.has(tag)) {
+            child.replaceWith(document.createTextNode(String(child.textContent || '')));
+            return;
+          }
+
+          Array.from(child.attributes || []).forEach((attr) => child.removeAttribute(attr.name));
+          sanitizeNode(child);
+        });
+      };
+
+      sanitizeNode(template.content);
+      return template.innerHTML;
+    };
+
     banner.classList.remove('hidden', 'info', 'error');
     if (type === 'info') {
       banner.classList.add('info');
     } else if (type === 'error') {
       banner.classList.add('error');
     }
-    banner.innerHTML = message;
+    banner.innerHTML = sanitizeStatusHtml(message);
   }
 
   function clearAppStatusBanner() {
@@ -10299,9 +10808,33 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const badge = document.createElement('div');
     badge.className = 'smart-suggest-badge';
     badge.style.cssText = 'display:flex; align-items:center; gap:6px; margin-top:5px; padding:4px 8px; background:#e8f0fe; border:1px solid #90caf9; border-radius:6px; font-size:0.75em; color:#1565c0;';
-    badge.innerHTML = `<span>💡 Suggested for <strong>${label}</strong>: <strong>${suggestedValue}</strong></span><button type="button" style="margin-left:auto; padding:2px 8px; border-radius:10px; border:1px solid #1565c0; background:#1565c0; color:#fff; font-size:0.9em; cursor:pointer; white-space:nowrap;">Apply</button><button type="button" style="padding:2px 6px; border-radius:10px; border:1px solid #90caf9; background:#fff; color:#1565c0; font-size:0.9em; cursor:pointer;">✕</button>`;
-    const applyBtn = badge.querySelectorAll('button')[0];
-    const dismissBtn = badge.querySelectorAll('button')[1];
+
+    const summary = document.createElement('span');
+    const prefix = document.createTextNode('💡 Suggested for ');
+    const labelStrong = document.createElement('strong');
+    labelStrong.textContent = String(label || 'Field');
+    const middle = document.createTextNode(': ');
+    const valueStrong = document.createElement('strong');
+    valueStrong.textContent = String(suggestedValue || '-');
+    summary.appendChild(prefix);
+    summary.appendChild(labelStrong);
+    summary.appendChild(middle);
+    summary.appendChild(valueStrong);
+
+    const applyBtn = document.createElement('button');
+    applyBtn.type = 'button';
+    applyBtn.style.cssText = 'margin-left:auto; padding:2px 8px; border-radius:10px; border:1px solid #1565c0; background:#1565c0; color:#fff; font-size:0.9em; cursor:pointer; white-space:nowrap;';
+    applyBtn.textContent = 'Apply';
+
+    const dismissBtn = document.createElement('button');
+    dismissBtn.type = 'button';
+    dismissBtn.style.cssText = 'padding:2px 6px; border-radius:10px; border:1px solid #90caf9; background:#fff; color:#1565c0; font-size:0.9em; cursor:pointer;';
+    dismissBtn.textContent = '✕';
+
+    badge.appendChild(summary);
+    badge.appendChild(applyBtn);
+    badge.appendChild(dismissBtn);
+
     applyBtn.addEventListener('click', () => { onAccept(); badge.remove(); });
     dismissBtn.addEventListener('click', () => badge.remove());
     container.appendChild(badge);
@@ -10969,9 +11502,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let best = null;
       const radii = [80, 180, 300];
 
+      const isStrongPreferredRoadMatch = (preferredStd, candidateRoadName) => {
+        const candidateStd = standardizeRoadName(candidateRoadName || '');
+        if (!preferredStd || !candidateStd) return false;
+        if (preferredStd === candidateStd) return true;
+        const overlap = tokenOverlapScore(preferredStd, candidateStd);
+        return overlap >= 0.6;
+      };
+
       for (let i = 0; i < radii.length; i++) {
         const radius = radii[i];
-        const query = `[out:json][timeout:12];way(around:${radius},${safeLat},${safeLon})[highway];out tags center 120;`;
+        const query = prefRoad
+          ? `[out:json][timeout:12];way(around:${radius},${safeLat},${safeLon})[highway][name];out tags center 120;`
+          : `[out:json][timeout:12];way(around:${radius},${safeLat},${safeLon})[highway];out tags center 120;`;
         const data = await fetchOverpassJson(query, {
           cacheKey: `${overpassCacheKey}:r${radius}`,
           ttlMs: 2 * OVERPASS_CACHE_TTL_MS
@@ -10988,9 +11531,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (!oneWayInfo.isOneWay) return;
 
           const roadName = String(tags.name || '').trim();
+          if (prefRoad && !roadName) return;
           const distanceMeters = haversineDistance(safeLat, safeLon, centerLat, centerLon);
-          const sameRoad = prefRoad && roadName ? isSameRoad(prefRoad, roadName) : false;
-          const score = (sameRoad ? 3 : 0) + Math.max(0, 1 - (Math.min(distanceMeters, 350) / 350));
+          const sameRoad = prefRoad && roadName ? isStrongPreferredRoadMatch(prefRoad, roadName) : false;
+          const overlapScore = (prefRoad && roadName) ? tokenOverlapScore(prefRoad, roadName) : 0;
+          const score = (sameRoad ? 4 : 0) + overlapScore + Math.max(0, 1 - (Math.min(distanceMeters, 220) / 220));
 
           if (!best || score > best.score) {
             best = {
@@ -11004,11 +11549,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           }
         });
 
-        if (best && best.score >= 3) break;
+        if (best && best.score >= 4.5) break;
       }
 
       // Avoid false positives from nearby side streets when the user searched a named road.
-      const result = (prefRoad && best && !best.sameRoad) ? null : (best || null);
+      const result = (prefRoad && best && (!best.sameRoad || Number(best.distanceMeters) > 180)) ? null : (best || null);
       if (result) {
         cache.set(cacheKey, result);
       } else {
@@ -13187,8 +13732,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const el = document.getElementById('macroDetailSource');
       if (!el) return;
       const source = String(sourceValue || 'N/A').trim();
-      const classSuffix = source.toLowerCase().replace(/\s+/g, '-');
-      el.innerHTML = `<span class="source-pill source-${classSuffix}">${source}</span>`;
+      const classSuffix = source.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'na';
+      el.textContent = '';
+      const pill = document.createElement('span');
+      pill.className = `source-pill source-${classSuffix}`;
+      pill.textContent = source;
+      el.appendChild(pill);
     };
 
     const setQualityBadge = () => {
@@ -13217,7 +13766,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         cls = 'quality-estimated';
       }
 
-      el.innerHTML = `<span class="quality-pill ${cls}">${label}</span>`;
+      el.textContent = '';
+      const pill = document.createElement('span');
+      pill.className = `quality-pill ${cls}`;
+      pill.textContent = label;
+      el.appendChild(pill);
     };
 
     setText('macroDetailSiteId', siteId);
@@ -14716,6 +15269,33 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
   }
 
+  function setQuickTiaError(title, detail = '', options = {}) {
+    const errEl = document.getElementById('quickTiaError');
+    if (!errEl) return;
+    const detailText = String(detail || '').trim();
+    const subText = String(options && options.subText ? options.subText : '').trim();
+
+    errEl.textContent = '';
+
+    const strong = document.createElement('strong');
+    strong.textContent = String(title || 'Error');
+    errEl.appendChild(strong);
+
+    if (detailText) {
+      errEl.appendChild(document.createTextNode(` ${detailText}`));
+    }
+
+    if (subText) {
+      errEl.appendChild(document.createElement('br'));
+      const note = document.createElement('span');
+      note.style.fontSize = '0.9em';
+      note.textContent = subText;
+      errEl.appendChild(note);
+    }
+
+    errEl.style.display = 'block';
+  }
+
   function initializeQuickTiaSearchHandlers() {
     if (isQuickTiaSearchInitialized) return;
     isQuickTiaSearchInitialized = true;
@@ -14732,30 +15312,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const fn = window && window.performQuickTIASearch;
       if (typeof fn !== 'function') {
         console.error('performQuickTIASearch not available');
-        const errEl = document.getElementById('quickTiaError');
-        if (errEl) {
-          errEl.innerHTML = '<strong>❌ Search function is not ready yet.</strong><br><span style="font-size: 0.9em;">Please refresh the page and try again.</span>';
-          errEl.style.display = 'block';
-        }
+        setQuickTiaError('❌ Search function is not ready yet.', '', { subText: 'Please refresh the page and try again.' });
         return;
       }
       try {
         await ensureSelectedStateDataLoaded(true);
       } catch (err) {
-        const errEl = document.getElementById('quickTiaError');
-        if (errEl) {
-          errEl.innerHTML = `<strong>❌ Could not load ${getQuickTiaSelectedState()} database:</strong> ${String(err && err.message ? err.message : err)}`;
-          errEl.style.display = 'block';
-        }
+        setQuickTiaError(`❌ Could not load ${getQuickTiaSelectedState()} database:`, String(err && err.message ? err.message : err));
         return;
       }
       Promise.resolve(fn()).catch(err => {
         console.error(err);
-        const errEl = document.getElementById('quickTiaError');
-        if (errEl) {
-          errEl.innerHTML = `<strong>❌ Search failed:</strong> ${String(err && err.message ? err.message : err)}`;
-          errEl.style.display = 'block';
-        }
+        setQuickTiaError('❌ Search failed:', String(err && err.message ? err.message : err));
       });
     };
 
@@ -14776,11 +15344,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           updateQuickTiaStateStatus(`Current database: ${label}`);
         } catch (err) {
           updateQuickTiaStateStatus(`Failed to load ${label} database`, true);
-          const errEl = document.getElementById('quickTiaError');
-          if (errEl) {
-            errEl.innerHTML = `<strong>❌ Database switch failed:</strong> ${String(err && err.message ? err.message : err)}`;
-            errEl.style.display = 'block';
-          }
+          setQuickTiaError('❌ Database switch failed:', String(err && err.message ? err.message : err));
         }
       });
     }
@@ -14845,8 +15409,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return;
       }
       console.error('Unhandled promise rejection:', ev.reason);
-      const errEl = document.getElementById('quickTiaError');
-      if (errEl) { errEl.innerHTML = `<strong>❌ Unexpected error:</strong> ${String(ev.reason && ev.reason.message ? ev.reason.message : ev.reason)}`; errEl.style.display = 'block'; }
+      setQuickTiaError('❌ Unexpected error:', String(ev.reason && ev.reason.message ? ev.reason.message : ev.reason));
       try { ev.preventDefault(); } catch (_) {}
     });
 
@@ -14991,10 +15554,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         try {
           const location = await geocodeOnline(searchInput);
           if (!location) {
-            if (errEl) {
-              errEl.innerHTML = '<strong>❌ Could not geocode that address.</strong><br><span style="font-size: 0.9em;">Try adding suburb/city/state.</span>';
-              errEl.style.display = 'block';
-            }
+            setQuickTiaError('❌ Could not geocode that address.', '', { subText: 'Try adding suburb/city/state.' });
             return;
           }
 
@@ -15012,10 +15572,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             .sort((a, b) => a.dist - b.dist);
 
           if (!sites.length) {
-            if (errEl) {
-              errEl.innerHTML = '<strong>❌ Address found, but no traffic counter database loaded yet.</strong>';
-              errEl.style.display = 'block';
-            }
+            setQuickTiaError('❌ Address found, but no traffic counter database loaded yet.');
             return;
           }
 
@@ -15032,15 +15589,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const radiusLabel = Number.isFinite(Number(matchResult.usedRadiusKm)) ? Number(matchResult.usedRadiusKm).toFixed(1) : '1.0';
 
           if (excludedRefs.length && exclusionSummary && errEl) {
-            errEl.innerHTML = `<strong>Note:</strong> ${exclusionSummary}<br><span style="font-size:0.9em;">Connected references shown below are within the validated 5km-radius context.</span>`;
-            errEl.style.display = 'block';
+            setQuickTiaError('Note:', exclusionSummary, { subText: 'Connected references shown below are within the validated 5km-radius context.' });
           }
 
           if (matchResult.type === 'NO_MATCH') {
-            if (errEl) {
-              errEl.innerHTML = `<strong>⚠ Address found, but no connected counter was verified within 5km radius.</strong><br><span style="font-size:0.9em;">Roads may connect beyond 5km; use manual trip generation if needed.</span>`;
-              errEl.style.display = 'block';
-            }
+            setQuickTiaError('⚠ Address found, but no connected counter was verified within 5km radius.', '', { subText: 'Roads may connect beyond 5km; use manual trip generation if needed.' });
             const panelEl = document.getElementById('quickTiaPanel');
             if (panelEl) panelEl.style.display = 'block';
             const manualRadio = document.querySelector('input[name="trafficCalcMethod"][value="manual"]');
@@ -15094,10 +15647,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           }
           handleSearchSuccess(matchResult);
         } catch (err) {
-          if (errEl) {
-            errEl.innerHTML = `<strong>❌ Search failed:</strong> ${String(err && err.message ? err.message : err)}`;
-            errEl.style.display = 'block';
-          }
+          setQuickTiaError('❌ Search failed:', String(err && err.message ? err.message : err));
         } finally {
           if (searchBtn) {
             searchBtn.innerHTML = originalBtnText || '🔍 Search';
@@ -16749,18 +17299,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadRaw.set(roadStd, Math.max(0, w));
     });
 
+    const roadTotal = Array.from(roadRaw.values()).reduce((sum, value) => sum + value, 0);
+    const normalizedRoadWeights = new Map();
+    roads.forEach(roadStd => {
+      const fallback = roads.length > 0 ? (1 / roads.length) : 0;
+      normalizedRoadWeights.set(
+        roadStd,
+        roadTotal > 0 ? ((roadRaw.get(roadStd) || 0) / roadTotal) : fallback
+      );
+    });
+
     const refBaseWeights = new Map();
     roads.forEach(roadStd => {
       const refsInRoad = refsByRoad.get(roadStd) || [];
-      refsInRoad.forEach(ref => {
+      const localRawWeights = refsInRoad.map(ref => {
         const siteId = String((ref && ref.siteId) || '').trim();
         const defaultLocalShare = refsInRoad.length > 0 ? (1 / refsInRoad.length) : 0;
-        const localWeight = bySite.has(siteId) ? bySite.get(siteId) : defaultLocalShare;
-        refBaseWeights.set(siteId, (roadRaw.get(roadStd) || 0) * Math.max(0, localWeight));
+        return {
+          siteId,
+          weight: bySite.has(siteId) ? bySite.get(siteId) : defaultLocalShare
+        };
+      });
+      const localTotal = localRawWeights.reduce((sum, entry) => sum + Math.max(0, Number(entry.weight) || 0), 0);
+
+      refsInRoad.forEach(ref => {
+        const siteId = String((ref && ref.siteId) || '').trim();
+        const localEntry = localRawWeights.find(entry => entry.siteId === siteId);
+        const fallbackLocalShare = refsInRoad.length > 0 ? (1 / refsInRoad.length) : 0;
+        const localWeight = localEntry ? Math.max(0, Number(localEntry.weight) || 0) : fallbackLocalShare;
+        const normalizedLocalWeight = localTotal > 0 ? (localWeight / localTotal) : fallbackLocalShare;
+        refBaseWeights.set(siteId, (normalizedRoadWeights.get(roadStd) || 0) * normalizedLocalWeight);
       });
     });
 
-    let weights = safeRefs.map(ref => {
+    const weights = safeRefs.map(ref => {
       const siteId = String((ref && ref.siteId) || '').trim();
       const base = refBaseWeights.has(siteId) ? refBaseWeights.get(siteId) : 0;
       const typeFactor = Math.max(0.3, Math.min(1.4, (Number(ref && ref.typePercent) || 100) / 100));
@@ -16772,10 +17344,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return safeRefs.map(() => 0);
     }
 
-    if (total > 1) {
-      return weights.map(value => value / total);
-    }
-    return weights;
+    return weights.map(value => value / total);
   }
 
   function buildWeightedHourlyFromReferences(direction, dailyTotal) {
@@ -17390,6 +17959,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function copyTgsTiaSheet(button, options = {}) {
+        const getTiaPreviewContext = (mode) => {
+          const resolvedMode = String(mode || '').toLowerCase() === 'detour' ? 'detour' : 'tgs';
+          if (resolvedMode === 'detour') {
+            return {
+              mode: 'detour',
+              wrapId: 'detourTiaPreviewWrap',
+              hostId: 'detourTiaPreviewHost',
+              statusId: 'detourTiaPreviewStatus',
+              htmlKey: 'lastDetourTiaSheetHtml',
+              textKey: 'lastDetourTiaSheetText',
+              editModeKey: 'detourTiaEditMode'
+            };
+          }
+          return {
+            mode: 'tgs',
+            wrapId: 'tgsTiaPreviewWrap',
+            hostId: 'tgsTiaPreviewHost',
+            statusId: 'tgsTiaPreviewStatus',
+            htmlKey: 'lastTgsTiaSheetHtml',
+            textKey: 'lastTgsTiaSheetText',
+            editModeKey: 'tgsTiaEditMode'
+          };
+        };
     const escapeHtml = (value) => String(value || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -17416,6 +18008,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const cloneTableForTgs = (tableId) => {
       const table = document.getElementById(tableId);
       if (!table) return '';
+
+      // If the tbody only has a placeholder row (single colspan td, no vcr-badge), treat as empty
+      const tbody = table.querySelector('tbody');
+      if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const hasRealData = rows.some(row => {
+          const cells = row.querySelectorAll('td');
+          return cells.length > 1 || (cells.length === 1 && !cells[0].hasAttribute('colspan') && row.querySelector('.vcr-badge'));
+        });
+        if (!hasRealData) return '';
+      }
       const losPalette = {
         'vcr-los-a': { background: '#2e7d32', color: '#ffffff', border: '#1b5e20' },
         'vcr-los-b': { background: '#8bc34a', color: '#111827', border: '#689f38' },
@@ -17426,6 +18029,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       };
       const clone = table.cloneNode(true);
       clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
       clone.querySelectorAll('.formula-inline, .report-remove-x, .report-remove-part-btn').forEach((el) => el.remove());
       clone.querySelectorAll('th, td').forEach((cell) => {
         cell.style.padding = '8px 10px';
@@ -17500,6 +18104,93 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return clone.outerHTML;
     };
 
+    const cloneBlockForTgs = (elementId) => {
+      const source = document.getElementById(elementId);
+      if (!source) return '';
+
+      const computedDisplay = (typeof window !== 'undefined' && window.getComputedStyle)
+        ? String(window.getComputedStyle(source).display || '').toLowerCase()
+        : '';
+      const inlineDisplay = String(source.style && source.style.display ? source.style.display : '').toLowerCase();
+      if (inlineDisplay === 'none' || computedDisplay === 'none') return '';
+
+      const text = String(source.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text) return '';
+
+      const clone = source.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+      clone.querySelectorAll('.formula-inline, .report-remove-x, .report-remove-part-btn').forEach((el) => el.remove());
+      clone.style.display = 'block';
+      clone.style.background = '#ffffff';
+      clone.style.border = '1.5px solid #64748b';
+      clone.style.borderRadius = '0';
+      clone.style.padding = '10px';
+      clone.style.marginBottom = '10px';
+      clone.style.pageBreakInside = 'avoid';
+
+      if (elementId === 'detourRoadVpdSummary') {
+        const summaryTitle = clone.querySelector('div');
+        if (summaryTitle) {
+          summaryTitle.style.fontSize = '13px';
+          summaryTitle.style.fontWeight = '900';
+          summaryTitle.style.color = '#111827';
+          summaryTitle.style.marginBottom = '8px';
+          summaryTitle.style.borderBottom = '1.5px solid #64748b';
+          summaryTitle.style.paddingBottom = '6px';
+        }
+
+        const summaryNote = clone.querySelector('div[style*="font-size: 0.78em"]');
+        if (summaryNote) {
+          summaryNote.style.fontSize = '11px';
+          summaryNote.style.color = '#334155';
+          summaryNote.style.marginTop = '0';
+          summaryNote.style.marginBottom = '8px';
+        }
+
+        clone.querySelectorAll('.detour-card-container').forEach((container) => {
+          container.style.display = 'grid';
+          container.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+          container.style.gap = '8px';
+          container.style.marginTop = '8px';
+        });
+
+        clone.querySelectorAll('.detour-card').forEach((card) => {
+          card.style.background = '#ffffff';
+          card.style.border = '1.5px solid #64748b';
+          card.style.borderRadius = '0';
+          card.style.padding = '9px';
+          card.style.boxShadow = 'none';
+          card.style.transform = 'none';
+          card.style.breakInside = 'avoid';
+          card.style.pageBreakInside = 'avoid';
+        });
+
+        clone.querySelectorAll('.detour-card h4').forEach((heading) => {
+          heading.style.margin = '0 0 6px 0';
+          heading.style.fontSize = '12px';
+          heading.style.fontWeight = '900';
+          heading.style.color = '#000000';
+          heading.style.borderBottom = '1px solid #64748b';
+          heading.style.paddingBottom = '5px';
+        });
+
+        clone.querySelectorAll('.detour-card p').forEach((para) => {
+          para.style.margin = '3px 0';
+          para.style.fontSize = '11px';
+          para.style.lineHeight = '1.3';
+          para.style.color = '#111827';
+        });
+
+        clone.querySelectorAll('.detour-card p strong').forEach((strong) => {
+          strong.style.color = '#000000';
+          strong.style.fontWeight = '800';
+        });
+      }
+
+      return clone.outerHTML;
+    };
+
     const buildInlineSummaryTable = (rows) => {
       const safeRows = Array.isArray(rows) ? rows : [];
       const body = safeRows.map(([label, value]) => {
@@ -17509,15 +18200,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     };
 
     const buildDetourDelayTableForTgs = () => {
-      const delayEstimateText = getValue('detourDelayEstimate') || '-';
+      // Use snapshot data for clean values instead of DOM text with formulas
+      const snap = (typeof window._lastDetourCalcSnapshot === 'object' && window._lastDetourCalcSnapshot) ? window._lastDetourCalcSnapshot : {};
+      const d = snap.delay || {};
+      const delayMin = d.estimatedDelayMin || 0;
       return buildInlineSummaryTable([
-        ['Detour Route Length (km)', getValue('detourRouteLengthKm') || '-'],
-        ['Average Travel Speed on Detour (km/h)', getValue('detourAvgSpeedKmh') || '-'],
-        ['Controlled Intersections (#)', getValue('detourControlledIntCount') || '-'],
-        ['Uncontrolled Intersections (#)', getValue('detourUncontrolledIntCount') || '-'],
-        ['Delay @ Controlled (s)', getValue('detourControlledDelaySec') || '-'],
-        ['Delay @ Uncontrolled (s)', getValue('detourUncontrolledDelaySec') || '-'],
-        ['Estimated Delay', delayEstimateText]
+        ['Detour Route Length (km)', String(d.detourLengthKm || getValue('detourRouteLengthKm') || '0')],
+        ['Average Travel Speed on Detour (km/h)', String(d.avgSpeedKmh || getValue('detourAvgSpeedKmh') || '0')],
+        ['Travel Time (seconds)', String(Math.round(d.travelTimeSec || 0))],
+        ['Total Time incl. Intersections (seconds)', String(Math.round(d.totalTimeSec || 0))],
+        ['Controlled Intersections (#)', getValue('detourControlledIntCount') || '0'],
+        ['Uncontrolled Intersections (#)', getValue('detourUncontrolledIntCount') || '0'],
+        ['Delay @ Controlled (s)', getValue('detourControlledDelaySec') || '60'],
+        ['Delay @ Uncontrolled (s)', getValue('detourUncontrolledDelaySec') || '10'],
+        ['Estimated Delay (minutes)', String(delayMin)]
       ]);
     };
 
@@ -17530,34 +18226,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         && typeof captureCurrentDetourRouteState === 'function'
         && typeof applyDetourRouteState === 'function';
 
-      let originalIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
+      // Save the current active state so we can restore after looping
+      const originalIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
       let originalState = null;
       let scenarios = [];
+
       if (hasRouteScenarioApi) {
         ensureDetourRouteScenarios();
         saveActiveDetourRouteScenario();
-        scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+        scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios.slice() : [];
         originalState = captureCurrentDetourRouteState();
       }
 
-      const routeIndexes = scenarios.length
+      const routeIndexes = scenarios.length > 0
         ? scenarios.map((_, idx) => idx)
-        : [Math.max(0, Number(window.activeDetourRouteIndex) || 0)];
+        : [originalIndex];
 
-      const blocks = [];
-      routeIndexes.forEach((routeIndex, blockIndex) => {
-        if (hasRouteScenarioApi && scenarios.length) {
-          window.activeDetourRouteIndex = routeIndex;
-          applyDetourRouteState(scenarios[routeIndex] || {}, { skipScan: true });
-        }
-
-        if (typeof calculateDetourOverlay === 'function') calculateDetourOverlay();
-        if (typeof calculatePedestrianDelay === 'function') calculatePedestrianDelay();
-
+      const buildRouteBlock = (routeIndex, blockIndex) => {
         const routeLabelRaw = getValue('detourRouteName') || `Detour Route ${routeIndex + 1}`;
-        const routeLabel = routeLabelRaw === '-' ? `Detour Route ${routeIndex + 1}` : routeLabelRaw;
-        const selectedPath = getValue('detourSelectedPathDisplay') || '-';
-        const selectedStreet = getValue('detourActiveStreetIndicator') || '-';
+        const routeLabel = (routeLabelRaw === '-' ? `Detour Route ${routeIndex + 1}` : routeLabelRaw)
+          .replace(/^Evaluating\s+Detour\s*:\s*/i, '').trim() || `Detour Route ${routeIndex + 1}`;
+        const selectedPath = (getValue('detourSelectedPathDisplay') || '-').replace(/^Selected\s+path\s*:\s*/i, '').trim();
+        const selectedStreet = (getValue('detourActiveStreetIndicator') || '-').replace(/^📍\s*Selected\s+street\s*:\s*/i, '').trim();
 
         const routeSummaryHtml = buildInlineSummaryTable([
           ['Detour Route', routeLabel],
@@ -17565,22 +18255,34 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ['Active Street', selectedStreet]
         ]);
 
+        const routeCapacitySummaryHtml = cloneBlockForTgs('detourRoadVpdSummary')
+          || '<div style="font-size:12px; color:#92400e; border:1px dashed #f59e0b; padding:8px; background:#fffbeb;">Detour Road Capacity Summary is currently unavailable for this route. Run Detour analysis for this route and regenerate the sheet.</div>';
+
         const capacitySummaryHtml = cloneTableForTgs('detourSegmentDetailedTable')
-          || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">Detour road summary table not available for this route. Run Detour analysis and try again.</div>';
+          || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">Detour road summary table not available. Run Detour analysis first, then click Generate Detour TIA Sheet.</div>';
         const roadStatusHtml = cloneTableForTgs('postDiversionTable')
-          || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">Road Status After Diversion table not available for this route. Run Detour analysis and try again.</div>';
+          || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">Road Status After Diversion table not available. Run Detour analysis first.</div>';
         const pedDelayHtml = cloneTableForTgs('pedDetailTable')
           || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">No pedestrian delay table available.</div>';
 
-        const sectionBreak = blockIndex > 0
-          ? 'page-break-before: always; break-before: page; margin-top: 18px;'
+        const pageBreak = blockIndex > 0
+          ? 'page-break-before: always; break-before: page; margin-top: 24px;'
           : 'margin-top: 18px;';
 
-        blocks.push(`
-<div style="${sectionBreak} font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #7e22ce; padding:14px; background:#f8f2fb; max-width:1280px; width:100%; box-sizing:border-box;">
-  <div style="font-weight:900; font-size:16px; color:#4a148c; margin-bottom:10px; border-bottom:2px solid #8e24aa; padding-bottom:6px;">Detour Analysis Sheet - ${escapeHtml(routeLabel)}</div>
+        const routeSlug = routeLabel
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .slice(0, 64) || `detour_route_${routeIndex + 1}`;
+
+        return `
+      <div class="detour-tia-sheet" data-route-index="${routeIndex}" data-route-slug="${escapeHtml(routeSlug)}" data-route-label="${escapeHtml(routeLabel)}" style="${pageBreak} font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #7e22ce; padding:14px; background:#f8f2fb; max-width:1280px; width:100%; box-sizing:border-box;">
+  <div style="font-weight:900; font-size:16px; color:#4a148c; margin-bottom:10px; border-bottom:2px solid #8e24aa; padding-bottom:6px;">Detour Analysis Sheet — ${escapeHtml(routeLabel)}</div>
   <div style="font-weight:900; font-size:12px; margin: 0 0 6px 0; color:#4a148c;">Detour Route</div>
   ${routeSummaryHtml}
+
+  <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Detour Road Capacity Summary</div>
+  ${routeCapacitySummaryHtml}
 
   <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Detour road summary: each selected road is assessed separately, with D1 and D2 LOS shown for every period.</div>
   ${capacitySummaryHtml}
@@ -17593,12 +18295,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Pedestrian Delay Table</div>
   ${pedDelayHtml}
-</div>`);
+</div>`;
+      };
+
+      const blocks = [];
+
+      routeIndexes.forEach((routeIndex, blockIndex) => {
+        if (hasRouteScenarioApi && scenarios.length > 0) {
+          window.activeDetourRouteIndex = routeIndex;
+          applyDetourRouteState(scenarios[routeIndex] || {}, { skipScan: false });
+        }
+        if (typeof calculateDetourOverlay === 'function') calculateDetourOverlay();
+        if (typeof calculatePedestrianDelay === 'function') calculatePedestrianDelay();
+
+        blocks.push(buildRouteBlock(routeIndex, blockIndex));
       });
 
-      if (hasRouteScenarioApi) {
+      // Restore original state
+      if (hasRouteScenarioApi && originalState) {
         window.activeDetourRouteIndex = originalIndex;
-        if (originalState) applyDetourRouteState(originalState, { skipScan: true });
+        applyDetourRouteState(originalState, { skipScan: false });
         if (typeof calculateDetourOverlay === 'function') calculateDetourOverlay();
         if (typeof calculatePedestrianDelay === 'function') calculatePedestrianDelay();
         if (typeof renderDetourRouteScenarioManager === 'function') renderDetourRouteScenarioManager();
@@ -17728,24 +18444,46 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     </div>
   </div>
 </div>`;
-    const detourHtml = buildDetourSheetsForTgs();
     const detourOnlyMode = !!(options && options.detourOnly);
-    const html = detourOnlyMode ? detourHtml : `${baseHtml}${detourHtml}`;
-    window.lastTgsTiaSheetHtml = html;
+    const previewMode = String((options && options.previewMode) || (detourOnlyMode ? 'detour' : 'tgs')).toLowerCase() === 'detour' ? 'detour' : 'tgs';
+    const detourHtml = detourOnlyMode ? buildDetourSheetsForTgs() : '';
+    const previewContext = getTiaPreviewContext(previewMode);
+    const html = detourOnlyMode ? detourHtml : baseHtml;
+    window[previewContext.htmlKey] = html;
     const temp = document.createElement('div');
     temp.innerHTML = html;
-    window.lastTgsTiaSheetText = cleanText(temp.textContent || '');
+    window[previewContext.textKey] = cleanText(temp.textContent || '');
 
-    const previewWrap = document.getElementById('tgsTiaPreviewWrap');
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+    const previewWrap = document.getElementById(previewContext.wrapId);
+    const previewHost = document.getElementById(previewContext.hostId);
+    const previewStatus = document.getElementById(previewContext.statusId);
     const autoRefresh = !!(options && options.autoRefresh);
 
     if (previewHost) {
       previewHost.innerHTML = html;
+      if (previewContext.mode === 'detour') {
+        const detourSheets = Array.from(previewHost.querySelectorAll(':scope > .detour-tia-sheet'));
+        detourSheets.forEach((sheetEl, sheetIndex) => {
+          const routeLabel = String(sheetEl.getAttribute('data-route-label') || `Detour Route ${sheetIndex + 1}`);
+          const controls = document.createElement('div');
+          controls.className = 'detour-sheet-download-row';
+          controls.style.cssText = 'display:flex; justify-content:flex-end; gap:8px; margin:10px 0 6px 0;';
+
+          const buttonEl = document.createElement('button');
+          buttonEl.type = 'button';
+          buttonEl.className = 'copy-table-btn';
+          buttonEl.style.background = '#6d28d9';
+          buttonEl.style.borderColor = '#5b21b6';
+          buttonEl.textContent = `Download ${routeLabel} Image`;
+          buttonEl.addEventListener('click', () => downloadDetourTiaSheetImage(buttonEl, sheetIndex));
+
+          controls.appendChild(buttonEl);
+          previewHost.insertBefore(controls, sheetEl);
+        });
+      }
     }
 
-    setTgsPreviewEditable(Boolean(window.tgsTiaEditMode));
+    setTgsPreviewEditable(Boolean(window[previewContext.editModeKey]), previewContext.mode);
 
     if (previewWrap) {
       previewWrap.style.display = 'block';
@@ -17762,9 +18500,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const original = button
       ? button.textContent
-      : (detourOnlyMode ? 'Generate Detour TIA Sheet' : 'Generate TGS TIA Sheet');
+      : (previewContext.mode === 'detour' ? 'Generate Detour TIA Sheet' : 'Generate TGS TIA Sheet');
     if (button && !(options && options.silentButton)) {
-      button.textContent = detourOnlyMode ? 'Detour Sheet Updated' : 'Preview Updated';
+      button.textContent = previewContext.mode === 'detour' ? 'Detour Sheet Updated' : 'Preview Updated';
       setTimeout(() => {
         button.textContent = original;
       }, 1300);
@@ -17777,22 +18515,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
-  function getCurrentTgsPreviewPayload() {
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
+  function getCurrentTgsPreviewPayload(mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+    const htmlKey = isDetour ? 'lastDetourTiaSheetHtml' : 'lastTgsTiaSheetHtml';
+    const textKey = isDetour ? 'lastDetourTiaSheetText' : 'lastTgsTiaSheetText';
     const node = previewHost ? previewHost.firstElementChild : null;
-    if (node) {
-      const html = String(node.outerHTML || '');
-      const plainText = String(node.textContent || '').replace(/\s+/g, ' ').trim();
+    if (previewHost && previewHost.children && previewHost.children.length > 0) {
+      const html = String(previewHost.innerHTML || '');
+      const plainText = String(previewHost.textContent || '').replace(/\s+/g, ' ').trim();
       return { html, plainText };
     }
     return {
-      html: String(window.lastTgsTiaSheetHtml || ''),
-      plainText: String(window.lastTgsTiaSheetText || '')
+      html: String(window[htmlKey] || ''),
+      plainText: String(window[textKey] || '')
     };
   }
 
-  function setTgsPreviewEditable(enabled) {
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
+  function setTgsPreviewEditable(enabled, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
     if (!previewHost) return;
 
     // Table cells, list items, note card body spans, direction/section labels
@@ -17821,12 +18563,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
   }
 
-  function toggleTgsTiaEditMode(button) {
-    window.tgsTiaEditMode = !window.tgsTiaEditMode;
-    const enabled = Boolean(window.tgsTiaEditMode);
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+  function toggleTgsTiaEditMode(button, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const editModeKey = isDetour ? 'detourTiaEditMode' : 'tgsTiaEditMode';
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
+    window[editModeKey] = !window[editModeKey];
+    const enabled = Boolean(window[editModeKey]);
 
-    setTgsPreviewEditable(enabled);
+    setTgsPreviewEditable(enabled, isDetour ? 'detour' : 'tgs');
 
     if (button) {
       button.textContent = enabled ? 'Disable Edit Mode' : 'Enable Edit Mode';
@@ -17845,11 +18589,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
-  function copyTgsTiaSheetPreview(button) {
-    const payload = getCurrentTgsPreviewPayload();
+  function toggleDetourTiaEditMode(button) {
+    toggleTgsTiaEditMode(button, 'detour');
+  }
+
+  function copyTgsTiaSheetPreview(button, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const payload = getCurrentTgsPreviewPayload(isDetour ? 'detour' : 'tgs');
     const html = String(payload.html || '');
     const plainText = String(payload.plainText || '');
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
 
     if (!html && !plainText) {
       if (previewStatus) {
@@ -17926,6 +18675,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     })();
   }
 
+  function copyDetourTiaSheetPreview(button) {
+    copyTgsTiaSheetPreview(button, 'detour');
+  }
+
   function ensureHtml2CanvasLoaded() {
     if (typeof window.html2canvas === 'function') {
       return Promise.resolve(window.html2canvas);
@@ -17960,9 +18713,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return window.__html2canvasLoadingPromise;
   }
 
-  function downloadTgsTiaSheetImage(button) {
-    const previewHost = document.getElementById('tgsTiaPreviewHost');
-    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+  function downloadTgsTiaSheetImage(button, mode = 'tgs', specificSheetIndex = null) {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
 
     if (!previewHost || !previewHost.firstElementChild) {
       if (previewStatus) {
@@ -17988,6 +18742,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let originalCaptureWidth = '';
       let originalCaptureMaxWidth = '';
       let originalCaptureMargin = '';
+      let originalHostMaxHeight = '';
+      let originalHostOverflow = '';
+      let originalSheetStyles = new Map();
       try {
         setButtonState('Rendering...', 0);
         if (previewStatus) {
@@ -17996,23 +18753,32 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
 
         const html2canvas = await ensureHtml2CanvasLoaded();
-        captureEl = previewHost.firstElementChild;
-        originalCaptureWidth = captureEl ? captureEl.style.width : '';
-        originalCaptureMaxWidth = captureEl ? captureEl.style.maxWidth : '';
-        originalCaptureMargin = captureEl ? captureEl.style.margin : '';
+        const allCaptureElements = isDetour
+          ? Array.from(previewHost.querySelectorAll(':scope > .detour-tia-sheet'))
+          : [previewHost.firstElementChild].filter(Boolean);
+        const captureElements = Number.isInteger(specificSheetIndex) && specificSheetIndex >= 0
+          ? [allCaptureElements[specificSheetIndex]].filter(Boolean)
+          : allCaptureElements;
+        if (!captureElements.length) {
+          throw new Error('No preview sheets available for capture.');
+        }
 
         // Remove scroll clipping on the host so html2canvas sees the full content
-        const originalHostMaxHeight = previewHost.style.maxHeight;
-        const originalHostOverflow = previewHost.style.overflow;
+        originalHostMaxHeight = previewHost.style.maxHeight;
+        originalHostOverflow = previewHost.style.overflow;
         previewHost.style.maxHeight = 'none';
         previewHost.style.overflow = 'visible';
 
-        // Ensure tables are fully visible and headers have proper styling before capture
-        if (captureEl) {
-          captureEl.style.width = '2200px';
-          captureEl.style.maxWidth = 'none';
-          captureEl.style.margin = '0';
-          captureEl.querySelectorAll('table').forEach((table) => {
+        captureElements.forEach((sheetEl) => {
+          originalSheetStyles.set(sheetEl, {
+            width: sheetEl.style.width,
+            maxWidth: sheetEl.style.maxWidth,
+            margin: sheetEl.style.margin
+          });
+          sheetEl.style.width = '2800px';
+          sheetEl.style.maxWidth = 'none';
+          sheetEl.style.margin = '0';
+          sheetEl.querySelectorAll('table').forEach((table) => {
             table.style.breakInside = 'avoid';
             table.querySelectorAll('thead').forEach((thead) => {
               thead.style.display = 'table-header-group';
@@ -18025,7 +18791,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
               th.style.opacity = '1';
             });
           });
-        }
+        });
         
         const losPalette = {
           'vcr-los-a': { background: '#2e7d32', color: '#ffffff', border: '#1b5e20' },
@@ -18036,130 +18802,155 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           'vcr-los-f': { background: '#c62828', color: '#ffffff', border: '#8e0000' }
         };
 
-        const contentCanvas = await html2canvas(captureEl, {
-          backgroundColor: '#ffffff',
-          scale: 4,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          onclone: (clonedDocument) => {
-            // Ensure bold styling is applied to cloned document
-            clonedDocument.querySelectorAll('thead th').forEach((th) => {
-              th.style.display = 'table-cell';
-              th.style.visibility = 'visible';
-              th.style.opacity = '1';
-              th.style.fontWeight = '900';
-              th.style.backgroundColor = '#ffffff';
-              th.style.color = '#000000';
-              th.style.fontSize = '13px';
-              th.style.borderBottom = '2px solid #000000';
-            });
-            clonedDocument.querySelectorAll('tbody th, .rowhead').forEach((th) => {
-              th.style.fontWeight = '900';
-              th.style.backgroundColor = '#ffffff';
-              th.style.color = '#000000';
-              th.style.fontSize = '12px';
-            });
-            clonedDocument.querySelectorAll('tbody td').forEach((td) => {
-              td.style.fontWeight = '700';
-              td.style.color = '#000000';
-            });
-            clonedDocument.querySelectorAll('.vcr-badge').forEach((badge) => {
-              badge.style.display = 'inline-flex';
-              badge.style.alignItems = 'center';
-              badge.style.justifyContent = 'center';
-              badge.style.gap = '4px';
-              badge.style.padding = '5px 8px';
-              badge.style.borderRadius = '999px';
-              badge.style.fontWeight = '800';
-              badge.style.fontSize = '10px';
-              badge.style.lineHeight = '1.15';
-
-              const losClass = Array.from(badge.classList).find((className) => losPalette[className]);
-              const palette = losClass ? losPalette[losClass] : null;
-              if (palette) {
-                badge.style.backgroundColor = palette.background;
-                badge.style.color = palette.color;
-                badge.style.border = `1px solid ${palette.border}`;
-              }
-
-              badge.querySelectorAll('span, div').forEach((child) => {
-                child.style.color = 'inherit';
-                child.style.opacity = '1';
-              });
-            });
-
-            // Force all text-bearing elements to have explicit visible colors.
-            // This catches anything that only inherits color via CSS classes (not inline styles)
-            // which html2canvas can miss when capturing an isolated subtree.
-            clonedDocument.querySelectorAll('div, p, li, label').forEach((el) => {
-              if (!el.style.color) {
-                el.style.color = '#111827';
-              }
-            });
-
-            // Force caption/label divs inside the two direction panels
-            clonedDocument.querySelectorAll('div[style*="font-weight:800"], div[style*="font-weight: 800"], div[style*="font-weight:700"], div[style*="font-weight: 700"]').forEach((el) => {
-              if (!el.style.color) el.style.color = '#0f172a';
-              el.style.opacity = '1';
-            });
-
-            const clonedRoot = clonedDocument.getElementById('tgsTiaPreviewHost');
-            const clonedSheet = clonedRoot ? clonedRoot.firstElementChild : clonedDocument.body.firstElementChild;
-            if (clonedSheet) {
-              clonedSheet.style.width = '2200px';
-              clonedSheet.style.maxWidth = 'none';
-              clonedSheet.style.margin = '0';
-            }
-            clonedDocument.querySelectorAll('table').forEach((table) => {
-              table.style.backgroundColor = '#ffffff';
-            });
-          }
-        });
-
-        if (captureEl) {
-          captureEl.style.width = originalCaptureWidth;
-          captureEl.style.maxWidth = originalCaptureMaxWidth;
-          captureEl.style.margin = originalCaptureMargin;
-        }
-
-        // Export onto a true A4 landscape canvas.
-        const pageWidth = 3508;
-        const pageHeight = 2480;
-        const margin = 120;
-        const drawWidth = pageWidth - (margin * 2);
-        const drawHeight = pageHeight - (margin * 2);
-
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = pageWidth;
-        exportCanvas.height = pageHeight;
-        const ctx = exportCanvas.getContext('2d');
-        if (!ctx) throw new Error('Canvas context not available');
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageWidth, pageHeight);
-
-        const scale = Math.min(drawWidth / contentCanvas.width, drawHeight / contentCanvas.height);
-        const targetW = Math.max(1, Math.round(contentCanvas.width * scale));
-        const targetH = Math.max(1, Math.round(contentCanvas.height * scale));
-        const offsetX = Math.round((pageWidth - targetW) / 2);
-        const offsetY = Math.round((pageHeight - targetH) / 2);
-
-        ctx.drawImage(contentCanvas, offsetX, offsetY, targetW, targetH);
-        const dataUrl = exportCanvas.toDataURL('image/png');
         const safeTitle = String((typeof getReportAddressForPrint === 'function' ? getReportAddressForPrint() : 'tia_sheet') || 'tia_sheet')
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '_')
           .replace(/^_+|_+$/g, '')
           .slice(0, 64) || 'tia_sheet';
-        const fileName = `${safeTitle}_tgs_sheet.png`;
 
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const renderClonedSheetCanvas = async (sheetIndex) => {
+          const sheetEl = captureElements[sheetIndex];
+          captureEl = sheetEl;
+          originalCaptureWidth = sheetEl ? sheetEl.style.width : '';
+          originalCaptureMaxWidth = sheetEl ? sheetEl.style.maxWidth : '';
+          originalCaptureMargin = sheetEl ? sheetEl.style.margin : '';
+
+          const contentCanvas = await html2canvas(sheetEl, {
+            backgroundColor: '#ffffff',
+            scale: 4,
+            useCORS: true,
+            logging: false,
+            allowTaint: true,
+            onclone: (clonedDocument) => {
+              clonedDocument.querySelectorAll('thead th').forEach((th) => {
+                th.style.display = 'table-cell';
+                th.style.visibility = 'visible';
+                th.style.opacity = '1';
+                th.style.fontWeight = '900';
+                th.style.backgroundColor = '#ffffff';
+                th.style.color = '#000000';
+                th.style.fontSize = '13px';
+                th.style.borderBottom = '2px solid #000000';
+              });
+              clonedDocument.querySelectorAll('tbody th, .rowhead').forEach((th) => {
+                th.style.fontWeight = '900';
+                th.style.backgroundColor = '#ffffff';
+                th.style.color = '#000000';
+                th.style.fontSize = '12px';
+              });
+              clonedDocument.querySelectorAll('tbody td').forEach((td) => {
+                td.style.fontWeight = '700';
+                td.style.color = '#000000';
+              });
+              clonedDocument.querySelectorAll('.vcr-badge').forEach((badge) => {
+                badge.style.display = 'inline-flex';
+                badge.style.alignItems = 'center';
+                badge.style.justifyContent = 'center';
+                badge.style.gap = '4px';
+                badge.style.padding = '5px 8px';
+                badge.style.borderRadius = '999px';
+                badge.style.fontWeight = '800';
+                badge.style.fontSize = '10px';
+                badge.style.lineHeight = '1.15';
+
+                const losClass = Array.from(badge.classList).find((className) => losPalette[className]);
+                const palette = losClass ? losPalette[losClass] : null;
+                if (palette) {
+                  badge.style.backgroundColor = palette.background;
+                  badge.style.color = palette.color;
+                  badge.style.border = `1px solid ${palette.border}`;
+                }
+
+                badge.querySelectorAll('span, div').forEach((child) => {
+                  child.style.color = 'inherit';
+                  child.style.opacity = '1';
+                });
+              });
+
+              clonedDocument.querySelectorAll('div, p, li, label').forEach((el) => {
+                if (!el.style.color) {
+                  el.style.color = '#111827';
+                }
+              });
+
+              clonedDocument.querySelectorAll('div[style*="font-weight:800"], div[style*="font-weight: 800"], div[style*="font-weight:700"], div[style*="font-weight: 700"]').forEach((el) => {
+                if (!el.style.color) el.style.color = '#0f172a';
+                el.style.opacity = '1';
+              });
+
+              const clonedHost = clonedDocument.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+              let clonedSheet = null;
+              if (clonedHost) {
+                clonedSheet = isDetour
+                  ? clonedHost.querySelectorAll(':scope > .detour-tia-sheet')[sheetIndex] || clonedHost.firstElementChild
+                  : clonedHost.firstElementChild;
+              }
+              if (!clonedSheet) {
+                clonedSheet = clonedDocument.body.firstElementChild;
+              }
+              if (clonedSheet) {
+                clonedSheet.style.width = '2800px';
+                clonedSheet.style.maxWidth = 'none';
+                clonedSheet.style.margin = '0';
+              }
+              clonedDocument.querySelectorAll('table').forEach((table) => {
+                table.style.backgroundColor = '#ffffff';
+              });
+            }
+          });
+
+          const pageWidth = 9933;   // A1 landscape at 300 DPI (841 × 594 mm)
+          const pageHeight = 7016;
+          const margin = 200;
+          const drawWidth = pageWidth - (margin * 2);
+          const drawHeight = pageHeight - (margin * 2);
+
+          const exportCanvas = document.createElement('canvas');
+          exportCanvas.width = pageWidth;
+          exportCanvas.height = pageHeight;
+          const ctx = exportCanvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas context not available');
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageWidth, pageHeight);
+
+          const scale = Math.min(drawWidth / contentCanvas.width, drawHeight / contentCanvas.height);
+          const targetW = Math.max(1, Math.round(contentCanvas.width * scale));
+          const targetH = Math.max(1, Math.round(contentCanvas.height * scale));
+          const offsetX = Math.round((pageWidth - targetW) / 2);
+          const offsetY = Math.round((pageHeight - targetH) / 2);
+
+          ctx.drawImage(contentCanvas, offsetX, offsetY, targetW, targetH);
+          return exportCanvas.toDataURL('image/png');
+        };
+
+        const downloadCount = captureElements.length;
+        const baseSheetIndex = Number.isInteger(specificSheetIndex) && specificSheetIndex >= 0 ? specificSheetIndex : 0;
+        for (let idx = 0; idx < captureElements.length; idx += 1) {
+          const sheetEl = captureElements[idx];
+          const sheetIndex = baseSheetIndex + idx;
+          const dataUrl = await renderClonedSheetCanvas(sheetIndex);
+          const routeSlug = String(sheetEl && sheetEl.getAttribute('data-route-slug') || `route_${sheetIndex + 1}`)
+            .toLowerCase()
+            .replace(/[^a-z0-9_]+/g, '_')
+            .replace(/^_+|_+$/g, '') || `route_${sheetIndex + 1}`;
+          const fileName = isDetour
+            ? `${safeTitle}_detour_tia_sheet_${String(sheetIndex + 1).padStart(2, '0')}_${routeSlug}.png`
+            : `${safeTitle}_tgs_sheet.png`;
+
+          const link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
+        originalSheetStyles.forEach((styleState, sheetEl) => {
+          sheetEl.style.width = styleState.width;
+          sheetEl.style.maxWidth = styleState.maxWidth;
+          sheetEl.style.margin = styleState.margin;
+        });
 
         // Restore host scroll container
         previewHost.style.maxHeight = originalHostMaxHeight;
@@ -18167,15 +18958,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         setButtonState('Downloaded');
         if (previewStatus) {
-          previewStatus.textContent = `Downloaded image: ${fileName}`;
+          previewStatus.textContent = isDetour
+            ? (downloadCount === 1
+              ? 'Downloaded selected detour route image.'
+              : `Downloaded ${downloadCount} detour route image${downloadCount === 1 ? '' : 's'}.`)
+            : 'Downloaded image: tgs sheet.';
           previewStatus.style.color = '#0f766e';
         }
       } catch (_err) {
-        if (captureEl) {
-          captureEl.style.width = originalCaptureWidth;
-          captureEl.style.maxWidth = originalCaptureMaxWidth;
-          captureEl.style.margin = originalCaptureMargin;
-        }
+        originalSheetStyles.forEach((styleState, sheetEl) => {
+          sheetEl.style.width = styleState.width;
+          sheetEl.style.maxWidth = styleState.maxWidth;
+          sheetEl.style.margin = styleState.margin;
+        });
         // Restore host scroll container on error too
         previewHost.style.maxHeight = originalHostMaxHeight;
         previewHost.style.overflow = originalHostOverflow;
@@ -18186,6 +18981,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
       }
     })();
+  }
+
+  function downloadDetourTiaSheetImage(button, specificSheetIndex = null) {
+    downloadTgsTiaSheetImage(button, 'detour', specificSheetIndex);
   }
 
   let tgsPreviewAutoRefreshTimer = null;
@@ -18215,7 +19014,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const ignoreIfInsidePreview = (target) => {
       if (!target || !(target instanceof Element)) return false;
-      return !!target.closest('#tgsTiaPreviewWrap');
+      return !!target.closest('#tgsTiaPreviewWrap') || !!target.closest('#detourTiaPreviewWrap');
     };
 
     document.addEventListener('input', (event) => {
@@ -18771,62 +19570,77 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     checkEngineeringConflicts();
   }
 
-  function drawQueueSimulation(queueLengthMeters, hvPercent) {
-    const canvas = document.getElementById('queueCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    // Sync canvas resolution to its rendered CSS width
-    canvas.width = canvas.offsetWidth || 600;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Road
-    ctx.fillStyle = '#7f8c8d';
-    ctx.fillRect(0, canvas.height / 2 - 20, canvas.width, 40);
-
-    // Stop line (red)
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(canvas.width - 50, canvas.height / 2 - 22, 5, 44);
-
-    const carLength = 6;   // metres
-    const hvLength  = 12;  // metres
-    const gap       = 2;   // metres between vehicles
-    const pxPerM    = Math.min(3, (canvas.width - 60) / Math.max(queueLengthMeters, 1));
-
-    let currentLength = 0;
-    let drawX = canvas.width - 55;
-
-    // Seed a stable random so the visual is consistent on re-render
-    let seed = Math.floor(queueLengthMeters * 100 + hvPercent);
-    const seededRand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
-
-    while (currentLength < queueLengthMeters) {
-      const isHV = (seededRand() * 100) < hvPercent;
-      const vehLength = isHV ? hvLength : carLength;
-      if (currentLength + vehLength > queueLengthMeters) break;
-
-      const pixelWidth = vehLength * pxPerM;
-      drawX -= (pixelWidth + gap * pxPerM);
-      if (drawX < 0) break;
-
-      ctx.fillStyle = isHV ? '#f39c12' : '#ecf0f1';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(drawX, canvas.height / 2 - 10, pixelWidth, 20, 3) : ctx.rect(drawX, canvas.height / 2 - 10, pixelWidth, 20);
-      ctx.fill();
-
-      currentLength += (vehLength + gap);
-    }
-
-    // Legend
-    ctx.font = 'bold 11px Arial';
-    ctx.fillStyle = '#ecf0f1';
-    ctx.fillText(`Peak Queue: ${queueLengthMeters.toFixed(0)} m`, 8, 18);
-    ctx.fillStyle = '#f39c12';
-    ctx.fillText(`\u25a0 Heavy Vehicles (${hvPercent}%)`, 8, 34);
-    ctx.fillStyle = '#ecf0f1';
-    ctx.fillText(`\u25a0 Passenger Cars`, 8, 50);
+  // Helper: Calculate bearing between two coordinates
+  function calculateBearing(lat1, lon1, lat2, lon2) {
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const l1 = lat1 * Math.PI / 180;
+    const l2 = lat2 * Math.PI / 180;
+    const y = Math.sin(dLon) * Math.cos(l2);
+    const x = Math.cos(l1) * Math.sin(l2) - Math.sin(l1) * Math.cos(l2) * Math.cos(dLon);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
   }
 
+  // Helper: Calculate GPS coordinate given a distance and bearing
+  function getDestinationPoint(lat, lon, distanceMeters, bearingDegrees) {
+    const R = 6371000;
+    const brng = bearingDegrees * Math.PI / 180;
+    const lat1 = lat * Math.PI / 180;
+    const lon1 = lon * Math.PI / 180;
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(distanceMeters / R) + Math.cos(lat1) * Math.sin(distanceMeters / R) * Math.cos(brng));
+    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(distanceMeters / R) * Math.cos(lat1), Math.cos(distanceMeters / R) - Math.sin(lat1) * Math.sin(lat2));
+    return [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI];
+  }
+
+  // Helper: Shift lat/lon to the left side of the road (AU rules)
+  function applyLateralOffset(lat, lon, travelBearing, offsetMeters = 3.5) {
+    const leftBearing = (travelBearing - 90 + 360) % 360;
+    return getDestinationPoint(lat, lon, offsetMeters, leftBearing);
+  }
+
+  // Helper: Truncate polyline strictly to distance
+  function truncatePathToDistance(path, maxDist) {
+    if (!path || path.length < 2) return path;
+    if (maxDist <= 0) return [path[0], path[0]];
+    let newPath = [path[0]];
+    let traversed = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const p1 = path[i];
+      const p2 = path[i+1];
+      const segLen = haversineDistance(p1[0], p1[1], p2[0], p2[1]);
+      if (traversed + segLen >= maxDist) {
+        const fraction = (maxDist - traversed) / segLen;
+        const lat = p1[0] + (p2[0] - p1[0]) * fraction;
+        const lon = p1[1] + (p2[1] - p1[1]) * fraction;
+        newPath.push([lat, lon]);
+        return newPath;
+      }
+      traversed += segLen;
+      newPath.push(p2);
+    }
+    return newPath;
+  }
+
+  // Helper: Get exact lat/lon and heading along path
+  function getPointAlongCurvedPath(path, distMeters) {
+    if (!path || path.length === 0) return null;
+    if (distMeters <= 0) return { lat: path[0][0], lon: path[0][1], bearing: calculateBearing(path[0][0], path[0][1], path[1][0], path[1][1]) };
+
+    let traversed = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const p1 = path[i];
+      const p2 = path[i+1];
+      const segLen = haversineDistance(p1[0], p1[1], p2[0], p2[1]);
+
+      if (traversed + segLen >= distMeters) {
+        const fraction = (distMeters - traversed) / segLen;
+        const lat = p1[0] + (p2[0] - p1[0]) * fraction;
+        const lon = p1[1] + (p2[1] - p1[1]) * fraction;
+        return { lat, lon, bearing: calculateBearing(p1[0], p1[1], p2[0], p2[1]) };
+      }
+      traversed += segLen;
+    }
+    return null;
+  }
 
   function maxValid(values){
     const nums = values.filter(v => Number.isFinite(v) && v >= 0);
@@ -19562,25 +20376,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       d2Label
     };
     renderQueueCharts(lastQueueChartData);
-
-    // Peak Queue Visualizer — use worst-case q15 across all periods and directions
-    {
-      const allQ15 = ['AM','OP','PM','EV'].flatMap(k => [
-        (queuePeriodD1[k] || {}).q15 || 0,
-        (queuePeriodD2[k] || {}).q15 || 0
-      ]);
-      const peakQ15 = Math.max(...allQ15);
-      const hvPct = parseFloat((document.getElementById('HVP') || {}).value) || 0;
-      const vizWrap = document.getElementById('queueVisualizerWrap');
-      if (vizWrap) {
-        if (peakQ15 > 0) {
-          vizWrap.style.display = 'block';
-          drawQueueSimulation(peakQ15, hvPct);
-        } else {
-          vizWrap.style.display = 'none';
-        }
-      }
-    }
 
     const vcrGroupedBodyD2 = document.getElementById('vcrGroupedBodyD2');
     if (vcrGroupedBodyD2) {
@@ -21557,9 +22352,85 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function getDetourManualRoadKey(roadName) {
-    const std = standardizeRoadName(roadName || '');
-    if (std) return std;
+    if (!roadName) return '';
     return String(roadName || '').trim().toLowerCase();
+  }
+
+  function getJurisdictionAwareSpeedDefault(roadName, funcClass, lanes) {
+    // Infer jurisdiction-default speed limits based on road characteristics
+    // Typical Australian defaults by road type
+    const name = String(roadName || '').toLowerCase();
+    const safeLanes = Math.max(1, Number(lanes) || 2);
+    
+    // Highway/Motorway detection
+    if (funcClass === 'highway' || /\b(motorway|freeway|highway|hwy|mwy|expressway)\b/.test(name)) {
+      return 100; // 100 km/h default for highways
+    }
+    
+    // Arterial roads
+    if (funcClass === 'arterial') {
+      return safeLanes >= 4 ? 80 : 70;
+    }
+    
+    // Collector roads
+    if (funcClass === 'collector') {
+      return safeLanes >= 2 ? 70 : 60;
+    }
+    
+    // Local streets - more granular based on naming patterns
+    if (/\b(court|place|close|cul-de-sac|loop|crescent|cir)\b/.test(name)) {
+      return 40; // Residential cul-de-sacs
+    }
+    if (/\b(lane|drive|road|street|ave)\b/.test(name)) {
+      return safeLanes <= 1 ? 40 : 50; // Narrow lanes vs regular streets
+    }
+    
+    // Default fallback
+    return safeLanes >= 4 ? 70 : (safeLanes >= 2 ? 60 : 50);
+  }
+
+  function getConfidenceBadge(level, score) {
+    const colors = {
+      high: { bg: '#e8f5e9', border: '#66bb6a', text: '#1b5e20', emoji: '✓' },
+      medium: { bg: '#fff8e1', border: '#ffb300', text: '#e65100', emoji: '⚠' },
+      low: { bg: '#ffebee', border: '#ef5350', text: '#c62828', emoji: '!' },
+      none: { bg: '#f5f5f5', border: '#9e9e9e', text: '#616161', emoji: '✗' }
+    };
+    const c = colors[level] || colors.none;
+    const label = level ? level.charAt(0).toUpperCase() + level.slice(1) : 'None';
+    return `<span style="display:inline-block;padding:1px 6px;border-radius:10px;font-size:0.85em;font-weight:600;background:${c.bg};border:1px solid ${c.border};color:${c.text};">${c.emoji} ${label} (${score || 0})</span>`;
+  }
+
+  function checkDetourInputSanity(inputData) {
+    // Warn on unrealistic combinations of inputs
+    const warnings = [];
+    const safeLanes = Number(inputData.lanes) || 2;
+    const safeSpeed = Number(inputData.speedLimitKmh) || 60;
+    const safeVpd = Number(inputData.baseVpd) || 0;
+    const funcClass = getRoadFunctionalClass(inputData.roadName, inputData);
+
+    // Speed too high for number of lanes
+    if (safeLanes <= 1 && safeSpeed > 70) {
+      warnings.push({ field: 'speedLimitKmh', type: 'high-for-lanes', message: 'Speed >70 km/h on a ≤1-lane road is unusual—please verify' });
+    }
+    if (safeLanes <= 2 && safeSpeed > 90) {
+      warnings.push({ field: 'speedLimitKmh', type: 'high-for-lanes', message: 'Speed >90 km/h on a ≤2-lane road is unusual—please verify' });
+    }
+
+    // Volume too high for road type
+    if (funcClass === 'local' && safeVpd > 10000) {
+      warnings.push({ field: 'baseVpd', type: 'high-for-type', message: 'VPD >10k on a local street is unusual—please verify' });
+    }
+    if (funcClass === 'collector' && safeVpd > 25000) {
+      warnings.push({ field: 'baseVpd', type: 'high-for-type', message: 'VPD >25k on a collector road is unusual—please verify' });
+    }
+
+    // Volume too low for road type
+    if ((funcClass === 'highway' || funcClass === 'arterial') && safeVpd > 0 && safeVpd < 3000) {
+      warnings.push({ field: 'baseVpd', type: 'low-for-type', message: 'VPD <3k on a highway/arterial is unusual—please verify' });
+    }
+
+    return warnings;
   }
 
   function getDetourManualRoadInput(roadName) {
@@ -21567,17 +22438,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!key) return null;
     const existing = window.detourManualRoadInputs[key] || {};
     const osmSpeed = (window.detourOsmRoadSpeeds && window.detourOsmRoadSpeeds[String(roadName || existing.roadName || '').trim()]) || null;
-    const defaultSpeed = osmSpeed || 60;
+    // Use jurisdiction-aware speed defaults based on road type when no OSM data
+    const funcClass = getRoadFunctionalClass(roadName, existing);
+    const inferredLanes = Math.max(1, Number(existing.lanes) || 2);
+    const jurisdictionSpeed = getJurisdictionAwareSpeedDefault(roadName, funcClass, inferredLanes);
+    const defaultSpeed = osmSpeed || jurisdictionSpeed;
     // Allow OSM speed to override only if the current value came from the hardcoded default (not user-set)
     const shouldUseOsm = osmSpeed && (!existing.speedLimitSource || existing.speedLimitSource === 'default');
     const normalized = {
       roadName: String(roadName || existing.roadName || '').trim(),
       baseVpd: Number(existing.baseVpd) || 0,
       baseVpdManual: !!existing.baseVpdManual,
-      lanes: Math.max(1, Number(existing.lanes) || 2),
+      lanes: inferredLanes,
       speedLimitKmh: shouldUseOsm ? osmSpeed : (existing.speedLimitKmh != null ? Math.max(10, Math.min(130, Number(existing.speedLimitKmh) || defaultSpeed)) : defaultSpeed),
-      speedLimitSource: shouldUseOsm ? 'osm' : (existing.speedLimitSource || (osmSpeed ? 'osm' : 'default')),
+      speedLimitSource: shouldUseOsm ? 'osm' : (existing.speedLimitSource || (osmSpeed ? 'osm' : (jurisdictionSpeed !== 60 ? 'jurisdiction-default' : 'default'))),
       vpdMethod: existing.vpdMethod || 'datapoints',
+      d1SplitPercent: Math.max(10, Math.min(90, Number(existing.d1SplitPercent) || 50)),
       tripGenVpd: (existing && typeof existing.tripGenVpd === 'object' && existing.tripGenVpd) ? existing.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 },
       tripGenCalcState: (existing && typeof existing.tripGenCalcState === 'object' && existing.tripGenCalcState) ? existing.tripGenCalcState : { landUse: 'custom', qty: '', rate: '', amPct: '10.0', pmPct: '10.0' },
       tripGenCalcLastResult: existing.tripGenCalcLastResult || '',
@@ -21589,15 +22465,52 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return normalized;
   }
 
-  function estimateDetourRoadBaseVpd(roadName, centerLat, centerLon, manualRefPercents = null, manualRefEnabled = null, excludeSiteIds = null) {
+  function getRoadFunctionalClass(roadName, siteData) {
+    // Infer functional class from road name patterns and available data
+    const name = String(roadName || '').toLowerCase();
+    const description = String(siteData && (siteData.road_name || siteData.description) || '').toLowerCase();
+    
+    // Highway/Motorway indicators
+    if (/\b(motorway|freeway|highway|hwy|mwy|expressway|bypass)\b/.test(name + ' ' + description)) return 'highway';
+    // Arterial indicators
+    if (/\b(arterial|main|principal|primary|ring|beltline)\b/.test(name + ' ' + description)) return 'arterial';
+    // Local street indicators
+    if (/\b(local|lane|court|place|close|cul-de-sac|loop)\b/.test(name)) return 'local';
+    // Collector indicators
+    if (/\b(collector|distributor|access)\b/.test(name + ' ' + description)) return 'collector';
+    
+    // Default based on VADT if available
+    const vadt = Number(siteData && siteData.vadt) || 0;
+    if (vadt > 25000) return 'highway';
+    if (vadt > 10000) return 'arterial';
+    if (vadt > 3000) return 'collector';
+    return 'local';
+  }
+
+  function calculateFunctionalClassScore(targetClass, refClass) {
+    const hierarchy = { highway: 4, arterial: 3, collector: 2, local: 1 };
+    const target = hierarchy[targetClass] || 2;
+    const ref = hierarchy[refClass] || 2;
+    const diff = Math.abs(target - ref);
+    // Same class = 1.0, adjacent = 0.7, two steps = 0.3, three steps = 0.1
+    if (diff === 0) return 1.0;
+    if (diff === 1) return 0.7;
+    if (diff === 2) return 0.3;
+    return 0.1;
+  }
+
+  function estimateDetourRoadBaseVpd(roadName, centerLat, centerLon, manualRefPercents = null, manualRefEnabled = null, excludeSiteIds = null, contextAreaType = 'urban') {
     // Use road-specific centroid from OSM scan if available, so distances are measured from
     // the road itself rather than the project center — giving meaningful per-road weights.
     const roadCentroid = window.detourRoadCentroids && window.detourRoadCentroids[roadName];
     const lat = Number(roadCentroid ? roadCentroid.lat : centerLat);
     const lon = Number(roadCentroid ? roadCentroid.lon : centerLon);
-    const radius = 5000;
+    // Dynamic radius based on context (urban vs rural)
+    const isRural = contextAreaType === 'rural' || contextAreaType === 'remote';
+    const radius = isRural ? 15000 : 5000;
+    
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      return { baseVpd: 0, source: 'No primary location', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [] };
+      return { baseVpd: 0, source: 'No primary location', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [], confidence: 'none' };
     }
 
     // Exclude the primary site counter so detour road base VPD is not contaminated
@@ -21608,15 +22521,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const sLat = Number(data && data.latitude);
       const sLon = Number(data && data.longitude);
       const dist = (Number.isFinite(sLat) && Number.isFinite(sLon)) ? haversineDistance(lat, lon, sLat, sLon) : Infinity;
-      return { id, data, dist };
+      const funcClass = getRoadFunctionalClass(data && (data.road_name || data.description), data);
+      return { id, data, dist, funcClass };
     }).filter(item => Number.isFinite(item.dist) && item.dist <= radius && Number(item.data && item.data.vadt) > 0 && !excludeSet.has(item.id));
+
+    // Get target road functional class
+    const targetFuncClass = getRoadFunctionalClass(roadName, null);
 
     const sameRoadSites = allSites
       .filter(item => isSameRoad(roadName, item.data && (item.data.road_name || item.data.description || '')))
       .sort((a, b) => a.dist - b.dist)
       .slice(0, 3);
 
-    const refsRaw = (sameRoadSites.length ? sameRoadSites : allSites.sort((a, b) => a.dist - b.dist).slice(0, 5));
+    // Apply functional class filtering - prefer same or adjacent class
+    const refsRaw = (sameRoadSites.length ? sameRoadSites : allSites.sort((a, b) => {
+      // Sort by combined score: distance + functional class similarity
+      const aScore = calculateFunctionalClassScore(targetFuncClass, a.funcClass);
+      const bScore = calculateFunctionalClassScore(targetFuncClass, b.funcClass);
+      // Weight: 70% distance, 30% functional class match
+      return (a.dist / 1000 * 0.7 + (1 - aScore) * 0.3) - (b.dist / 1000 * 0.7 + (1 - bScore) * 0.3);
+    }).slice(0, 5));
     const refsAll = refsRaw.map(item => ({
       siteId: String(item.id || ''),
       vadt: Number(item.data && item.data.vadt) || 0,
@@ -21629,8 +22553,45 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       enabled: true
     })).filter(r => r.vadt > 0);
 
+    // Calculate confidence based on reference proximity and functional class match
+    function calculateConfidenceMetrics(refsList, targetClass) {
+      if (!refsList.length) return { level: 'none', score: 0, nearestDist: Infinity, avgDist: Infinity, funcClassMatch: 0 };
+      
+      const distances = refsList.map(r => Number(r.distance) || Infinity);
+      const nearestDist = Math.min(...distances);
+      const avgDist = distances.reduce((a, b) => a + b, 0) / distances.length;
+      
+      // Functional class match rate
+      const funcMatches = refsList.filter(r => {
+        const refClass = getRoadFunctionalClass(r.road, { road_name: r.road, vadt: r.vadt });
+        return calculateFunctionalClassScore(targetClass, refClass) >= 0.7;
+      }).length;
+      const funcClassMatch = funcMatches / refsList.length;
+      
+      // Confidence score 0-100
+      let score = 0;
+      if (nearestDist < 500) score += 40;
+      else if (nearestDist < 1000) score += 30;
+      else if (nearestDist < 2000) score += 20;
+      else if (nearestDist < 5000) score += 10;
+      
+      if (refsList.length >= 3) score += 25;
+      else if (refsList.length >= 2) score += 15;
+      else score += 5;
+      
+      score += Math.round(funcClassMatch * 25);
+      
+      let level = 'low';
+      if (score >= 70) level = 'high';
+      else if (score >= 40) level = 'medium';
+      else if (score >= 15) level = 'low';
+      else level = 'none';
+      
+      return { level, score: Math.min(100, score), nearestDist, avgDist, funcClassMatch };
+    }
+
     if (!refsAll.length) {
-      return { baseVpd: 0, source: 'No refs within 5 km', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [] };
+      return { baseVpd: 0, source: `No refs within ${isRural ? '15 km' : '5 km'}`, refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [], confidence: 'none', confidenceScore: 0 };
     }
 
     refsAll.forEach((site) => {
@@ -21639,6 +22600,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     const refs = refsAll.filter(site => site.enabled);
+    const confidenceMetrics = calculateConfidenceMetrics(refs, targetFuncClass);
+    
     if (!refs.length) {
       return {
         baseVpd: 0,
@@ -21646,7 +22609,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         refsCount: 0,
         areaType: 'N/A',
         areaFactorPercent: 100,
-        refs: refsAll
+        refs: refsAll,
+        confidence: 'none',
+        confidenceScore: 0
       };
     }
 
@@ -21694,6 +22659,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       refsCount: refs.length,
       areaType: 'User weighted only',
       areaFactorPercent: 100,
+      confidence: confidenceMetrics.level,
+      confidenceScore: confidenceMetrics.score,
+      confidenceMetrics: {
+        nearestDist: confidenceMetrics.nearestDist,
+        avgDist: confidenceMetrics.avgDist,
+        funcClassMatch: confidenceMetrics.funcClassMatch,
+        refCount: refs.length
+      },
       refs: refsAll.map(site => ({
         siteId: site.siteId,
         road: site.road,
@@ -21711,6 +22684,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const panelEl = document.getElementById('detourManualVpdPanel');
     const bodyEl = document.getElementById('detourManualVpdRows');
     if (!panelEl || !bodyEl) return;
+
+    const previousBodyScrollTop = bodyEl.scrollTop;
+    const previousBodyScrollLeft = bodyEl.scrollLeft;
+    const previousWindowScrollY = window.scrollY;
+    const previousWindowScrollX = window.scrollX;
 
     const cleanRoads = Array.from(new Set((Array.isArray(roads) ? roads : []).map(r => String(r || '').trim()).filter(Boolean)));
     window.detourManualPanelRoads = cleanRoads;
@@ -21771,7 +22749,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Road</label>
           <input type="text" value="${roadName.replace(/"/g, '&quot;')}" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%;" />
-          <div style="font-size: 0.72em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">${hasEstimate ? `${String(estimateMeta.source || 'Estimated')} • ${Number(estimateMeta.refsCount) || 0} refs • ${numberRoundUp(activeWeightPercent, 0)}% active selected` : 'No reference counters within 5 km to estimate road VPD.'}</div>
+          <div style="font-size: 0.72em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">${hasEstimate ? `${String(estimateMeta.source || 'Estimated')} • ${Number(estimateMeta.refsCount) || 0} refs • ${numberRoundUp(activeWeightPercent, 0)}% active • ${getConfidenceBadge(estimateMeta.confidence, estimateMeta.confidenceScore)}` : 'No reference counters within range to estimate road VPD.'}</div>
         </div>
         <div data-datapoints-section="${safeKeyAttr}" style="${vpdMethod === 'tripgen' ? 'display:none;' : ''}">
           <label style="color: ${hasEstimate ? '#6a1b9a' : '#c62828'}; font-size: 0.75em;">Weighted Volume Sum (% × VPD)</label>
@@ -21789,7 +22767,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         </div>
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Profile Logic</label>
-          <input type="text" value="Auto from existing hourly logic" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%;" />
+          <input type="text" value="From Base VPD + D1/D2 Split" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%; font-size: 0.85em;" title="Hourly profile is computed from Base VPD using the D1/D2 split percentage" />
         </div>
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Lanes *</label>
@@ -21798,8 +22776,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div>
           <label style="color: ${inputData.speedLimitSource === 'default' ? '#c62828' : '#6a1b9a'}; font-size: 0.75em;">Speed Limit *</label>
           <input type="number" data-detour-manual-key="${key}" data-detour-manual-field="speedLimitKmh" min="10" max="130" step="5" value="${Math.max(10, Number(inputData.speedLimitKmh) || 60)}" style="border: 1px solid ${inputData.speedLimitSource === 'default' ? '#e53935' : '#ce93d8'}; background: ${inputData.speedLimitSource === 'default' ? '#fff3f0' : '#fff'}; width: 100%;" />
-          <div style="font-size: 0.71em; color: ${inputData.speedLimitSource === 'osm' ? '#2e7d32' : (inputData.speedLimitSource === 'user' ? '#1565c0' : '#c62828')}; margin-top: 2px;">${inputData.speedLimitSource === 'osm' ? '🗺️ From OSM' : (inputData.speedLimitSource === 'user' ? '✏️ User entered' : '⚠️ No data — please enter')}</div>
+          <div style="font-size: 0.71em; color: ${inputData.speedLimitSource === 'osm' ? '#2e7d32' : (inputData.speedLimitSource === 'user' ? '#1565c0' : (inputData.speedLimitSource === 'jurisdiction-default' ? '#f57c00' : '#c62828'))}; margin-top: 2px;">${inputData.speedLimitSource === 'osm' ? '🗺️ From OSM' : (inputData.speedLimitSource === 'user' ? '✏️ User entered' : (inputData.speedLimitSource === 'jurisdiction-default' ? '🏛️ Jurisdiction default' : '⚠️ No data — please enter'))}</div>
         </div>
+        <div>
+          <label style="color: #6a1b9a; font-size: 0.75em;">D1 Split %</label>
+          <input type="number" data-detour-manual-key="${key}" data-detour-manual-field="d1SplitPercent" min="10" max="90" step="5" value="${Math.max(10, Math.min(90, Number(inputData.d1SplitPercent) || 50))}" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
+          <div style="font-size: 0.71em; color: #6a1b9a; margin-top: 2px;">D1 traffic % (D2 = ${100 - Math.max(10, Math.min(90, Number(inputData.d1SplitPercent) || 50))}%)</div>
+        </div>
+        ${(() => {
+          const sanityWarnings = checkDetourInputSanity(inputData);
+          if (!sanityWarnings.length) return '';
+          const warningHtml = sanityWarnings.map(w => `<div style="font-size:0.71em;color:#c62828;margin-top:2px;">⚠️ ${w.message}</div>`).join('');
+          return `<div style="grid-column: 1 / -1; background: #ffebee; border: 1px solid #ef5350; border-radius: 4px; padding: 6px 8px; margin-top: 8px;"><div style="font-size:0.75em;font-weight:600;color:#c62828;">Input Warnings</div>${warningHtml}</div>`;
+        })()}
       `;
 
       // Add Manual Trip Generation section
@@ -21994,6 +22983,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         let value = Number(inputEl.value);
         if (!Number.isFinite(value)) value = 0;
         if (field === 'lanes') value = Math.max(1, Math.round(value));
+        if (field === 'd1SplitPercent') value = Math.max(10, Math.min(90, Math.round(value)));
         if (field === 'speedLimitKmh') {
           value = Math.max(10, Math.min(130, Math.round(value)));
           existing.speedLimitSource = 'user';
@@ -22077,7 +23067,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const baseDisplayEl = bodyEl.querySelector(`.detour-base-vpd-display[data-detour-base-key="${manualKey}"]`);
         if (weightedDisplayEl) weightedDisplayEl.value = Math.max(0, Math.round(Number(estimate.weightedVolumeSum) || 0)).toLocaleString();
         if (baseDisplayEl) baseDisplayEl.value = Math.max(0, Math.round(existing.baseVpd || 0)).toLocaleString();
-        calculateDetourOverlay();
+        calculateDetourOverlay({ skipManualPanelRender: true });
         return;
       }
 
@@ -22163,7 +23153,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const sliderEl = bodyEl.querySelector(`.detour-ref-weight-slider[data-detour-manual-key="${key}"][data-ref-siteid="${siteId}"]`);
         if (sliderEl) sliderEl.value = String(inputEl.value);
         syncDetourRefWeights(inputEl, false);
-        updateDetourBaseVpdDisplay(roadName, key);
+        updateDetourBaseVpdDisplay(roadName, key, { liveOnly: true });
       });
       inputEl.addEventListener('input', () => {
         const key = String(inputEl.dataset.detourManualKey || '').trim();
@@ -22196,9 +23186,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const roadName = String(checkEl.dataset.detourManualRoad || '').trim();
         if (!key || !roadName) return;
         syncDetourRefEnabled(checkEl);
-        updateDetourBaseVpdDisplay(roadName, key);
+        updateDetourBaseVpdDisplay(roadName, key, { liveOnly: true });
       });
     });
+
+    bodyEl.scrollTop = previousBodyScrollTop;
+    bodyEl.scrollLeft = previousBodyScrollLeft;
+    if (window.scrollY !== previousWindowScrollY || window.scrollX !== previousWindowScrollX) {
+      window.scrollTo({ top: previousWindowScrollY, left: previousWindowScrollX, behavior: 'auto' });
+    }
   }
 
   function recalculateDetourManualBaseVpdForRoad(roadName, options = {}) {
@@ -23076,8 +24072,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Initialize detour length UI
   updateDetourLengthModeUi();
 
-  function buildManualDetourProfile(baseVpd) {
-    return buildSyntheticHourlyFromDaily(baseVpd);
+  function buildManualDetourProfile(baseVpd, d1SplitPercent = 50) {
+    // Default 50/50 split, but allow user override for directional imbalance
+    const profile = buildSyntheticHourlyFromDaily(baseVpd);
+    const split = Math.max(10, Math.min(90, Number(d1SplitPercent) || 50)) / 100;
+    return {
+      profile,
+      d1Split: split,
+      d2Split: 1 - split
+    };
   }
 
   function deriveDirectionalLanes(totalLanes, seedD1 = 1, seedD2 = 1) {
@@ -23313,7 +24316,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
   window.calculateDetourRoadTripGen = calculateDetourRoadTripGen;
 
-  function calculateDetourOverlay() {
+  function calculateDetourOverlay(options = {}) {
     syncPedestrianDetourFromTraffic({ skipRecalc: true });
     updateDetourClosureUi();
     updateRouteDistanceDisplay();
@@ -23484,7 +24487,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       manualInput.estimateMeta = estimate;
       window.detourManualRoadInputs[key] = manualInput;
     });
-    renderDetourManualVpdPanel(selectedRoadPath);
+    if (!options.skipManualPanelRender) {
+      renderDetourManualVpdPanel(selectedRoadPath);
+    }
 
     if (resultsPanel) resultsPanel.style.display = 'block';
     const selectedName = getCurrentTrafficDetourRoadName();
@@ -23617,9 +24622,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           roadsWithNoEstimate.push(roadName);
           return;
         }
-        const profile = buildManualDetourProfile(baseVpd);
-        const d1Profile = profile.map(value => Math.max(0, (Number(value) || 0) * 0.5));
-        const d2Profile = profile.map(value => Math.max(0, (Number(value) || 0) * 0.5));
+        // Use configurable directional split (default 50/50, allow 60/40, 70/30, etc.)
+        const d1SplitPercent = Math.max(10, Math.min(90, Number(manualInput && manualInput.d1SplitPercent) || 50));
+        const profileResult = buildManualDetourProfile(baseVpd, d1SplitPercent);
+        const profile = profileResult.profile;
+        const d1Profile = profile.map(value => Math.max(0, (Number(value) || 0) * profileResult.d1Split));
+        const d2Profile = profile.map(value => Math.max(0, (Number(value) || 0) * profileResult.d2Split));
         const d1Lanes = lanes <= 1 ? 0.5 : Math.ceil(lanes / 2);
         const d2Lanes = lanes <= 1 ? 0.5 : Math.max(1, Math.floor(lanes / 2));
         const perLaneCapacity = calculateDetourCapacity(detourLaneWidth, detourLateralClearance, detourCapacityHvPercent, detourGradeType, detourBaseLaneCapacity);
@@ -26859,8 +27867,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (!location) {
-      document.getElementById('quickTiaError').innerHTML = `<strong>❌ Could not find that address on the map.</strong><br><span style="font-size: 0.9em;">Try adding suburb/city.</span>`;
-      document.getElementById('quickTiaError').style.display = 'block';
+      setQuickTiaError('❌ Could not find that address on the map.', '', { subText: 'Try adding suburb/city.' });
       if (searchBtn) { searchBtn.innerHTML = originalBtnText; searchBtn.disabled = false; }
       return;
     }
@@ -26928,22 +27935,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     updateQuickAddressSearchOverlay('Validating road connectivity...', 'Removing references not connected to the searched address road network.', 78);
 
     if (matchResult.type === 'NO_MATCH') {
-      const noConnectedMsg = '<strong>⚠ No connected datapoint found within 5km radius.</strong><br><span style="font-size:0.9em;">Use manual trip generation method.</span>';
       const disconnectedExtra = excludedRefs.length
-        ? '<br><span style="font-size:0.9em;">Nearby datapoints were excluded because no connected route was verified within the 5km radius context.</span>'
+        ? ' Nearby datapoints were excluded because no connected route was verified within the 5km radius context.'
         : '';
       const beyondRadiusExtra = connectedBeyond5Count > 0 || excludedBeyond5Count > 0
-        ? '<br><span style="font-size:0.9em;">Some roads may still connect beyond 5km, but no connected reference is available within the 5km radius.</span>'
+        ? ' Some roads may still connect beyond 5km, but no connected reference is available within the 5km radius.'
         : '';
       const fallbackReferenceExtra = within5FallbackRefs.length
-        ? `<br><span style="font-size:0.9em;">Showing ${within5FallbackRefs.length} nearest datapoint${within5FallbackRefs.length === 1 ? '' : 's'} within 5km as proximity fallback (connectivity not verified).</span>`
+        ? ` Showing ${within5FallbackRefs.length} nearest datapoint${within5FallbackRefs.length === 1 ? '' : 's'} within 5km as proximity fallback (connectivity not verified).`
         : (beyond5FallbackRefs.length
-        ? `<br><span style="font-size:0.9em;">Showing ${beyond5FallbackRefs.length} nearest datapoint${beyond5FallbackRefs.length === 1 ? '' : 's'} beyond 5km radius as reference only.</span>`
+        ? ` Showing ${beyond5FallbackRefs.length} nearest datapoint${beyond5FallbackRefs.length === 1 ? '' : 's'} beyond 5km radius as reference only.`
         : '');
       const fallbackRefsToDisplay = within5FallbackRefs.length ? within5FallbackRefs : beyond5FallbackRefs;
       const fallbackIsBeyondRadius = !within5FallbackRefs.length && beyond5FallbackRefs.length > 0;
-      document.getElementById('quickTiaError').innerHTML = `${noConnectedMsg}${disconnectedExtra}${beyondRadiusExtra}${fallbackReferenceExtra}`;
-      document.getElementById('quickTiaError').style.display = 'block';
+      setQuickTiaError('⚠ No connected datapoint found within 5km radius.', 'Use manual trip generation method.', {
+        subText: `${disconnectedExtra}${beyondRadiusExtra}${fallbackReferenceExtra}`.trim()
+      });
       const panelEl = document.getElementById('quickTiaPanel');
       if (panelEl) panelEl.style.display = 'block';
       if (fallbackRefsToDisplay.length) {
@@ -27009,8 +28016,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
 
       if (hasSelectedBeyond5Km || (connectedWithin5Count === 0 && connectedBeyond5Count > 0)) {
-        document.getElementById('quickTiaError').innerHTML = '<strong>⚠ No connected reference is available within 5km radius.</strong><br><span style="font-size:0.9em;">Roads may connect beyond 5km; use with caution or switch to manual trip generation.</span>';
-        document.getElementById('quickTiaError').style.display = 'block';
+        setQuickTiaError('⚠ No connected reference is available within 5km radius.', '', {
+          subText: 'Roads may connect beyond 5km; use with caution or switch to manual trip generation.'
+        });
       } else {
         document.getElementById('quickTiaError').style.display = 'none';
       }
@@ -27021,8 +28029,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (searchBtn) { searchBtn.innerHTML = originalBtnText; searchBtn.disabled = false; }
     } catch (err) {
       console.error('performQuickTIASearch error', err);
-      const errEl = document.getElementById('quickTiaError');
-      if (errEl) { errEl.innerHTML = `<strong>❌ Error:</strong> ${String(err && err.message ? err.message : err)}`; errEl.style.display = 'block'; }
+      setQuickTiaError('❌ Error:', String(err && err.message ? err.message : err));
       // try to restore button state if possible
       try { const b = document.getElementById('quickTiaSearchBtn'); if (b) { b.innerHTML = '🔍 Search'; b.disabled = false; } } catch (_) {}
     } finally {
@@ -27107,7 +28114,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }).addTo(macroSearchMarkerLayer);
 
     // Add popup with label
-    marker.bindPopup(`<b>${label}</b>`, {
+    const popupLabel = document.createElement('b');
+    popupLabel.textContent = String(label || 'Selected location');
+    marker.bindPopup(popupLabel, {
       autoClose: false,
       closeButton: true
     }).openPopup();
@@ -27182,6 +28191,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function displayQuickTiaMultipleRefs(searchTerm, nearbyArray, centerLat, centerLon, isSameRoadMatch = false, options = {}) {
+    const escapeHtml = (value) => String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
     window.lastSearchedAddress = String(searchTerm || '').trim();
     const excludedRefs = Array.isArray(options && options.excludedRefs) ? options.excludedRefs : [];
     const exclusionSummary = String(options && options.exclusionSummary ? options.exclusionSummary : '').trim();
@@ -27252,8 +28268,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!refArray.length) {
       refList.innerHTML = '<div style="padding:10px; border:1px solid #ef9a9a; border-radius:6px; background:#ffebee; color:#b71c1c; font-size:0.86em;"><strong>⚠ No connected datapoint found within 5km radius</strong><br><span style="font-size:0.82em;">No connected same-road or nearby references were verified within the 5km radius context.</span></div>';
       document.getElementById('quickTiaMultipleRefs').style.display = 'none';
-      document.getElementById('quickTiaError').innerHTML = '<strong>⚠ No connected datapoint found within 5km radius.</strong><br><span style="font-size:0.9em;">Use manual trip generation method.</span>';
-      document.getElementById('quickTiaError').style.display = 'block';
+      setQuickTiaError('⚠ No connected datapoint found within 5km radius.', '', {
+        subText: 'Use manual trip generation method.'
+      });
       return;
     }
 
@@ -27320,11 +28337,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const row = document.createElement('div');
           row.style.cssText = 'padding:8px; border:1px solid #c8e6c9; border-radius:6px; background:#fff;';
           const safeRoad = String(bucket.road || `Road ${idx + 1}`);
+          const safeRoadKey = String(bucket.key || '').trim();
+          const safeWeight = Math.max(0, Math.min(100, bucket.autoWeight));
           row.innerHTML = `
-            <div style="font-size:0.82em; color:#1b5e20; font-weight:700; margin-bottom:4px;">${safeRoad}</div>
+            <div style="font-size:0.82em; color:#1b5e20; font-weight:700; margin-bottom:4px;">${escapeHtml(safeRoad)}</div>
             <div style="display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:8px;">
-              <input type="range" class="road-weight-slider" data-roadstd="${bucket.key}" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, bucket.autoWeight))}" style="width:100%;" />
-              <input type="number" class="road-weight" data-roadstd="${bucket.key}" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, bucket.autoWeight))}" style="width:62px; padding:2px 4px; border:1px solid #a5d6a7; border-radius:3px; font-size:0.82em;" />
+              <input type="range" class="road-weight-slider" data-roadstd="${escapeHtml(safeRoadKey)}" min="0" max="100" step="1" value="${safeWeight}" style="width:100%;" />
+              <input type="number" class="road-weight" data-roadstd="${escapeHtml(safeRoadKey)}" min="0" max="100" step="1" value="${safeWeight}" style="width:62px; padding:2px 4px; border:1px solid #a5d6a7; border-radius:3px; font-size:0.82em;" />
               <span style="font-size:0.78em; color:#33691e;">%</span>
             </div>
           `;
@@ -27372,20 +28391,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         : '<span style="margin-left: 6px; padding: 1px 6px; border-radius: 10px; background: #546e7a; color: #fff; font-size: 0.72em;">Nearby</span>';
       div.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <strong>${idx + 1}.</strong> ${site.road} ${matchBadge}
+          <strong>${idx + 1}.</strong> ${escapeHtml(site.road)} ${matchBadge}
           <span style="display:inline-flex; align-items:center; gap:8px;">
             <label style="font-size:0.78em; color:#37474f; display:inline-flex; align-items:center; gap:4px;">
-              <input type="checkbox" class="ref-include" data-siteid="${site.siteId}" checked /> Use
+              <input type="checkbox" class="ref-include" data-siteid="${escapeHtml(site.siteId)}" checked /> Use
             </label>
-            <button type="button" class="ref-remove" data-siteid="${site.siteId}" style="width:auto; margin:0; padding:2px 8px; font-size:0.74em; background:#ef5350; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:none;">Remove</button>
+            <button type="button" class="ref-remove" data-siteid="${escapeHtml(site.siteId)}" style="width:auto; margin:0; padding:2px 8px; font-size:0.74em; background:#ef5350; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:none;">Remove</button>
           </span>
         </div>
-        <small style="color: #666;">${sourceLabel} • <strong>${distanceText} ${site.direction} of address</strong> • ${site.vadt.toLocaleString()} VADT ${estimatedTag}</small>
-        ${site.vadt_is_estimated && site.vadt_estimate_note ? `<div style="margin-top:4px; font-size:0.74em; color:#e65100;">${site.vadt_estimate_note}</div>` : ''}
+        <small style="color: #666;">${escapeHtml(sourceLabel)} • <strong>${escapeHtml(distanceText)} ${escapeHtml(site.direction)} of address</strong> • ${Number(site.vadt || 0).toLocaleString()} VADT ${estimatedTag}</small>
+        ${site.vadt_is_estimated && site.vadt_estimate_note ? `<div style="margin-top:4px; font-size:0.74em; color:#e65100;">${escapeHtml(site.vadt_estimate_note)}</div>` : ''}
         <div style="margin-top: 6px; display: grid; grid-template-columns: 1fr auto auto auto auto; align-items: center; gap: 8px;">
           <span style="color: #333; font-size: 0.8em;">Distance Weighting:</span>
-          <input type="range" class="ref-weight-slider" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 100%; cursor: pointer;" />
-          <input type="number" class="ref-weight" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 62px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85em;" />
+          <input type="range" class="ref-weight-slider" data-siteid="${escapeHtml(site.siteId)}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 100%; cursor: pointer;" />
+          <input type="number" class="ref-weight" data-siteid="${escapeHtml(site.siteId)}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 62px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85em;" />
           <span style="font-size: 0.8em; color: #666;">%</span>
           <span style="font-size: 0.75em; color: #1f5e63; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 10px; padding: 1px 6px;">${site.typePercent}%</span>
         </div>
@@ -27421,8 +28440,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const remaining = (window.selectedTiaData.references || []);
           if (!remaining.length) {
             document.getElementById('quickTiaMultipleRefs').style.display = 'none';
-            document.getElementById('quickTiaError').innerHTML = '<strong>❌ No reference points selected.</strong><br><span style="font-size:0.9em;">Search again to load nearby references.</span>';
-            document.getElementById('quickTiaError').style.display = 'block';
+            setQuickTiaError('❌ No reference points selected.', '', { subText: 'Search again to load nearby references.' });
             return;
           }
           const rebuilt = remaining.map(ref => [ref.siteId, macroSitesData[ref.siteId] || {
@@ -27467,7 +28485,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const excludedWrap = document.createElement('div');
       excludedWrap.style.cssText = 'margin-top:10px; padding:10px; border:1px solid #ffccbc; border-radius:6px; background:#fff3e0;';
       const summaryText = exclusionSummary || `${excludedRefsToShow.length} reference point(s) excluded: no connected route verified within 5km radius context.`;
-      excludedWrap.innerHTML = `<div style="font-weight:700; color:#bf360c; margin-bottom:6px;">Excluded Reference Points (Not Connected Within 5km Radius)</div><div style="font-size:0.84em; color:#5d4037; margin-bottom:6px;">${summaryText}</div>`;
+      excludedWrap.innerHTML = `<div style="font-weight:700; color:#bf360c; margin-bottom:6px;">Excluded Reference Points (Not Connected Within 5km Radius)</div><div style="font-size:0.84em; color:#5d4037; margin-bottom:6px;">${escapeHtml(summaryText)}</div>`;
 
       const list = document.createElement('div');
       list.style.cssText = 'display:grid; gap:6px;';
@@ -27478,7 +28496,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ? (distanceMeters < 1000 ? `${Math.round(distanceMeters)}m` : `${(distanceMeters / 1000).toFixed(1)}km`)
           : '-';
         row.style.cssText = 'padding:8px; border:1px solid #ffe0b2; border-radius:4px; background:#fffaf5;';
-        row.innerHTML = `<div style="font-weight:700; color:#6d4c41;">${idx + 1}. ${String((ref && ref.road) || 'Unnamed reference')}</div><div style="font-size:0.8em; color:#795548;">Distance: ${distanceLabel} | ${String((ref && ref.reason) || 'Excluded by accessibility logic.')}</div>`;
+        row.innerHTML = `<div style="font-weight:700; color:#6d4c41;">${idx + 1}. ${escapeHtml(String((ref && ref.road) || 'Unnamed reference'))}</div><div style="font-size:0.8em; color:#795548;">Distance: ${escapeHtml(distanceLabel)} | ${escapeHtml(String((ref && ref.reason) || 'Excluded by accessibility logic.'))}</div>`;
         list.appendChild(row);
       });
       excludedWrap.appendChild(list);
