@@ -2450,6 +2450,19 @@ def editor_page(draft_id: str) -> str:
       }}).filter((item) => item.path);
     }}
 
+    const _defaultFontSizePx = 16;
+    let _currentFontSizePx = _defaultFontSizePx;
+    function adjustFontSize(direction) {{
+      const doc = document.querySelector('main.document-wrapper');
+      if (!doc) return;
+      if (direction === 0) {{
+        _currentFontSizePx = _defaultFontSizePx;
+      }} else {{
+        _currentFontSizePx = Math.min(28, Math.max(10, _currentFontSizePx + direction * 1));
+      }}
+      doc.style.fontSize = _currentFontSizePx + 'px';
+    }}
+
     function downloadEditsProfile() {{
       const payload = getEmbeddedReportPayload() || {{}};
       const profile = {{
