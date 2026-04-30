@@ -22174,9 +22174,85 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function getDetourManualRoadKey(roadName) {
-    const std = standardizeRoadName(roadName || '');
-    if (std) return std;
+    if (!roadName) return '';
     return String(roadName || '').trim().toLowerCase();
+  }
+
+  function getJurisdictionAwareSpeedDefault(roadName, funcClass, lanes) {
+    // Infer jurisdiction-default speed limits based on road characteristics
+    // Typical Australian defaults by road type
+    const name = String(roadName || '').toLowerCase();
+    const safeLanes = Math.max(1, Number(lanes) || 2);
+    
+    // Highway/Motorway detection
+    if (funcClass === 'highway' || /\b(motorway|freeway|highway|hwy|mwy|expressway)\b/.test(name)) {
+      return 100; // 100 km/h default for highways
+    }
+    
+    // Arterial roads
+    if (funcClass === 'arterial') {
+      return safeLanes >= 4 ? 80 : 70;
+    }
+    
+    // Collector roads
+    if (funcClass === 'collector') {
+      return safeLanes >= 2 ? 70 : 60;
+    }
+    
+    // Local streets - more granular based on naming patterns
+    if (/\b(court|place|close|cul-de-sac|loop|crescent|cir)\b/.test(name)) {
+      return 40; // Residential cul-de-sacs
+    }
+    if (/\b(lane|drive|road|street|ave)\b/.test(name)) {
+      return safeLanes <= 1 ? 40 : 50; // Narrow lanes vs regular streets
+    }
+    
+    // Default fallback
+    return safeLanes >= 4 ? 70 : (safeLanes >= 2 ? 60 : 50);
+  }
+
+  function getConfidenceBadge(level, score) {
+    const colors = {
+      high: { bg: '#e8f5e9', border: '#66bb6a', text: '#1b5e20', emoji: '✓' },
+      medium: { bg: '#fff8e1', border: '#ffb300', text: '#e65100', emoji: '⚠' },
+      low: { bg: '#ffebee', border: '#ef5350', text: '#c62828', emoji: '!' },
+      none: { bg: '#f5f5f5', border: '#9e9e9e', text: '#616161', emoji: '✗' }
+    };
+    const c = colors[level] || colors.none;
+    const label = level ? level.charAt(0).toUpperCase() + level.slice(1) : 'None';
+    return `<span style="display:inline-block;padding:1px 6px;border-radius:10px;font-size:0.85em;font-weight:600;background:${c.bg};border:1px solid ${c.border};color:${c.text};">${c.emoji} ${label} (${score || 0})</span>`;
+  }
+
+  function checkDetourInputSanity(inputData) {
+    // Warn on unrealistic combinations of inputs
+    const warnings = [];
+    const safeLanes = Number(inputData.lanes) || 2;
+    const safeSpeed = Number(inputData.speedLimitKmh) || 60;
+    const safeVpd = Number(inputData.baseVpd) || 0;
+    const funcClass = getRoadFunctionalClass(inputData.roadName, inputData);
+
+    // Speed too high for number of lanes
+    if (safeLanes <= 1 && safeSpeed > 70) {
+      warnings.push({ field: 'speedLimitKmh', type: 'high-for-lanes', message: 'Speed >70 km/h on a ≤1-lane road is unusual—please verify' });
+    }
+    if (safeLanes <= 2 && safeSpeed > 90) {
+      warnings.push({ field: 'speedLimitKmh', type: 'high-for-lanes', message: 'Speed >90 km/h on a ≤2-lane road is unusual—please verify' });
+    }
+
+    // Volume too high for road type
+    if (funcClass === 'local' && safeVpd > 10000) {
+      warnings.push({ field: 'baseVpd', type: 'high-for-type', message: 'VPD >10k on a local street is unusual—please verify' });
+    }
+    if (funcClass === 'collector' && safeVpd > 25000) {
+      warnings.push({ field: 'baseVpd', type: 'high-for-type', message: 'VPD >25k on a collector road is unusual—please verify' });
+    }
+
+    // Volume too low for road type
+    if ((funcClass === 'highway' || funcClass === 'arterial') && safeVpd > 0 && safeVpd < 3000) {
+      warnings.push({ field: 'baseVpd', type: 'low-for-type', message: 'VPD <3k on a highway/arterial is unusual—please verify' });
+    }
+
+    return warnings;
   }
 
   function getDetourManualRoadInput(roadName) {
@@ -22184,17 +22260,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!key) return null;
     const existing = window.detourManualRoadInputs[key] || {};
     const osmSpeed = (window.detourOsmRoadSpeeds && window.detourOsmRoadSpeeds[String(roadName || existing.roadName || '').trim()]) || null;
-    const defaultSpeed = osmSpeed || 60;
+    // Use jurisdiction-aware speed defaults based on road type when no OSM data
+    const funcClass = getRoadFunctionalClass(roadName, existing);
+    const inferredLanes = Math.max(1, Number(existing.lanes) || 2);
+    const jurisdictionSpeed = getJurisdictionAwareSpeedDefault(roadName, funcClass, inferredLanes);
+    const defaultSpeed = osmSpeed || jurisdictionSpeed;
     // Allow OSM speed to override only if the current value came from the hardcoded default (not user-set)
     const shouldUseOsm = osmSpeed && (!existing.speedLimitSource || existing.speedLimitSource === 'default');
     const normalized = {
       roadName: String(roadName || existing.roadName || '').trim(),
       baseVpd: Number(existing.baseVpd) || 0,
       baseVpdManual: !!existing.baseVpdManual,
-      lanes: Math.max(1, Number(existing.lanes) || 2),
+      lanes: inferredLanes,
       speedLimitKmh: shouldUseOsm ? osmSpeed : (existing.speedLimitKmh != null ? Math.max(10, Math.min(130, Number(existing.speedLimitKmh) || defaultSpeed)) : defaultSpeed),
-      speedLimitSource: shouldUseOsm ? 'osm' : (existing.speedLimitSource || (osmSpeed ? 'osm' : 'default')),
+      speedLimitSource: shouldUseOsm ? 'osm' : (existing.speedLimitSource || (osmSpeed ? 'osm' : (jurisdictionSpeed !== 60 ? 'jurisdiction-default' : 'default'))),
       vpdMethod: existing.vpdMethod || 'datapoints',
+      d1SplitPercent: Math.max(10, Math.min(90, Number(existing.d1SplitPercent) || 50)),
       tripGenVpd: (existing && typeof existing.tripGenVpd === 'object' && existing.tripGenVpd) ? existing.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 },
       tripGenCalcState: (existing && typeof existing.tripGenCalcState === 'object' && existing.tripGenCalcState) ? existing.tripGenCalcState : { landUse: 'custom', qty: '', rate: '', amPct: '10.0', pmPct: '10.0' },
       tripGenCalcLastResult: existing.tripGenCalcLastResult || '',
@@ -22206,15 +22287,52 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return normalized;
   }
 
-  function estimateDetourRoadBaseVpd(roadName, centerLat, centerLon, manualRefPercents = null, manualRefEnabled = null, excludeSiteIds = null) {
+  function getRoadFunctionalClass(roadName, siteData) {
+    // Infer functional class from road name patterns and available data
+    const name = String(roadName || '').toLowerCase();
+    const description = String(siteData && (siteData.road_name || siteData.description) || '').toLowerCase();
+    
+    // Highway/Motorway indicators
+    if (/\b(motorway|freeway|highway|hwy|mwy|expressway|bypass)\b/.test(name + ' ' + description)) return 'highway';
+    // Arterial indicators
+    if (/\b(arterial|main|principal|primary|ring|beltline)\b/.test(name + ' ' + description)) return 'arterial';
+    // Local street indicators
+    if (/\b(local|lane|court|place|close|cul-de-sac|loop)\b/.test(name)) return 'local';
+    // Collector indicators
+    if (/\b(collector|distributor|access)\b/.test(name + ' ' + description)) return 'collector';
+    
+    // Default based on VADT if available
+    const vadt = Number(siteData && siteData.vadt) || 0;
+    if (vadt > 25000) return 'highway';
+    if (vadt > 10000) return 'arterial';
+    if (vadt > 3000) return 'collector';
+    return 'local';
+  }
+
+  function calculateFunctionalClassScore(targetClass, refClass) {
+    const hierarchy = { highway: 4, arterial: 3, collector: 2, local: 1 };
+    const target = hierarchy[targetClass] || 2;
+    const ref = hierarchy[refClass] || 2;
+    const diff = Math.abs(target - ref);
+    // Same class = 1.0, adjacent = 0.7, two steps = 0.3, three steps = 0.1
+    if (diff === 0) return 1.0;
+    if (diff === 1) return 0.7;
+    if (diff === 2) return 0.3;
+    return 0.1;
+  }
+
+  function estimateDetourRoadBaseVpd(roadName, centerLat, centerLon, manualRefPercents = null, manualRefEnabled = null, excludeSiteIds = null, contextAreaType = 'urban') {
     // Use road-specific centroid from OSM scan if available, so distances are measured from
     // the road itself rather than the project center — giving meaningful per-road weights.
     const roadCentroid = window.detourRoadCentroids && window.detourRoadCentroids[roadName];
     const lat = Number(roadCentroid ? roadCentroid.lat : centerLat);
     const lon = Number(roadCentroid ? roadCentroid.lon : centerLon);
-    const radius = 5000;
+    // Dynamic radius based on context (urban vs rural)
+    const isRural = contextAreaType === 'rural' || contextAreaType === 'remote';
+    const radius = isRural ? 15000 : 5000;
+    
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      return { baseVpd: 0, source: 'No primary location', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [] };
+      return { baseVpd: 0, source: 'No primary location', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [], confidence: 'none' };
     }
 
     // Exclude the primary site counter so detour road base VPD is not contaminated
@@ -22225,15 +22343,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const sLat = Number(data && data.latitude);
       const sLon = Number(data && data.longitude);
       const dist = (Number.isFinite(sLat) && Number.isFinite(sLon)) ? haversineDistance(lat, lon, sLat, sLon) : Infinity;
-      return { id, data, dist };
+      const funcClass = getRoadFunctionalClass(data && (data.road_name || data.description), data);
+      return { id, data, dist, funcClass };
     }).filter(item => Number.isFinite(item.dist) && item.dist <= radius && Number(item.data && item.data.vadt) > 0 && !excludeSet.has(item.id));
+
+    // Get target road functional class
+    const targetFuncClass = getRoadFunctionalClass(roadName, null);
 
     const sameRoadSites = allSites
       .filter(item => isSameRoad(roadName, item.data && (item.data.road_name || item.data.description || '')))
       .sort((a, b) => a.dist - b.dist)
       .slice(0, 3);
 
-    const refsRaw = (sameRoadSites.length ? sameRoadSites : allSites.sort((a, b) => a.dist - b.dist).slice(0, 5));
+    // Apply functional class filtering - prefer same or adjacent class
+    const refsRaw = (sameRoadSites.length ? sameRoadSites : allSites.sort((a, b) => {
+      // Sort by combined score: distance + functional class similarity
+      const aScore = calculateFunctionalClassScore(targetFuncClass, a.funcClass);
+      const bScore = calculateFunctionalClassScore(targetFuncClass, b.funcClass);
+      // Weight: 70% distance, 30% functional class match
+      return (a.dist / 1000 * 0.7 + (1 - aScore) * 0.3) - (b.dist / 1000 * 0.7 + (1 - bScore) * 0.3);
+    }).slice(0, 5));
     const refsAll = refsRaw.map(item => ({
       siteId: String(item.id || ''),
       vadt: Number(item.data && item.data.vadt) || 0,
@@ -22246,8 +22375,45 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       enabled: true
     })).filter(r => r.vadt > 0);
 
+    // Calculate confidence based on reference proximity and functional class match
+    function calculateConfidenceMetrics(refsList, targetClass) {
+      if (!refsList.length) return { level: 'none', score: 0, nearestDist: Infinity, avgDist: Infinity, funcClassMatch: 0 };
+      
+      const distances = refsList.map(r => Number(r.distance) || Infinity);
+      const nearestDist = Math.min(...distances);
+      const avgDist = distances.reduce((a, b) => a + b, 0) / distances.length;
+      
+      // Functional class match rate
+      const funcMatches = refsList.filter(r => {
+        const refClass = getRoadFunctionalClass(r.road, { road_name: r.road, vadt: r.vadt });
+        return calculateFunctionalClassScore(targetClass, refClass) >= 0.7;
+      }).length;
+      const funcClassMatch = funcMatches / refsList.length;
+      
+      // Confidence score 0-100
+      let score = 0;
+      if (nearestDist < 500) score += 40;
+      else if (nearestDist < 1000) score += 30;
+      else if (nearestDist < 2000) score += 20;
+      else if (nearestDist < 5000) score += 10;
+      
+      if (refsList.length >= 3) score += 25;
+      else if (refsList.length >= 2) score += 15;
+      else score += 5;
+      
+      score += Math.round(funcClassMatch * 25);
+      
+      let level = 'low';
+      if (score >= 70) level = 'high';
+      else if (score >= 40) level = 'medium';
+      else if (score >= 15) level = 'low';
+      else level = 'none';
+      
+      return { level, score: Math.min(100, score), nearestDist, avgDist, funcClassMatch };
+    }
+
     if (!refsAll.length) {
-      return { baseVpd: 0, source: 'No refs within 5 km', refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [] };
+      return { baseVpd: 0, source: `No refs within ${isRural ? '15 km' : '5 km'}`, refsCount: 0, areaType: 'N/A', areaFactorPercent: 100, refs: [], confidence: 'none', confidenceScore: 0 };
     }
 
     refsAll.forEach((site) => {
@@ -22256,6 +22422,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     const refs = refsAll.filter(site => site.enabled);
+    const confidenceMetrics = calculateConfidenceMetrics(refs, targetFuncClass);
+    
     if (!refs.length) {
       return {
         baseVpd: 0,
@@ -22263,7 +22431,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         refsCount: 0,
         areaType: 'N/A',
         areaFactorPercent: 100,
-        refs: refsAll
+        refs: refsAll,
+        confidence: 'none',
+        confidenceScore: 0
       };
     }
 
@@ -22311,6 +22481,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       refsCount: refs.length,
       areaType: 'User weighted only',
       areaFactorPercent: 100,
+      confidence: confidenceMetrics.level,
+      confidenceScore: confidenceMetrics.score,
+      confidenceMetrics: {
+        nearestDist: confidenceMetrics.nearestDist,
+        avgDist: confidenceMetrics.avgDist,
+        funcClassMatch: confidenceMetrics.funcClassMatch,
+        refCount: refs.length
+      },
       refs: refsAll.map(site => ({
         siteId: site.siteId,
         road: site.road,
@@ -22393,7 +22571,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Road</label>
           <input type="text" value="${roadName.replace(/"/g, '&quot;')}" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%;" />
-          <div style="font-size: 0.72em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">${hasEstimate ? `${String(estimateMeta.source || 'Estimated')} • ${Number(estimateMeta.refsCount) || 0} refs • ${numberRoundUp(activeWeightPercent, 0)}% active selected` : 'No reference counters within 5 km to estimate road VPD.'}</div>
+          <div style="font-size: 0.72em; color: ${hasEstimate ? '#8e24aa' : '#c62828'}; margin-top: 2px;">${hasEstimate ? `${String(estimateMeta.source || 'Estimated')} • ${Number(estimateMeta.refsCount) || 0} refs • ${numberRoundUp(activeWeightPercent, 0)}% active • ${getConfidenceBadge(estimateMeta.confidence, estimateMeta.confidenceScore)}` : 'No reference counters within range to estimate road VPD.'}</div>
         </div>
         <div data-datapoints-section="${safeKeyAttr}" style="${vpdMethod === 'tripgen' ? 'display:none;' : ''}">
           <label style="color: ${hasEstimate ? '#6a1b9a' : '#c62828'}; font-size: 0.75em;">Weighted Volume Sum (% × VPD)</label>
@@ -22411,7 +22589,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         </div>
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Profile Logic</label>
-          <input type="text" value="Auto from existing hourly logic" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%;" />
+          <input type="text" value="From Base VPD + D1/D2 Split" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%; font-size: 0.85em;" title="Hourly profile is computed from Base VPD using the D1/D2 split percentage" />
         </div>
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Lanes *</label>
@@ -22420,8 +22598,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div>
           <label style="color: ${inputData.speedLimitSource === 'default' ? '#c62828' : '#6a1b9a'}; font-size: 0.75em;">Speed Limit *</label>
           <input type="number" data-detour-manual-key="${key}" data-detour-manual-field="speedLimitKmh" min="10" max="130" step="5" value="${Math.max(10, Number(inputData.speedLimitKmh) || 60)}" style="border: 1px solid ${inputData.speedLimitSource === 'default' ? '#e53935' : '#ce93d8'}; background: ${inputData.speedLimitSource === 'default' ? '#fff3f0' : '#fff'}; width: 100%;" />
-          <div style="font-size: 0.71em; color: ${inputData.speedLimitSource === 'osm' ? '#2e7d32' : (inputData.speedLimitSource === 'user' ? '#1565c0' : '#c62828')}; margin-top: 2px;">${inputData.speedLimitSource === 'osm' ? '🗺️ From OSM' : (inputData.speedLimitSource === 'user' ? '✏️ User entered' : '⚠️ No data — please enter')}</div>
+          <div style="font-size: 0.71em; color: ${inputData.speedLimitSource === 'osm' ? '#2e7d32' : (inputData.speedLimitSource === 'user' ? '#1565c0' : (inputData.speedLimitSource === 'jurisdiction-default' ? '#f57c00' : '#c62828'))}; margin-top: 2px;">${inputData.speedLimitSource === 'osm' ? '🗺️ From OSM' : (inputData.speedLimitSource === 'user' ? '✏️ User entered' : (inputData.speedLimitSource === 'jurisdiction-default' ? '🏛️ Jurisdiction default' : '⚠️ No data — please enter'))}</div>
         </div>
+        <div>
+          <label style="color: #6a1b9a; font-size: 0.75em;">D1 Split %</label>
+          <input type="number" data-detour-manual-key="${key}" data-detour-manual-field="d1SplitPercent" min="10" max="90" step="5" value="${Math.max(10, Math.min(90, Number(inputData.d1SplitPercent) || 50))}" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
+          <div style="font-size: 0.71em; color: #6a1b9a; margin-top: 2px;">D1 traffic % (D2 = ${100 - Math.max(10, Math.min(90, Number(inputData.d1SplitPercent) || 50))}%)</div>
+        </div>
+        ${(() => {
+          const sanityWarnings = checkDetourInputSanity(inputData);
+          if (!sanityWarnings.length) return '';
+          const warningHtml = sanityWarnings.map(w => `<div style="font-size:0.71em;color:#c62828;margin-top:2px;">⚠️ ${w.message}</div>`).join('');
+          return `<div style="grid-column: 1 / -1; background: #ffebee; border: 1px solid #ef5350; border-radius: 4px; padding: 6px 8px; margin-top: 8px;"><div style="font-size:0.75em;font-weight:600;color:#c62828;">Input Warnings</div>${warningHtml}</div>`;
+        })()}
       `;
 
       // Add Manual Trip Generation section
@@ -22616,6 +22805,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         let value = Number(inputEl.value);
         if (!Number.isFinite(value)) value = 0;
         if (field === 'lanes') value = Math.max(1, Math.round(value));
+        if (field === 'd1SplitPercent') value = Math.max(10, Math.min(90, Math.round(value)));
         if (field === 'speedLimitKmh') {
           value = Math.max(10, Math.min(130, Math.round(value)));
           existing.speedLimitSource = 'user';
@@ -23704,8 +23894,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Initialize detour length UI
   updateDetourLengthModeUi();
 
-  function buildManualDetourProfile(baseVpd) {
-    return buildSyntheticHourlyFromDaily(baseVpd);
+  function buildManualDetourProfile(baseVpd, d1SplitPercent = 50) {
+    // Default 50/50 split, but allow user override for directional imbalance
+    const profile = buildSyntheticHourlyFromDaily(baseVpd);
+    const split = Math.max(10, Math.min(90, Number(d1SplitPercent) || 50)) / 100;
+    return {
+      profile,
+      d1Split: split,
+      d2Split: 1 - split
+    };
   }
 
   function deriveDirectionalLanes(totalLanes, seedD1 = 1, seedD2 = 1) {
@@ -24247,9 +24444,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           roadsWithNoEstimate.push(roadName);
           return;
         }
-        const profile = buildManualDetourProfile(baseVpd);
-        const d1Profile = profile.map(value => Math.max(0, (Number(value) || 0) * 0.5));
-        const d2Profile = profile.map(value => Math.max(0, (Number(value) || 0) * 0.5));
+        // Use configurable directional split (default 50/50, allow 60/40, 70/30, etc.)
+        const d1SplitPercent = Math.max(10, Math.min(90, Number(manualInput && manualInput.d1SplitPercent) || 50));
+        const profileResult = buildManualDetourProfile(baseVpd, d1SplitPercent);
+        const profile = profileResult.profile;
+        const d1Profile = profile.map(value => Math.max(0, (Number(value) || 0) * profileResult.d1Split));
+        const d2Profile = profile.map(value => Math.max(0, (Number(value) || 0) * profileResult.d2Split));
         const d1Lanes = lanes <= 1 ? 0.5 : Math.ceil(lanes / 2);
         const d2Lanes = lanes <= 1 ? 0.5 : Math.max(1, Math.floor(lanes / 2));
         const perLaneCapacity = calculateDetourCapacity(detourLaneWidth, detourLateralClearance, detourCapacityHvPercent, detourGradeType, detourBaseLaneCapacity);
