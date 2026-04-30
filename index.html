@@ -18027,15 +18027,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     };
 
     const buildDetourDelayTableForTgs = () => {
-      const delayEstimateText = getValue('detourDelayEstimate') || '-';
+      // Use snapshot data for clean values instead of DOM text with formulas
+      const snap = (typeof window._lastDetourCalcSnapshot === 'object' && window._lastDetourCalcSnapshot) ? window._lastDetourCalcSnapshot : {};
+      const d = snap.delay || {};
+      const delayMin = d.estimatedDelayMin || 0;
       return buildInlineSummaryTable([
-        ['Detour Route Length (km)', getValue('detourRouteLengthKm') || '-'],
-        ['Average Travel Speed on Detour (km/h)', getValue('detourAvgSpeedKmh') || '-'],
-        ['Controlled Intersections (#)', getValue('detourControlledIntCount') || '-'],
-        ['Uncontrolled Intersections (#)', getValue('detourUncontrolledIntCount') || '-'],
-        ['Delay @ Controlled (s)', getValue('detourControlledDelaySec') || '-'],
-        ['Delay @ Uncontrolled (s)', getValue('detourUncontrolledDelaySec') || '-'],
-        ['Estimated Delay', delayEstimateText]
+        ['Detour Route Length (km)', String(d.detourLengthKm || getValue('detourRouteLengthKm') || '0')],
+        ['Average Travel Speed on Detour (km/h)', String(d.avgSpeedKmh || getValue('detourAvgSpeedKmh') || '0')],
+        ['Travel Time (seconds)', String(Math.round(d.travelTimeSec || 0))],
+        ['Total Time incl. Intersections (seconds)', String(Math.round(d.totalTimeSec || 0))],
+        ['Controlled Intersections (#)', getValue('detourControlledIntCount') || '0'],
+        ['Uncontrolled Intersections (#)', getValue('detourUncontrolledIntCount') || '0'],
+        ['Delay @ Controlled (s)', getValue('detourControlledDelaySec') || '60'],
+        ['Delay @ Uncontrolled (s)', getValue('detourUncontrolledDelaySec') || '10'],
+        ['Estimated Delay (minutes)', String(delayMin)]
       ]);
     };
 
