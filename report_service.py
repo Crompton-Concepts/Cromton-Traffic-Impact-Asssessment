@@ -2715,6 +2715,101 @@ def editor_page(draft_id: str) -> str:
 """
 
 
+# ─── FORMULA VERIFICATION ENDPOINT ──────────────────────────────────────────
+
+class FormulaFailure(BaseModel):
+    id: str
+    name: str
+    group: str
+    reference: Any
+    actual: Any
+    deviation: Any = None
+    error: str | None = None
+
+
+class FormulaVerifyRequest(BaseModel):
+    failures: list[FormulaFailure]
+
+
+def _call_claude_verify(failures: list[FormulaFailure]) -> str:
+    """Call Claude API to analyse formula failures. Returns analysis string."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return "ANTHROPIC_API_KEY not set — AI analysis unavailable."
+
+    failure_lines = []
+    for f in failures:
+        dev_str = f"deviation={f.deviation}" if f.deviation is not None else f"error={f.error}"
+        failure_lines.append(
+            f"  [{f.group}] {f.name}: reference={f.reference}, actual={f.actual}, {dev_str}"
+        )
+    failures_text = "\n".join(failure_lines)
+
+    system_prompt = (
+        "You are a traffic engineering specialist and software auditor. "
+        "You verify that traffic calculation formulas in a Traffic Impact Assessment (TIA) tool "
+        "conform to Austroads and TMR (Queensland) engineering standards. "
+        "When formula deviations are reported, diagnose the root cause and give concrete remediation steps."
+    )
+
+    user_prompt = f"""The TIA Formula Verification Agent found {len(failures)} formula failure(s).
+Each failure shows: [group] test-name: reference=<expected>, actual=<app result>, deviation or error.
+
+Failures:
+{failures_text}
+
+For each failure:
+1. Identify the most likely cause (wrong constant, rounding difference, formula variant, code drift, or genuine bug).
+2. State whether the deviation is safety-critical for a traffic engineering assessment.
+3. Provide a one-line corrective action the developer should take.
+
+Keep your response concise and structured."""
+
+    body = json.dumps({
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 1024,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=body,
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data["content"][0]["text"]
+    except urllib.error.HTTPError as exc:
+        body_bytes = exc.read()
+        return f"Claude API error {exc.code}: {body_bytes.decode('utf-8', errors='replace')}"
+    except Exception as exc:
+        return f"Claude API request failed: {exc}"
+
+
+@app.post("/verify-formulas")
+async def verify_formulas(req: FormulaVerifyRequest):
+    """
+    Accepts formula failures from the in-browser Formula Verification Agent,
+    forwards them to Claude for expert analysis, and returns a structured report.
+    """
+    if not req.failures:
+        return {"status": "ok", "analysis": "No failures to analyse."}
+
+    analysis = _call_claude_verify(req.failures)
+    return {
+        "status": "failures_analysed",
+        "failure_count": len(req.failures),
+        "analysis": analysis,
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     
