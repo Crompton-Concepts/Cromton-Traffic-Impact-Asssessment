@@ -21572,7 +21572,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return sum + (percent / 100);
       }, 0);
       if (!(weightTotal > 0)) return 0;
-      return weightedSum / weightTotal;
+      // Divide by max(weightTotal, 1): when total sliders < 100% (weightTotal < 1.0),
+      // output scales down proportionally (participation effect).
+      // When total >= 100%, behaves as a pure weighted average.
+      return weightedSum / Math.max(weightTotal, 1);
     };
 
     const avgVadtRaw = percentAdjustedMean('vadt');

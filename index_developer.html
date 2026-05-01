@@ -28629,7 +28629,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return sum + (percent / 100);
       }, 0);
       if (!(weightTotal > 0)) return 0;
-      return weightedSum / weightTotal;
+      // Divide by max(weightTotal, 1): when total sliders < 100% (weightTotal < 1.0),
+      // output scales down proportionally (participation effect).
+      // When total >= 100%, behaves as a pure weighted average.
+      return weightedSum / Math.max(weightTotal, 1);
     };
 
     const avgVadtRaw = percentAdjustedMean('vadt');
@@ -28687,7 +28690,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     document.getElementById('quickTiaCalcAdjVADT').textContent = finalAvgVADT.toLocaleString();
     document.getElementById('quickTiaCalcD1').textContent = finalAvgD1.toLocaleString();
     document.getElementById('quickTiaCalcD2').textContent = finalAvgD2.toLocaleString();
-    setFormulaBelow('quickTiaCalcAvgVADT', `Weighted Avg VADT = (sum((n_i% * VADT_i))) / sum(n_i%) = ${weightedAvgVADT.toLocaleString()} (N = ${selectedCount})`);
+    setFormulaBelow('quickTiaCalcAvgVADT', `Weighted Avg VADT = sum(n_i% * VADT_i) / max(sum(n_i%), 100%) = ${weightedAvgVADT.toLocaleString()} (N = ${selectedCount})`);
     if (isOneWay) {
       setFormulaBelow('quickTiaCalcAdjVADT', `One-way AADT = (Weighted Avg * area factor) * selected one-way % = (${weightedAvgVADT.toLocaleString()} * ${(areaTypeFactorPercent / 100).toFixed(2)}) * ${(oneWayPercent / 100).toFixed(2)} = ${finalAvgVADT.toLocaleString()}`);
       setFormulaBelow('quickTiaCalcD1', `Calculated D1 (one-way, selected ${oneWayDirection}) = ${finalAvgD1.toLocaleString()}`);
