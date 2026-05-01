@@ -4425,6 +4425,9 @@
         <button id="calcBtn" style="padding: 16px; font-size: 1.1em; font-weight: bold; background: var(--brand); color: white; border: none; border-radius: 12px; cursor: pointer; width: 100%; box-shadow: 0 8px 20px rgba(31, 94, 99, 0.3); transition: transform 0.1s, box-shadow 0.1s;">
           🚀 Calculate All Metrics
         </button>
+        <button id="tia-verify-btn" onclick="window.TIAFormulaAgent && window.TIAFormulaAgent.run()" title="Run formula verification against Austroads / TMR reference implementations" style="margin-top:8px; padding:10px 16px; font-size:0.85em; font-weight:600; background:#37474f; color:white; border:none; border-radius:10px; cursor:pointer; width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.18); transition:transform 0.1s, box-shadow 0.1s;">
+          ✓ Verify Formulas
+        </button>
         <p class="field-help" style="text-align:center; margin-top:8px;">This updates directional summary, queue, VCR/LOS, optional diagnostics, and charts in one pass.</p>
       </div>
     </div>
@@ -29639,9 +29642,76 @@ const LoganTrafficEngine = (function() {
     }
   };
 
+  // ─── FORMULA AGENT BRIDGE ──────────────────────────────────────────────────
+  // Exposes pure calculation functions for the Formula Verification Agent.
+  // Only stateless, DOM-independent functions are exposed here.
+  window.__tiaCalc = {
+    // VCR
+    vcr: (vol, cap) => TMRCalculator.calculateVCR(vol, cap),
+
+    // Queue length (TMRCalculator net-overflow model)
+    queueLength: (vphPerLane, waitMin, capPerLane) =>
+      TMRCalculator.calculateQueueLength(vphPerLane, waitMin, capPerLane),
+
+    // Base volume: ceil(mean)
+    baseVolume: (arr) => TMRCalculator.calculateBaseVolume(arr),
+
+    // Adjusted LV count
+    adjustedLV: (total, hvPct) => TMRCalculator.calculateAdjustedLightVehicles(total, hvPct),
+
+    // CAGR projection
+    cagr: (base, growthRatePct, years) =>
+      TMRCalculator.calculateProjectedVolume(base, 0, years, growthRatePct),
+
+    // PCE volume via DetourCapacityModel
+    pceVolume: (mix, grade) => {
+      const m = new DetourCapacityModel();
+      return m.calculatePCEVolume(mix, grade);
+    },
+
+    // Intersection gap-acceptance absorption
+    intersectionAbsorption: (opposingVph, critGap, followUpHeadway) => {
+      const m = new DetourCapacityModel();
+      return m.calculateIntersectionAbsorption(opposingVph, critGap, followUpHeadway);
+    },
+
+    // ASD (wraps the pure math, not the DOM-bound calculateASD function)
+    asd: (speedKmh, reactionSec, gradePct) => {
+      const V = Number(speedKmh);
+      const t = Number(reactionSec);
+      const G = Number(gradePct) / 100;
+      const f = V <= 40 ? 0.35 : V <= 50 ? 0.33 : V <= 60 ? 0.31
+              : V <= 70 ? 0.30 : V <= 80 ? 0.29 : 0.28;
+      const reactionDist = (V * t) / 3.6;
+      const eff = f + G;
+      const brakingDist = eff > 0.05 ? (V * V) / (254 * eff) : 9999;
+      return { reactionDist, brakingDist, total: Math.round(reactionDist + brakingDist) };
+    },
+
+    // Shockwave queue (fundamental diagram model)
+    swtQueue: (qa, uf, kj, s, us, r) => calculateSWTQueueLength(qa, uf, kj, s, us, r),
+
+    // Key constants for deviation detection
+    constants: {
+      CAP_FREEWAY:              TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['freeway'],
+      CAP_ARTERIAL:             TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['arterial'],
+      CAP_LOCAL:                TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['local'],
+      QUEUE_VEHICLE_SPACING:    7.6,
+      PCE_HEAVY_RIGID_FLAT:     1.4000,
+      PCE_ARTICULATED_FLAT:     2.4000,
+      PCE_BDOUBLE_FLAT:         4.1000,
+      SWT_PCE_LV:               1.0,
+      SWT_PCE_HV:               1.4,
+      SWT_PCE_RT:               4.1,
+      PED_SPEED_MS:             ENGINEERING_CONSTANTS.PED_TRAVEL_SPEED_MS,
+      PEAK_K_FACTOR:            ENGINEERING_CONSTANTS.PEAK_K_FACTOR,
+    },
+  };
+
 })();
 </script>
 <script src="tia-shared-sync.js"></script>
+<script src="formula-agent.js"></script>
 
 <!-- FORMULA MODE ENFORCER START -->
 <script>
