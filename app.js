@@ -15441,6 +15441,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       speedLimitKmh: shouldUseOsm ? osmSpeed : (existing.speedLimitKmh != null ? Math.max(10, Math.min(130, Number(existing.speedLimitKmh) || defaultSpeed)) : defaultSpeed),
       speedLimitSource: shouldUseOsm ? 'osm' : (existing.speedLimitSource || (osmSpeed ? 'osm' : 'default')),
       vpdMethod: existing.vpdMethod || 'datapoints',
+      detourAlignment: String(existing.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel',
       tripGenVpd: (existing && typeof existing.tripGenVpd === 'object' && existing.tripGenVpd) ? existing.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 },
       tripGenCalcState: (existing && typeof existing.tripGenCalcState === 'object' && existing.tripGenCalcState) ? existing.tripGenCalcState : { landUse: 'custom', qty: '', rate: '', amPct: '10.0', pmPct: '10.0' },
       tripGenCalcLastResult: existing.tripGenCalcLastResult || '',
@@ -15619,6 +15620,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const _totalTgVpd = ['EAST', 'WEST', 'NORTH', 'SOUTH'].reduce((s, d) => s + Math.max(0, Number(_tgData[d]) || 0), 0);
       const weightedVolumeSum = Math.max(0, Math.round(Number(estimateMeta.weightedVolumeSum) || 0));
       const activeWeightPercent = Math.max(0, Number(estimateMeta.totalWeightPercent) || 0);
+      const detourAlignment = String((inputData && inputData.detourAlignment) || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
 
       const row = document.createElement('div');
       row.style.cssText = 'display: grid; grid-template-columns: 1.15fr 0.78fr 0.82fr 0.8fr 0.62fr 0.62fr; gap: 8px; align-items: end; background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;';
@@ -15662,6 +15664,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           <label style="color: ${inputData.speedLimitSource === 'default' ? '#c62828' : '#6a1b9a'}; font-size: 0.75em;">Speed Limit *</label>
           <input type="number" data-detour-manual-key="${key}" data-detour-manual-field="speedLimitKmh" min="10" max="130" step="5" value="${Math.max(10, Number(inputData.speedLimitKmh) || 60)}" style="border: 1px solid ${inputData.speedLimitSource === 'default' ? '#e53935' : '#ce93d8'}; background: ${inputData.speedLimitSource === 'default' ? '#fff3f0' : '#fff'}; width: 100%;" />
           <div style="font-size: 0.71em; color: ${inputData.speedLimitSource === 'osm' ? '#2e7d32' : (inputData.speedLimitSource === 'user' ? '#1565c0' : '#c62828')}; margin-top: 2px;">${inputData.speedLimitSource === 'osm' ? '🗺️ From OSM' : (inputData.speedLimitSource === 'user' ? '✏️ User entered' : '⚠️ No data — please enter')}</div>
+        </div>
+        <div style="grid-column: 1 / -1; margin-top: 10px; padding: 10px; background: #faf5ff; border: 1px dashed #ce93d8; border-radius: 6px;">
+          <label style="color: #6a1b9a; font-weight: 700; font-size: 0.85em;">🧭 Detour Direction Alignment *</label>
+          <p style="font-size: 0.75em; color: #8e24aa; margin: 2px 0 6px 0;">Specify how this detour road's D1 aligns with the primary road.</p>
+          <select class="detour-alignment-select" data-road-id="${safeKeyAttr}" data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="detourAlignment" style="width: 100%; border: 1px solid #ce93d8; background: #fff; padding: 6px; border-radius: 4px;">
+            <option value="parallel" ${detourAlignment === 'parallel' ? 'selected' : ''}>Detour D1 flows SAME as Primary D1</option>
+            <option value="anti_parallel" ${detourAlignment === 'anti_parallel' ? 'selected' : ''}>Detour D1 flows SAME as Primary D2</option>
+          </select>
         </div>
       `;
 
@@ -15913,6 +15923,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
               if (pmEl) pmEl.value = (sc.peakPM * 100).toFixed(1);
             }
           }
+        } else if (sField === 'detourAlignment') {
+          sExisting.detourAlignment = String(selectEl.value || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
+          window.detourManualRoadInputs[sKey] = sExisting;
+          calculateDetourOverlay({ skipManualPanelRender: true });
+          return;
         }
         window.detourManualRoadInputs[sKey] = sExisting;
       });
@@ -17235,11 +17250,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const capClearance = Number(capInputs.lateralClearance);
       const capHvPct = Number(capInputs.heavyVehiclePercent);
       const capGradeType = String(capInputs.gradeType || 'level');
+      const alignment = String(roadInputData.detourAlignment || model.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
+      const alignmentBadge = alignment === 'anti_parallel'
+        ? '<span style="font-size:0.72em; color:#6a1b9a; background:#f3e5f5; border:1px solid #ce93d8; border-radius:8px; padding:1px 6px; margin-left:4px;">🧭 D1 -> Pri D2</span>'
+        : '<span style="font-size:0.72em; color:#6a1b9a; background:#f3e5f5; border:1px solid #ce93d8; border-radius:8px; padding:1px 6px; margin-left:4px;">🧭 D1 -> Pri D1</span>';
+      const alignmentText = alignment === 'anti_parallel'
+        ? 'Detour D1 acts as Primary D2; Detour D2 acts as Primary D1.'
+        : 'Detour D1 acts as Primary D1; Detour D2 acts as Primary D2.';
       const methodBadge = vpdMethodUsed === 'tripgen'
         ? '<span style="font-size:0.72em; color:#2a4045; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:8px; padding:1px 6px; margin-left:4px;">🚗 Trip Generation</span>'
         : '<span style="font-size:0.72em; color:#4a148c; background:#f3e5f5; border:1px solid #ce93d8; border-radius:8px; padding:1px 6px; margin-left:4px;">📡 Datapoints</span>';
       card.innerHTML = `
-        <h4>🛣️ ${roadName}</h4>
+        <h4>🛣️ ${roadName}${alignmentBadge}</h4>
+        <p><strong>Direction Alignment:</strong> ${alignmentText}</p>
         <p><strong>Legal Speed Limit:</strong> ${speedLimitKmh} km/h <span style="font-size:0.8em; color:${speedSource === 'default' ? '#c62828' : '#8e24aa'};">(${speedSourceLabel})</span></p>
         ${vpdMethodUsed === 'tripgen' ? '' : `<p><strong>Weighted Volume Sum (% × VPD):</strong> ${weightedVolumeSum.toLocaleString()} vpd</p>`}
         ${vpdMethodUsed === 'tripgen' ? '' : `<p><strong>Active Selected Weight:</strong> ${numberRoundUp(activeWeightPercent, 0)}%</p>`}
@@ -17503,6 +17526,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         window.detourManualRoadInputs[key] = {
           ...existingManual,
           lanes: Math.max(1, Number(existingManual.lanes) || defaultLanes),
+          detourAlignment: String(existingManual.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel',
           baseVpd: keepManualMatched ? safeBaseVpd : resolvedBase,
           baseVpdManual: keepManualMatched,
           estimateMeta: estimate
@@ -17516,6 +17540,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const keepManual = !!manualInput.baseVpdManual && currentBase > 0;
       manualInput.baseVpd = keepManual ? currentBase : Math.max(0, Number(estimate.baseVpd) || 0);
       if (!keepManual) manualInput.baseVpdManual = false;
+      manualInput.detourAlignment = String(manualInput.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
       manualInput.estimateMeta = estimate;
       window.detourManualRoadInputs[key] = manualInput;
     });
@@ -17597,6 +17622,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const matchedSite = matchedRoadsByKey.get(roadKey);
         if (matchedSite) {
           const manualInput = getDetourManualRoadInput(roadName) || {};
+          const detourAlignment = String(manualInput.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
           const manualBaseVpd = Math.max(0, Number(manualInput.baseVpd) || 0);
           const counterBaseVpd = Math.max(0, Number(matchedSite.vadt) || 0);
           const baseBefore = manualBaseVpd > 0 ? manualBaseVpd : counterBaseVpd;
@@ -17620,6 +17646,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             site: matchedSite,
             roadName,
             sourceType: manualBaseVpd > 0 ? 'manual' : 'counter',
+            detourAlignment,
             baseVpd,
             profile,
             laneCount: lanes,
@@ -17641,6 +17668,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
 
         const manualInput = getDetourManualRoadInput(roadName);
+        const detourAlignment = String((manualInput && manualInput.detourAlignment) || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
         const vpdMethodNoSite = (manualInput && manualInput.vpdMethod) || 'datapoints';
         const _tgVpd = (manualInput && typeof manualInput.tripGenVpd === 'object' && manualInput.tripGenVpd) ? manualInput.tripGenVpd : { EAST: 0, WEST: 0, NORTH: 0, SOUTH: 0 };
         const _totalTgVpd = (Number(_tgVpd.EAST) || 0) + (Number(_tgVpd.WEST) || 0) + (Number(_tgVpd.NORTH) || 0) + (Number(_tgVpd.SOUTH) || 0);
@@ -17663,6 +17691,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           site: null,
           roadName,
           sourceType: 'manual',
+          detourAlignment,
           baseVpd,
           profile,
           laneCount: lanes,
@@ -17854,15 +17883,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         let addedD1 = 0;
         let addedD2 = 0;
+        const detourAlignment = String(model.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
+        const routePrimaryToDetour = (primaryDirection, volume) => {
+          const safeVolume = Math.max(0, Number(volume) || 0);
+          if (!(safeVolume > 0)) return;
+          const mapsToDetourD1 = detourAlignment === 'parallel'
+            ? (primaryDirection === 'D1')
+            : (primaryDirection === 'D2');
+          if (mapsToDetourD1) addedD1 += safeVolume;
+          else addedD2 += safeVolume;
+        };
         if (closureType === 'full') {
-          addedD1 = (maxPrimaryD1 * diversionRate);
-          addedD2 = (maxPrimaryD2 * diversionRate);
+          routePrimaryToDetour('D1', maxPrimaryD1 * diversionRate);
+          routePrimaryToDetour('D2', maxPrimaryD2 * diversionRate);
         } else if (closureType === 'oneway') {
-          if (closedDirection === 'D1') {
-            addedD1 = (maxPrimaryD1 * diversionRate);
-          } else {
-            addedD2 = (maxPrimaryD2 * diversionRate);
-          }
+          routePrimaryToDetour(closedDirection, sourceVol * diversionRate);
         }
 
         if (maxBaseD1 > debugMaxBaseD1) debugMaxBaseD1 = maxBaseD1;
@@ -17932,6 +17967,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             segmentResultsByRoad.set(segmentKey, {
               roadName: String(model.roadName || '').trim() || 'Detour road',
               laneCount: Number(model.laneCount) || 2,
+              detourAlignment,
               periods: {}
             });
           }
@@ -17975,38 +18011,43 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       orderedRoadResults.forEach((roadResult) => {
         const roadLabel = String(roadResult.roadName || 'Detour road');
+        const alignment = String(roadResult.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
+        const d1DirectionalLabel = alignment === 'anti_parallel' ? 'D1 (Pri D2)' : 'D1 (Pri D1)';
+        const d2DirectionalLabel = alignment === 'anti_parallel' ? 'D2 (Pri D1)' : 'D2 (Pri D2)';
+        const alignmentBadgeText = alignment === 'anti_parallel' ? 'D1 -> Pri D2' : 'D1 -> Pri D1';
+        const roadLabelHtml = `${roadLabel} <span style="display:inline-block; margin-left:6px; padding:1px 6px; border-radius:10px; background:#f3e5f5; border:1px solid #ce93d8; color:#6a1b9a; font-size:0.74em;">${alignmentBadgeText}</span>`;
         const isSingleLane = (roadResult.laneCount || 2) <= 1;
 
         const baseDetailRow = document.createElement('tr');
-        baseDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">Base Direction LOS</td>${periods.map(p => {
+        baseDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabelHtml}</td><td class="rowhead" data-label="Metric">Base Direction LOS</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
           if (isSingleLane) {
             return `<td data-label="${p.key}">${formatVCR(result.baseVcr)}</td>`;
           }
-          return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D1</span>${formatVCR(result.baseD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D2</span>${formatVCR(result.baseD2Vcr)}</div></div></td>`;
+          return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">${d1DirectionalLabel}</span>${formatVCR(result.baseD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">${d2DirectionalLabel}</span>${formatVCR(result.baseD2Vcr)}</div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(baseDetailRow);
 
         const addedDetailRow = document.createElement('tr');
-        addedDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">Added Diverted Vol</td>${periods.map(p => {
+        addedDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabelHtml}</td><td class="rowhead" data-label="Metric">Added Diverted Vol</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
           if (isSingleLane) {
             return `<td data-label="${p.key}" style="color: #6a1b9a;">+${Math.round(result.addedD1 + result.addedD2).toLocaleString()} vph</td>`;
           }
-          return `<td data-label="${p.key}" style="color: #6a1b9a;"><div class="directional-stack"><div class="directional-row"><span class="direction-label">D1</span><span>+${Math.round(result.addedD1).toLocaleString()} vph</span></div><div class="directional-row"><span class="direction-label">D2</span><span>+${Math.round(result.addedD2).toLocaleString()} vph</span></div></div></td>`;
+          return `<td data-label="${p.key}" style="color: #6a1b9a;"><div class="directional-stack"><div class="directional-row"><span class="direction-label">${d1DirectionalLabel}</span><span>+${Math.round(result.addedD1).toLocaleString()} vph</span></div><div class="directional-row"><span class="direction-label">${d2DirectionalLabel}</span><span>+${Math.round(result.addedD2).toLocaleString()} vph</span></div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(addedDetailRow);
 
         const newDetailRow = document.createElement('tr');
-        newDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabel}</td><td class="rowhead" data-label="Metric">New Direction LOS</td>${periods.map(p => {
+        newDetailRow.innerHTML = `<td class="rowhead" data-label="Road">${roadLabelHtml}</td><td class="rowhead" data-label="Metric">New Direction LOS</td>${periods.map(p => {
           const result = roadResult.periods[p.key];
           if (!result) return `<td data-label="${p.key}">-</td>`;
           if (isSingleLane) {
             return `<td data-label="${p.key}">${formatVCR(result.newVcr)}</td>`;
           }
-          return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D1</span>${formatVCR(result.updatedD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">D2</span>${formatVCR(result.updatedD2Vcr)}</div></div></td>`;
+          return `<td data-label="${p.key}"><div class="directional-stack"><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">${d1DirectionalLabel}</span>${formatVCR(result.updatedD1Vcr)}</div><div class="directional-row"><span class="direction-label" style="color:#6a1b9a;">${d2DirectionalLabel}</span>${formatVCR(result.updatedD2Vcr)}</div></div></td>`;
         }).join('')}`;
         segmentTbody.appendChild(newDetailRow);
       });
