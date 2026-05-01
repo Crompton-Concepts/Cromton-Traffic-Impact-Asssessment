@@ -29642,10 +29642,14 @@ const LoganTrafficEngine = (function() {
     }
   };
 
-  // ─── FORMULA AGENT BRIDGE ──────────────────────────────────────────────────
-  // Exposes pure calculation functions for the Formula Verification Agent.
-  // Only stateless, DOM-independent functions are exposed here.
-  window.__tiaCalc = {
+})();
+
+// ─── FORMULA AGENT BRIDGE ──────────────────────────────────────────────────
+// Exposes pure calculation functions for the Formula Verification Agent.
+// Only stateless, DOM-independent functions are exposed here.
+// Must live outside the LoganTrafficEngine IIFE so TMRCalculator and
+// DetourCapacityModel (defined in the main script block) are in scope.
+window.__tiaCalc = {
     // VCR
     vcr: (vol, cap) => TMRCalculator.calculateVCR(vol, cap),
 
@@ -29707,8 +29711,6 @@ const LoganTrafficEngine = (function() {
       PEAK_K_FACTOR:            ENGINEERING_CONSTANTS.PEAK_K_FACTOR,
     },
   };
-
-})();
 </script>
 <script src="tia-shared-sync.js"></script>
 <script src="formula-agent.js"></script>
