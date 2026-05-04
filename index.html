@@ -26592,7 +26592,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     if (isSlrfMode) {
       const combinedVcr = new Array(24).fill(0).map((_, h) => {
-        const fromWorst = Number.isFinite(Number(hourlyWorstVcr && hourlyWorstVcr[h])) ? Number(hourlyWorstVcr[h]) : null;
+        const fromWorst = (hourlyWorstVcr != null && Number.isFinite(Number(hourlyWorstVcr[h]))) ? Number(hourlyWorstVcr[h]) : null;
         if (Number.isFinite(fromWorst)) return fromWorst;
         const vol1 = Number(gazData[h]) || 0;
         const vol2 = Number(agData[h]) || 0;
@@ -30062,8 +30062,8 @@ window.__tiaCalc = {
       SWT_PCE_LV:               1.0,
       SWT_PCE_HV:               1.4,
       SWT_PCE_RT:               4.1,
-      PED_SPEED_MS:             ENGINEERING_CONSTANTS.PED_TRAVEL_SPEED_MS,
-      PEAK_K_FACTOR:            ENGINEERING_CONSTANTS.PEAK_K_FACTOR,
+      PED_SPEED_MS:             1.2,
+      PEAK_K_FACTOR:            0.10,
     },
   };
 </script>
