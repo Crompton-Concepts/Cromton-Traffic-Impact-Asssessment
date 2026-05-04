@@ -95,6 +95,14 @@
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
     .modal-err { font-size: 0.84rem; color: #b00020; min-height: 1.2em; margin-top: 8px; }
 
+    /* Tabs */
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--line); }
+    .tab-btn { padding: 8px 18px; border: none; background: none; font-size: 0.9rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; border-radius: 6px 6px 0 0; transition: all 0.18s; }
+    .tab-btn:hover { color: var(--brand); background: rgba(31,94,99,0.05); }
+    .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .tab-btn.tab-deleted.active { color: #dc2626; border-bottom-color: #dc2626; }
+    .tbadge-deleted { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }
+
     /* Toast */
     #toast { position: fixed; bottom: 24px; right: 24px; background: #1f5e63; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(80px); opacity: 0; transition: transform 0.25s, opacity 0.25s; z-index: 9999; }
     #toast.show { transform: translateY(0); opacity: 1; }
@@ -138,6 +146,12 @@
 
     <div class="stats-row" id="statsRow"></div>
 
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Active Users</button>
+      <button class="tab-btn tab-deleted" id="tabDeleted" onclick="switchTab('deleted')">Deleted Users <span id="deletedBadge" style="display:none;background:#fca5a5;color:#991b1b;border-radius:10px;font-size:0.75rem;padding:1px 7px;margin-left:4px;"></span></button>
+    </div>
+
+    <div id="activeSection">
     <div class="toolbar">
       <input type="search" id="searchInput" placeholder="Search by username or email…" oninput="renderTable()" />
       <select id="tierFilter" onchange="renderTable()">
@@ -166,6 +180,17 @@
         <tbody id="userTableBody"></tbody>
       </table>
       <div id="noUsersMsg" class="no-users" style="display:none;">No users found.</div>
+    </div>
+    </div><!-- /activeSection -->
+
+    <div id="deletedSection" style="display:none;">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Username</th><th>Email</th><th>Original Tier</th><th>Deleted On</th><th>Actions</th></tr></thead>
+          <tbody id="deletedTableBody"></tbody>
+        </table>
+        <div id="noDeletedMsg" class="no-users" style="display:none;">No deleted users.</div>
+      </div>
     </div>
   </div>
 </div>
@@ -213,14 +238,19 @@
 <div id="toast"></div>
 
 <script>
-  const USERS_STORE_KEY  = 'crompton_tia_users';
-  const ADMIN_SESSION    = 'crompton_tia_admin_session';
+  const USERS_STORE_KEY   = 'crompton_tia_users';
+  const DELETED_STORE_KEY = 'crompton_tia_deleted_users';
+  const ADMIN_SESSION     = 'crompton_tia_admin_session';
 
   // ── Persistence helpers ───────────────────────────────────────────────────
   function getDB() {
     try { return JSON.parse(localStorage.getItem(USERS_STORE_KEY) || '{}'); } catch { return {}; }
   }
   function saveDB(db) { localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db)); }
+  function getDeletedDB() {
+    try { return JSON.parse(localStorage.getItem(DELETED_STORE_KEY) || '{}'); } catch { return {}; }
+  }
+  function saveDeletedDB(db) { localStorage.setItem(DELETED_STORE_KEY, JSON.stringify(db)); }
 
   async function hashPassword(pw) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
@@ -281,12 +311,32 @@
     document.getElementById('adminWelcome').textContent = 'Signed in as ' + u;
     renderStats();
     renderTable();
+    renderDeletedTable();
+    updateDeletedBadge();
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  let currentTab = 'active';
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+    document.getElementById('tabDeleted').classList.toggle('active', tab === 'deleted');
+    document.getElementById('activeSection').style.display  = tab === 'active'  ? '' : 'none';
+    document.getElementById('deletedSection').style.display = tab === 'deleted' ? '' : 'none';
+    if (tab === 'deleted') renderDeletedTable();
+  }
+
+  function updateDeletedBadge() {
+    const count = Object.keys(getDeletedDB()).length;
+    const badge = document.getElementById('deletedBadge');
+    if (count > 0) { badge.textContent = count; badge.style.display = 'inline'; }
+    else badge.style.display = 'none';
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
   function renderStats() {
     const db = getDB();
-    const users = Object.values(db);
+    const users = Object.values(db).filter(u => !u.deleted);
     const counts = { total: users.length, free: 0, basic: 0, pro: 0, 'pro+': 0 };
     users.forEach(u => { const t = (u.tier || 'free').toLowerCase(); if (counts[t] !== undefined) counts[t]++; });
     const row = document.getElementById('statsRow');
@@ -313,6 +363,7 @@
     const tbody    = document.getElementById('userTableBody');
     const noMsg    = document.getElementById('noUsersMsg');
     let rows = Object.values(db).filter(u => {
+      if (u.deleted) return false;
       const matchQ = !q || u.username.includes(q) || (u.email || '').toLowerCase().includes(q);
       const matchT = !tierF || (u.tier || 'free').toLowerCase() === tierF;
       return matchQ && matchT;
@@ -359,13 +410,82 @@
   }
 
   function deleteUser(uname) {
-    if (!confirm(`Delete user "${uname}"? This cannot be undone.`)) return;
+    if (!confirm(`Delete user "${uname}"?\n\nThey will be moved to the Deleted tab and their access will be revoked.`)) return;
     const db = getDB();
-    delete db[uname];
+    const user = db[uname];
+    if (!user) return;
+    // Archive to deleted store
+    const deleted = getDeletedDB();
+    deleted[uname] = { ...user, deletedAt: new Date().toISOString(), originalTier: user.tier };
+    saveDeletedDB(deleted);
+    // Revoke access: set tier to 'deleted' and mark deleted
+    db[uname].tier = 'deleted';
+    db[uname].deleted = true;
     saveDB(db);
     renderStats();
     renderTable();
-    showToast(`User "${uname}" deleted.`);
+    renderDeletedTable();
+    updateDeletedBadge();
+    showToast(`User "${uname}" deleted — access revoked.`);
+  }
+
+  function restoreUser(uname) {
+    const deleted = getDeletedDB();
+    const user = deleted[uname];
+    if (!user) return;
+    const db = getDB();
+    // Restore with original tier, remove deleted flags
+    db[uname] = { ...user };
+    db[uname].tier = user.originalTier || 'free';
+    delete db[uname].deleted;
+    delete db[uname].deletedAt;
+    delete db[uname].originalTier;
+    saveDB(db);
+    delete deleted[uname];
+    saveDeletedDB(deleted);
+    renderStats();
+    renderTable();
+    renderDeletedTable();
+    updateDeletedBadge();
+    showToast(`User "${uname}" restored with ${db[uname].tier} plan.`);
+  }
+
+  function purgeUser(uname) {
+    if (!confirm(`Permanently delete "${uname}"? This cannot be undone.`)) return;
+    const deleted = getDeletedDB();
+    delete deleted[uname];
+    saveDeletedDB(deleted);
+    // Also remove from main DB if still there
+    const db = getDB();
+    if (db[uname] && db[uname].deleted) { delete db[uname]; saveDB(db); }
+    renderDeletedTable();
+    updateDeletedBadge();
+    showToast(`User "${uname}" permanently deleted.`);
+  }
+
+  function renderDeletedTable() {
+    const deleted = getDeletedDB();
+    const tbody = document.getElementById('deletedTableBody');
+    const noMsg = document.getElementById('noDeletedMsg');
+    const rows = Object.values(deleted);
+    if (!rows.length) { tbody.innerHTML = ''; noMsg.style.display = 'block'; return; }
+    noMsg.style.display = 'none';
+    rows.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+    tbody.innerHTML = rows.map(u => {
+      const deletedOn = u.deletedAt ? new Date(u.deletedAt).toLocaleDateString('en-AU', { year:'numeric', month:'short', day:'numeric' }) : '—';
+      const origTier = u.originalTier || 'free';
+      const tClass = origTier.replace('+','plus');
+      return `<tr>
+        <td><strong>${esc(u.username)}</strong></td>
+        <td>${esc(u.email || '—')}</td>
+        <td><span class="tbadge tbadge-${tClass}">${tierLabel(origTier)}</span></td>
+        <td style="color:var(--muted);font-size:0.82rem;">${deletedOn}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-sm btn-primary" onclick="restoreUser('${esc(u.username)}')">Restore</button>
+          <button class="btn btn-sm btn-danger" style="margin-left:6px;" onclick="purgeUser('${esc(u.username)}')">Purge</button>
+        </td>
+      </tr>`;
+    }).join('');
   }
 
   // ── Add / Edit modal ──────────────────────────────────────────────────────

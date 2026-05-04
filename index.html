@@ -9982,6 +9982,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         showError('Invalid username or password.'); 
         return; 
       }
+
+      // Block deleted/revoked accounts
+      if (record.deleted || record.tier === 'deleted') {
+        if (submitBtn) submitBtn.classList.remove('loading');
+        showError('This account has been deactivated. Please contact Crompton Concepts.');
+        return;
+      }
       
       // Persist migration if password was upgraded
       db[key] = record;
