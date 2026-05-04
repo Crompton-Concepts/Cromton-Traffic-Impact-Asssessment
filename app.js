@@ -3880,15 +3880,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   setupPdfPreviewModal();
 
   // ===== DATA CONFIG & LOADING =====
-  const GITHUB_TMR_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/tmr.geojson';
-  const GITHUB_GOLDCOAST_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/goldcoast.geojson';
-  const GITHUB_BRISBANE_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/Brisbane.geojson';
-  const GITHUB_IPSWICH_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/Ipswich.geojson';
-  const GITHUB_LOGAN_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/logan.geojson';
-  const GITHUB_TOOWOOMBA_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/toowoomba.geojson';
-  const GITHUB_TEWANTIN_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/tewantin.geojson';
-  const GITHUB_NSW_2026_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/nsw_2026.geojson';
-  const GITHUB_NSW_TNSW_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/refs/heads/main/TNSW.geojson';
+  const GITHUB_TMR_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tmr.geojson';
+  const GITHUB_GOLDCOAST_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/goldcoast.geojson';
+  const GITHUB_BRISBANE_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/Brisbane.geojson';
+  const GITHUB_IPSWICH_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/Ipswich.geojson';
+  const GITHUB_LOGAN_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/logan.geojson';
+  const GITHUB_TOOWOOMBA_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/toowoomba.geojson';
+  const GITHUB_TEWANTIN_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tewantin.geojson';
+  const GITHUB_NSW_2026_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/nsw_2026.geojson';
+  const GITHUB_NSW_TNSW_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/TNSW.geojson';
   const GITHUB_DATASET_MANIFEST_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/dataset_manifest.json';
   const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v4:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
