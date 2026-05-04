@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TIA Admin — Crompton Concepts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand:   #1f5e63;
+      --brand-2: #0f2f32;
+      --bg:      #f4f7f9;
+      --card:    #ffffff;
+      --line:    #e1ded8;
+      --ink:     #1c1c1c;
+      --muted:   #5f6368;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+    /* ── Login ── */
+    #adminLoginGate { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f2f32 0%, #1f5e63 100%); padding: 20px; }
+    .al-card { background: #fff; border-radius: 16px; padding: 32px 28px; width: min(400px, 100%); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+    .al-logo { width: 160px; display: block; margin: 0 auto 16px; object-fit: contain; }
+    .al-title { text-align: center; font-size: 1.15rem; font-weight: 700; color: var(--brand-2); margin: 0 0 4px; }
+    .al-sub   { text-align: center; font-size: 0.85rem; color: var(--muted); margin: 0 0 20px; }
+    .al-field { margin-bottom: 14px; }
+    .al-field label { display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 5px; }
+    .al-field input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 0.95rem; }
+    .al-field input:focus { border-color: var(--brand); outline: none; }
+    .al-btn { width: 100%; padding: 11px; background: var(--brand); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .al-btn:hover { background: var(--brand-2); }
+    .al-err { margin-top: 10px; font-size: 0.86rem; color: #b00020; min-height: 1.2em; }
+
+    /* ── App shell ── */
+    #adminApp { display: none; }
+    .top-bar { background: var(--brand-2); color: #fff; display: flex; align-items: center; padding: 0 24px; height: 56px; gap: 16px; }
+    .top-bar-logo { height: 34px; object-fit: contain; }
+    .top-bar-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.01em; }
+    .top-bar-user  { margin-left: auto; font-size: 0.82rem; opacity: 0.8; }
+    .top-bar-logout { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; }
+    .top-bar-logout:hover { background: rgba(255,255,255,0.25); }
+
+    .main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+    h1 { font-size: 1.4rem; font-weight: 700; color: var(--brand-2); margin: 0 0 4px; }
+    .page-sub { font-size: 0.88rem; color: var(--muted); margin: 0 0 24px; }
+
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat-card { background: var(--card); border-radius: 12px; padding: 18px 16px; border: 1px solid var(--line); text-align: center; }
+    .stat-num  { font-size: 2rem; font-weight: 700; color: var(--brand); line-height: 1; }
+    .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .toolbar input { flex: 1; min-width: 200px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 0.9rem; }
+    .toolbar input:focus { border-color: var(--brand); outline: none; }
+    .toolbar select { padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 0.88rem; }
+    .btn { padding: 8px 16px; border-radius: 7px; border: none; font-size: 0.87rem; font-weight: 700; cursor: pointer; }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-2); }
+    .btn-danger  { background: #dc2626; color: #fff; }
+    .btn-danger:hover  { background: #991b1b; }
+    .btn-sm { padding: 5px 11px; font-size: 0.8rem; }
+
+    /* Table */
+    .table-wrap { background: var(--card); border-radius: 12px; border: 1px solid var(--line); overflow: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    thead { background: #f0f4f5; }
+    th { padding: 11px 14px; font-size: 0.8rem; font-weight: 700; text-align: left; color: var(--brand-2); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    td { padding: 11px 14px; font-size: 0.88rem; border-top: 1px solid var(--line); vertical-align: middle; }
+    tr:hover td { background: #f7fafa; }
+    .no-users { padding: 32px; text-align: center; color: var(--muted); }
+
+    /* Tier badge */
+    .tbadge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .tbadge-free    { background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; }
+    .tbadge-basic   { background:#eff6ff; color:#1d4ed8; border:1px solid #93c5fd; }
+    .tbadge-pro     { background:#f0fdf4; color:#15803d; border:1px solid #86efac; }
+    .tbadge-proplus { background:linear-gradient(135deg,#fdf4ff,#fef3c7); color:#7e22ce; border:1px solid #c4b5fd; }
+
+    /* Edit tier select inline */
+    .tier-select-inline { padding: 4px 6px; border: 1.5px solid var(--line); border-radius: 6px; font-size: 0.84rem; cursor: pointer; }
+    .tier-select-inline:focus { border-color: var(--brand); outline: none; }
+
+    /* Add user modal */
+    #addUserModal { position: fixed; inset: 0; z-index: 500; display: none; align-items: center; justify-content: center; background: rgba(7,20,22,0.55); backdrop-filter: blur(4px); padding: 20px; }
+    #addUserModal.open { display: flex; }
+    .modal-card { background: #fff; border-radius: 14px; padding: 28px 24px; width: min(420px, 100%); box-shadow: 0 18px 40px rgba(0,0,0,0.22); }
+    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--brand-2); margin: 0 0 18px; }
+    .modal-field { margin-bottom: 12px; }
+    .modal-field label { display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 4px; }
+    .modal-field input, .modal-field select { width: 100%; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 7px; font-size: 0.9rem; }
+    .modal-field input:focus, .modal-field select:focus { border-color: var(--brand); outline: none; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .modal-err { font-size: 0.84rem; color: #b00020; min-height: 1.2em; margin-top: 8px; }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 24px; right: 24px; background: #1f5e63; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(80px); opacity: 0; transition: transform 0.25s, opacity 0.25s; z-index: 9999; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- Admin Login -->
+<div id="adminLoginGate">
+  <div class="al-card">
+    <img class="al-logo" src="logo.jpeg" alt="Crompton logo" />
+    <h2 class="al-title">Admin Dashboard</h2>
+    <p class="al-sub">Crompton Traffic Impact Assessment</p>
+    <form id="adminLoginForm">
+      <div class="al-field">
+        <label for="alUser">Username</label>
+        <input id="alUser" type="text" placeholder="admin" autocomplete="username" required />
+      </div>
+      <div class="al-field">
+        <label for="alPass">Password</label>
+        <input id="alPass" type="password" placeholder="Password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="al-btn">Sign In to Admin</button>
+      <div id="alErr" class="al-err"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Admin App -->
+<div id="adminApp">
+  <div class="top-bar">
+    <img class="top-bar-logo" src="logo.jpeg" alt="Crompton logo" />
+    <span class="top-bar-title">TIA Admin Dashboard</span>
+    <span class="top-bar-user" id="adminWelcome"></span>
+    <button class="top-bar-logout" onclick="adminLogout()">Logout</button>
+  </div>
+
+  <div class="main">
+    <h1>User Management</h1>
+    <p class="page-sub">View and manage all registered TIA accounts. Changes are stored locally in this browser.</p>
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="toolbar">
+      <input type="search" id="searchInput" placeholder="Search by username or email…" oninput="renderTable()" />
+      <select id="tierFilter" onchange="renderTable()">
+        <option value="">All Tiers</option>
+        <option value="free">Free</option>
+        <option value="basic">Basic</option>
+        <option value="pro">Pro</option>
+        <option value="pro+">Pro+</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+      <button class="btn" style="background:#f3f4f6;color:#374151;" onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Tier</th>
+            <th>Role</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+      <div id="noUsersMsg" class="no-users" style="display:none;">No users found.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal">
+  <div class="modal-card">
+    <p class="modal-title" id="addUserModalTitle">Add New User</p>
+    <div class="modal-field">
+      <label for="muUsername">Username</label>
+      <input id="muUsername" type="text" placeholder="username" autocomplete="off" />
+    </div>
+    <div class="modal-field">
+      <label for="muEmail">Email</label>
+      <input id="muEmail" type="email" placeholder="user@example.com" />
+    </div>
+    <div class="modal-field">
+      <label for="muPassword">Password <span style="font-weight:400;color:#9ca3af;font-size:0.78rem;">(leave blank to keep existing)</span></label>
+      <input id="muPassword" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
+    </div>
+    <div class="modal-field">
+      <label for="muTier">Plan / Tier</label>
+      <select id="muTier">
+        <option value="free">Free — $0/mo</option>
+        <option value="basic">Basic — $29/mo</option>
+        <option value="pro">Pro — $79/mo</option>
+        <option value="pro+">Pro+ — $149/mo</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label for="muRole">Role</label>
+      <select id="muRole">
+        <option value="">User</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div id="muErr" class="modal-err"></div>
+    <div class="modal-actions">
+      <button class="btn" style="background:#f3f4f6;color:#374151;" onclick="closeAddUserModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveModalUser()">Save User</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const USERS_STORE_KEY  = 'crompton_tia_users';
+  const ADMIN_SESSION    = 'crompton_tia_admin_session';
+
+  // ── Persistence helpers ───────────────────────────────────────────────────
+  function getDB() {
+    try { return JSON.parse(localStorage.getItem(USERS_STORE_KEY) || '{}'); } catch { return {}; }
+  }
+  function saveDB(db) { localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db)); }
+
+  async function hashPassword(pw) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // ── Seed defaults (mirrors index.html) ───────────────────────────────────
+  function ensureDefaults() {
+    const db = getDB(); let changed = false;
+    if (!db['admin']) { db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', legacyPassword: 'Packer4551', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true }; changed = true; }
+    if (!db['users']) { db['users'] = { username: 'users', email: 'users@cromptonconcepts.com.au', legacyPassword: 'Crompton123', tier: 'basic', createdAt: new Date().toISOString() }; changed = true; }
+    if (changed) saveDB(db);
+  }
+
+  async function verifyPassword(record, pw) {
+    if (record.legacyPassword) {
+      if (pw !== record.legacyPassword) return false;
+      record.passwordHash = await hashPassword(pw);
+      delete record.legacyPassword;
+      return true;
+    }
+    if (record.passwordHash) return record.passwordHash === await hashPassword(pw);
+    return false;
+  }
+
+  // ── Admin login ───────────────────────────────────────────────────────────
+  ensureDefaults();
+
+  if (sessionStorage.getItem(ADMIN_SESSION) === 'true') showApp();
+
+  document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const user = String(document.getElementById('alUser').value || '').trim().toLowerCase();
+    const pw   = String(document.getElementById('alPass').value || '');
+    const errEl = document.getElementById('alErr');
+    errEl.textContent = '';
+    const db = getDB();
+    const rec = db[user];
+    if (!rec || !rec.isAdmin) { errEl.textContent = 'Access denied. Admin credentials required.'; return; }
+    const ok = await verifyPassword(rec, pw);
+    if (!ok) { errEl.textContent = 'Invalid password.'; return; }
+    db[user] = rec; saveDB(db);
+    sessionStorage.setItem(ADMIN_SESSION, 'true');
+    sessionStorage.setItem('crompton_tia_admin_user', user);
+    showApp();
+  });
+
+  function adminLogout() {
+    sessionStorage.removeItem(ADMIN_SESSION);
+    sessionStorage.removeItem('crompton_tia_admin_user');
+    location.reload();
+  }
+
+  function showApp() {
+    document.getElementById('adminLoginGate').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'block';
+    const u = sessionStorage.getItem('crompton_tia_admin_user') || 'admin';
+    document.getElementById('adminWelcome').textContent = 'Signed in as ' + u;
+    renderStats();
+    renderTable();
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+  function renderStats() {
+    const db = getDB();
+    const users = Object.values(db);
+    const counts = { total: users.length, free: 0, basic: 0, pro: 0, 'pro+': 0 };
+    users.forEach(u => { const t = (u.tier || 'free').toLowerCase(); if (counts[t] !== undefined) counts[t]++; });
+    const row = document.getElementById('statsRow');
+    row.innerHTML = [
+      { n: counts.total,   l: 'Total Users' },
+      { n: counts.free,    l: 'Free' },
+      { n: counts.basic,   l: 'Basic' },
+      { n: counts.pro,     l: 'Pro' },
+      { n: counts['pro+'], l: 'Pro+' }
+    ].map(s => `<div class="stat-card"><div class="stat-num">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
+  }
+
+  // ── Table ─────────────────────────────────────────────────────────────────
+  function tierBadge(tier) {
+    const t = (tier || 'free').toLowerCase().replace('+','plus');
+    const label = { free:'Free', basic:'Basic', pro:'Pro', proplus:'Pro+' };
+    return `<span class="tbadge tbadge-${t}">${label[t] || tier}</span>`;
+  }
+
+  function renderTable() {
+    const db       = getDB();
+    const q        = (document.getElementById('searchInput').value || '').toLowerCase();
+    const tierF    = (document.getElementById('tierFilter').value || '').toLowerCase();
+    const tbody    = document.getElementById('userTableBody');
+    const noMsg    = document.getElementById('noUsersMsg');
+    let rows = Object.values(db).filter(u => {
+      const matchQ = !q || u.username.includes(q) || (u.email || '').toLowerCase().includes(q);
+      const matchT = !tierF || (u.tier || 'free').toLowerCase() === tierF;
+      return matchQ && matchT;
+    });
+    // Sort: admins first, then by createdAt
+    rows.sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0) || new Date(a.createdAt) - new Date(b.createdAt));
+    if (!rows.length) { tbody.innerHTML = ''; noMsg.style.display = 'block'; return; }
+    noMsg.style.display = 'none';
+    tbody.innerHTML = rows.map(u => {
+      const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-AU', { year:'numeric', month:'short', day:'numeric' }) : '—';
+      return `<tr>
+        <td><strong>${esc(u.username)}</strong></td>
+        <td>${esc(u.email || '—')}</td>
+        <td>
+          <select class="tier-select-inline" data-user="${esc(u.username)}" onchange="changeTier(this)">
+            ${['free','basic','pro','pro+'].map(t => `<option value="${t}"${(u.tier||'free')===t?' selected':''}>${tierLabel(t)}</option>`).join('')}
+          </select>
+        </td>
+        <td>${u.isAdmin ? '<span style="font-size:0.78rem;font-weight:700;color:#7e22ce;background:#fdf4ff;border:1px solid #c4b5fd;padding:2px 8px;border-radius:20px;">Admin</span>' : '<span style="color:var(--muted);font-size:0.84rem;">User</span>'}</td>
+        <td style="color:var(--muted);font-size:0.82rem;">${joined}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-sm btn-primary" onclick="openEditModal('${esc(u.username)}')">Edit</button>
+          ${!u.isAdmin ? `<button class="btn btn-sm btn-danger" style="margin-left:6px;" onclick="deleteUser('${esc(u.username)}')">Delete</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function tierLabel(t) {
+    return { free: 'Free ($0)', basic: 'Basic ($29)', pro: 'Pro ($79)', 'pro+': 'Pro+ ($149)' }[t] || t;
+  }
+
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function changeTier(sel) {
+    const uname = sel.dataset.user;
+    const newTier = sel.value;
+    const db = getDB();
+    if (!db[uname]) return;
+    db[uname].tier = newTier;
+    saveDB(db);
+    renderStats();
+    showToast(`Plan updated: ${uname} → ${newTier}`);
+  }
+
+  function deleteUser(uname) {
+    if (!confirm(`Delete user "${uname}"? This cannot be undone.`)) return;
+    const db = getDB();
+    delete db[uname];
+    saveDB(db);
+    renderStats();
+    renderTable();
+    showToast(`User "${uname}" deleted.`);
+  }
+
+  // ── Add / Edit modal ──────────────────────────────────────────────────────
+  let editingUser = null;
+
+  function openAddUserModal() {
+    editingUser = null;
+    document.getElementById('addUserModalTitle').textContent = 'Add New User';
+    document.getElementById('muUsername').value = '';
+    document.getElementById('muUsername').disabled = false;
+    document.getElementById('muEmail').value = '';
+    document.getElementById('muPassword').value = '';
+    document.getElementById('muTier').value = 'free';
+    document.getElementById('muRole').value = '';
+    document.getElementById('muErr').textContent = '';
+    document.getElementById('addUserModal').classList.add('open');
+    document.getElementById('muUsername').focus();
+  }
+
+  function openEditModal(uname) {
+    const db = getDB();
+    const u = db[uname];
+    if (!u) return;
+    editingUser = uname;
+    document.getElementById('addUserModalTitle').textContent = 'Edit User — ' + uname;
+    document.getElementById('muUsername').value = u.username;
+    document.getElementById('muUsername').disabled = true;
+    document.getElementById('muEmail').value = u.email || '';
+    document.getElementById('muPassword').value = '';
+    document.getElementById('muTier').value = u.tier || 'free';
+    document.getElementById('muRole').value = u.isAdmin ? 'admin' : '';
+    document.getElementById('muErr').textContent = '';
+    document.getElementById('addUserModal').classList.add('open');
+  }
+
+  function closeAddUserModal() { document.getElementById('addUserModal').classList.remove('open'); }
+
+  async function saveModalUser() {
+    const errEl = document.getElementById('muErr');
+    errEl.textContent = '';
+    const uname = String(document.getElementById('muUsername').value || '').trim().toLowerCase();
+    const email = String(document.getElementById('muEmail').value || '').trim();
+    const pw    = String(document.getElementById('muPassword').value || '');
+    const tier  = document.getElementById('muTier').value;
+    const isAdmin = document.getElementById('muRole').value === 'admin';
+    const db = getDB();
+
+    if (!editingUser) {
+      // New user
+      if (!uname || uname.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
+      if (!/^[a-z0-9_.-]+$/.test(uname)) { errEl.textContent = 'Username: letters, numbers, _ . - only.'; return; }
+      if (!email || !email.includes('@')) { errEl.textContent = 'Valid email required.'; return; }
+      if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+      if (db[uname]) { errEl.textContent = 'Username already exists.'; return; }
+      const hash = await hashPassword(pw);
+      db[uname] = { username: uname, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
+      if (isAdmin) db[uname].isAdmin = true;
+    } else {
+      // Edit existing
+      const rec = db[editingUser];
+      if (!rec) { errEl.textContent = 'User not found.'; return; }
+      if (!email || !email.includes('@')) { errEl.textContent = 'Valid email required.'; return; }
+      rec.email = email;
+      rec.tier  = tier;
+      if (isAdmin) rec.isAdmin = true; else delete rec.isAdmin;
+      if (pw) {
+        if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+        rec.passwordHash = await hashPassword(pw);
+        delete rec.legacyPassword;
+      }
+    }
+
+    saveDB(db);
+    closeAddUserModal();
+    renderStats();
+    renderTable();
+    showToast(editingUser ? `User "${editingUser}" updated.` : `User "${uname}" created.`);
+  }
+
+  // ── Export CSV ─────────────────────────────────────────────────────────────
+  function exportCSV() {
+    const db = getDB();
+    const rows = [['Username','Email','Tier','Role','Joined']];
+    Object.values(db).forEach(u => {
+      rows.push([u.username, u.email||'', u.tier||'free', u.isAdmin?'Admin':'User', u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-AU') : '']);
+    });
+    const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'tia_users_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('addUserModal').addEventListener('click', function (e) { if (e.target === this) closeAddUserModal(); });
+</script>
+</body>
+</html>
