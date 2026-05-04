@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // app.js — Extracted from index.html (read-only reference copy)
 // Main script block 1: lines 5478–26870
 // Main script block 2: lines 26873–27152
@@ -3541,7 +3541,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       event.preventDefault();
       const usernameKey = String(loginUser.value || '').trim().toLowerCase();
       const enteredPassword = String(loginPassword.value || '').trim();
-      const expectedPassword = allowedUsers[usernameKey];
+      
+      // Check localStorage for custom password override
+      const customPasswordKey = `tia_custom_pwd_${usernameKey}`;
+      const customPassword = localStorage.getItem(customPasswordKey);
+      
+      const expectedPassword = customPassword || allowedUsers[usernameKey];
 
       if (expectedPassword && enteredPassword === expectedPassword) {
         if (window.PasswordCredential && navigator.credentials && typeof navigator.credentials.store === 'function') {
@@ -3571,6 +3576,78 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       loginPassword.value = '';
       loginPassword.focus();
     });
+
+    // Forgot Password Logic
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const backToSignInBtn = document.getElementById('backToSignInBtn');
+    const paneSignIn = document.getElementById('paneSignIn');
+    const paneReset = document.getElementById('paneReset');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    const loginTabs = document.querySelector('.login-tabs');
+
+    if (forgotPasswordLink && paneReset) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        paneSignIn.style.display = 'none';
+        if (loginTabs) loginTabs.style.display = 'none';
+        paneReset.style.display = 'block';
+      });
+    }
+
+    if (backToSignInBtn && paneSignIn) {
+      backToSignInBtn.addEventListener('click', () => {
+        paneReset.style.display = 'none';
+        if (loginTabs) loginTabs.style.display = 'flex';
+        paneSignIn.style.display = 'block';
+      });
+    }
+
+    if (resetPasswordForm) {
+      resetPasswordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rUser = document.getElementById('resetUsername').value.trim().toLowerCase();
+        const rKey = document.getElementById('resetRecoveryKey').value.trim();
+        const rNew = document.getElementById('resetNewPassword').value.trim();
+        const rConfirm = document.getElementById('resetConfirmPassword').value.trim();
+        const rError = document.getElementById('resetError');
+        const rSuccess = document.getElementById('resetSuccess');
+
+        rError.textContent = '';
+        rSuccess.textContent = '';
+
+        if (!allowedUsers[rUser]) {
+          rError.textContent = 'Username not found.';
+          return;
+        }
+
+        // Hardcoded Recovery Key for client-side app
+        const validRecoveryKey = 'CromptonReset2024!';
+        if (rKey !== validRecoveryKey) {
+          rError.textContent = 'Invalid Recovery Key.';
+          return;
+        }
+
+        if (rNew !== rConfirm) {
+          rError.textContent = 'Passwords do not match.';
+          return;
+        }
+
+        if (rNew.length < 8) {
+          rError.textContent = 'Password must be at least 8 characters.';
+          return;
+        }
+
+        // Save new password override in localStorage
+        localStorage.setItem(`tia_custom_pwd_${rUser}`, rNew);
+        rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
+        
+        setTimeout(() => {
+          resetPasswordForm.reset();
+          rSuccess.textContent = '';
+          backToSignInBtn.click();
+        }, 2000);
+      });
+    }
   }
 
   function setupLogoutButton() {

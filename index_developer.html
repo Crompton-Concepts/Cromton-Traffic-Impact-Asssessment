@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -3766,7 +3766,10 @@
             </div>
           </div>
           <div class="login-field-group">
-            <label for="loginPassword">Password</label>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label for="loginPassword">Password</label>
+              <a href="#" id="forgotPasswordLink" style="font-size:0.75rem; color:var(--primary); text-decoration:none;">Forgot password?</a>
+            </div>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-lock"></i>
               <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
@@ -3842,6 +3845,45 @@
           <div id="createSuccess" class="login-success" aria-live="polite"></div>
         </form>
       </div>
+
+      <!-- Reset Password -->
+      <div class="login-tab-pane" id="paneReset" role="tabpanel" aria-labelledby="tabReset" style="display:none;">
+        <form id="resetPasswordForm" autocomplete="off">
+          <div class="login-field-group">
+            <label for="resetUsername">Username</label>
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-user"></i>
+              <input id="resetUsername" name="resetUsername" type="text" placeholder="Enter username" required />
+            </div>
+          </div>
+          <div class="login-field-group">
+            <label for="resetRecoveryKey">Recovery Key</label>
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-key"></i>
+              <input id="resetRecoveryKey" name="resetRecoveryKey" type="password" placeholder="Enter recovery key" required />
+            </div>
+          </div>
+          <div class="login-field-group">
+            <label for="resetNewPassword">New Password</label>
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-lock"></i>
+              <input id="resetNewPassword" name="resetNewPassword" type="password" placeholder="New password" required minlength="8" />
+            </div>
+          </div>
+          <div class="login-field-group">
+            <label for="resetConfirmPassword">Confirm New Password</label>
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-lock"></i>
+              <input id="resetConfirmPassword" name="resetConfirmPassword" type="password" placeholder="Confirm password" required />
+            </div>
+          </div>
+          <button type="submit" class="login-submit-btn">Reset Password</button>
+          <button type="button" id="backToSignInBtn" style="width:100%; margin-top:10px; border:none; background:none; color:var(--primary); cursor:pointer; font-size:0.85rem;">Back to Sign In</button>
+          <div id="resetError" class="login-error" aria-live="polite"></div>
+          <div id="resetSuccess" class="login-success" aria-live="polite" style="color:var(--success); font-size:0.85rem; margin-top:0.5rem; text-align:center;"></div>
+        </form>
+      </div>
+
     </div>
   </div>
 
