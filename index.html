@@ -9841,7 +9841,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         loginGate.querySelectorAll('.login-tab-pane').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         btn.setAttribute('aria-selected', 'true');
-        const pane = document.getElementById('pane' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1));
+        const tabPaneId = btn.getAttribute('aria-controls');
+        const pane = tabPaneId ? document.getElementById(tabPaneId) : null;
         if (pane) pane.classList.add('active');
         if (loginError) loginError.textContent = '';
       });
