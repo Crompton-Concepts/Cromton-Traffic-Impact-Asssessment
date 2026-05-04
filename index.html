@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1920,34 +1920,45 @@
     .company-logo-watermark-layer { position: fixed; inset: 0; z-index: 120; pointer-events: none; user-select: none; background-image: var(--watermark-logo); background-repeat: repeat; background-size: 180px auto; background-position: 40px 60px; opacity: 0.018; filter: grayscale(100%) brightness(1.35) contrast(0.7) saturate(60%); }
 
     body.app-locked { overflow: hidden; }
-    body.app-locked .container { filter: blur(2px); pointer-events: none; user-select: none; }
-    #loginGate { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(7, 20, 22, 0.5); backdrop-filter: blur(4px); }
-    .login-card { width: min(420px, 94vw); background: #ffffff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16); padding: 22px; }
-    .login-logo { width: min(230px, 62vw); display: block; margin: 0 auto 14px; object-fit: contain; }
-    .login-title { margin: 0 0 6px; text-align: center; color: var(--brand-2); font-size: 1.2rem; font-weight: 700; }
-    .login-note { margin: 0 0 14px; text-align: center; color: var(--muted); font-size: 0.9rem; }
-    .login-error { margin-top: 10px; font-size: 0.88rem; color: #b00020; min-height: 1.2em; }
+    body.app-locked .container { filter: blur(5px); pointer-events: none; user-select: none; }
+    #loginGate { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle at 50% 50%, rgba(31, 94, 99, 0.45) 0%, rgba(7, 20, 22, 0.75) 100%); backdrop-filter: blur(10px); animation: fadeIn 0.4s ease-out; }
+    .login-card { width: min(460px, 94vw); background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%); border: 1px solid rgba(255,255,255,0.5); border-radius: 20px; box-shadow: 0 24px 50px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255,255,255,0.8); padding: 32px 28px; max-height: 92vh; overflow-y: auto; transform: translateY(0); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .login-logo { width: min(200px, 50vw); display: block; margin: 0 auto 20px; object-fit: contain; border-radius: 12px; box-shadow: 0 8px 24px rgba(31, 94, 99, 0.12); }
+    .login-title { margin: 0 0 8px; text-align: center; color: var(--brand-2); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+    .login-note { margin: 0 0 20px; text-align: center; color: var(--muted); font-size: 0.95rem; }
+    .login-error { margin-top: 14px; font-size: 0.9rem; color: #d32f2f; min-height: 1.2em; text-align: center; font-weight: 600; background: #ffebee; border-radius: 8px; padding: 8px; opacity: 0; transform: translateY(-5px); transition: all 0.3s ease; }
+    .login-error.show { opacity: 1; transform: translateY(0); }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 20%, 40%, 60%, 80% { transform: translateX(5px); } }
+    .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
     /* Membership auth UI */
-    .login-card { width: min(460px, 94vw); background: #ffffff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16); padding: 22px 24px; max-height: 92vh; overflow-y: auto; }
-    .login-tabs { display: flex; border-bottom: 2px solid var(--line); margin-bottom: 16px; gap: 0; }
-    .login-tab-btn { flex: 1; padding: 9px 8px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 0.95rem; font-weight: 600; color: var(--muted); transition: color 0.2s, border-color 0.2s; margin-bottom: -2px; }
+    .login-tabs { display: flex; border-bottom: 2px solid var(--line); margin-bottom: 20px; gap: 0; }
+    .login-tab-btn { flex: 1; padding: 12px 8px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 0.95rem; font-weight: 600; color: var(--muted); transition: all 0.2s ease; margin-bottom: -2px; }
+    .login-tab-btn:hover { color: var(--brand); background: rgba(31, 94, 99, 0.04); border-radius: 6px 6px 0 0; }
     .login-tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
-    .login-tab-pane { display: none; }
+    .login-tab-pane { display: none; animation: fadeIn 0.3s ease-out; }
     .login-tab-pane.active { display: block; }
-    .login-field-group { margin-bottom: 11px; }
-    .login-field-group label { display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: var(--ink); }
-    .login-field-group input, .login-field-group select { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s; }
-    .login-field-group input:focus, .login-field-group select:focus { border-color: var(--brand); outline: none; }
-    .login-submit-btn { width: 100%; padding: 11px; background: var(--brand); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.2s; }
-    .login-submit-btn:hover { background: var(--brand-2); }
-    .login-success { margin-top: 10px; font-size: 0.88rem; color: #1b7e37; min-height: 1.2em; }
-    .tier-select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-    .tier-card { border: 2px solid var(--line); border-radius: 8px; padding: 10px 8px 8px; cursor: pointer; transition: border-color 0.18s, background 0.18s; text-align: center; user-select: none; }
-    .tier-card:hover { border-color: var(--brand); background: #f0f9fa; }
-    .tier-card.selected { border-color: var(--brand); background: #e6f4f5; }
-    .tier-card-name { font-weight: 700; font-size: 0.9rem; color: var(--brand-2); }
-    .tier-card-price { font-size: 0.78rem; color: var(--brand); font-weight: 700; margin-top: 3px; }
-    .tier-card-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+    .login-field-group { margin-bottom: 16px; position: relative; }
+    .login-field-group label { display: block; margin-bottom: 6px; font-size: 0.88rem; font-weight: 600; color: var(--brand-2); }
+    .login-input-wrapper { position: relative; display: flex; align-items: center; }
+    .login-input-wrapper i { position: absolute; left: 14px; color: #94a3b8; transition: color 0.3s ease; }
+    .login-field-group input, .login-field-group select { width: 100%; box-sizing: border-box; padding: 12px 14px 12px 40px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 0.95rem; background: #ffffff; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .login-field-group input:focus, .login-field-group select:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(31, 94, 99, 0.1); outline: none; }
+    .login-field-group input:focus + i, .login-input-wrapper:focus-within i { color: var(--brand); }
+    .login-submit-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%); color: #fff; border: none; border-radius: 10px; font-size: 1.05rem; font-weight: 700; cursor: pointer; margin-top: 8px; transition: transform 0.2s, box-shadow 0.2s, background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 8px 16px rgba(15, 47, 50, 0.2); }
+    .login-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 20px rgba(15, 47, 50, 0.25); }
+    .login-submit-btn:active { transform: translateY(0); }
+    .login-submit-btn .fa-spinner { display: none; animation: spin 1s linear infinite; }
+    .login-submit-btn.loading .fa-spinner { display: inline-block; }
+    .login-submit-btn.loading .btn-text { opacity: 0.8; }
+    .login-success { margin-top: 14px; font-size: 0.9rem; color: #1b7e37; min-height: 1.2em; text-align: center; font-weight: 600; background: #e8f5e9; border-radius: 8px; padding: 8px; opacity: 0; transform: translateY(-5px); transition: all 0.3s ease; }
+    .login-success.show { opacity: 1; transform: translateY(0); }
+    .tier-select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .tier-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px 10px; cursor: pointer; transition: all 0.2s ease; text-align: center; user-select: none; background: #ffffff; }
+    .tier-card:hover { border-color: #cbd5e1; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .tier-card.selected { border-color: var(--brand); background: #f0f9fa; box-shadow: 0 4px 12px rgba(31, 94, 99, 0.1); }
+    .tier-card-name { font-weight: 700; font-size: 0.95rem; color: var(--brand-2); }
+    .tier-card-price { font-size: 0.85rem; color: var(--brand); font-weight: 700; margin-top: 4px; }
+    .tier-card-desc { font-size: 0.75rem; color: var(--muted); margin-top: 4px; line-height: 1.3; }
     /* Tier badge in navbar */
     .tier-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; border: 1.5px solid transparent; white-space: nowrap; }
     .tier-badge-free { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
@@ -3754,13 +3765,22 @@
         <form id="loginForm" autocomplete="on">
           <div class="login-field-group">
             <label for="loginUser">Username</label>
-            <input id="loginUser" name="loginUser" type="text" placeholder="Enter username" autocomplete="username" required />
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-user"></i>
+              <input id="loginUser" name="loginUser" type="text" placeholder="Enter username" autocomplete="username" required />
+            </div>
           </div>
           <div class="login-field-group">
             <label for="loginPassword">Password</label>
-            <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-lock"></i>
+              <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
+            </div>
           </div>
-          <button type="submit" class="login-submit-btn">Sign In</button>
+          <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
+            <i class="fa-solid fa-spinner"></i>
+            <span class="btn-text">Sign In</span>
+          </button>
           <div id="loginError" class="login-error" aria-live="polite"></div>
         </form>
       </div>
@@ -3770,19 +3790,31 @@
         <form id="createAccountForm" autocomplete="off">
           <div class="login-field-group">
             <label for="newUsername">Username</label>
-            <input id="newUsername" name="newUsername" type="text" placeholder="Choose a username" autocomplete="off" required />
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-user"></i>
+              <input id="newUsername" name="newUsername" type="text" placeholder="Choose a username" autocomplete="off" required />
+            </div>
           </div>
           <div class="login-field-group">
             <label for="newEmail">Email</label>
-            <input id="newEmail" name="newEmail" type="email" placeholder="your@email.com" autocomplete="email" required />
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-envelope"></i>
+              <input id="newEmail" name="newEmail" type="email" placeholder="your@email.com" autocomplete="email" required />
+            </div>
           </div>
           <div class="login-field-group">
             <label for="newPassword">Password <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(min. 8 characters)</span></label>
-            <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-key"></i>
+              <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
+            </div>
           </div>
           <div class="login-field-group">
             <label for="newPasswordConfirm">Confirm Password</label>
-            <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-key"></i>
+              <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
+            </div>
           </div>
           <div class="login-field-group">
             <label>Select Plan <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(upgrade anytime)</span></label>
@@ -9767,11 +9799,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const db = getUsersDB();
     let changed = false;
     if (!db['admin']) {
-      db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', legacyPassword: 'Packer4551', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
+      db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', passwordHash: '4b6fa37ecea574cfb815f54fff9deded20c4d3b7956294166abea32578502a02', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
       changed = true;
     }
     if (!db['users']) {
-      db['users'] = { username: 'users', email: 'users@cromptonconcepts.com.au', legacyPassword: 'Crompton123', tier: 'basic', createdAt: new Date().toISOString() };
+      db['users'] = { username: 'users', email: 'users@cromptonconcepts.com.au', passwordHash: '9866f6d83a7aeb6ba26eb5c5f02056a38296a52df3d83b92c48882659ab985ed', tier: 'basic', createdAt: new Date().toISOString() };
       changed = true;
     }
     if (changed) saveUsersDB(db);
@@ -9870,31 +9902,68 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     loginForm.addEventListener('submit', async function (e) {
       e.preventDefault();
       if (!loginUser || !loginPassword || !loginError) return;
+      
+      const showError = (msg) => {
+        loginError.textContent = msg;
+        loginError.classList.add('show');
+        loginPassword.closest('.login-field-group').classList.add('shake');
+        setTimeout(() => loginPassword.closest('.login-field-group').classList.remove('shake'), 500);
+        loginPassword.value = '';
+        loginPassword.focus();
+      };
+      
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      if (submitBtn) submitBtn.classList.add('loading');
+      
       const key = String(loginUser.value || '').trim().toLowerCase();
       const pw  = String(loginPassword.value || '').trim();
-      if (!key || !pw) { loginError.textContent = 'Please enter username and password.'; return; }
+      
+      if (!key || !pw) { 
+        if (submitBtn) submitBtn.classList.remove('loading');
+        showError('Please enter username and password.'); 
+        return; 
+      }
+      
       const db = getUsersDB();
       const record = db[key];
-      if (!record) { loginError.textContent = 'Invalid username or password.'; loginPassword.value = ''; if (loginPassword) loginPassword.focus(); return; }
+      if (!record) { 
+        if (submitBtn) submitBtn.classList.remove('loading');
+        showError('Invalid username or password.'); 
+        return; 
+      }
+      
       const ok = await verifyPassword(record, pw);
-      if (!ok) { loginError.textContent = 'Invalid username or password.'; loginPassword.value = ''; if (loginPassword) loginPassword.focus(); return; }
+      if (!ok) { 
+        if (submitBtn) submitBtn.classList.remove('loading');
+        showError('Invalid username or password.'); 
+        return; 
+      }
+      
       // Persist migration if password was upgraded
       db[key] = record;
       saveUsersDB(db);
       sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
       sessionStorage.setItem(USER_SESSION_KEY, record.username);
       sessionStorage.setItem(TIER_SESSION_KEY, record.tier || 'free');
+      
       loginError.textContent = '';
+      loginError.classList.remove('show');
+      
       if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
         navigator.credentials.store(new PasswordCredential({ id: key, password: pw, name: key })).catch(() => {});
       }
-      try { await unlockApplication({ useFunnyLoading: true }); }
-      catch (err) {
+      
+      try { 
+        await unlockApplication({ useFunnyLoading: true }); 
+      } catch (err) {
         console.error('[Login] Unlock failed:', err);
         loginError.textContent = 'Login succeeded but app initialization failed. Please refresh.';
+        loginError.classList.add('show');
         sessionStorage.removeItem(AUTH_SESSION_KEY);
         document.body.classList.add('app-locked');
         loginGate.style.display = 'flex';
+      } finally {
+        if (submitBtn) submitBtn.classList.remove('loading');
       }
     });
 
