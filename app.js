@@ -3465,10 +3465,82 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const loginError = document.getElementById('loginError');
     if (!loginGate || !loginForm || !loginUser || !loginPassword || !loginError) return;
 
-    const allowedUsers = {
-      admin: 'Packer4551',
-      users: 'Crompton123'
-    };
+    const USERS_STORE_KEY = 'crompton_tia_users';
+
+    function getUserDb() {
+      try {
+        return JSON.parse(localStorage.getItem(USERS_STORE_KEY) || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function saveUserDb(db) {
+      localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+    }
+
+    async function hashPassword(pw) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function ensureDefaultUsers(db) {
+      let changed = false;
+      if (!db.admin) {
+        db.admin = {
+          username: 'admin',
+          email: 'admin@cromptonconcepts.com.au',
+          legacyPassword: 'Packer4551',
+          tier: 'pro+',
+          createdAt: new Date().toISOString(),
+          isAdmin: true
+        };
+        changed = true;
+      }
+      if (!db.users) {
+        db.users = {
+          username: 'users',
+          email: 'users@cromptonconcepts.com.au',
+          legacyPassword: 'Crompton123',
+          tier: 'basic',
+          createdAt: new Date().toISOString()
+        };
+        changed = true;
+      }
+      if (changed) saveUserDb(db);
+    }
+
+    async function verifyPassword(record, pw) {
+      if (record.legacyPassword) {
+        if (pw !== record.legacyPassword) return false;
+        record.passwordHash = await hashPassword(pw);
+        delete record.legacyPassword;
+        return true;
+      }
+      if (record.passwordHash) {
+        return record.passwordHash === await hashPassword(pw);
+      }
+      return false;
+    }
+
+    function findUserRecord(db, identifier) {
+      if (!identifier) return null;
+      const key = String(identifier).trim().toLowerCase();
+      const byUsername = db[key];
+      if (byUsername) {
+        return { key, record: byUsername };
+      }
+      for (const uname of Object.keys(db)) {
+        const rec = db[uname];
+        if (String(rec && rec.email || '').trim().toLowerCase() === key) {
+          return { key: uname, record: rec };
+        }
+      }
+      return null;
+    }
+
+    const initialDb = getUserDb();
+    ensureDefaultUsers(initialDb);
 
     async function unlockApplication(options = {}) {
       const useFunnyLoading = !!(options && options.useFunnyLoading);
@@ -3539,21 +3611,33 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
-      const usernameKey = String(loginUser.value || '').trim().toLowerCase();
+      const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
       const enteredPassword = String(loginPassword.value || '').trim();
-      
-      // Check localStorage for custom password override
-      const customPasswordKey = `tia_custom_pwd_${usernameKey}`;
-      const customPassword = localStorage.getItem(customPasswordKey);
-      
-      const expectedPassword = customPassword || allowedUsers[usernameKey];
 
-      if (expectedPassword && enteredPassword === expectedPassword) {
+      const db = getUserDb();
+      ensureDefaultUsers(db);
+      const found = findUserRecord(db, userIdentifier);
+
+      if (found && !found.record.deleted) {
+        const customPasswordKey = `tia_custom_pwd_${found.key}`;
+        const customPassword = localStorage.getItem(customPasswordKey);
+        const isCustomPasswordValid = !!customPassword && enteredPassword === customPassword;
+        const isStoredPasswordValid = await verifyPassword(found.record, enteredPassword);
+        if (!isCustomPasswordValid && !isStoredPasswordValid) {
+          loginError.textContent = 'Invalid username or password.';
+          loginPassword.value = '';
+          loginPassword.focus();
+          return;
+        }
+
+        db[found.key] = found.record;
+        saveUserDb(db);
+
         if (window.PasswordCredential && navigator.credentials && typeof navigator.credentials.store === 'function') {
           navigator.credentials.store(new PasswordCredential({
-            id: usernameKey,
+            id: found.key,
             password: enteredPassword,
-            name: usernameKey
+            name: found.key
           })).catch(() => {});
         }
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
@@ -3615,7 +3699,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         rError.textContent = '';
         rSuccess.textContent = '';
 
-        if (!allowedUsers[rUser]) {
+        const db = getUserDb();
+        ensureDefaultUsers(db);
+        const found = findUserRecord(db, rUser);
+        if (!found || found.record.deleted) {
           rError.textContent = 'Username not found.';
           return;
         }
@@ -3638,7 +3725,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
 
         // Save new password override in localStorage
-        localStorage.setItem(`tia_custom_pwd_${rUser}`, rNew);
+        localStorage.setItem(`tia_custom_pwd_${found.key}`, rNew);
         rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
         
         setTimeout(() => {
