@@ -9864,6 +9864,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return false;
   }
 
+  function findUserRecord(db, identifier) {
+    if (!identifier) return null;
+    const key = String(identifier).trim().toLowerCase();
+    const byUsername = db[key];
+    if (byUsername) {
+      return { key, record: byUsername };
+    }
+    for (const uname of Object.keys(db)) {
+      const rec = db[uname];
+      if (String(rec && rec.email || '').trim().toLowerCase() === key) {
+        return { key: uname, record: rec };
+      }
+    }
+    return null;
+  }
+
   // â”€â”€ setupLoginGate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function setupLoginGate() {
     const loginGate   = document.getElementById('loginGate');
@@ -9958,42 +9974,50 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const submitBtn = document.getElementById('loginSubmitBtn');
       if (submitBtn) submitBtn.classList.add('loading');
       
-      const key = String(loginUser.value || '').trim().toLowerCase();
-      const pw  = String(loginPassword.value || '').trim();
+      const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
+      const enteredPassword  = String(loginPassword.value || '').trim();
       
-      if (!key || !pw) { 
+      if (!userIdentifier || !enteredPassword) { 
         if (submitBtn) submitBtn.classList.remove('loading');
         showError('Please enter username and password.'); 
         return; 
       }
       
       const db = getUsersDB();
-      const record = db[key];
-      if (!record) { 
+      const found = findUserRecord(db, userIdentifier);
+      if (!found || found.record.deleted || found.record.tier === 'deleted') { 
         if (submitBtn) submitBtn.classList.remove('loading');
-        showError('Invalid username or password.'); 
+        if (found && (found.record.deleted || found.record.tier === 'deleted')) {
+          showError('This account has been deactivated. Please contact Crompton Concepts.');
+        } else {
+          showError('Invalid username or password.'); 
+        }
         return; 
       }
       
-      const ok = await verifyPassword(record, pw);
-      if (!ok) { 
+      const customPasswordKey = `tia_custom_pwd_${found.key}`;
+      const customPassword = localStorage.getItem(customPasswordKey);
+      const isCustomPasswordValid = !!customPassword && enteredPassword === customPassword;
+      const isStoredPasswordValid = await verifyPassword(found.record, enteredPassword);
+      
+      if (!isCustomPasswordValid && !isStoredPasswordValid) { 
         if (submitBtn) submitBtn.classList.remove('loading');
         showError('Invalid username or password.'); 
         return; 
       }
       
       // Persist migration if password was upgraded
-      db[key] = record;
+      db[found.key] = found.record;
       saveUsersDB(db);
       sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      sessionStorage.setItem(USER_SESSION_KEY, record.username);
-      sessionStorage.setItem(TIER_SESSION_KEY, record.tier || 'free');
+      sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
+      sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
       
       loginError.textContent = '';
       loginError.classList.remove('show');
       
       if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
-        navigator.credentials.store(new PasswordCredential({ id: key, password: pw, name: key })).catch(() => {});
+        navigator.credentials.store(new PasswordCredential({ id: found.key, password: enteredPassword, name: found.key })).catch(() => {});
       }
       
       try { 
@@ -10010,6 +10034,80 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     });
 
+    // Forgot Password Logic
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const backToSignInBtn = document.getElementById('backToSignInBtn');
+    const paneSignIn = document.getElementById('paneSignIn');
+    const paneReset = document.getElementById('paneReset');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    const loginTabs = document.querySelector('.login-tabs');
+
+    if (forgotPasswordLink && paneReset) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (paneSignIn) paneSignIn.style.display = 'none';
+        if (loginTabs) loginTabs.style.display = 'none';
+        paneReset.style.display = 'block';
+      });
+    }
+
+    if (backToSignInBtn && paneSignIn) {
+      backToSignInBtn.addEventListener('click', () => {
+        paneReset.style.display = 'none';
+        if (loginTabs) loginTabs.style.display = 'flex';
+        paneSignIn.style.display = 'block';
+      });
+    }
+
+    if (resetPasswordForm) {
+      resetPasswordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rUser = document.getElementById('resetUsername').value.trim().toLowerCase();
+        const rKey = document.getElementById('resetRecoveryKey').value.trim();
+        const rNew = document.getElementById('resetNewPassword').value.trim();
+        const rConfirm = document.getElementById('resetConfirmPassword').value.trim();
+        const rError = document.getElementById('resetError');
+        const rSuccess = document.getElementById('resetSuccess');
+
+        if (rError) rError.textContent = '';
+        if (rSuccess) rSuccess.textContent = '';
+
+        const db = getUsersDB();
+        const found = findUserRecord(db, rUser);
+        if (!found || found.record.deleted) {
+          if (rError) rError.textContent = 'Username not found.';
+          return;
+        }
+
+        // Hardcoded Recovery Key for client-side app
+        const validRecoveryKey = 'CromptonReset2024!';
+        if (rKey !== validRecoveryKey) {
+          if (rError) rError.textContent = 'Invalid Recovery Key.';
+          return;
+        }
+
+        if (rNew !== rConfirm) {
+          if (rError) rError.textContent = 'Passwords do not match.';
+          return;
+        }
+
+        if (rNew.length < 8) {
+          if (rError) rError.textContent = 'Password must be at least 8 characters.';
+          return;
+        }
+
+        // Save new password override in localStorage
+        localStorage.setItem(`tia_custom_pwd_${found.key}`, rNew);
+        if (rSuccess) rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
+        
+        setTimeout(() => {
+          resetPasswordForm.reset();
+          if (rSuccess) rSuccess.textContent = '';
+          if (backToSignInBtn) backToSignInBtn.click();
+        }, 2000);
+      });
+    }
+
     // Create account form
     if (createForm) {
       createForm.addEventListener('submit', async function (e) {
@@ -10020,8 +10118,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (okEl) okEl.textContent = '';
         const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
         const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
-        const pw1     = String((document.getElementById('newPassword') || {}).value || '');
-        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '');
+        const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
+        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '').trim();
         const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
         if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
         if (!/^[a-z0-9_.-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, _ . -'; return; }
@@ -26710,13 +26808,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const Ï†1 = lat1 * Math.PI / 180;
-    const Ï†2 = lat2 * Math.PI / 180;
-    const Î”Ï† = (lat2 - lat1) * Math.PI / 180;
-    const Î”Î» = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(Î”Ï† / 2) * Math.sin(Î”Ï† / 2) +
-              Math.cos(Ï†1) * Math.cos(Ï†2) *
-              Math.sin(Î”Î» / 2) * Math.sin(Î”Î» / 2);
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

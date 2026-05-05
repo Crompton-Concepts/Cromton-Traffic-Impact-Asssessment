@@ -3735,6 +3735,41 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }, 2000);
       });
     }
+
+    // Create account form
+    const createForm = document.getElementById('createAccountForm');
+    if (createForm) {
+      createForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const errEl = document.getElementById('createError');
+        const okEl  = document.getElementById('createSuccess');
+        if (errEl) errEl.textContent = '';
+        if (okEl) okEl.textContent = '';
+        const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
+        const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
+        const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
+        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '').trim();
+        const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
+        if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
+        if (!/^[a-z0-9_.-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, _ . -'; return; }
+        if (!email || !email.includes('@')) { if (errEl) errEl.textContent = 'Please enter a valid email address.'; return; }
+        if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
+        if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
+        const db = getUserDb();
+        if (db[uname]) { if (errEl) errEl.textContent = 'That username is already taken. Please choose another.'; return; }
+        const hash = await hashPassword(pw1);
+        db[uname] = { username: uname, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
+        saveUserDb(db);
+        if (okEl) okEl.textContent = 'Account created! Signing you in...';
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        sessionStorage.setItem(USER_SESSION_KEY, uname);
+        sessionStorage.setItem(TIER_SESSION_KEY, tier);
+        setTimeout(async () => {
+          try { await unlockApplication({ useFunnyLoading: true }); }
+          catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }
+        }, 800);
+      });
+    }
   }
 
   function setupLogoutButton() {
@@ -19443,13 +19478,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
