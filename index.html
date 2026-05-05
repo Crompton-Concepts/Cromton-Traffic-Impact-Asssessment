@@ -9853,10 +9853,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', passwordHash: '4b6fa37ecea574cfb815f54fff9deded20c4d3b7956294166abea32578502a02', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
       changed = true;
     }
-    if (!db['users']) {
-      db['users'] = { username: 'users', email: 'users@cromptonconcepts.com.au', passwordHash: '9866f6d83a7aeb6ba26eb5c5f02056a38296a52df3d83b92c48882659ab985ed', tier: 'basic', createdAt: new Date().toISOString() };
-      changed = true;
-    }
     if (changed) saveUsersDB(db);
   }
 
@@ -10021,6 +10017,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (submitBtn) submitBtn.classList.remove('loading');
         showError('Please enter username and password.'); 
         return; 
+      }
+
+      // Pull latest users from Firebase before authentication so cross-device
+      // account creation is visible immediately on this device.
+      if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+        try {
+          await Promise.race([
+            TIASync.pullAll(),
+            new Promise(resolve => setTimeout(resolve, 3000))
+          ]);
+        } catch (_) {}
       }
       
       const db = getUsersDB();
@@ -10208,6 +10215,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const hash = await hashPassword(pw1);
         db[uname] = { username: uname, fullName, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
         saveUsersDB(db);
+
+        // Push to Firebase so all devices/admin portals see the new account.
+        if (window.TIASync && TIASync.saveUser) {
+          try { await TIASync.saveUser(uname, db[uname]); } catch (_) {}
+        }
+
         showCreateSuccess('Account created! Signing you in...');
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, uname);
