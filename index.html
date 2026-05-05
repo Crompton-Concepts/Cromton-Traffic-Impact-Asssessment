@@ -10156,34 +10156,65 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     // Create account form
     if (createForm) {
+      // Use custom validation messages so users always see feedback in the modal.
+      createForm.setAttribute('novalidate', 'novalidate');
+
       createForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         const errEl = document.getElementById('createError');
         const okEl  = document.getElementById('createSuccess');
-        if (errEl) errEl.textContent = '';
-        if (okEl) okEl.textContent = '';
+        const showCreateError = (msg) => {
+          if (!errEl) return;
+          errEl.textContent = msg;
+          errEl.classList.add('show');
+          if (okEl) {
+            okEl.textContent = '';
+            okEl.classList.remove('show');
+          }
+        };
+        const showCreateSuccess = (msg) => {
+          if (!okEl) return;
+          okEl.textContent = msg;
+          okEl.classList.add('show');
+          if (errEl) {
+            errEl.textContent = '';
+            errEl.classList.remove('show');
+          }
+        };
+
+        if (errEl) {
+          errEl.textContent = '';
+          errEl.classList.remove('show');
+        }
+        if (okEl) {
+          okEl.textContent = '';
+          okEl.classList.remove('show');
+        }
+
         const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
+        const fullName = String((document.getElementById('newFullName') || {}).value || '').trim();
         const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
         const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
         const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '').trim();
         const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
-        if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
-        if (!/^[a-z0-9_.-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, _ . -'; return; }
-        if (!email || !email.includes('@')) { if (errEl) errEl.textContent = 'Please enter a valid email address.'; return; }
-        if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
-        if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
+        if (!fullName) { showCreateError('Please enter your full name.'); return; }
+        if (!uname || uname.length < 3) { showCreateError('Username must be at least 3 characters.'); return; }
+        if (!/^[a-z0-9_.-]+$/.test(uname)) { showCreateError('Username may only contain letters, numbers, _ . -'); return; }
+        if (!email || !email.includes('@')) { showCreateError('Please enter a valid email address.'); return; }
+        if (pw1.length < 8) { showCreateError('Password must be at least 8 characters.'); return; }
+        if (pw1 !== pw2) { showCreateError('Passwords do not match.'); return; }
         const db = getUsersDB();
-        if (db[uname]) { if (errEl) errEl.textContent = 'That username is already taken. Please choose another.'; return; }
+        if (db[uname]) { showCreateError('That username is already taken. Please choose another.'); return; }
         const hash = await hashPassword(pw1);
-        db[uname] = { username: uname, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
+        db[uname] = { username: uname, fullName, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
         saveUsersDB(db);
-        if (okEl) okEl.textContent = 'Account created! Signing you in…';
+        showCreateSuccess('Account created! Signing you in...');
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, uname);
         sessionStorage.setItem(TIER_SESSION_KEY, tier);
         setTimeout(async () => {
           try { await unlockApplication({ useFunnyLoading: true }); }
-          catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }
+          catch (err) { showCreateError('Account created but app init failed. Please refresh.'); }
         }, 800);
       });
     }
