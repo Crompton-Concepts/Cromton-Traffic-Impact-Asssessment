@@ -30,6 +30,9 @@
     .al-field input:focus { border-color: var(--brand); outline: none; }
     .al-btn { width: 100%; padding: 11px; background: var(--brand); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
     .al-btn:hover { background: var(--brand-2); }
+    .al-link { display: inline-block; margin-top: 10px; font-size: 0.82rem; color: var(--brand); text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
+    .al-link:hover { text-decoration: underline; color: var(--brand-2); }
+    .al-msg { margin-top: 8px; font-size: 0.84rem; color: #12703a; min-height: 1.1em; }
     .al-err { margin-top: 10px; font-size: 0.86rem; color: #b00020; min-height: 1.2em; }
 
     /* ── App shell ── */
@@ -126,6 +129,8 @@
         <input id="alPass" type="password" placeholder="Password" autocomplete="current-password" required />
       </div>
       <button type="submit" class="al-btn">Sign In to Admin</button>
+      <button type="button" class="al-link" onclick="adminForgotPassword()">Forgot password?</button>
+      <div id="alMsg" class="al-msg"></div>
       <div id="alErr" class="al-err"></div>
     </form>
   </div>
@@ -305,6 +310,42 @@
   // ── Admin login ───────────────────────────────────────────────────────────
   ensureDefaults();
 
+  async function adminForgotPassword() {
+    const errEl = document.getElementById('alErr');
+    const msgEl = document.getElementById('alMsg');
+    errEl.textContent = '';
+    msgEl.textContent = '';
+
+    // Pull latest users first so username->email lookup is current.
+    if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+      try { await TIASync.pullAll(); } catch (_) {}
+    }
+
+    const identifier = String(document.getElementById('alUser').value || '').trim().toLowerCase();
+    if (!identifier) {
+      errEl.textContent = 'Enter username or email first, then click Forgot password.';
+      return;
+    }
+
+    const db = getDB();
+    const found = Object.values(db).find(u =>
+      u.username.toLowerCase() === identifier || (u.email && u.email.toLowerCase() === identifier)
+    );
+    const email = found ? found.email : (identifier.includes('@') ? identifier : null);
+
+    if (!email) {
+      errEl.textContent = 'No email found for that account.';
+      return;
+    }
+
+    try {
+      await firebase.auth().sendPasswordResetEmail(email);
+      msgEl.textContent = 'Reset link sent to ' + email + '. Please check inbox/spam.';
+    } catch (error) {
+      errEl.textContent = 'Could not send reset link: ' + error.message;
+    }
+  }
+
   firebase.auth().onAuthStateChanged((user) => {
     if (user && sessionStorage.getItem(ADMIN_SESSION) === 'true') {
       showApp();
@@ -316,6 +357,8 @@
     const identifier = String(document.getElementById('alUser').value || '').trim().toLowerCase();
     const pw   = String(document.getElementById('alPass').value || '');
     const errEl = document.getElementById('alErr');
+    const msgEl = document.getElementById('alMsg');
+    msgEl.textContent = '';
     errEl.textContent = 'Authenticating...';
 
     const db = getDB();
