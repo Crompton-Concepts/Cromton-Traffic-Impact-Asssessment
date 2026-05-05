@@ -3579,7 +3579,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           welcomeUserText.style.display = 'inline-block';
         }
       }
-      
+
+      const userGreeting = document.getElementById('userGreeting');
+      if (userGreeting) {
+        const uname = sessionStorage.getItem(USER_SESSION_KEY);
+        if (uname) {
+          const db = getUserDb();
+          const rec = db[uname] || {};
+          const displayName = rec.fullName || rec.username || uname;
+          userGreeting.textContent = 'Hi ' + displayName;
+        }
+      }
+
       const adminPortalLink = document.getElementById('adminPortalLink');
       if (adminPortalLink) {
         if (sessionStorage.getItem('IS_ADMIN') === 'true') {
