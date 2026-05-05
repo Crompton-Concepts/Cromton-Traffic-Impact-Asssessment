@@ -3578,6 +3578,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       document.body.classList.remove('app-locked');
       loginGate.style.display = 'none';
       
+      const welcomeUserText = document.getElementById('welcomeUserText');
+      if (welcomeUserText) {
+        const uname = sessionStorage.getItem(USER_SESSION_KEY);
+        if (uname) {
+          const db = getUserDb();
+          const rec = db[uname] || {};
+          const displayName = rec.fullName || rec.username || uname;
+          welcomeUserText.textContent = 'Welcome, ' + displayName;
+          welcomeUserText.style.display = 'inline-block';
+        }
+      }
+      
       const adminPortalLink = document.getElementById('adminPortalLink');
       if (adminPortalLink) {
         if (sessionStorage.getItem('IS_ADMIN') === 'true') {
@@ -3757,6 +3769,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const okEl  = document.getElementById('createSuccess');
         if (errEl) errEl.textContent = '';
         if (okEl) okEl.textContent = '';
+        const fullName= String((document.getElementById('newFullName') || {}).value || '').trim();
         const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
         const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
         const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
@@ -3770,7 +3783,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const db = getUserDb();
         if (db[uname]) { if (errEl) errEl.textContent = 'That username is already taken. Please choose another.'; return; }
         const hash = await hashPassword(pw1);
-        db[uname] = { username: uname, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
+        db[uname] = { username: uname, fullName, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
         saveUserDb(db);
         if (okEl) okEl.textContent = 'Account created! Signing you in...';
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');

@@ -3764,10 +3764,10 @@
       <div class="login-tab-pane active" id="paneSignIn" role="tabpanel" aria-labelledby="tabSignIn">
         <form id="loginForm" autocomplete="on">
           <div class="login-field-group">
-            <label for="loginUser">Username</label>
+            <label for="loginUser">Username or Email</label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-user"></i>
-              <input id="loginUser" name="loginUser" type="text" placeholder="Enter username" autocomplete="username" required />
+              <input id="loginUser" name="loginUser" type="text" placeholder="Enter username or email" autocomplete="username" required />
             </div>
           </div>
           <div class="login-field-group">
@@ -3791,6 +3791,13 @@
       <!-- Create Account -->
       <div class="login-tab-pane" id="paneCreate" role="tabpanel" aria-labelledby="tabCreate">
         <form id="createAccountForm" autocomplete="off">
+          <div class="login-field-group">
+            <label for="newFullName">Full Name</label>
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-id-card"></i>
+              <input id="newFullName" name="newFullName" type="text" placeholder="Your full name" autocomplete="name" />
+            </div>
+          </div>
           <div class="login-field-group">
             <label for="newUsername">Username</label>
             <div class="login-input-wrapper">
