@@ -221,6 +221,43 @@
     }
   }
 
+  /**
+   * Subscribe to real-time updates on the users path.
+   * callback(usersObject) is called immediately and on every change.
+   * Returns an unsubscribe function.
+   */
+  function watchUsers(callback) {
+    if (!_syncEnabled || !_db) return () => {};
+    const ref = _db.ref(USERS_PATH);
+    const handler = snap => {
+      const remote = snap.exists() ? (snap.val() || {}) : {};
+      // Merge remote into localStorage (remote wins)
+      const local  = _getLocal(USERS_STORE_KEY);
+      const merged = Object.assign({}, local, remote);
+      _setLocal(USERS_STORE_KEY, merged);
+      if (typeof callback === 'function') callback(merged);
+    };
+    ref.on('value', handler);
+    return () => ref.off('value', handler);
+  }
+
+  /**
+   * Subscribe to real-time updates on the deleted users path.
+   * callback(deletedObject) is called immediately and on every change.
+   * Returns an unsubscribe function.
+   */
+  function watchDeletedUsers(callback) {
+    if (!_syncEnabled || !_db) return () => {};
+    const ref = _db.ref(DELETED_PATH);
+    const handler = snap => {
+      const remote = snap.exists() ? (snap.val() || {}) : {};
+      _setLocal(DELETED_STORE_KEY, remote);
+      if (typeof callback === 'function') callback(remote);
+    };
+    ref.on('value', handler);
+    return () => ref.off('value', handler);
+  }
+
   function isEnabled() { return _syncEnabled; }
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
@@ -233,6 +270,8 @@
     restoreUser,
     purgeUser,
     pushAll,
+    watchUsers,
+    watchDeletedUsers,
     isEnabled
   };
 

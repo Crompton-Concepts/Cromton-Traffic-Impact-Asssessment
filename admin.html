@@ -272,7 +272,6 @@
   function ensureDefaults() {
     const db = getDB(); let changed = false;
     if (!db['admin']) { db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', legacyPassword: 'Packer4551', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true }; changed = true; }
-    if (!db['users']) { db['users'] = { username: 'users', email: 'users@cromptonconcepts.com.au', legacyPassword: 'Crompton123', tier: 'basic', createdAt: new Date().toISOString() }; changed = true; }
     if (changed) saveDB(db);
   }
 
@@ -321,24 +320,21 @@
     const u = sessionStorage.getItem('crompton_tia_admin_user') || 'admin';
     document.getElementById('adminWelcome').textContent = 'Signed in as ' + u;
 
-    // Pull latest users from Firebase, then render — ensures admin always sees all accounts.
-    if (window.TIASync && TIASync.isEnabled()) {
-      TIASync.pullAll().then(() => {
-        renderStats();
-        renderTable();
-        renderDeletedTable();
-        updateDeletedBadge();
-      }).catch(() => {
-        renderStats();
-        renderTable();
-        renderDeletedTable();
-        updateDeletedBadge();
-      });
-    } else {
+    function refreshAll() {
       renderStats();
       renderTable();
       renderDeletedTable();
       updateDeletedBadge();
+    }
+
+    // Set up real-time Firebase listeners so the table updates instantly
+    // whenever any user is created, modified, or deleted on any device.
+    if (window.TIASync && TIASync.isEnabled()) {
+      TIASync.watchUsers(() => { renderStats(); renderTable(); updateDeletedBadge(); });
+      TIASync.watchDeletedUsers(() => { renderDeletedTable(); updateDeletedBadge(); });
+    } else {
+      // Firebase not available — do a one-time local render
+      refreshAll();
     }
   }
 
