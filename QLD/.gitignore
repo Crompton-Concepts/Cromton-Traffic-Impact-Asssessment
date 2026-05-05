@@ -25,3 +25,7 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Ignore desktop.ini
+[Dd]esktop.ini
+**/[Dd]esktop.ini
