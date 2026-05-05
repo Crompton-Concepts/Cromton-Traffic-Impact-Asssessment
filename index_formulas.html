@@ -10022,12 +10022,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return; 
       }
       
-      const customPasswordKey = `tia_custom_pwd_${found.key}`;
-      const customPassword = localStorage.getItem(customPasswordKey);
-      const isCustomPasswordValid = !!customPassword && enteredPassword === customPassword;
-      const isStoredPasswordValid = await verifyPassword(found.record, enteredPassword);
+      let isStoredPasswordValid = await verifyPassword(found.record, enteredPassword);
       
-      if (!isCustomPasswordValid && !isStoredPasswordValid) { 
+      // Auto-healing: if custom hash fails, try Firebase Auth directly.
+      // This handles cases where the user reset their password via email.
+      if (!isStoredPasswordValid && found.record.email) {
+        const auth = getFirebaseAuthForReset();
+        if (auth) {
+          try {
+            await auth.signInWithEmailAndPassword(found.record.email, enteredPassword);
+            // Firebase Auth succeeded! Update the custom hash to match the new password.
+            isStoredPasswordValid = true;
+            found.record.passwordHash = await hashPassword(enteredPassword);
+            delete found.record.legacyPassword;
+            if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled() && TIASync.saveUser) {
+              await TIASync.saveUser(found.key, found.record);
+            }
+          } catch (err) {
+            isStoredPasswordValid = false;
+          }
+        }
+      }
+
+      if (!isStoredPasswordValid) { 
         if (submitBtn) submitBtn.classList.remove('loading');
         showError('Invalid username or password.'); 
         return; 
@@ -10093,51 +10110,71 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (resetPasswordForm) {
-      resetPasswordForm.addEventListener('submit', (e) => {
+      resetPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const rUser = document.getElementById('resetUsername').value.trim().toLowerCase();
-        const rKey = document.getElementById('resetRecoveryKey').value.trim();
-        const rNew = document.getElementById('resetNewPassword').value.trim();
-        const rConfirm = document.getElementById('resetConfirmPassword').value.trim();
+        const resetEmailEl = document.getElementById('resetEmail');
         const rError = document.getElementById('resetError');
         const rSuccess = document.getElementById('resetSuccess');
+        const email = String((resetEmailEl && resetEmailEl.value) || '').trim().toLowerCase();
 
-        if (rError) rError.textContent = '';
-        if (rSuccess) rSuccess.textContent = '';
+        if (rError) {
+          rError.textContent = '';
+          rError.classList.remove('show');
+        }
+        if (rSuccess) {
+          rSuccess.textContent = '';
+          rSuccess.classList.remove('show');
+        }
 
-        const db = getUsersDB();
-        const found = findUserRecord(db, rUser);
-        if (!found || found.record.deleted) {
-          if (rError) rError.textContent = 'Username not found.';
+        if (!email || !email.includes('@')) {
+          if (rError) {
+            rError.textContent = 'Please enter a valid email address.';
+            rError.classList.add('show');
+          }
           return;
         }
 
-        // Hardcoded Recovery Key for client-side app
-        const validRecoveryKey = 'CromptonReset2024!';
-        if (rKey !== validRecoveryKey) {
-          if (rError) rError.textContent = 'Invalid Recovery Key.';
+        // Keep local DB current before attempting reset.
+        if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+          try {
+            await Promise.race([
+              TIASync.pullAll(),
+              new Promise(resolve => setTimeout(resolve, 3000))
+            ]);
+          } catch (_) {}
+        }
+
+        const auth = getFirebaseAuthForReset();
+        if (!auth) {
+          if (rError) {
+            rError.textContent = 'Password reset is temporarily unavailable. Please refresh and try again.';
+            rError.classList.add('show');
+          }
           return;
         }
 
-        if (rNew !== rConfirm) {
-          if (rError) rError.textContent = 'Passwords do not match.';
-          return;
-        }
+        try {
+          await auth.sendPasswordResetEmail(email);
+          if (rSuccess) {
+            rSuccess.textContent = 'Reset link sent. Please check your inbox and spam folder.';
+            rSuccess.classList.add('show');
+          }
 
-        if (rNew.length < 8) {
-          if (rError) rError.textContent = 'Password must be at least 8 characters.';
-          return;
+          setTimeout(() => {
+            resetPasswordForm.reset();
+            if (rSuccess) {
+              rSuccess.textContent = '';
+              rSuccess.classList.remove('show');
+            }
+            if (backToSignInBtn) backToSignInBtn.click();
+          }, 2200);
+        } catch (err) {
+          const msg = err && err.message ? err.message : 'Could not send reset link. Please try again.';
+          if (rError) {
+            rError.textContent = msg;
+            rError.classList.add('show');
+          }
         }
-
-        // Save new password override in localStorage
-        localStorage.setItem(`tia_custom_pwd_${found.key}`, rNew);
-        if (rSuccess) rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
-        
-        setTimeout(() => {
-          resetPasswordForm.reset();
-          if (rSuccess) rSuccess.textContent = '';
-          if (backToSignInBtn) backToSignInBtn.click();
-        }, 2000);
       });
     }
 

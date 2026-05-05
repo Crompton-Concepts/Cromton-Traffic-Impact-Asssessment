@@ -10319,7 +10319,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return;
       }
 
-      const isStoredPasswordValid = await verifyPassword(remoteFound.record, enteredPassword);
+      let isStoredPasswordValid = await verifyPassword(remoteFound.record, enteredPassword);
+      
+      // Auto-healing: if custom hash fails, try Firebase Auth directly.
+      // This handles cases where the user reset their password via email.
+      if (!isStoredPasswordValid && remoteFound.record.email) {
+        const auth = getFirebaseAuthForReset();
+        if (auth) {
+          try {
+            await auth.signInWithEmailAndPassword(remoteFound.record.email, enteredPassword);
+            // Firebase Auth succeeded! Update the custom hash to match the new password.
+            isStoredPasswordValid = true;
+            remoteFound.record.passwordHash = await hashPassword(enteredPassword);
+            delete remoteFound.record.legacyPassword;
+            if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled() && TIASync.saveUser) {
+              await TIASync.saveUser(remoteFound.key, remoteFound.record);
+            }
+          } catch (err) {
+            isStoredPasswordValid = false;
+          }
+        }
+      }
+
       if (!isStoredPasswordValid) {
         if (submitBtn) submitBtn.classList.remove('loading');
         showError('Invalid username or password.');
