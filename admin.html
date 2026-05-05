@@ -286,6 +286,33 @@
     return false;
   }
 
+  let usersUnwatch = null;
+  let deletedUsersUnwatch = null;
+
+  function attachRealtimeSync(refreshAll, retriesLeft = 20) {
+    if (!(window.TIASync && TIASync.isEnabled && TIASync.isEnabled())) {
+      if (retriesLeft > 0) {
+        setTimeout(() => attachRealtimeSync(refreshAll, retriesLeft - 1), 250);
+      }
+      return;
+    }
+
+    if (usersUnwatch) usersUnwatch();
+    if (deletedUsersUnwatch) deletedUsersUnwatch();
+
+    usersUnwatch = TIASync.watchUsers(() => {
+      renderStats();
+      renderTable();
+      updateDeletedBadge();
+    });
+    deletedUsersUnwatch = TIASync.watchDeletedUsers(() => {
+      renderDeletedTable();
+      updateDeletedBadge();
+    });
+
+    TIASync.pullAll().then(() => refreshAll()).catch(() => {});
+  }
+
   // ── Admin login ───────────────────────────────────────────────────────────
   ensureDefaults();
 
@@ -327,15 +354,12 @@
       updateDeletedBadge();
     }
 
-    // Set up real-time Firebase listeners so the table updates instantly
-    // whenever any user is created, modified, or deleted on any device.
-    if (window.TIASync && TIASync.isEnabled()) {
-      TIASync.watchUsers(() => { renderStats(); renderTable(); updateDeletedBadge(); });
-      TIASync.watchDeletedUsers(() => { renderDeletedTable(); updateDeletedBadge(); });
-    } else {
-      // Firebase not available — do a one-time local render
-      refreshAll();
-    }
+    // Always render immediately from localStorage.
+    refreshAll();
+
+    // Then attach real-time Firebase sync with retries so auto-restored admin
+    // sessions still subscribe even if user-sync.js loads slightly later.
+    attachRealtimeSync(refreshAll);
   }
 
   // ── Tab switching ─────────────────────────────────────────────────────────
