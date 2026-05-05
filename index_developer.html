@@ -9845,7 +9845,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const db = getUsersDB();
     let changed = false;
     if (!db['admin']) {
-      db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', passwordHash: '4b6fa37ecea574cfb815f54fff9deded20c4d3b7956294166abea32578502a02', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
+      db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', tier: 'pro+', isAdmin: true, createdAt: new Date().toISOString() };
       changed = true;
     }
     if (changed) saveUsersDB(db);
