@@ -3475,44 +3475,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
-    function saveUserDb(db) {
-      localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
-    }
-
-    async function hashPassword(pw) {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function ensureDefaultUsers(db) {
-      let changed = false;
-      if (!db.admin) {
-        db.admin = {
-          username: 'admin',
-          email: 'admin@cromptonconcepts.com.au',
-          legacyPassword: 'Packer4551',
-          tier: 'pro+',
-          createdAt: new Date().toISOString(),
-          isAdmin: true
-        };
-        changed = true;
-      }
-      if (changed) saveUserDb(db);
-    }
-
-    async function verifyPassword(record, pw) {
-      if (record.legacyPassword) {
-        if (pw !== record.legacyPassword) return false;
-        record.passwordHash = await hashPassword(pw);
-        delete record.legacyPassword;
-        return true;
-      }
-      if (record.passwordHash) {
-        return record.passwordHash === await hashPassword(pw);
-      }
-      return false;
-    }
-
     function findUserRecord(db, identifier) {
       if (!identifier) return null;
       const key = String(identifier).trim().toLowerCase();
@@ -3528,9 +3490,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       return null;
     }
-
-    const initialDb = getUserDb();
-    ensureDefaultUsers(initialDb);
 
     async function unlockApplication(options = {}) {
       const useFunnyLoading = !!(options && options.useFunnyLoading);
@@ -3615,85 +3574,69 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
+    // Firebase Auth State Listener
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (user && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        unlockApplication().catch(function(err) {
+          console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+          document.body.classList.remove('app-locked');
+          loginGate.style.display = 'none';
+        });
+      }
+    });
+
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-      unlockApplication().catch(function(err) {
-        // Async unlock failed (e.g. data load error) — force-clear the blur so the
-        // app is still usable. Data may be unavailable but the UI won't stay locked.
-        console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
-        document.body.classList.remove('app-locked');
-        loginGate.style.display = 'none';
-      });
+      // Logic handled by onAuthStateChanged or fallback
       return;
     }
 
     loginUser.focus();
-
-    // Keep login typing responsive: do not start heavy data loading on input/focus.
-    // Data loading now starts only after successful credential validation.
 
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
       const enteredPassword = String(loginPassword.value || '').trim();
 
+      loginError.textContent = 'Authenticating...';
+
       // Pull latest users from Firebase before checking credentials.
-      // This ensures accounts created on other devices are visible here.
-      // A 3-second timeout prevents this from blocking the login experience.
       if (window.TIASync && TIASync.isEnabled()) {
-        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 3000))]); } catch (_) {}
+        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 2000))]); } catch (_) {}
       }
 
       const db = getUserDb();
-      ensureDefaultUsers(db);
       const found = findUserRecord(db, userIdentifier);
+      const email = found ? found.record.email : (userIdentifier.includes('@') ? userIdentifier : null);
 
-      if (found && !found.record.deleted) {
-        const customPasswordKey = `tia_custom_pwd_${found.key}`;
-        const customPassword = localStorage.getItem(customPasswordKey);
-        const isCustomPasswordValid = !!customPassword && enteredPassword === customPassword;
-        const isStoredPasswordValid = await verifyPassword(found.record, enteredPassword);
-        if (!isCustomPasswordValid && !isStoredPasswordValid) {
-          loginError.textContent = 'Invalid username or password.';
-          loginPassword.value = '';
-          loginPassword.focus();
-          return;
-        }
-
-        db[found.key] = found.record;
-        saveUserDb(db);
-
-        if (window.PasswordCredential && navigator.credentials && typeof navigator.credentials.store === 'function') {
-          navigator.credentials.store(new PasswordCredential({
-            id: found.key,
-            password: enteredPassword,
-            name: found.key
-          })).catch(() => {});
-        }
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-        sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
-        sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
-        sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
-        loginError.textContent = '';
-        // Instead of reloading, unlock app (will wait for data if needed)
-        try {
-          await unlockApplication({ useFunnyLoading: true });
-        } catch (error) {
-          console.error('[Login] Unlock failed:', error);
-          loginError.textContent = 'Login succeeded but app initialization failed. Please refresh and try again.';
-          setAppStatusBanner('<strong>❌ App initialization failed:</strong> Please refresh the page and sign in again.', 'error');
-          sessionStorage.removeItem(AUTH_SESSION_KEY);
-          document.body.classList.add('app-locked');
-          loginGate.style.display = 'flex';
-        }
+      if (!email) {
+        loginError.textContent = 'Invalid username or email format.';
         return;
       }
 
-      loginError.textContent = 'Invalid username or password.';
-      loginPassword.value = '';
-      loginPassword.focus();
+      try {
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
+        const user = userCredential.user;
+        
+        // Sync record if found
+        const finalUname = found ? found.record.username : user.email.split('@')[0];
+        const finalRec = found ? found.record : { username: finalUname, email: user.email, tier: 'free' };
+
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        sessionStorage.setItem(USER_SESSION_KEY, finalUname);
+        sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
+        sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
+        
+        loginError.textContent = '';
+        await unlockApplication({ useFunnyLoading: true });
+      } catch (error) {
+        console.error('[Login] Firebase Auth error:', error);
+        loginError.textContent = 'Login failed: ' + error.message;
+        loginPassword.value = '';
+        loginPassword.focus();
+      }
     });
 
-    // Forgot Password Logic
+    // Forgot Password Logic (Firebase Auth)
     const forgotPasswordLink = document.getElementById('forgotPasswordLink');
     const backToSignInBtn = document.getElementById('backToSignInBtn');
     const paneSignIn = document.getElementById('paneSignIn');
@@ -3719,56 +3662,31 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (resetPasswordForm) {
-      resetPasswordForm.addEventListener('submit', (e) => {
+      resetPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const rUser = document.getElementById('resetUsername').value.trim().toLowerCase();
-        const rKey = document.getElementById('resetRecoveryKey').value.trim();
-        const rNew = document.getElementById('resetNewPassword').value.trim();
-        const rConfirm = document.getElementById('resetConfirmPassword').value.trim();
+        const rEmail = document.getElementById('resetEmail').value.trim();
         const rError = document.getElementById('resetError');
         const rSuccess = document.getElementById('resetSuccess');
 
         rError.textContent = '';
-        rSuccess.textContent = '';
+        rSuccess.textContent = 'Sending reset link...';
 
-        const db = getUserDb();
-        ensureDefaultUsers(db);
-        const found = findUserRecord(db, rUser);
-        if (!found || found.record.deleted) {
-          rError.textContent = 'Username not found.';
-          return;
-        }
-
-        // Hardcoded Recovery Key for client-side app
-        const validRecoveryKey = 'CromptonReset2024!';
-        if (rKey !== validRecoveryKey) {
-          rError.textContent = 'Invalid Recovery Key.';
-          return;
-        }
-
-        if (rNew !== rConfirm) {
-          rError.textContent = 'Passwords do not match.';
-          return;
-        }
-
-        if (rNew.length < 8) {
-          rError.textContent = 'Password must be at least 8 characters.';
-          return;
-        }
-
-        // Save new password override in localStorage
-        localStorage.setItem(`tia_custom_pwd_${found.key}`, rNew);
-        rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
-        
-        setTimeout(() => {
-          resetPasswordForm.reset();
+        try {
+          await firebase.auth().sendPasswordResetEmail(rEmail);
+          rSuccess.textContent = 'Reset link sent! Please check your email (including spam).';
+          setTimeout(() => {
+            resetPasswordForm.reset();
+            backToSignInBtn.click();
+          }, 4000);
+        } catch (error) {
+          console.error('[Reset] Firebase error:', error);
           rSuccess.textContent = '';
-          backToSignInBtn.click();
-        }, 2000);
+          rError.textContent = 'Error: ' + error.message;
+        }
       });
     }
 
-    // Create account form
+    // Create account form (Firebase Auth)
     const createForm = document.getElementById('createAccountForm');
     if (createForm) {
       createForm.addEventListener('submit', async function (e) {
@@ -3777,33 +3695,47 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const okEl  = document.getElementById('createSuccess');
         if (errEl) errEl.textContent = '';
         if (okEl) okEl.textContent = '';
+        
         const fullName= String((document.getElementById('newFullName') || {}).value || '').trim();
         const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
         const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
         const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
         const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '').trim();
         const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
+
         if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
-        if (!/^[a-z0-9_.-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, _ . -'; return; }
         if (!email || !email.includes('@')) { if (errEl) errEl.textContent = 'Please enter a valid email address.'; return; }
         if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
         if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
-        const db = getUserDb();
-        if (db[uname]) { if (errEl) errEl.textContent = 'That username is already taken. Please choose another.'; return; }
-        const hash = await hashPassword(pw1);
-        db[uname] = { username: uname, fullName, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
-        saveUserDb(db);
-        // Push new account to Firebase so it is visible on all devices immediately.
-        if (window.TIASync) TIASync.saveUser(uname, db[uname]).catch(() => {});
-        if (okEl) okEl.textContent = 'Account created! Signing you in...';
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-        sessionStorage.setItem(USER_SESSION_KEY, uname);
-        sessionStorage.setItem(TIER_SESSION_KEY, tier);
-        sessionStorage.setItem('IS_ADMIN', 'false');
-        setTimeout(async () => {
-          try { await unlockApplication({ useFunnyLoading: true }); }
-          catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }
-        }, 800);
+
+        okEl.textContent = 'Creating account...';
+
+        try {
+          const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, pw1);
+          const user = userCredential.user;
+          
+          const db = getUserDb();
+          const record = { username: uname, fullName, email, tier, createdAt: new Date().toISOString() };
+          db[uname] = record;
+          localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+
+          if (window.TIASync) await TIASync.saveUser(uname, record);
+
+          okEl.textContent = 'Account created! Signing you in...';
+          sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+          sessionStorage.setItem(USER_SESSION_KEY, uname);
+          sessionStorage.setItem(TIER_SESSION_KEY, tier);
+          sessionStorage.setItem('IS_ADMIN', 'false');
+
+          setTimeout(async () => {
+            try { await unlockApplication({ useFunnyLoading: true }); }
+            catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }
+          }, 800);
+        } catch (error) {
+          console.error('[Create] Firebase error:', error);
+          okEl.textContent = '';
+          errEl.textContent = 'Error: ' + error.message;
+        }
       });
     }
   }
@@ -3812,7 +3744,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const logoutBtn = document.getElementById('logoutBtn');
     if (!logoutBtn) return;
 
-    logoutBtn.addEventListener('click', function () {
+    logoutBtn.addEventListener('click', async function () {
+      try {
+        await firebase.auth().signOut();
+      } catch (e) {
+        console.warn('[Logout] Firebase signOut error:', e);
+      }
       sessionStorage.removeItem(AUTH_SESSION_KEY);
       window.location.reload();
     });

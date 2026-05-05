@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -3856,35 +3856,15 @@
       <!-- Reset Password -->
       <div class="login-tab-pane" id="paneReset" role="tabpanel" aria-labelledby="tabReset" style="display:none;">
         <form id="resetPasswordForm" autocomplete="off">
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Enter your email address and we'll send you a link to reset your password.</p>
           <div class="login-field-group">
-            <label for="resetUsername">Username</label>
+            <label for="resetEmail">Email Address</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
-              <input id="resetUsername" name="resetUsername" type="text" placeholder="Enter username" required />
+              <i class="fa-solid fa-envelope"></i>
+              <input id="resetEmail" name="resetEmail" type="email" placeholder="your@email.com" required />
             </div>
           </div>
-          <div class="login-field-group">
-            <label for="resetRecoveryKey">Recovery Key</label>
-            <div class="login-input-wrapper">
-              <i class="fa-solid fa-key"></i>
-              <input id="resetRecoveryKey" name="resetRecoveryKey" type="password" placeholder="Enter recovery key" required />
-            </div>
-          </div>
-          <div class="login-field-group">
-            <label for="resetNewPassword">New Password</label>
-            <div class="login-input-wrapper">
-              <i class="fa-solid fa-lock"></i>
-              <input id="resetNewPassword" name="resetNewPassword" type="password" placeholder="New password" required minlength="8" />
-            </div>
-          </div>
-          <div class="login-field-group">
-            <label for="resetConfirmPassword">Confirm New Password</label>
-            <div class="login-input-wrapper">
-              <i class="fa-solid fa-lock"></i>
-              <input id="resetConfirmPassword" name="resetConfirmPassword" type="password" placeholder="Confirm password" required />
-            </div>
-          </div>
-          <button type="submit" class="login-submit-btn">Reset Password</button>
+          <button type="submit" class="login-submit-btn">Send Reset Link</button>
           <button type="button" id="backToSignInBtn" style="width:100%; margin-top:10px; border:none; background:none; color:var(--primary); cursor:pointer; font-size:0.85rem;">Back to Sign In</button>
           <div id="resetError" class="login-error" aria-live="polite"></div>
           <div id="resetSuccess" class="login-success" aria-live="polite" style="color:var(--success); font-size:0.85rem; margin-top:0.5rem; text-align:center;"></div>
@@ -30332,6 +30312,7 @@ window.__tiaCalc = {
 </script>
 <!-- Firebase Realtime Database SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <!-- TIA Firebase config (fill in with your project credentials) -->
 <script src="firebase-config.js"></script>
