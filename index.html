@@ -1987,6 +1987,97 @@
     .upgrade-modal-btn-secondary { background: #f3f4f6; color: #374151; }
     .upgrade-modal-btn-secondary:hover { background: #e5e7eb; }
 
+    /* Demo payment portal (temporary placeholder for real gateway) */
+    .demo-payment-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 31000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(7, 20, 22, 0.6);
+      backdrop-filter: blur(4px);
+    }
+    .demo-payment-overlay.open { display: flex; }
+    .demo-payment-card {
+      width: min(520px, 95vw);
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #d8e2e6;
+      box-shadow: 0 22px 54px rgba(0, 0, 0, 0.25);
+      padding: 18px;
+    }
+    .demo-payment-title {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      color: #0f2f32;
+      font-weight: 700;
+    }
+    .demo-payment-note {
+      margin: 0 0 12px;
+      font-size: 0.84rem;
+      color: #5f6f79;
+      line-height: 1.45;
+    }
+    .demo-payment-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid #c7d8de;
+      background: #f2f8fa;
+      color: #1f5e63;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      margin: 0 0 12px;
+    }
+    .demo-payment-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .demo-payment-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .demo-payment-btn {
+      width: auto;
+      margin: 0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+    .demo-payment-btn-primary {
+      background: linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%);
+      color: #ffffff;
+    }
+    .demo-payment-btn-secondary {
+      background: #eef3f5;
+      color: #2b3f4b;
+      border: 1px solid #d3dee3;
+    }
+    .demo-payment-error {
+      margin: 8px 0 0;
+      color: #b71c1c;
+      font-size: 0.82rem;
+      font-weight: 700;
+      min-height: 1.1em;
+    }
+
+    @media (max-width: 640px) {
+      .demo-payment-grid { grid-template-columns: 1fr; }
+      .demo-payment-actions { flex-direction: column; }
+      .demo-payment-btn { width: 100%; }
+    }
+
     @media print {
       /* 1. Global Setup for Engineering Reports */
       @page {
@@ -3888,6 +3979,54 @@
       <div class="upgrade-modal-actions">
         <button class="upgrade-modal-btn upgrade-modal-btn-primary" onclick="showLoginGateOnUpgrade()">Upgrade Plan</button>
         <button class="upgrade-modal-btn upgrade-modal-btn-secondary" onclick="document.getElementById('upgradeModal').classList.remove('open')">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="demoPaymentPortal" class="demo-payment-overlay" role="dialog" aria-modal="true" aria-labelledby="demoPaymentTitle">
+    <div class="demo-payment-card">
+      <h3 id="demoPaymentTitle" class="demo-payment-title">Demo Payment Portal</h3>
+      <p class="demo-payment-note">Temporary checkout screen for testing plan upgrades. Replace this with real Stripe/PayPal integration later.</p>
+      <div class="demo-payment-pill">
+        <span id="demoPaymentPlanLabel">Plan: Basic</span>
+        <span id="demoPaymentPlanAmount">$29 / mo</span>
+      </div>
+      <div class="demo-payment-grid">
+        <div class="login-field-group" style="margin-bottom:0;">
+          <label for="demoPayName">Cardholder Name</label>
+          <div class="login-input-wrapper">
+            <i class="fa-solid fa-id-card"></i>
+            <input id="demoPayName" type="text" placeholder="Name on card" autocomplete="off" />
+          </div>
+        </div>
+        <div class="login-field-group" style="margin-bottom:0;">
+          <label for="demoPayEmail">Billing Email</label>
+          <div class="login-input-wrapper">
+            <i class="fa-solid fa-envelope"></i>
+            <input id="demoPayEmail" type="email" placeholder="billing@email.com" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+      <div class="demo-payment-grid">
+        <div class="login-field-group" style="margin-bottom:0;">
+          <label for="demoPayCard">Card Number (Demo)</label>
+          <div class="login-input-wrapper">
+            <i class="fa-solid fa-credit-card"></i>
+            <input id="demoPayCard" type="text" placeholder="4242 4242 4242 4242" autocomplete="off" />
+          </div>
+        </div>
+        <div class="login-field-group" style="margin-bottom:0;">
+          <label for="demoPayExpiry">Expiry</label>
+          <div class="login-input-wrapper">
+            <i class="fa-solid fa-calendar"></i>
+            <input id="demoPayExpiry" type="text" placeholder="MM/YY" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+      <div id="demoPaymentError" class="demo-payment-error" aria-live="polite"></div>
+      <div class="demo-payment-actions">
+        <button type="button" id="demoPayConfirmBtn" class="demo-payment-btn demo-payment-btn-primary">Simulate Payment Success</button>
+        <button type="button" id="demoPayCancelBtn" class="demo-payment-btn demo-payment-btn-secondary">Cancel (Use Free Plan)</button>
       </div>
     </div>
   </div>
@@ -9989,12 +10128,97 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Tier card selection
     const tierCards = loginGate.querySelectorAll('.tier-card');
     const selectedTierInput = document.getElementById('selectedTierInput');
+    const demoPaymentPortal = document.getElementById('demoPaymentPortal');
+    const demoPaymentPlanLabel = document.getElementById('demoPaymentPlanLabel');
+    const demoPaymentPlanAmount = document.getElementById('demoPaymentPlanAmount');
+    const demoPayName = document.getElementById('demoPayName');
+    const demoPayEmail = document.getElementById('demoPayEmail');
+    const demoPayCard = document.getElementById('demoPayCard');
+    const demoPayExpiry = document.getElementById('demoPayExpiry');
+    const demoPaymentError = document.getElementById('demoPaymentError');
+    const demoPayConfirmBtn = document.getElementById('demoPayConfirmBtn');
+    const demoPayCancelBtn = document.getElementById('demoPayCancelBtn');
+    let demoPaymentPendingTier = 'free';
+    let demoPaymentApprovedTier = 'free';
+    let demoPaymentApprovedEmail = '';
+
+    const tierDisplay = {
+      free: { label: 'Free', amount: '$0 / mo' },
+      basic: { label: 'Basic', amount: '$29 / mo' },
+      pro: { label: 'Pro', amount: '$79 / mo' },
+      'pro+': { label: 'Pro+', amount: '$149 / mo' }
+    };
+
+    const applyTierSelection = (tierName) => {
+      const normalized = String(tierName || 'free').toLowerCase();
+      tierCards.forEach(c => {
+        const isSelected = String(c.dataset.tier || '').toLowerCase() === normalized;
+        c.classList.toggle('selected', isSelected);
+        c.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+      });
+      if (selectedTierInput) selectedTierInput.value = normalized;
+      return normalized;
+    };
+
+    const openDemoPaymentPortal = (tierName) => {
+      if (!demoPaymentPortal) return;
+      demoPaymentPendingTier = String(tierName || 'free').toLowerCase();
+      const plan = tierDisplay[demoPaymentPendingTier] || tierDisplay.free;
+      if (demoPaymentPlanLabel) demoPaymentPlanLabel.textContent = 'Plan: ' + plan.label;
+      if (demoPaymentPlanAmount) demoPaymentPlanAmount.textContent = plan.amount;
+      if (demoPaymentError) demoPaymentError.textContent = '';
+      const fullNameEl = document.getElementById('newFullName');
+      const newEmailEl = document.getElementById('newEmail');
+      if (demoPayName && fullNameEl && String(fullNameEl.value || '').trim()) demoPayName.value = String(fullNameEl.value || '').trim();
+      if (demoPayEmail) demoPayEmail.value = String((newEmailEl && newEmailEl.value) || '').trim().toLowerCase();
+      demoPaymentPortal.classList.add('open');
+    };
+
+    const closeDemoPaymentPortal = () => {
+      if (demoPaymentPortal) demoPaymentPortal.classList.remove('open');
+    };
+
+    if (demoPayCancelBtn) {
+      demoPayCancelBtn.addEventListener('click', () => {
+        closeDemoPaymentPortal();
+        applyTierSelection('free');
+      });
+    }
+
+    if (demoPayConfirmBtn) {
+      demoPayConfirmBtn.addEventListener('click', () => {
+        const name = String((demoPayName && demoPayName.value) || '').trim();
+        const email = String((demoPayEmail && demoPayEmail.value) || '').trim().toLowerCase();
+        const card = String((demoPayCard && demoPayCard.value) || '').replace(/\s+/g, '');
+        const expiry = String((demoPayExpiry && demoPayExpiry.value) || '').trim();
+        if (!name || !email.includes('@') || card.length < 12 || expiry.length < 4) {
+          if (demoPaymentError) demoPaymentError.textContent = 'Please complete all demo payment fields to continue.';
+          return;
+        }
+        demoPaymentApprovedTier = demoPaymentPendingTier;
+        demoPaymentApprovedEmail = email;
+        closeDemoPaymentPortal();
+        const okEl = document.getElementById('createSuccess');
+        const errEl = document.getElementById('createError');
+        if (errEl) {
+          errEl.textContent = '';
+          errEl.classList.remove('show');
+        }
+        if (okEl) {
+          okEl.textContent = 'Demo payment approved for ' + (tierDisplay[demoPaymentApprovedTier] || tierDisplay.free).label + '. You can now create your account.';
+          okEl.classList.add('show');
+        }
+      });
+    }
+
     tierCards.forEach(card => {
       const select = () => {
-        tierCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked', 'false'); });
-        card.classList.add('selected');
-        card.setAttribute('aria-checked', 'true');
-        if (selectedTierInput) selectedTierInput.value = card.dataset.tier;
+        const chosenTier = applyTierSelection(card.dataset.tier || 'free');
+        if (chosenTier === 'free') {
+          demoPaymentApprovedTier = 'free';
+          return;
+        }
+        openDemoPaymentPortal(chosenTier);
       };
       card.addEventListener('click', select);
       card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); } });
@@ -10288,6 +10512,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (!email || !email.includes('@')) { showCreateError('Please enter a valid email address.'); return; }
         if (pw1.length < 8) { showCreateError('Password must be at least 8 characters.'); return; }
         if (pw1 !== pw2) { showCreateError('Passwords do not match.'); return; }
+
+        if (tier !== 'free') {
+          const normalizedEmail = email.toLowerCase();
+          if (demoPaymentApprovedTier !== tier || demoPaymentApprovedEmail !== normalizedEmail) {
+            showCreateError('Payment is required for ' + (tierDisplay[tier] || tierDisplay.free).label + '. Complete the demo payment portal first.');
+            openDemoPaymentPortal(tier);
+            return;
+          }
+        }
 
         const authProvision = await ensureFirebaseAuthAccountForEmail(email, pw1);
         if (!authProvision.ok) {
