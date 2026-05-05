@@ -3497,16 +3497,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         };
         changed = true;
       }
-      if (!db.users) {
-        db.users = {
-          username: 'users',
-          email: 'users@cromptonconcepts.com.au',
-          legacyPassword: 'Crompton123',
-          tier: 'basic',
-          createdAt: new Date().toISOString()
-        };
-        changed = true;
-      }
       if (changed) saveUserDb(db);
     }
 
