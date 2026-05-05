@@ -9815,6 +9815,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // ── Membership auth helpers ──────────────────────────────────────────────
   const USERS_STORE_KEY   = 'crompton_tia_users';
   const USER_SESSION_KEY  = 'crompton_tia_user';
+  const USER_NAME_SESSION_KEY = 'crompton_tia_user_name';
   const TIER_SESSION_KEY  = 'crompton_tia_tier';
 
   async function hashPassword(pw) {
@@ -9877,6 +9878,45 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!loginGate || !loginForm) return;
 
     ensureDefaultUsers();
+
+    function getFirebaseAuthForReset() {
+      if (!(window.firebase && typeof firebase.auth === 'function')) return null;
+      try {
+        if (!firebase.apps || !firebase.apps.length) {
+          if (typeof FIREBASE_CONFIG === 'undefined') return null;
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        return firebase.auth();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function getFirebaseDatabaseForLogin() {
+      if (!(window.firebase && typeof firebase.database === 'function')) return null;
+      try {
+        if (!firebase.apps || !firebase.apps.length) {
+          if (typeof FIREBASE_CONFIG === 'undefined') return null;
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        return firebase.database();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function findFirebaseUserRecord(identifier) {
+      const fdb = getFirebaseDatabaseForLogin();
+      if (!fdb) return null;
+      try {
+        const snap = await fdb.ref('tia_users').get();
+        if (!snap.exists()) return null;
+        const remoteDb = snap.val() || {};
+        return findUserRecord(remoteDb, identifier);
+      } catch (_) {
+        return null;
+      }
+    }
 
     function activateAuthTab(tabPaneId) {
       const loginTabs = document.querySelector('.login-tabs');
@@ -9945,6 +9985,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       } catch (err) { dataLoadIssue = err; console.error('[Login] Data load issue:', err); }
       document.body.classList.remove('app-locked');
       loginGate.style.display = 'none';
+
+      const displayName = sessionStorage.getItem(USER_NAME_SESSION_KEY) || sessionStorage.getItem(USER_SESSION_KEY) || 'User';
+      const userGreetingEl = document.getElementById('userGreeting');
+      if (userGreetingEl) userGreetingEl.textContent = 'Hi ' + displayName;
+      const welcomeUserEl = document.getElementById('welcomeUserText');
+      if (welcomeUserEl) {
+        welcomeUserEl.textContent = 'Welcome, ' + displayName;
+        welcomeUserEl.style.display = 'inline';
+      }
+
       // Apply tier restrictions after unlock
       const tier = sessionStorage.getItem(TIER_SESSION_KEY) || 'free';
       applyTierRestrictions(tier);
@@ -10001,53 +10051,42 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return; 
       }
 
-      // Pull latest users from Firebase before authentication so cross-device
-      // account creation is visible immediately on this device.
-      if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
-        try {
-          await Promise.race([
-            TIASync.pullAll(),
-            new Promise(resolve => setTimeout(resolve, 3000))
-          ]);
-        } catch (_) {}
-      }
-      
-      const db = getUsersDB();
-      const found = findUserRecord(db, userIdentifier);
-      if (!found || found.record.deleted || found.record.tier === 'deleted') { 
+      // Enforce cloud-backed login: user must exist in Firebase.
+      const remoteFound = await findFirebaseUserRecord(userIdentifier);
+      if (!remoteFound || remoteFound.record.deleted || remoteFound.record.tier === 'deleted') {
         if (submitBtn) submitBtn.classList.remove('loading');
-        if (found && (found.record.deleted || found.record.tier === 'deleted')) {
+        if (remoteFound && (remoteFound.record.deleted || remoteFound.record.tier === 'deleted')) {
           showError('This account has been deactivated. Please contact Crompton Concepts.');
         } else {
-          showError('Invalid username or password.'); 
+          showError('Account not found in Firebase. Please contact support.');
         }
-        return; 
+        return;
       }
-      
-      const customPasswordKey = `tia_custom_pwd_${found.key}`;
-      const customPassword = localStorage.getItem(customPasswordKey);
-      const isCustomPasswordValid = !!customPassword && enteredPassword === customPassword;
-      const isStoredPasswordValid = await verifyPassword(found.record, enteredPassword);
-      
-      if (!isCustomPasswordValid && !isStoredPasswordValid) { 
+
+      const isStoredPasswordValid = await verifyPassword(remoteFound.record, enteredPassword);
+      if (!isStoredPasswordValid) {
         if (submitBtn) submitBtn.classList.remove('loading');
-        showError('Invalid username or password.'); 
+        showError('Invalid username or password.');
         return; 
       }
-      
-      // Persist migration if password was upgraded
-      db[found.key] = found.record;
-      saveUsersDB(db);
+
+      // Mirror validated cloud record into local cache.
+      const localDb = getUsersDB();
+      localDb[remoteFound.key] = remoteFound.record;
+      saveUsersDB(localDb);
+
+      const displayName = (remoteFound.record.fullName || remoteFound.record.username || remoteFound.key || 'User').trim();
       sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
-      sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
-      sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
+      sessionStorage.setItem(USER_SESSION_KEY, remoteFound.record.username);
+      sessionStorage.setItem(USER_NAME_SESSION_KEY, displayName);
+      sessionStorage.setItem(TIER_SESSION_KEY, remoteFound.record.tier || 'free');
+      sessionStorage.setItem('IS_ADMIN', remoteFound.record.isAdmin ? 'true' : 'false');
       
       loginError.textContent = '';
       loginError.classList.remove('show');
       
       if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
-        navigator.credentials.store(new PasswordCredential({ id: found.key, password: enteredPassword, name: found.key })).catch(() => {});
+        navigator.credentials.store(new PasswordCredential({ id: remoteFound.key, password: enteredPassword, name: displayName })).catch(() => {});
       }
       
       try { 
@@ -10095,51 +10134,71 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (resetPasswordForm) {
-      resetPasswordForm.addEventListener('submit', (e) => {
+      resetPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const rUser = document.getElementById('resetUsername').value.trim().toLowerCase();
-        const rKey = document.getElementById('resetRecoveryKey').value.trim();
-        const rNew = document.getElementById('resetNewPassword').value.trim();
-        const rConfirm = document.getElementById('resetConfirmPassword').value.trim();
+        const resetEmailEl = document.getElementById('resetEmail');
         const rError = document.getElementById('resetError');
         const rSuccess = document.getElementById('resetSuccess');
+        const email = String((resetEmailEl && resetEmailEl.value) || '').trim().toLowerCase();
 
-        if (rError) rError.textContent = '';
-        if (rSuccess) rSuccess.textContent = '';
+        if (rError) {
+          rError.textContent = '';
+          rError.classList.remove('show');
+        }
+        if (rSuccess) {
+          rSuccess.textContent = '';
+          rSuccess.classList.remove('show');
+        }
 
-        const db = getUsersDB();
-        const found = findUserRecord(db, rUser);
-        if (!found || found.record.deleted) {
-          if (rError) rError.textContent = 'Username not found.';
+        if (!email || !email.includes('@')) {
+          if (rError) {
+            rError.textContent = 'Please enter a valid email address.';
+            rError.classList.add('show');
+          }
           return;
         }
 
-        // Hardcoded Recovery Key for client-side app
-        const validRecoveryKey = 'CromptonReset2024!';
-        if (rKey !== validRecoveryKey) {
-          if (rError) rError.textContent = 'Invalid Recovery Key.';
+        // Keep local DB current before attempting reset.
+        if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+          try {
+            await Promise.race([
+              TIASync.pullAll(),
+              new Promise(resolve => setTimeout(resolve, 3000))
+            ]);
+          } catch (_) {}
+        }
+
+        const auth = getFirebaseAuthForReset();
+        if (!auth) {
+          if (rError) {
+            rError.textContent = 'Password reset is temporarily unavailable. Please refresh and try again.';
+            rError.classList.add('show');
+          }
           return;
         }
 
-        if (rNew !== rConfirm) {
-          if (rError) rError.textContent = 'Passwords do not match.';
-          return;
-        }
+        try {
+          await auth.sendPasswordResetEmail(email);
+          if (rSuccess) {
+            rSuccess.textContent = 'Reset link sent. Please check your inbox and spam folder.';
+            rSuccess.classList.add('show');
+          }
 
-        if (rNew.length < 8) {
-          if (rError) rError.textContent = 'Password must be at least 8 characters.';
-          return;
+          setTimeout(() => {
+            resetPasswordForm.reset();
+            if (rSuccess) {
+              rSuccess.textContent = '';
+              rSuccess.classList.remove('show');
+            }
+            if (backToSignInBtn) backToSignInBtn.click();
+          }, 2200);
+        } catch (err) {
+          const msg = err && err.message ? err.message : 'Could not send reset link. Please try again.';
+          if (rError) {
+            rError.textContent = msg;
+            rError.classList.add('show');
+          }
         }
-
-        // Save new password override in localStorage
-        localStorage.setItem(`tia_custom_pwd_${found.key}`, rNew);
-        if (rSuccess) rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
-        
-        setTimeout(() => {
-          resetPasswordForm.reset();
-          if (rSuccess) rSuccess.textContent = '';
-          if (backToSignInBtn) backToSignInBtn.click();
-        }, 2000);
       });
     }
 
@@ -10222,6 +10281,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         showCreateSuccess('Account created! Signing you in...');
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, uname);
+        sessionStorage.setItem(USER_NAME_SESSION_KEY, fullName);
         sessionStorage.setItem(TIER_SESSION_KEY, tier);
         setTimeout(async () => {
           try { await unlockApplication({ useFunnyLoading: true }); }
@@ -10237,6 +10297,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     logoutBtn.addEventListener('click', function () {
       sessionStorage.removeItem(AUTH_SESSION_KEY);
       sessionStorage.removeItem(USER_SESSION_KEY);
+      sessionStorage.removeItem(USER_NAME_SESSION_KEY);
       sessionStorage.removeItem(TIER_SESSION_KEY);
       window.location.reload();
     });

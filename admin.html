@@ -310,6 +310,37 @@
   // ── Admin login ───────────────────────────────────────────────────────────
   ensureDefaults();
 
+  function getFirebaseAuth() {
+    if (!(window.firebase && typeof firebase.auth === 'function')) return null;
+    try {
+      // Ensure default app exists even if user-sync.js has not initialised yet.
+      if (!firebase.apps || !firebase.apps.length) {
+        if (typeof FIREBASE_CONFIG === 'undefined') return null;
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
+      return firebase.auth();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function initAdminAuthWatch(retriesLeft = 40) {
+    const auth = getFirebaseAuth();
+    if (!auth) {
+      if (retriesLeft > 0) {
+        setTimeout(() => initAdminAuthWatch(retriesLeft - 1), 250);
+      }
+      return;
+    }
+    auth.onAuthStateChanged((user) => {
+      if (user && sessionStorage.getItem(ADMIN_SESSION) === 'true') {
+        showApp();
+      }
+    });
+  }
+
+  initAdminAuthWatch();
+
   async function adminForgotPassword() {
     const errEl = document.getElementById('alErr');
     const msgEl = document.getElementById('alMsg');
@@ -338,19 +369,19 @@
       return;
     }
 
+    const auth = getFirebaseAuth();
+    if (!auth) {
+      errEl.textContent = 'Password reset is temporarily unavailable. Please refresh and try again.';
+      return;
+    }
+
     try {
-      await firebase.auth().sendPasswordResetEmail(email);
+      await auth.sendPasswordResetEmail(email);
       msgEl.textContent = 'Reset link sent to ' + email + '. Please check inbox/spam.';
     } catch (error) {
       errEl.textContent = 'Could not send reset link: ' + error.message;
     }
   }
-
-  firebase.auth().onAuthStateChanged((user) => {
-    if (user && sessionStorage.getItem(ADMIN_SESSION) === 'true') {
-      showApp();
-    }
-  });
 
   document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -369,15 +400,18 @@
     const email = found ? found.email : (identifier.includes('@') ? identifier : null);
     if (!email) { errEl.textContent = 'Invalid user or email format.'; return; }
 
+    const auth = getFirebaseAuth();
+    if (!auth) { errEl.textContent = 'Authentication is temporarily unavailable. Please refresh and try again.'; return; }
+
     try {
-      const userCredential = await firebase.auth().signInWithEmailAndPassword(email, pw);
+      const userCredential = await auth.signInWithEmailAndPassword(email, pw);
       const user = userCredential.user;
 
       // Double check admin status from local/cached DB
       // In a real app, this should be a custom claim or a DB check
       const rec = Object.values(db).find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
       if (!rec || !rec.isAdmin) {
-        await firebase.auth().signOut();
+        await auth.signOut();
         errEl.textContent = 'Access denied. Admin privileges required.';
         return;
       }
@@ -392,7 +426,8 @@
   });
 
   async function adminLogout() {
-    try { await firebase.auth().signOut(); } catch(e) {}
+    const auth = getFirebaseAuth();
+    try { if (auth) await auth.signOut(); } catch(e) {}
     sessionStorage.removeItem(ADMIN_SESSION);
     sessionStorage.removeItem('crompton_tia_admin_user');
     location.reload();
