@@ -10214,11 +10214,27 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (db[uname]) { showCreateError('That username is already taken. Please choose another.'); return; }
         const hash = await hashPassword(pw1);
         db[uname] = { username: uname, fullName, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
-        saveUsersDB(db);
 
-        // Push to Firebase so all devices/admin portals see the new account.
-        if (window.TIASync && TIASync.saveUser) {
-          try { await TIASync.saveUser(uname, db[uname]); } catch (_) {}
+        // Enforce cloud-backed account creation to avoid local-only users that
+        // never appear on other devices or in admin.
+        if (!(window.TIASync && TIASync.isEnabled && TIASync.isEnabled() && TIASync.saveUser)) {
+          delete db[uname];
+          showCreateError('Cloud sync is currently unavailable on this device. Please check connection and try again.');
+          return;
+        }
+
+        saveUsersDB(db);
+        let cloudSaved = false;
+        try {
+          cloudSaved = await TIASync.saveUser(uname, db[uname]);
+        } catch (_) {
+          cloudSaved = false;
+        }
+        if (!cloudSaved) {
+          delete db[uname];
+          saveUsersDB(db);
+          showCreateError('Account was not synced to Firebase. Please retry so it is available on all devices.');
+          return;
         }
 
         showCreateSuccess('Account created! Signing you in...');
