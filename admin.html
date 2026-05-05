@@ -246,11 +246,22 @@
   function getDB() {
     try { return JSON.parse(localStorage.getItem(USERS_STORE_KEY) || '{}'); } catch { return {}; }
   }
-  function saveDB(db) { localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db)); }
+  // saveDB: always persists locally, then pushes active users to Firebase in background.
+  function saveDB(db) {
+    localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+    if (window.TIASync && TIASync.isEnabled()) {
+      TIASync.pushAll(db, null).catch(() => {});
+    }
+  }
   function getDeletedDB() {
     try { return JSON.parse(localStorage.getItem(DELETED_STORE_KEY) || '{}'); } catch { return {}; }
   }
-  function saveDeletedDB(db) { localStorage.setItem(DELETED_STORE_KEY, JSON.stringify(db)); }
+  function saveDeletedDB(db) {
+    localStorage.setItem(DELETED_STORE_KEY, JSON.stringify(db));
+    if (window.TIASync && TIASync.isEnabled()) {
+      TIASync.pushAll(null, db).catch(() => {});
+    }
+  }
 
   async function hashPassword(pw) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
@@ -309,10 +320,26 @@
     document.getElementById('adminApp').style.display = 'block';
     const u = sessionStorage.getItem('crompton_tia_admin_user') || 'admin';
     document.getElementById('adminWelcome').textContent = 'Signed in as ' + u;
-    renderStats();
-    renderTable();
-    renderDeletedTable();
-    updateDeletedBadge();
+
+    // Pull latest users from Firebase, then render — ensures admin always sees all accounts.
+    if (window.TIASync && TIASync.isEnabled()) {
+      TIASync.pullAll().then(() => {
+        renderStats();
+        renderTable();
+        renderDeletedTable();
+        updateDeletedBadge();
+      }).catch(() => {
+        renderStats();
+        renderTable();
+        renderDeletedTable();
+        updateDeletedBadge();
+      });
+    } else {
+      renderStats();
+      renderTable();
+      renderDeletedTable();
+      updateDeletedBadge();
+    }
   }
 
   // ── Tab switching ─────────────────────────────────────────────────────────
@@ -416,12 +443,15 @@
     if (!user) return;
     // Archive to deleted store
     const deleted = getDeletedDB();
-    deleted[uname] = { ...user, deletedAt: new Date().toISOString(), originalTier: user.tier };
+    const archivedRecord = { ...user, deletedAt: new Date().toISOString(), originalTier: user.tier };
+    deleted[uname] = archivedRecord;
     saveDeletedDB(deleted);
     // Revoke access: set tier to 'deleted' and mark deleted
     db[uname].tier = 'deleted';
     db[uname].deleted = true;
     saveDB(db);
+    // Sync individual record to Firebase
+    if (window.TIASync) TIASync.deleteUser(uname, db[uname], archivedRecord).catch(() => {});
     renderStats();
     renderTable();
     renderDeletedTable();
@@ -443,6 +473,8 @@
     saveDB(db);
     delete deleted[uname];
     saveDeletedDB(deleted);
+    // Sync restore to Firebase
+    if (window.TIASync) TIASync.restoreUser(uname, db[uname]).catch(() => {});
     renderStats();
     renderTable();
     renderDeletedTable();
@@ -458,6 +490,8 @@
     // Also remove from main DB if still there
     const db = getDB();
     if (db[uname] && db[uname].deleted) { delete db[uname]; saveDB(db); }
+    // Sync purge to Firebase
+    if (window.TIASync) TIASync.purgeUser(uname).catch(() => {});
     renderDeletedTable();
     updateDeletedBadge();
     showToast(`User "${uname}" permanently deleted.`);
@@ -590,5 +624,13 @@
   // Close modal on backdrop click
   document.getElementById('addUserModal').addEventListener('click', function (e) { if (e.target === this) closeAddUserModal(); });
 </script>
+
+<!-- Firebase Realtime Database SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- TIA Firebase config (fill in firebase-config.js with your project credentials) -->
+<script src="firebase-config.js"></script>
+<!-- TIA shared user sync module -->
+<script src="user-sync.js"></script>
 </body>
 </html>

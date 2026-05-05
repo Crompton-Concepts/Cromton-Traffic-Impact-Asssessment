@@ -3635,6 +3635,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
       const enteredPassword = String(loginPassword.value || '').trim();
 
+      // Pull latest users from Firebase before checking credentials.
+      // This ensures accounts created on other devices are visible here.
+      // A 3-second timeout prevents this from blocking the login experience.
+      if (window.TIASync && TIASync.isEnabled()) {
+        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 3000))]); } catch (_) {}
+      }
+
       const db = getUserDb();
       ensureDefaultUsers(db);
       const found = findUserRecord(db, userIdentifier);
@@ -3785,6 +3792,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const hash = await hashPassword(pw1);
         db[uname] = { username: uname, fullName, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
         saveUserDb(db);
+        // Push new account to Firebase so it is visible on all devices immediately.
+        if (window.TIASync) TIASync.saveUser(uname, db[uname]).catch(() => {});
         if (okEl) okEl.textContent = 'Account created! Signing you in...';
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, uname);
