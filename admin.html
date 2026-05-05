@@ -30,6 +30,9 @@
     .al-field input:focus { border-color: var(--brand); outline: none; }
     .al-btn { width: 100%; padding: 11px; background: var(--brand); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
     .al-btn:hover { background: var(--brand-2); }
+    .al-link { display: inline-block; margin-top: 10px; font-size: 0.82rem; color: var(--brand); text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
+    .al-link:hover { text-decoration: underline; color: var(--brand-2); }
+    .al-msg { margin-top: 8px; font-size: 0.84rem; color: #12703a; min-height: 1.1em; }
     .al-err { margin-top: 10px; font-size: 0.86rem; color: #b00020; min-height: 1.2em; }
 
     /* ── App shell ── */
@@ -126,6 +129,8 @@
         <input id="alPass" type="password" placeholder="Password" autocomplete="current-password" required />
       </div>
       <button type="submit" class="al-btn">Sign In to Admin</button>
+      <button type="button" class="al-link" onclick="adminForgotPassword()">Forgot password?</button>
+      <div id="alMsg" class="al-msg"></div>
       <div id="alErr" class="al-err"></div>
     </form>
   </div>
@@ -142,7 +147,7 @@
 
   <div class="main">
     <h1>User Management</h1>
-    <p class="page-sub">View and manage all registered TIA accounts. Changes are stored locally in this browser.</p>
+    <p class="page-sub">View and manage all registered TIA accounts. Changes sync across all devices via Firebase.</p>
 
     <div class="stats-row" id="statsRow"></div>
 
@@ -162,6 +167,7 @@
         <option value="pro+">Pro+</option>
       </select>
       <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+      <button class="btn" id="syncBtn" style="background:#e0f2f1;color:#1f5e63;border:1px solid #b2dfdb;" onclick="manualSync()">&#8635; Sync from Cloud</button>
       <button class="btn" style="background:#f3f4f6;color:#374151;" onclick="exportCSV()">Export CSV</button>
     </div>
 
@@ -246,59 +252,147 @@
   function getDB() {
     try { return JSON.parse(localStorage.getItem(USERS_STORE_KEY) || '{}'); } catch { return {}; }
   }
-  function saveDB(db) { localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db)); }
+  // saveDB: always persists locally, then pushes active users to Firebase in background.
+  function saveDB(db) {
+    localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+    if (window.TIASync && TIASync.isEnabled()) {
+      TIASync.pushAll(db, null).catch(() => {});
+    }
+  }
   function getDeletedDB() {
     try { return JSON.parse(localStorage.getItem(DELETED_STORE_KEY) || '{}'); } catch { return {}; }
   }
-  function saveDeletedDB(db) { localStorage.setItem(DELETED_STORE_KEY, JSON.stringify(db)); }
-
-  async function hashPassword(pw) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  function saveDeletedDB(db) {
+    localStorage.setItem(DELETED_STORE_KEY, JSON.stringify(db));
+    if (window.TIASync && TIASync.isEnabled()) {
+      TIASync.pushAll(null, db).catch(() => {});
+    }
   }
 
   // ── Seed defaults (mirrors index.html) ───────────────────────────────────
   function ensureDefaults() {
     const db = getDB(); let changed = false;
-    if (!db['admin']) { db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', legacyPassword: 'Packer4551', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true }; changed = true; }
-    if (!db['users']) { db['users'] = { username: 'users', email: 'users@cromptonconcepts.com.au', legacyPassword: 'Crompton123', tier: 'basic', createdAt: new Date().toISOString() }; changed = true; }
-    if (changed) saveDB(db);
+    if (!db['admin']) { db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true }; changed = true; }
+    if (changed) {
+      // Only update localStorage — never push to Firebase here as TIASync
+      // is not yet initialised and the local DB is incomplete.
+      localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+    }
   }
 
-  async function verifyPassword(record, pw) {
-    if (record.legacyPassword) {
-      if (pw !== record.legacyPassword) return false;
-      record.passwordHash = await hashPassword(pw);
-      delete record.legacyPassword;
-      return true;
+  let usersUnwatch = null;
+  let deletedUsersUnwatch = null;
+
+  function attachRealtimeSync(refreshAll, retriesLeft = 20) {
+    if (!(window.TIASync && TIASync.isEnabled && TIASync.isEnabled())) {
+      if (retriesLeft > 0) {
+        setTimeout(() => attachRealtimeSync(refreshAll, retriesLeft - 1), 250);
+      }
+      return;
     }
-    if (record.passwordHash) return record.passwordHash === await hashPassword(pw);
-    return false;
+
+    if (usersUnwatch) usersUnwatch();
+    if (deletedUsersUnwatch) deletedUsersUnwatch();
+
+    usersUnwatch = TIASync.watchUsers(() => {
+      renderStats();
+      renderTable();
+      updateDeletedBadge();
+    });
+    deletedUsersUnwatch = TIASync.watchDeletedUsers(() => {
+      renderDeletedTable();
+      updateDeletedBadge();
+    });
+
+    TIASync.pullAll().then(() => refreshAll()).catch(() => {});
   }
 
   // ── Admin login ───────────────────────────────────────────────────────────
   ensureDefaults();
 
-  if (sessionStorage.getItem(ADMIN_SESSION) === 'true') showApp();
+  async function adminForgotPassword() {
+    const errEl = document.getElementById('alErr');
+    const msgEl = document.getElementById('alMsg');
+    errEl.textContent = '';
+    msgEl.textContent = '';
+
+    // Pull latest users first so username->email lookup is current.
+    if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+      try { await TIASync.pullAll(); } catch (_) {}
+    }
+
+    const identifier = String(document.getElementById('alUser').value || '').trim().toLowerCase();
+    if (!identifier) {
+      errEl.textContent = 'Enter username or email first, then click Forgot password.';
+      return;
+    }
+
+    const db = getDB();
+    const found = Object.values(db).find(u =>
+      u.username.toLowerCase() === identifier || (u.email && u.email.toLowerCase() === identifier)
+    );
+    const email = found ? found.email : (identifier.includes('@') ? identifier : null);
+
+    if (!email) {
+      errEl.textContent = 'No email found for that account.';
+      return;
+    }
+
+    try {
+      await firebase.auth().sendPasswordResetEmail(email);
+      msgEl.textContent = 'Reset link sent to ' + email + '. Please check inbox/spam.';
+    } catch (error) {
+      errEl.textContent = 'Could not send reset link: ' + error.message;
+    }
+  }
+
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user && sessionStorage.getItem(ADMIN_SESSION) === 'true') {
+      showApp();
+    }
+  });
 
   document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    const user = String(document.getElementById('alUser').value || '').trim().toLowerCase();
+    const identifier = String(document.getElementById('alUser').value || '').trim().toLowerCase();
     const pw   = String(document.getElementById('alPass').value || '');
     const errEl = document.getElementById('alErr');
-    errEl.textContent = '';
+    const msgEl = document.getElementById('alMsg');
+    msgEl.textContent = '';
+    errEl.textContent = 'Authenticating...';
+
     const db = getDB();
-    const rec = db[user];
-    if (!rec || !rec.isAdmin) { errEl.textContent = 'Access denied. Admin credentials required.'; return; }
-    const ok = await verifyPassword(rec, pw);
-    if (!ok) { errEl.textContent = 'Invalid password.'; return; }
-    db[user] = rec; saveDB(db);
-    sessionStorage.setItem(ADMIN_SESSION, 'true');
-    sessionStorage.setItem('crompton_tia_admin_user', user);
-    showApp();
+    const found = Object.values(db).find(u => 
+      u.username.toLowerCase() === identifier || (u.email && u.email.toLowerCase() === identifier)
+    );
+
+    const email = found ? found.email : (identifier.includes('@') ? identifier : null);
+    if (!email) { errEl.textContent = 'Invalid user or email format.'; return; }
+
+    try {
+      const userCredential = await firebase.auth().signInWithEmailAndPassword(email, pw);
+      const user = userCredential.user;
+
+      // Double check admin status from local/cached DB
+      // In a real app, this should be a custom claim or a DB check
+      const rec = Object.values(db).find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
+      if (!rec || !rec.isAdmin) {
+        await firebase.auth().signOut();
+        errEl.textContent = 'Access denied. Admin privileges required.';
+        return;
+      }
+
+      sessionStorage.setItem(ADMIN_SESSION, 'true');
+      sessionStorage.setItem('crompton_tia_admin_user', rec.username);
+      showApp();
+    } catch (error) {
+      console.error('[Admin Login] error:', error);
+      errEl.textContent = 'Login failed: ' + error.message;
+    }
   });
 
-  function adminLogout() {
+  async function adminLogout() {
+    try { await firebase.auth().signOut(); } catch(e) {}
     sessionStorage.removeItem(ADMIN_SESSION);
     sessionStorage.removeItem('crompton_tia_admin_user');
     location.reload();
@@ -309,10 +403,20 @@
     document.getElementById('adminApp').style.display = 'block';
     const u = sessionStorage.getItem('crompton_tia_admin_user') || 'admin';
     document.getElementById('adminWelcome').textContent = 'Signed in as ' + u;
-    renderStats();
-    renderTable();
-    renderDeletedTable();
-    updateDeletedBadge();
+
+    function refreshAll() {
+      renderStats();
+      renderTable();
+      renderDeletedTable();
+      updateDeletedBadge();
+    }
+
+    // Always render immediately from localStorage.
+    refreshAll();
+
+    // Then attach real-time Firebase sync with retries so auto-restored admin
+    // sessions still subscribe even if user-sync.js loads slightly later.
+    attachRealtimeSync(refreshAll);
   }
 
   // ── Tab switching ─────────────────────────────────────────────────────────
@@ -416,12 +520,15 @@
     if (!user) return;
     // Archive to deleted store
     const deleted = getDeletedDB();
-    deleted[uname] = { ...user, deletedAt: new Date().toISOString(), originalTier: user.tier };
+    const archivedRecord = { ...user, deletedAt: new Date().toISOString(), originalTier: user.tier };
+    deleted[uname] = archivedRecord;
     saveDeletedDB(deleted);
     // Revoke access: set tier to 'deleted' and mark deleted
     db[uname].tier = 'deleted';
     db[uname].deleted = true;
     saveDB(db);
+    // Sync individual record to Firebase
+    if (window.TIASync) TIASync.deleteUser(uname, db[uname], archivedRecord).catch(() => {});
     renderStats();
     renderTable();
     renderDeletedTable();
@@ -443,6 +550,8 @@
     saveDB(db);
     delete deleted[uname];
     saveDeletedDB(deleted);
+    // Sync restore to Firebase
+    if (window.TIASync) TIASync.restoreUser(uname, db[uname]).catch(() => {});
     renderStats();
     renderTable();
     renderDeletedTable();
@@ -458,6 +567,8 @@
     // Also remove from main DB if still there
     const db = getDB();
     if (db[uname] && db[uname].deleted) { delete db[uname]; saveDB(db); }
+    // Sync purge to Firebase
+    if (window.TIASync) TIASync.purgeUser(uname).catch(() => {});
     renderDeletedTable();
     updateDeletedBadge();
     showToast(`User "${uname}" permanently deleted.`);
@@ -565,6 +676,28 @@
     showToast(editingUser ? `User "${editingUser}" updated.` : `User "${uname}" created.`);
   }
 
+  // ── Manual cloud sync ─────────────────────────────────────────────────────
+  async function manualSync() {
+    const btn = document.getElementById('syncBtn');
+    btn.textContent = '⏳ Syncing…';
+    btn.disabled = true;
+    try {
+      if (!(window.TIASync && TIASync.isEnabled && TIASync.isEnabled())) {
+        showToast('Cloud sync is not available — check Firebase config.');
+        return;
+      }
+      const ok = await TIASync.pullAll();
+      renderStats();
+      renderTable();
+      renderDeletedTable();
+      updateDeletedBadge();
+      showToast(ok ? 'Synced from Firebase ✓' : 'Sync timed out — showing latest local data.');
+    } finally {
+      btn.textContent = '↻ Sync from Cloud';
+      btn.disabled = false;
+    }
+  }
+
   // ── Export CSV ─────────────────────────────────────────────────────────────
   function exportCSV() {
     const db = getDB();
@@ -590,5 +723,14 @@
   // Close modal on backdrop click
   document.getElementById('addUserModal').addEventListener('click', function (e) { if (e.target === this) closeAddUserModal(); });
 </script>
+
+<!-- Firebase Realtime Database SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- TIA Firebase config (fill in firebase-config.js with your project credentials) -->
+<script src="firebase-config.js"></script>
+<!-- TIA shared user sync module -->
+<script src="user-sync.js"></script>
 </body>
 </html>

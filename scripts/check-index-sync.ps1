@@ -1,7 +1,9 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$staged = @(git diff --cached --name-only --diff-filter=ACMR)
+$staged = @(git diff --cached --name-only --diff-filter=ACMR | Where-Object {
+  $_ -and ($_ -notmatch '(?i)(^|[\\/])desktop\.ini$')
+})
 $hasDeveloper = $staged -contains 'index_developer.html'
 $hasIndex = $staged -contains 'index.html'
 

@@ -3764,10 +3764,10 @@
       <div class="login-tab-pane active" id="paneSignIn" role="tabpanel" aria-labelledby="tabSignIn">
         <form id="loginForm" autocomplete="on">
           <div class="login-field-group">
-            <label for="loginUser">Username</label>
+            <label for="loginUser">Username or Email</label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-user"></i>
-              <input id="loginUser" name="loginUser" type="text" placeholder="Enter username" autocomplete="username" required />
+              <input id="loginUser" name="loginUser" type="text" placeholder="Enter username or email" autocomplete="username" required />
             </div>
           </div>
           <div class="login-field-group">
@@ -3791,6 +3791,13 @@
       <!-- Create Account -->
       <div class="login-tab-pane" id="paneCreate" role="tabpanel" aria-labelledby="tabCreate">
         <form id="createAccountForm" autocomplete="off">
+          <div class="login-field-group">
+            <label for="newFullName">Full Name</label>
+            <div class="login-input-wrapper">
+              <i class="fa-solid fa-id-card"></i>
+              <input id="newFullName" name="newFullName" type="text" placeholder="Your full name" autocomplete="name" />
+            </div>
+          </div>
           <div class="login-field-group">
             <label for="newUsername">Username</label>
             <div class="login-input-wrapper">
@@ -3854,35 +3861,15 @@
       <!-- Reset Password -->
       <div class="login-tab-pane" id="paneReset" role="tabpanel" aria-labelledby="tabReset" style="display:none;">
         <form id="resetPasswordForm" autocomplete="off">
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Enter your email address and we'll send you a link to reset your password.</p>
           <div class="login-field-group">
-            <label for="resetUsername">Username</label>
+            <label for="resetEmail">Email Address</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
-              <input id="resetUsername" name="resetUsername" type="text" placeholder="Enter username" required />
+              <i class="fa-solid fa-envelope"></i>
+              <input id="resetEmail" name="resetEmail" type="email" placeholder="your@email.com" required />
             </div>
           </div>
-          <div class="login-field-group">
-            <label for="resetRecoveryKey">Recovery Key</label>
-            <div class="login-input-wrapper">
-              <i class="fa-solid fa-key"></i>
-              <input id="resetRecoveryKey" name="resetRecoveryKey" type="password" placeholder="Enter recovery key" required />
-            </div>
-          </div>
-          <div class="login-field-group">
-            <label for="resetNewPassword">New Password</label>
-            <div class="login-input-wrapper">
-              <i class="fa-solid fa-lock"></i>
-              <input id="resetNewPassword" name="resetNewPassword" type="password" placeholder="New password" required minlength="8" />
-            </div>
-          </div>
-          <div class="login-field-group">
-            <label for="resetConfirmPassword">Confirm New Password</label>
-            <div class="login-input-wrapper">
-              <i class="fa-solid fa-lock"></i>
-              <input id="resetConfirmPassword" name="resetConfirmPassword" type="password" placeholder="Confirm password" required />
-            </div>
-          </div>
-          <button type="submit" class="login-submit-btn">Reset Password</button>
+          <button type="submit" class="login-submit-btn">Send Reset Link</button>
           <button type="button" id="backToSignInBtn" style="width:100%; margin-top:10px; border:none; background:none; color:var(--primary); cursor:pointer; font-size:0.85rem;">Back to Sign In</button>
           <div id="resetError" class="login-error" aria-live="polite"></div>
           <div id="resetSuccess" class="login-success" aria-live="polite" style="color:var(--success); font-size:0.85rem; margin-top:0.5rem; text-align:center;"></div>
@@ -3932,6 +3919,7 @@
     </div>
     
     <div class="navbar">
+      <span id="userGreeting" style="font-size:0.95rem; font-weight:600; color:var(--brand); padding-right:10px;">Hi User</span>
       <a class="home-button" href="#" onclick="window.location.reload(); return false;">Home</a>
       
       <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
@@ -3941,7 +3929,7 @@
         <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal">📖 User Manual</button>
         <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View">📘 Formula View</a>
         <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View">🧪 Developer View</a>
-        <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Admin Portal">Admin Portal</a>
+        <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="display:none; text-decoration: none;" title="Open Admin Portal">Admin Portal</a>
         <div class="contact-dev-wrap">
           <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel">💬 Contact Developer</button>
           <div id="contactDevPanel" class="contact-dev-panel hidden" role="dialog" aria-label="Developer contact details">
@@ -3954,6 +3942,7 @@
           </div>
         </div>
         <span id="tierBadgeDisplay" class="tier-badge tier-badge-free" style="display:none;" title="Your current plan"></span>
+        <span id="welcomeUserText" style="display:none; font-size:0.82rem; font-weight:600; color:var(--primary); padding:0 6px; white-space:nowrap;"></span>
         <button id="logoutBtn" type="button" class="logout-button">Logout</button>
       </div>
     </div>
@@ -9839,17 +9828,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function saveUsersDB(db) { localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db)); }
 
   function ensureDefaultUsers() {
+    // Only seed a structural placeholder so the login screen can render.
+    // The real password hash is NEVER stored in source — it lives in Firebase
+    // and is pulled via TIASync.pullAll() before every login attempt.
     const db = getUsersDB();
-    let changed = false;
     if (!db['admin']) {
-      db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', passwordHash: '4b6fa37ecea574cfb815f54fff9deded20c4d3b7956294166abea32578502a02', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
-      changed = true;
+      db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', tier: 'pro+', isAdmin: true, createdAt: new Date().toISOString() };
+      saveUsersDB(db);
     }
-    if (!db['users']) {
-      db['users'] = { username: 'users', email: 'users@cromptonconcepts.com.au', passwordHash: '9866f6d83a7aeb6ba26eb5c5f02056a38296a52df3d83b92c48882659ab985ed', tier: 'basic', createdAt: new Date().toISOString() };
-      changed = true;
-    }
-    if (changed) saveUsersDB(db);
   }
 
   async function verifyPassword(record, enteredPassword) {
@@ -9864,6 +9850,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return false;
   }
 
+  function findUserRecord(db, identifier) {
+    if (!identifier) return null;
+    const key = String(identifier).trim().toLowerCase();
+    const byUsername = db[key];
+    if (byUsername) {
+      return { key, record: byUsername };
+    }
+    for (const uname of Object.keys(db)) {
+      const rec = db[uname];
+      if (String(rec && rec.email || '').trim().toLowerCase() === key) {
+        return { key: uname, record: rec };
+      }
+    }
+    return null;
+  }
+
   // ── setupLoginGate ────────────────────────────────────────────────────────
   function setupLoginGate() {
     const loginGate   = document.getElementById('loginGate');
@@ -9876,17 +9878,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     ensureDefaultUsers();
 
+    function activateAuthTab(tabPaneId) {
+      const loginTabs = document.querySelector('.login-tabs');
+      const paneSignIn = document.getElementById('paneSignIn');
+      const paneCreate = document.getElementById('paneCreate');
+      const paneReset = document.getElementById('paneReset');
+
+      if (loginTabs) loginTabs.style.display = 'flex';
+      if (paneReset) paneReset.style.display = 'none';
+      if (paneSignIn) paneSignIn.style.removeProperty('display');
+      if (paneCreate) paneCreate.style.removeProperty('display');
+
+      loginGate.querySelectorAll('.login-tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      loginGate.querySelectorAll('.login-tab-pane').forEach(p => p.classList.remove('active'));
+
+      const targetPaneId = tabPaneId === 'paneCreate' ? 'paneCreate' : 'paneSignIn';
+      const targetPane = document.getElementById(targetPaneId);
+      const targetBtn = loginGate.querySelector(`.login-tab-btn[aria-controls="${targetPaneId}"]`);
+      if (targetPane) targetPane.classList.add('active');
+      if (targetBtn) {
+        targetBtn.classList.add('active');
+        targetBtn.setAttribute('aria-selected', 'true');
+      }
+      if (loginError) loginError.textContent = '';
+    }
+
     // Tab switching
     loginGate.querySelectorAll('.login-tab-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        loginGate.querySelectorAll('.login-tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-        loginGate.querySelectorAll('.login-tab-pane').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
         const tabPaneId = btn.getAttribute('aria-controls');
-        const pane = tabPaneId ? document.getElementById(tabPaneId) : null;
-        if (pane) pane.classList.add('active');
-        if (loginError) loginError.textContent = '';
+        activateAuthTab(tabPaneId || 'paneSignIn');
       });
     });
 
@@ -9924,6 +9948,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Apply tier restrictions after unlock
       const tier = sessionStorage.getItem(TIER_SESSION_KEY) || 'free';
       applyTierRestrictions(tier);
+      
+      const adminPortalLink = document.getElementById('adminPortalLink');
+      if (adminPortalLink) {
+        if (sessionStorage.getItem('IS_ADMIN') === 'true') {
+          adminPortalLink.style.display = 'inline-block';
+        } else {
+          adminPortalLink.style.display = 'none';
+        }
+      }
       if (dataLoadIssue) setAppStatusBanner('<strong>⚠️ Logged in with limited data:</strong> Some data is still loading. Retry in a few seconds.', 'warning');
       else clearAppStatusBanner();
       if (loadingOverlay) setTimeout(() => { loadingOverlay.classList.add('hidden'); stopLoadingHints(); }, 300);
@@ -9959,49 +9992,62 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const submitBtn = document.getElementById('loginSubmitBtn');
       if (submitBtn) submitBtn.classList.add('loading');
       
-      const key = String(loginUser.value || '').trim().toLowerCase();
-      const pw  = String(loginPassword.value || '').trim();
+      const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
+      const enteredPassword  = String(loginPassword.value || '').trim();
       
-      if (!key || !pw) { 
+      if (!userIdentifier || !enteredPassword) { 
         if (submitBtn) submitBtn.classList.remove('loading');
         showError('Please enter username and password.'); 
         return; 
       }
+
+      // Pull latest users from Firebase before authentication so cross-device
+      // account creation is visible immediately on this device.
+      if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+        try {
+          await Promise.race([
+            TIASync.pullAll(),
+            new Promise(resolve => setTimeout(resolve, 3000))
+          ]);
+        } catch (_) {}
+      }
       
       const db = getUsersDB();
-      const record = db[key];
-      if (!record) { 
+      const found = findUserRecord(db, userIdentifier);
+      if (!found || found.record.deleted || found.record.tier === 'deleted') { 
         if (submitBtn) submitBtn.classList.remove('loading');
-        showError('Invalid username or password.'); 
+        if (found && (found.record.deleted || found.record.tier === 'deleted')) {
+          showError('This account has been deactivated. Please contact Crompton Concepts.');
+        } else {
+          showError('Invalid username or password.'); 
+        }
         return; 
       }
       
-      const ok = await verifyPassword(record, pw);
-      if (!ok) { 
+      const customPasswordKey = `tia_custom_pwd_${found.key}`;
+      const customPassword = localStorage.getItem(customPasswordKey);
+      const isCustomPasswordValid = !!customPassword && enteredPassword === customPassword;
+      const isStoredPasswordValid = await verifyPassword(found.record, enteredPassword);
+      
+      if (!isCustomPasswordValid && !isStoredPasswordValid) { 
         if (submitBtn) submitBtn.classList.remove('loading');
         showError('Invalid username or password.'); 
         return; 
-      }
-
-      // Block deleted/revoked accounts
-      if (record.deleted || record.tier === 'deleted') {
-        if (submitBtn) submitBtn.classList.remove('loading');
-        showError('This account has been deactivated. Please contact Crompton Concepts.');
-        return;
       }
       
       // Persist migration if password was upgraded
-      db[key] = record;
+      db[found.key] = found.record;
       saveUsersDB(db);
       sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      sessionStorage.setItem(USER_SESSION_KEY, record.username);
-      sessionStorage.setItem(TIER_SESSION_KEY, record.tier || 'free');
+      sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
+      sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
+      sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
       
       loginError.textContent = '';
       loginError.classList.remove('show');
       
       if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
-        navigator.credentials.store(new PasswordCredential({ id: key, password: pw, name: key })).catch(() => {});
+        navigator.credentials.store(new PasswordCredential({ id: found.key, password: enteredPassword, name: found.key })).catch(() => {});
       }
       
       try { 
@@ -10018,36 +10064,168 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     });
 
+    // Forgot Password Logic
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const backToSignInBtn = document.getElementById('backToSignInBtn');
+    const paneSignIn = document.getElementById('paneSignIn');
+    const paneReset = document.getElementById('paneReset');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    const loginTabs = document.querySelector('.login-tabs');
+
+    if (forgotPasswordLink && paneReset) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginGate.querySelectorAll('.login-tab-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        loginGate.querySelectorAll('.login-tab-pane').forEach(p => p.classList.remove('active'));
+        if (paneSignIn) paneSignIn.style.display = 'none';
+        const paneCreate = document.getElementById('paneCreate');
+        if (paneCreate) paneCreate.style.display = 'none';
+        if (loginTabs) loginTabs.style.display = 'none';
+        paneReset.style.display = 'block';
+      });
+    }
+
+    if (backToSignInBtn && paneSignIn) {
+      backToSignInBtn.addEventListener('click', () => {
+        activateAuthTab('paneSignIn');
+      });
+    }
+
+    if (resetPasswordForm) {
+      resetPasswordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rUser = document.getElementById('resetUsername').value.trim().toLowerCase();
+        const rKey = document.getElementById('resetRecoveryKey').value.trim();
+        const rNew = document.getElementById('resetNewPassword').value.trim();
+        const rConfirm = document.getElementById('resetConfirmPassword').value.trim();
+        const rError = document.getElementById('resetError');
+        const rSuccess = document.getElementById('resetSuccess');
+
+        if (rError) rError.textContent = '';
+        if (rSuccess) rSuccess.textContent = '';
+
+        const db = getUsersDB();
+        const found = findUserRecord(db, rUser);
+        if (!found || found.record.deleted) {
+          if (rError) rError.textContent = 'Username not found.';
+          return;
+        }
+
+        // Hardcoded Recovery Key for client-side app
+        const validRecoveryKey = 'CromptonReset2024!';
+        if (rKey !== validRecoveryKey) {
+          if (rError) rError.textContent = 'Invalid Recovery Key.';
+          return;
+        }
+
+        if (rNew !== rConfirm) {
+          if (rError) rError.textContent = 'Passwords do not match.';
+          return;
+        }
+
+        if (rNew.length < 8) {
+          if (rError) rError.textContent = 'Password must be at least 8 characters.';
+          return;
+        }
+
+        // Save new password override in localStorage
+        localStorage.setItem(`tia_custom_pwd_${found.key}`, rNew);
+        if (rSuccess) rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
+        
+        setTimeout(() => {
+          resetPasswordForm.reset();
+          if (rSuccess) rSuccess.textContent = '';
+          if (backToSignInBtn) backToSignInBtn.click();
+        }, 2000);
+      });
+    }
+
     // Create account form
     if (createForm) {
+      // Use custom validation messages so users always see feedback in the modal.
+      createForm.setAttribute('novalidate', 'novalidate');
+
       createForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         const errEl = document.getElementById('createError');
         const okEl  = document.getElementById('createSuccess');
-        if (errEl) errEl.textContent = '';
-        if (okEl) okEl.textContent = '';
+        const showCreateError = (msg) => {
+          if (!errEl) return;
+          errEl.textContent = msg;
+          errEl.classList.add('show');
+          if (okEl) {
+            okEl.textContent = '';
+            okEl.classList.remove('show');
+          }
+        };
+        const showCreateSuccess = (msg) => {
+          if (!okEl) return;
+          okEl.textContent = msg;
+          okEl.classList.add('show');
+          if (errEl) {
+            errEl.textContent = '';
+            errEl.classList.remove('show');
+          }
+        };
+
+        if (errEl) {
+          errEl.textContent = '';
+          errEl.classList.remove('show');
+        }
+        if (okEl) {
+          okEl.textContent = '';
+          okEl.classList.remove('show');
+        }
+
         const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
+        const fullName = String((document.getElementById('newFullName') || {}).value || '').trim();
         const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
-        const pw1     = String((document.getElementById('newPassword') || {}).value || '');
-        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '');
+        const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
+        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '').trim();
         const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
-        if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
-        if (!/^[a-z0-9_.-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, _ . -'; return; }
-        if (!email || !email.includes('@')) { if (errEl) errEl.textContent = 'Please enter a valid email address.'; return; }
-        if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
-        if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
+        if (!fullName) { showCreateError('Please enter your full name.'); return; }
+        if (!uname || uname.length < 3) { showCreateError('Username must be at least 3 characters.'); return; }
+        if (!/^[a-z0-9_.-]+$/.test(uname)) { showCreateError('Username may only contain letters, numbers, _ . -'); return; }
+        if (!email || !email.includes('@')) { showCreateError('Please enter a valid email address.'); return; }
+        if (pw1.length < 8) { showCreateError('Password must be at least 8 characters.'); return; }
+        if (pw1 !== pw2) { showCreateError('Passwords do not match.'); return; }
         const db = getUsersDB();
-        if (db[uname]) { if (errEl) errEl.textContent = 'That username is already taken. Please choose another.'; return; }
+        if (db[uname]) { showCreateError('That username is already taken. Please choose another.'); return; }
         const hash = await hashPassword(pw1);
-        db[uname] = { username: uname, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
+        db[uname] = { username: uname, fullName, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
+
+        // Enforce cloud-backed account creation to avoid local-only users that
+        // never appear on other devices or in admin.
+        if (!(window.TIASync && TIASync.isEnabled && TIASync.isEnabled() && TIASync.saveUser)) {
+          delete db[uname];
+          showCreateError('Cloud sync is currently unavailable on this device. Please check connection and try again.');
+          return;
+        }
+
         saveUsersDB(db);
-        if (okEl) okEl.textContent = 'Account created! Signing you in…';
+        let cloudSaved = false;
+        try {
+          cloudSaved = await TIASync.saveUser(uname, db[uname]);
+        } catch (_) {
+          cloudSaved = false;
+        }
+        if (!cloudSaved) {
+          delete db[uname];
+          saveUsersDB(db);
+          showCreateError('Account was not synced to Firebase. Please retry so it is available on all devices.');
+          return;
+        }
+
+        showCreateSuccess('Account created! Signing you in...');
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, uname);
         sessionStorage.setItem(TIER_SESSION_KEY, tier);
         setTimeout(async () => {
           try { await unlockApplication({ useFunnyLoading: true }); }
-          catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }
+          catch (err) { showCreateError('Account created but app init failed. Please refresh.'); }
         }, 800);
       });
     }
@@ -26730,13 +26908,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -30129,6 +30307,14 @@ window.__tiaCalc = {
     },
   };
 </script>
+<!-- Firebase Realtime Database SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- TIA Firebase config (fill in with your project credentials) -->
+<script src="firebase-config.js"></script>
+<!-- TIA shared user sync module -->
+<script src="user-sync.js"></script>
 <script src="tia-shared-sync.js"></script>
 <script src="formula-agent.js"></script>
 </body>

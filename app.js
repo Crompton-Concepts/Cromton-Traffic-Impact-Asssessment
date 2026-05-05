@@ -3465,10 +3465,31 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const loginError = document.getElementById('loginError');
     if (!loginGate || !loginForm || !loginUser || !loginPassword || !loginError) return;
 
-    const allowedUsers = {
-      admin: 'Packer4551',
-      users: 'Crompton123'
-    };
+    const USERS_STORE_KEY = 'crompton_tia_users';
+
+    function getUserDb() {
+      try {
+        return JSON.parse(localStorage.getItem(USERS_STORE_KEY) || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function findUserRecord(db, identifier) {
+      if (!identifier) return null;
+      const key = String(identifier).trim().toLowerCase();
+      const byUsername = db[key];
+      if (byUsername) {
+        return { key, record: byUsername };
+      }
+      for (const uname of Object.keys(db)) {
+        const rec = db[uname];
+        if (String(rec && rec.email || '').trim().toLowerCase() === key) {
+          return { key: uname, record: rec };
+        }
+      }
+      return null;
+    }
 
     async function unlockApplication(options = {}) {
       const useFunnyLoading = !!(options && options.useFunnyLoading);
@@ -3505,6 +3526,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Unlock app interface
       document.body.classList.remove('app-locked');
       loginGate.style.display = 'none';
+      
+      const welcomeUserText = document.getElementById('welcomeUserText');
+      if (welcomeUserText) {
+        const uname = sessionStorage.getItem(USER_SESSION_KEY);
+        if (uname) {
+          const db = getUserDb();
+          const rec = db[uname] || {};
+          const displayName = rec.fullName || rec.username || uname;
+          welcomeUserText.textContent = 'Welcome, ' + displayName;
+          welcomeUserText.style.display = 'inline-block';
+        }
+      }
+
+      const userGreeting = document.getElementById('userGreeting');
+      if (userGreeting) {
+        const uname = sessionStorage.getItem(USER_SESSION_KEY);
+        if (uname) {
+          const db = getUserDb();
+          const rec = db[uname] || {};
+          const displayName = rec.fullName || rec.username || uname;
+          userGreeting.textContent = 'Hi ' + displayName;
+        }
+      }
+
+      const adminPortalLink = document.getElementById('adminPortalLink');
+      if (adminPortalLink) {
+        if (sessionStorage.getItem('IS_ADMIN') === 'true') {
+          adminPortalLink.style.display = 'inline-block';
+        } else {
+          adminPortalLink.style.display = 'none';
+        }
+      }
 
       if (dataLoadIssue) {
         setAppStatusBanner('<strong>⚠️ Logged in with limited data:</strong> Some data is still loading. Please retry your action in a few seconds.', 'warning');
@@ -3521,63 +3574,69 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
+    // Firebase Auth State Listener
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (user && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        unlockApplication().catch(function(err) {
+          console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+          document.body.classList.remove('app-locked');
+          loginGate.style.display = 'none';
+        });
+      }
+    });
+
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-      unlockApplication().catch(function(err) {
-        // Async unlock failed (e.g. data load error) — force-clear the blur so the
-        // app is still usable. Data may be unavailable but the UI won't stay locked.
-        console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
-        document.body.classList.remove('app-locked');
-        loginGate.style.display = 'none';
-      });
+      // Logic handled by onAuthStateChanged or fallback
       return;
     }
 
     loginUser.focus();
 
-    // Keep login typing responsive: do not start heavy data loading on input/focus.
-    // Data loading now starts only after successful credential validation.
-
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
-      const usernameKey = String(loginUser.value || '').trim().toLowerCase();
+      const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
       const enteredPassword = String(loginPassword.value || '').trim();
-      
-      // Check localStorage for custom password override
-      const customPasswordKey = `tia_custom_pwd_${usernameKey}`;
-      const customPassword = localStorage.getItem(customPasswordKey);
-      
-      const expectedPassword = customPassword || allowedUsers[usernameKey];
 
-      if (expectedPassword && enteredPassword === expectedPassword) {
-        if (window.PasswordCredential && navigator.credentials && typeof navigator.credentials.store === 'function') {
-          navigator.credentials.store(new PasswordCredential({
-            id: usernameKey,
-            password: enteredPassword,
-            name: usernameKey
-          })).catch(() => {});
-        }
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-        loginError.textContent = '';
-        // Instead of reloading, unlock app (will wait for data if needed)
-        try {
-          await unlockApplication({ useFunnyLoading: true });
-        } catch (error) {
-          console.error('[Login] Unlock failed:', error);
-          loginError.textContent = 'Login succeeded but app initialization failed. Please refresh and try again.';
-          setAppStatusBanner('<strong>❌ App initialization failed:</strong> Please refresh the page and sign in again.', 'error');
-          sessionStorage.removeItem(AUTH_SESSION_KEY);
-          document.body.classList.add('app-locked');
-          loginGate.style.display = 'flex';
-        }
+      loginError.textContent = 'Authenticating...';
+
+      // Pull latest users from Firebase before checking credentials.
+      if (window.TIASync && TIASync.isEnabled()) {
+        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 2000))]); } catch (_) {}
+      }
+
+      const db = getUserDb();
+      const found = findUserRecord(db, userIdentifier);
+      const email = found ? found.record.email : (userIdentifier.includes('@') ? userIdentifier : null);
+
+      if (!email) {
+        loginError.textContent = 'Invalid username or email format.';
         return;
       }
 
-      loginError.textContent = 'Invalid username or password.';
-      loginPassword.value = '';
-      loginPassword.focus();
+      try {
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
+        const user = userCredential.user;
+        
+        // Sync record if found
+        const finalUname = found ? found.record.username : user.email.split('@')[0];
+        const finalRec = found ? found.record : { username: finalUname, email: user.email, tier: 'free' };
+
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        sessionStorage.setItem(USER_SESSION_KEY, finalUname);
+        sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
+        sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
+        
+        loginError.textContent = '';
+        await unlockApplication({ useFunnyLoading: true });
+      } catch (error) {
+        console.error('[Login] Firebase Auth error:', error);
+        loginError.textContent = 'Login failed: ' + error.message;
+        loginPassword.value = '';
+        loginPassword.focus();
+      }
     });
 
-    // Forgot Password Logic
+    // Forgot Password Logic (Firebase Auth)
     const forgotPasswordLink = document.getElementById('forgotPasswordLink');
     const backToSignInBtn = document.getElementById('backToSignInBtn');
     const paneSignIn = document.getElementById('paneSignIn');
@@ -3603,49 +3662,80 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (resetPasswordForm) {
-      resetPasswordForm.addEventListener('submit', (e) => {
+      resetPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const rUser = document.getElementById('resetUsername').value.trim().toLowerCase();
-        const rKey = document.getElementById('resetRecoveryKey').value.trim();
-        const rNew = document.getElementById('resetNewPassword').value.trim();
-        const rConfirm = document.getElementById('resetConfirmPassword').value.trim();
+        const rEmail = document.getElementById('resetEmail').value.trim();
         const rError = document.getElementById('resetError');
         const rSuccess = document.getElementById('resetSuccess');
 
         rError.textContent = '';
-        rSuccess.textContent = '';
+        rSuccess.textContent = 'Sending reset link...';
 
-        if (!allowedUsers[rUser]) {
-          rError.textContent = 'Username not found.';
-          return;
-        }
-
-        // Hardcoded Recovery Key for client-side app
-        const validRecoveryKey = 'CromptonReset2024!';
-        if (rKey !== validRecoveryKey) {
-          rError.textContent = 'Invalid Recovery Key.';
-          return;
-        }
-
-        if (rNew !== rConfirm) {
-          rError.textContent = 'Passwords do not match.';
-          return;
-        }
-
-        if (rNew.length < 8) {
-          rError.textContent = 'Password must be at least 8 characters.';
-          return;
-        }
-
-        // Save new password override in localStorage
-        localStorage.setItem(`tia_custom_pwd_${rUser}`, rNew);
-        rSuccess.textContent = 'Password reset successfully! Returning to Sign In...';
-        
-        setTimeout(() => {
-          resetPasswordForm.reset();
+        try {
+          await firebase.auth().sendPasswordResetEmail(rEmail);
+          rSuccess.textContent = 'Reset link sent! Please check your email (including spam).';
+          setTimeout(() => {
+            resetPasswordForm.reset();
+            backToSignInBtn.click();
+          }, 4000);
+        } catch (error) {
+          console.error('[Reset] Firebase error:', error);
           rSuccess.textContent = '';
-          backToSignInBtn.click();
-        }, 2000);
+          rError.textContent = 'Error: ' + error.message;
+        }
+      });
+    }
+
+    // Create account form (Firebase Auth)
+    const createForm = document.getElementById('createAccountForm');
+    if (createForm) {
+      createForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const errEl = document.getElementById('createError');
+        const okEl  = document.getElementById('createSuccess');
+        if (errEl) errEl.textContent = '';
+        if (okEl) okEl.textContent = '';
+        
+        const fullName= String((document.getElementById('newFullName') || {}).value || '').trim();
+        const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
+        const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
+        const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
+        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '').trim();
+        const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
+
+        if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
+        if (!email || !email.includes('@')) { if (errEl) errEl.textContent = 'Please enter a valid email address.'; return; }
+        if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
+        if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
+
+        okEl.textContent = 'Creating account...';
+
+        try {
+          const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, pw1);
+          const user = userCredential.user;
+          
+          const db = getUserDb();
+          const record = { username: uname, fullName, email, tier, createdAt: new Date().toISOString() };
+          db[uname] = record;
+          localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+
+          if (window.TIASync) await TIASync.saveUser(uname, record);
+
+          okEl.textContent = 'Account created! Signing you in...';
+          sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+          sessionStorage.setItem(USER_SESSION_KEY, uname);
+          sessionStorage.setItem(TIER_SESSION_KEY, tier);
+          sessionStorage.setItem('IS_ADMIN', 'false');
+
+          setTimeout(async () => {
+            try { await unlockApplication({ useFunnyLoading: true }); }
+            catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }
+          }, 800);
+        } catch (error) {
+          console.error('[Create] Firebase error:', error);
+          okEl.textContent = '';
+          errEl.textContent = 'Error: ' + error.message;
+        }
       });
     }
   }
@@ -3654,7 +3744,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const logoutBtn = document.getElementById('logoutBtn');
     if (!logoutBtn) return;
 
-    logoutBtn.addEventListener('click', function () {
+    logoutBtn.addEventListener('click', async function () {
+      try {
+        await firebase.auth().signOut();
+      } catch (e) {
+        console.warn('[Logout] Firebase signOut error:', e);
+      }
       sessionStorage.removeItem(AUTH_SESSION_KEY);
       window.location.reload();
     });
@@ -19356,13 +19451,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 
+# Firebase config — contains API keys, never commit
+firebase-config.js
+!firebase-config.example.js
+
 # Local Python environments
 .venv/
 venv/
