@@ -3577,6 +3577,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Unlock app interface
       document.body.classList.remove('app-locked');
       loginGate.style.display = 'none';
+      
+      const adminPortalLink = document.getElementById('adminPortalLink');
+      if (adminPortalLink) {
+        if (sessionStorage.getItem('IS_ADMIN') === 'true') {
+          adminPortalLink.style.display = 'inline-block';
+        } else {
+          adminPortalLink.style.display = 'none';
+        }
+      }
 
       if (dataLoadIssue) {
         setAppStatusBanner('<strong>⚠️ Logged in with limited data:</strong> Some data is still loading. Please retry your action in a few seconds.', 'warning');
@@ -3641,6 +3650,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           })).catch(() => {});
         }
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
+        sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
+        sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
         loginError.textContent = '';
         // Instead of reloading, unlock app (will wait for data if needed)
         try {
@@ -3764,6 +3776,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, uname);
         sessionStorage.setItem(TIER_SESSION_KEY, tier);
+        sessionStorage.setItem('IS_ADMIN', 'false');
         setTimeout(async () => {
           try { await unlockApplication({ useFunnyLoading: true }); }
           catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }

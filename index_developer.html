@@ -3936,7 +3936,7 @@
         <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal">ðŸ“– User Manual</button>
         <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View">ðŸ“˜ Formula View</a>
         <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View">ðŸ§ª Developer View</a>
-        <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Admin Portal">Admin Portal</a>
+        <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="display:none; text-decoration: none;" title="Open Admin Portal">Admin Portal</a>
         <div class="contact-dev-wrap">
           <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel">ðŸ’¬ Contact Developer</button>
           <div id="contactDevPanel" class="contact-dev-panel hidden" role="dialog" aria-label="Developer contact details">
@@ -9934,6 +9934,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Apply tier restrictions after unlock
       const tier = sessionStorage.getItem(TIER_SESSION_KEY) || 'free';
       applyTierRestrictions(tier);
+      
+      const adminPortalLink = document.getElementById('adminPortalLink');
+      if (adminPortalLink) {
+        if (sessionStorage.getItem('IS_ADMIN') === 'true') {
+          adminPortalLink.style.display = 'inline-block';
+        } else {
+          adminPortalLink.style.display = 'none';
+        }
+      }
       if (dataLoadIssue) setAppStatusBanner('<strong>âš ï¸ Logged in with limited data:</strong> Some data is still loading. Retry in a few seconds.', 'warning');
       else clearAppStatusBanner();
       if (loadingOverlay) setTimeout(() => { loadingOverlay.classList.add('hidden'); stopLoadingHints(); }, 300);
@@ -10007,6 +10016,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
       sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
       sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
+      sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
       
       loginError.textContent = '';
       loginError.classList.remove('show');
