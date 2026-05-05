@@ -9900,17 +9900,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     ensureDefaultUsers();
 
+    function activateAuthTab(tabPaneId) {
+      const loginTabs = document.querySelector('.login-tabs');
+      const paneSignIn = document.getElementById('paneSignIn');
+      const paneCreate = document.getElementById('paneCreate');
+      const paneReset = document.getElementById('paneReset');
+
+      if (loginTabs) loginTabs.style.display = 'flex';
+      if (paneReset) paneReset.style.display = 'none';
+      if (paneSignIn) paneSignIn.style.removeProperty('display');
+      if (paneCreate) paneCreate.style.removeProperty('display');
+
+      loginGate.querySelectorAll('.login-tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      loginGate.querySelectorAll('.login-tab-pane').forEach(p => p.classList.remove('active'));
+
+      const targetPaneId = tabPaneId === 'paneCreate' ? 'paneCreate' : 'paneSignIn';
+      const targetPane = document.getElementById(targetPaneId);
+      const targetBtn = loginGate.querySelector(`.login-tab-btn[aria-controls="${targetPaneId}"]`);
+      if (targetPane) targetPane.classList.add('active');
+      if (targetBtn) {
+        targetBtn.classList.add('active');
+        targetBtn.setAttribute('aria-selected', 'true');
+      }
+      if (loginError) loginError.textContent = '';
+    }
+
     // Tab switching
     loginGate.querySelectorAll('.login-tab-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        loginGate.querySelectorAll('.login-tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-        loginGate.querySelectorAll('.login-tab-pane').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
         const tabPaneId = btn.getAttribute('aria-controls');
-        const pane = tabPaneId ? document.getElementById(tabPaneId) : null;
-        if (pane) pane.classList.add('active');
-        if (loginError) loginError.textContent = '';
+        activateAuthTab(tabPaneId || 'paneSignIn');
       });
     });
 
@@ -10064,7 +10086,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (forgotPasswordLink && paneReset) {
       forgotPasswordLink.addEventListener('click', (e) => {
         e.preventDefault();
+        loginGate.querySelectorAll('.login-tab-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        loginGate.querySelectorAll('.login-tab-pane').forEach(p => p.classList.remove('active'));
         if (paneSignIn) paneSignIn.style.display = 'none';
+        const paneCreate = document.getElementById('paneCreate');
+        if (paneCreate) paneCreate.style.display = 'none';
         if (loginTabs) loginTabs.style.display = 'none';
         paneReset.style.display = 'block';
       });
@@ -10072,9 +10101,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     if (backToSignInBtn && paneSignIn) {
       backToSignInBtn.addEventListener('click', () => {
-        paneReset.style.display = 'none';
-        if (loginTabs) loginTabs.style.display = 'flex';
-        paneSignIn.style.display = 'block';
+        activateAuthTab('paneSignIn');
       });
     }
 
