@@ -106,6 +106,22 @@
     .tab-btn.tab-deleted.active { color: #dc2626; border-bottom-color: #dc2626; }
     .tbadge-deleted { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }
 
+    /* Sessions Analytics */
+    .session-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .metric-box { background: linear-gradient(135deg, rgba(31,94,99,0.05), rgba(15,47,50,0.05)); border: 1px solid #d8e2e6; border-radius: 10px; padding: 14px; text-align: center; }
+    .metric-value { font-size: 1.6rem; font-weight: 700; color: var(--brand); line-height: 1; }
+    .metric-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+    .session-admin-header { display: flex; align-items: center; gap: 8px; padding: 12px; background: #f7fafa; border-bottom: 1px solid var(--line); margin-top: 12px; margin-bottom: 8px; border-radius: 8px; }
+    .session-admin-name { font-weight: 700; color: var(--brand); flex: 1; }
+    .session-admin-count { font-size: 0.82rem; color: var(--muted); }
+    .session-row { display: grid; grid-template-columns: 2fr 1fr 1.5fr; gap: 12px; padding: 10px; border-bottom: 1px solid #eee; align-items: center; font-size: 0.85rem; }
+    .session-row:last-child { border-bottom: none; }
+    .session-time { color: var(--muted); }
+    .session-duration { background: #eff6ff; color: #1d4ed8; padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; }
+    .session-browser { font-size: 0.78rem; color: #6b7280; background: #f3f4f6; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+    .clear-sessions-btn { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 8px 14px; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+    .clear-sessions-btn:hover { background: #fecaca; }
+
     /* Toast */
     #toast { position: fixed; bottom: 24px; right: 24px; background: #1f5e63; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(80px); opacity: 0; transition: transform 0.25s, opacity 0.25s; z-index: 9999; }
     #toast.show { transform: translateY(0); opacity: 1; }
@@ -153,6 +169,7 @@
 
     <div class="tab-bar">
       <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Active Users</button>
+      <button class="tab-btn" id="tabSessions" onclick="switchTab('sessions')">Sessions Analytics</button>
       <button class="tab-btn tab-deleted" id="tabDeleted" onclick="switchTab('deleted')">Deleted Users <span id="deletedBadge" style="display:none;background:#fca5a5;color:#991b1b;border-radius:10px;font-size:0.75rem;padding:1px 7px;margin-left:4px;"></span></button>
     </div>
 
@@ -188,6 +205,18 @@
       <div id="noUsersMsg" class="no-users" style="display:none;">No users found.</div>
     </div>
     </div><!-- /activeSection -->
+
+    <div id="sessionsSection" style="display:none;">
+      <div class="session-metrics" id="sessionMetrics"></div>
+      <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
+        <span style="font-size: 0.85rem; color: var(--muted);">Session data helps track admin activity. No sensitive data collected.</span>
+        <button class="clear-sessions-btn" onclick="clearAllSessions()" title="Remove all session logs">Clear Logs</button>
+      </div>
+      <div class="table-wrap" id="sessionsTableWrap" style="display:none;">
+        <div id="sessionsContent"></div>
+      </div>
+      <div id="noSessionsMsg" class="no-users" style="display:none;">No session data yet. Sessions are logged on each login.</div>
+    </div>
 
     <div id="deletedSection" style="display:none;">
       <div class="table-wrap">
@@ -247,6 +276,8 @@
   const USERS_STORE_KEY   = 'crompton_tia_users';
   const DELETED_STORE_KEY = 'crompton_tia_deleted_users';
   const ADMIN_SESSION     = 'crompton_tia_admin_session';
+  const SESSION_LOG_KEY   = 'crompton_tia_session_logs';
+  const SESSION_START_KEY = 'crompton_tia_session_start';
 
   // ── Persistence helpers ───────────────────────────────────────────────────
   function getDB() {
@@ -425,6 +456,7 @@
 
       sessionStorage.setItem(ADMIN_SESSION, 'true');
       sessionStorage.setItem('crompton_tia_admin_user', rec.username);
+      recordLoginSession(rec.username);
       showApp();
     } catch (error) {
       console.error('[Admin Login] error:', error);
@@ -433,10 +465,13 @@
   });
 
   async function adminLogout() {
+    const username = sessionStorage.getItem('crompton_tia_admin_user') || 'unknown';
+    recordLogoutSession(username);
     const auth = getFirebaseAuth();
     try { if (auth) await auth.signOut(); } catch(e) {}
     sessionStorage.removeItem(ADMIN_SESSION);
     sessionStorage.removeItem('crompton_tia_admin_user');
+    sessionStorage.removeItem(SESSION_START_KEY);
     location.reload();
   }
 
@@ -461,15 +496,175 @@
     attachRealtimeSync(refreshAll);
   }
 
+  // ── Session Logging ───────────────────────────────────────────────────────
+  function getBrowserFamily() {
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('chrome') && !ua.includes('chromium')) return 'Chrome';
+    if (ua.includes('firefox')) return 'Firefox';
+    if (ua.includes('safari') && !ua.includes('chrome')) return 'Safari';
+    if (ua.includes('edge') || ua.includes('edg/')) return 'Edge';
+    if (ua.includes('opera') || ua.includes('opr/')) return 'Opera';
+    return 'Other';
+  }
+
+  function getSessionLogs() {
+    try { return JSON.parse(localStorage.getItem(SESSION_LOG_KEY) || '[]'); } catch { return []; }
+  }
+
+  function saveSessionLogs(logs) {
+    const pruned = logs.slice(-500); // Keep only last 500 sessions (~90 days typical)
+    localStorage.setItem(SESSION_LOG_KEY, JSON.stringify(pruned));
+  }
+
+  function recordLoginSession(username) {
+    const sessionStart = Date.now();
+    sessionStorage.setItem(SESSION_START_KEY, sessionStart.toString());
+  }
+
+  function recordLogoutSession(username) {
+    const sessionStart = parseInt(sessionStorage.getItem(SESSION_START_KEY) || Date.now());
+    const duration = Math.round((Date.now() - sessionStart) / 1000);
+    const logs = getSessionLogs();
+    logs.push({
+      username: username || 'unknown',
+      loginTime: new Date(sessionStart).toISOString(),
+      logoutTime: new Date().toISOString(),
+      duration: Math.max(0, duration),
+      browser: getBrowserFamily(),
+      sessionId: 'sess_' + Math.random().toString(36).slice(2, 11)
+    });
+    saveSessionLogs(logs);
+  }
+
+  // Auto-record logout on page unload
+  window.addEventListener('beforeunload', () => {
+    const username = sessionStorage.getItem('crompton_tia_admin_user') || 'unknown';
+    if (sessionStorage.getItem(ADMIN_SESSION) === 'true') {
+      recordLogoutSession(username);
+    }
+  });
+
+  function renderSessionAnalytics() {
+    const logs = getSessionLogs();
+    const metricsEl = document.getElementById('sessionMetrics');
+    const tableWrap = document.getElementById('sessionsTableWrap');
+    const noMsg = document.getElementById('noSessionsMsg');
+    const content = document.getElementById('sessionsContent');
+
+    if (!logs.length) {
+      metricsEl.innerHTML = '';
+      tableWrap.style.display = 'none';
+      noMsg.style.display = 'block';
+      return;
+    }
+
+    noMsg.style.display = 'none';
+    tableWrap.style.display = 'block';
+
+    // Calculate metrics
+    const byAdmin = {};
+    let totalDuration = 0;
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+    logs.forEach(log => {
+      const adminName = log.username || 'unknown';
+      if (!byAdmin[adminName]) {
+        byAdmin[adminName] = { logins: 0, totalDuration: 0, lastLogin: null, browsers: {} };
+      }
+      byAdmin[adminName].logins++;
+      byAdmin[adminName].totalDuration += log.duration || 0;
+      const loginTime = new Date(log.loginTime).getTime();
+      if (!byAdmin[adminName].lastLogin || loginTime > new Date(byAdmin[adminName].lastLogin).getTime()) {
+        byAdmin[adminName].lastLogin = log.loginTime;
+      }
+      byAdmin[adminName].browsers[log.browser] = (byAdmin[adminName].browsers[log.browser] || 0) + 1;
+      totalDuration += log.duration || 0;
+    });
+
+    // Format metrics
+    const avgDuration = logs.length ? Math.round(totalDuration / logs.length) : 0;
+    const recentLogins = logs.filter(l => new Date(l.loginTime).getTime() > sevenDaysAgo).length;
+    const monthlyLogins = logs.filter(l => new Date(l.loginTime).getTime() > thirtyDaysAgo).length;
+    const mostActiveAdmin = Object.entries(byAdmin).sort((a, b) => b[1].logins - a[1].logins)[0];
+
+    metricsEl.innerHTML = `
+      <div class="metric-box">
+        <div class="metric-value">${logs.length}</div>
+        <div class="metric-label">Total Logins</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value">${Object.keys(byAdmin).length}</div>
+        <div class="metric-label">Active Admins</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value">${recentLogins}</div>
+        <div class="metric-label">Last 7 Days</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value">${monthlyLogins}</div>
+        <div class="metric-label">Last 30 Days</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value">${Math.round(avgDuration / 60) || 0}m</div>
+        <div class="metric-label">Avg Duration</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value" style="color: #7e22ce;">${mostActiveAdmin ? mostActiveAdmin[0] : '—'}</div>
+        <div class="metric-label">Most Active</div>
+      </div>
+    `;
+
+    // Build session table by admin
+    let tableHtml = '';
+    Object.entries(byAdmin)
+      .sort((a, b) => b[1].logins - a[1].logins)
+      .forEach(([admin, stats]) => {
+        const adminLogs = logs.filter(l => l.username === admin).sort((a, b) => new Date(b.loginTime) - new Date(a.loginTime));
+        const lastLoginDate = stats.lastLogin ? new Date(stats.lastLogin).toLocaleString('en-AU') : '—';
+        tableHtml += `
+          <div class="session-admin-header">
+            <div class="session-admin-name">${esc(admin)}</div>
+            <div class="session-admin-count">${stats.logins} logins • Avg ${Math.round(stats.totalDuration / stats.logins / 60) || 0}m</div>
+          </div>
+          ${adminLogs.slice(0, 5).map(log => {
+            const loginDate = new Date(log.loginTime).toLocaleString('en-AU');
+            const durationMin = Math.round((log.duration || 0) / 60);
+            return `
+              <div class="session-row">
+                <div class="session-time">${loginDate}</div>
+                <div class="session-duration">${durationMin}m</div>
+                <div class="session-browser">${log.browser || 'Unknown'}</div>
+              </div>
+            `;
+          }).join('')}
+        `;
+      });
+
+    content.innerHTML = tableHtml || '<div class="no-users">No sessions to display.</div>';
+  }
+
+  function clearAllSessions() {
+    if (confirm('Are you sure? This will delete all session logs. This action cannot be undone.')) {
+      localStorage.removeItem(SESSION_LOG_KEY);
+      renderSessionAnalytics();
+      showToast('Session logs cleared.');
+    }
+  }
+
   // ── Tab switching ─────────────────────────────────────────────────────────
   let currentTab = 'active';
   function switchTab(tab) {
     currentTab = tab;
     document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+    document.getElementById('tabSessions').classList.toggle('active', tab === 'sessions');
     document.getElementById('tabDeleted').classList.toggle('active', tab === 'deleted');
     document.getElementById('activeSection').style.display  = tab === 'active'  ? '' : 'none';
+    document.getElementById('sessionsSection').style.display = tab === 'sessions' ? '' : 'none';
     document.getElementById('deletedSection').style.display = tab === 'deleted' ? '' : 'none';
     if (tab === 'deleted') renderDeletedTable();
+    if (tab === 'sessions') renderSessionAnalytics();
   }
 
   function updateDeletedBadge() {
