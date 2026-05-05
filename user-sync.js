@@ -15,7 +15,7 @@
   const DELETED_PATH      = 'tia_deleted_users';
   const USERS_STORE_KEY   = 'crompton_tia_users';
   const DELETED_STORE_KEY = 'crompton_tia_deleted_users';
-  const PULL_TIMEOUT_MS   = 3000; // max wait for Firebase on login
+  const PULL_TIMEOUT_MS   = 8000; // max wait for Firebase on login
 
   let _db          = null;
   let _syncEnabled = false;

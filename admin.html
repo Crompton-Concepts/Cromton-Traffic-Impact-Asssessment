@@ -162,6 +162,7 @@
         <option value="pro+">Pro+</option>
       </select>
       <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+      <button class="btn" id="syncBtn" style="background:#e0f2f1;color:#1f5e63;border:1px solid #b2dfdb;" onclick="manualSync()">&#8635; Sync from Cloud</button>
       <button class="btn" style="background:#f3f4f6;color:#374151;" onclick="exportCSV()">Export CSV</button>
     </div>
 
@@ -617,6 +618,28 @@
     renderStats();
     renderTable();
     showToast(editingUser ? `User "${editingUser}" updated.` : `User "${uname}" created.`);
+  }
+
+  // ── Manual cloud sync ─────────────────────────────────────────────────────
+  async function manualSync() {
+    const btn = document.getElementById('syncBtn');
+    btn.textContent = '⏳ Syncing…';
+    btn.disabled = true;
+    try {
+      if (!(window.TIASync && TIASync.isEnabled && TIASync.isEnabled())) {
+        showToast('Cloud sync is not available — check Firebase config.');
+        return;
+      }
+      const ok = await TIASync.pullAll();
+      renderStats();
+      renderTable();
+      renderDeletedTable();
+      updateDeletedBadge();
+      showToast(ok ? 'Synced from Firebase ✓' : 'Sync timed out — showing latest local data.');
+    } finally {
+      btn.textContent = '↻ Sync from Cloud';
+      btn.disabled = false;
+    }
   }
 
   // ── Export CSV ─────────────────────────────────────────────────────────────
