@@ -10460,6 +10460,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
 
         try {
+          const tempPw = 'Temp!' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+          await auth.createUserWithEmailAndPassword(email, tempPw);
+          await auth.signOut();
+        } catch (_) {}
+
+        try {
           await auth.sendPasswordResetEmail(email);
           if (rSuccess) {
             rSuccess.textContent = 'Reset link sent. Please check your inbox and spam folder.';
