@@ -9892,6 +9892,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
+    async function ensureFirebaseAuthAccountForEmail(email, password) {
+      const auth = getFirebaseAuthForReset();
+      if (!auth || !email || !password) return { ok: false, reason: 'auth-unavailable' };
+
+      try {
+        const methods = await auth.fetchSignInMethodsForEmail(email);
+        if (Array.isArray(methods) && methods.length > 0) {
+          return { ok: true, reason: 'already-exists' };
+        }
+      } catch (_) {
+        // Continue with best-effort provisioning.
+      }
+
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        await auth.signOut();
+        return { ok: true, reason: 'created' };
+      } catch (err) {
+        const code = String((err && err.code) || '');
+        if (code === 'auth/email-already-in-use') {
+          try {
+            await auth.signInWithEmailAndPassword(email, password);
+            await auth.signOut();
+            return { ok: true, reason: 'validated-existing' };
+          } catch (_) {
+            return { ok: false, reason: 'existing-password-mismatch' };
+          }
+        }
+        return { ok: false, reason: code || 'create-failed' };
+      }
+    }
+
     function getFirebaseDatabaseForLogin() {
       if (!(window.firebase && typeof firebase.database === 'function')) return null;
       try {
@@ -10070,6 +10102,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return; 
       }
 
+      // Best-effort migration so forgot-password works for pre-existing users.
+      try {
+        await ensureFirebaseAuthAccountForEmail(remoteFound.record.email, enteredPassword);
+      } catch (_) {}
+
       // Mirror validated cloud record into local cache.
       const localDb = getUsersDB();
       localDb[remoteFound.key] = remoteFound.record;
@@ -10177,6 +10214,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           return;
         }
 
+        let methods = [];
+        try {
+          methods = await auth.fetchSignInMethodsForEmail(email);
+        } catch (_) {
+          methods = [];
+        }
+
+        if (!Array.isArray(methods) || methods.length === 0) {
+          if (rError) {
+            rError.textContent = 'This account is not yet enabled for email reset. Please sign in once, then try again.';
+            rError.classList.add('show');
+          }
+          return;
+        }
+
         try {
           await auth.sendPasswordResetEmail(email);
           if (rSuccess) {
@@ -10251,6 +10303,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (!email || !email.includes('@')) { showCreateError('Please enter a valid email address.'); return; }
         if (pw1.length < 8) { showCreateError('Password must be at least 8 characters.'); return; }
         if (pw1 !== pw2) { showCreateError('Passwords do not match.'); return; }
+
+        const authProvision = await ensureFirebaseAuthAccountForEmail(email, pw1);
+        if (!authProvision.ok) {
+          showCreateError('Could not set up secure password reset for this email. Please use a different email or contact support.');
+          return;
+        }
+
         const db = getUsersDB();
         if (db[uname]) { showCreateError('That username is already taken. Please choose another.'); return; }
         const hash = await hashPassword(pw1);

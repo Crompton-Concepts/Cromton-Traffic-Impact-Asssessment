@@ -375,6 +375,18 @@
       return;
     }
 
+    let methods = [];
+    try {
+      methods = await auth.fetchSignInMethodsForEmail(email);
+    } catch (_) {
+      methods = [];
+    }
+
+    if (!Array.isArray(methods) || methods.length === 0) {
+      errEl.textContent = 'This account is not enabled for email reset yet. Ask the user to sign in once, then retry.';
+      return;
+    }
+
     try {
       await auth.sendPasswordResetEmail(email);
       msgEl.textContent = 'Reset link sent to ' + email + '. Please check inbox/spam.';
