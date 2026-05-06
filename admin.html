@@ -1012,6 +1012,23 @@
 
   function closeAddUserModal() { document.getElementById('addUserModal').classList.remove('open'); }
 
+  async function hashPassword(pw) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function verifyPassword(record, enteredPassword) {
+    if (record.legacyPassword) {
+      if (enteredPassword !== record.legacyPassword) return false;
+      // Migrate: hash and remove legacy plaintext
+      record.passwordHash = await hashPassword(enteredPassword);
+      delete record.legacyPassword;
+      return true;
+    }
+    if (record.passwordHash) return record.passwordHash === await hashPassword(enteredPassword);
+    return false;
+  }
+
   async function saveModalUser() {
     const errEl = document.getElementById('muErr');
     errEl.textContent = '';
