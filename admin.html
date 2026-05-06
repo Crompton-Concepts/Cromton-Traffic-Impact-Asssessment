@@ -474,6 +474,9 @@
       let existing = 0;
       let resetSent = 0;
       let failed = 0;
+      const failures = [];
+
+      const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
       for (const user of candidates) {
         const tempPw = 'Temp!' + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8);
@@ -502,13 +505,30 @@
         }
 
         try {
+          // Small pacing delay helps avoid Firebase email rate limits in bulk runs.
+          await sleep(350);
           await auth.sendPasswordResetEmail(user.email);
           resetSent++;
-        } catch (_) {
-          // If reset cannot be sent for one user, continue the bulk run.
-          if (wasCreated) {
-            failed++;
+        } catch (resetErr) {
+          const resetCode = String((resetErr && resetErr.code) || 'unknown-reset-error');
+
+          // One retry for throttling/rate-limit errors.
+          if (resetCode === 'auth/too-many-requests') {
+            try {
+              await sleep(1500);
+              await auth.sendPasswordResetEmail(user.email);
+              resetSent++;
+              continue;
+            } catch (retryErr) {
+              const retryCode = String((retryErr && retryErr.code) || 'unknown-reset-error');
+              failed++;
+              failures.push({ email: user.email, code: retryCode });
+              continue;
+            }
           }
+
+          failed++;
+          failures.push({ email: user.email, code: resetCode });
         }
       }
 
@@ -516,9 +536,24 @@
         try { await provisionApp.delete(); } catch (_) {}
       }
 
-      showToast(
-        'Auth migration done. Created: ' + created + ', Existing: ' + existing + ', Reset sent: ' + resetSent + ', Failed: ' + failed
-      );
+      const summary =
+        'Auth migration done. Created: ' + created +
+        ', Existing: ' + existing +
+        ', Reset sent: ' + resetSent +
+        ', Failed: ' + failed;
+
+      showToast(summary);
+
+      if (failures.length) {
+        console.warn('[Auth Migration] Reset failures:', failures);
+        const preview = failures.slice(0, 6).map(f => f.email + ' (' + f.code + ')').join('\n');
+        alert(
+          summary +
+          '\n\nSome reset emails failed. Common causes are rate limits, blocked template sender, or invalid email addresses.' +
+          '\n\nFirst failures:\n' + preview +
+          (failures.length > 6 ? '\n...and ' + (failures.length - 6) + ' more.' : '')
+        );
+      }
     } finally {
       if (migrateBtn) {
         migrateBtn.disabled = false;
