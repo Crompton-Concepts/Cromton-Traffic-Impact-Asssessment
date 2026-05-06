@@ -255,6 +255,36 @@ def _find_payload_table(payload: dict[str, Any], title_keywords: tuple[str, ...]
   return None
 
 
+def _find_2min_queue_peak(payload: dict[str, Any]) -> float | None:
+  """Return the highest 2-minute hold-cycle queue value across all Directional Queue Summary tables."""
+  tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+  best: float | None = None
+  for tbl in tables:
+    if not isinstance(tbl, dict):
+      continue
+    title_lc = _safe_text(tbl.get("title"), "").lower()
+    if "queue" not in title_lc:
+      continue
+    rows = tbl.get("rows", []) if isinstance(tbl.get("rows"), list) else []
+    columns = tbl.get("columns", []) if isinstance(tbl.get("columns"), list) else []
+    col_keys = [_safe_text(c, "").lower() for c in columns]
+    for row in rows:
+      if not isinstance(row, list) or not row:
+        continue
+      label = _safe_text(row[0], "").lower()
+      if "2 min" not in label and "2min" not in label and "per 2" not in label and "agttm" not in label:
+        continue
+      for idx, cell in enumerate(row[1:], start=1):
+        val_str = re.sub(r"[^\d.]", "", _safe_text(cell, ""))
+        try:
+          val = float(val_str)
+          if best is None or val > best:
+            best = val
+        except (ValueError, TypeError):
+          pass
+  return best
+
+
 def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   project = payload.get("project", {}) if isinstance(payload.get("project"), dict) else {}
   inputs = payload.get("inputs", {}) if isinstance(payload.get("inputs"), dict) else {}
@@ -320,6 +350,7 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
     "growth_rate": growth_rate,
     "worst_vcr": worst_vcr,
     "queue_peak": queue_peak,
+    "queue_2min_peak": _find_2min_queue_peak(payload),
     "d1_queue_peak": d1_queue_peak,
     "d2_queue_peak": d2_queue_peak,
     "los": _safe_text(_from_summary("los", "level of service") or results.get("los"), "-"),
@@ -668,8 +699,12 @@ def _build_fallback_professional_commentary(
   performance_bits: list[str] = []
   if ctx["worst_vcr"] is not None:
     performance_bits.append(f"a worst V/C ratio of {_format_number(ctx['worst_vcr'], 2)} corresponding to LOS {ctx['los']}")
-  if ctx["queue_peak"] is not None:
-    performance_bits.append(f"a peak queue on the order of {_format_number(ctx['queue_peak'])} m")
+  _q2 = ctx.get("queue_2min_peak")
+  _qfallback = ctx["queue_peak"]
+  _q_display = _q2 if _q2 is not None else _qfallback
+  _q_label = f"{_format_number(_q_display)} m (2-minute hold cycle)" if _q2 is not None else f"{_format_number(_qfallback)} m"
+  if _q_display is not None:
+    performance_bits.append(f"a peak queue on the order of {_q_label}")
   if performance_bits:
     commentary.append(
       "Operationally, the model points to " + " and ".join(performance_bits) + ". "
@@ -737,8 +772,12 @@ def _build_fallback_executive_paragraphs(payload: dict[str, Any]) -> list[str]:
   operational_bits: list[str] = []
   if ctx["worst_vcr"] is not None:
     operational_bits.append(f"the worst modeled V/C ratio is {_format_number(ctx['worst_vcr'], 2)} (LOS {ctx['los']})")
-  if ctx["queue_peak"] is not None:
-    operational_bits.append(f"the peak queue demand is approximately {_format_number(ctx['queue_peak'])} m")
+  _q2 = ctx.get("queue_2min_peak")
+  _qf = ctx["queue_peak"]
+  _qv = _q2 if _q2 is not None else _qf
+  _ql = f"{_format_number(_qv)} m (e.g. {_format_number(_qv, 0)} m queue for 2-minute hold)" if _q2 is not None else f"{_format_number(_qf)} m"
+  if _qv is not None:
+    operational_bits.append(f"the peak queue demand is approximately {_ql}")
   if ctx["d1_queue_peak"] is not None or ctx["d2_queue_peak"] is not None:
     operational_bits.append(f"directional peak queues are D1 {_format_number(ctx['d1_queue_peak'])} m and D2 {_format_number(ctx['d2_queue_peak'])} m")
   if operational_bits:
@@ -768,9 +807,13 @@ def _build_fallback_explanation_notes(payload: dict[str, Any]) -> list[str]:
     notes.append(
       f"Network performance: worst V/C ratio is {_format_number(ctx['worst_vcr'], 2)}, which places the controlling condition at LOS {ctx['los']}."
     )
-  if ctx["queue_peak"] is not None:
+  _q2 = ctx.get("queue_2min_peak")
+  _qf = ctx["queue_peak"]
+  _qv = _q2 if _q2 is not None else _qf
+  if _qv is not None:
+    _suffix = " (2-minute hold cycle)" if _q2 is not None else ""
     notes.append(
-      f"Queue implications: the longest modeled queue is approximately {_format_number(ctx['queue_peak'])} m, with D1 peak queue {_format_number(ctx['d1_queue_peak'])} m and D2 peak queue {_format_number(ctx['d2_queue_peak'])} m."
+      f"Queue implications: the longest modeled queue is approximately {_format_number(_qv, 0)} m{_suffix}, with D1 peak queue {_format_number(ctx['d1_queue_peak'])} m and D2 peak queue {_format_number(ctx['d2_queue_peak'])} m."
     )
   notes.append(
     "Mitigation interpretation: detour planning is recommended because the modeled queue and/or capacity outcomes indicate material operational risk during the work stage."
@@ -1373,29 +1416,42 @@ def _render_computed_results_section(
   )
 
 
-def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict, chart_items: list[dict] | None = None) -> str:
-  """Render a 6-subsection detour block per route, in the required order:
-  1. VPD Calculated  2. Detour Road Directional Capacity Summary
-  3. Detour Road Capacity Summary  4. Existing Road Status After Diversion
-  5. Estimated Delay – Detour route  6. Pedestrian Detour Impact – Delay calculation
+def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict, chart_items: list[dict] | None = None, is_short: bool = False) -> str:
+  """Render the detour block per route.
+  Detailed: Table 28 / VPD Calculated / Detour Road Capacity Summary /
+            Estimated Detour Delay Inputs / Detour Road Summary (Table 29) /
+            Road Status After Diversion / Pedestrian Delay
+  Short:    Table 28 / Estimated Detour Delay Inputs / Pedestrian Delay
   """
   if chart_items is None:
     chart_items = []
   label_esc = _escape(route_label)
 
-  # Classify each table into one of the 6 ordered slots.
-  # Fixed keywords to match exact titles coming from the HTML front-end.
+  # Classify each table into ordered slots.
+  route_info_tables: list[dict] = []   # Table 28 — route overview
   vpd_tables: list[dict] = []
   dir_capacity_tables: list[dict] = []
   road_capacity_tables: list[dict] = []
   road_status_tables: list[dict] = []
   delay_tables: list[dict] = []
   pedestrian_tables: list[dict] = []
+  detour_summary_tables: list[dict] = []  # Table 29 — detour road summary
   other_tables: list[dict] = []
 
   for table in route_tables:
-    title_lc = _safe_text(table.get("title"), "").lower()
-    if "pedestrian" in title_lc:
+    title_raw = _safe_text(table.get("title"), "")
+    title_lc = title_raw.lower().strip()
+    title_stripped = title_lc.strip()
+    # Table 28 → route info
+    if re.fullmatch(r"table\s*28", title_stripped):
+      route_info_tables.append(table)
+    # Table 29 → detour road summary
+    elif re.fullmatch(r"table\s*29", title_stripped):
+      detour_summary_tables.append(table)
+    # Tables 30-32 → fold into road capacity
+    elif re.fullmatch(r"table\s*(3[0-2])", title_stripped):
+      road_capacity_tables.append(table)
+    elif "pedestrian" in title_lc:
       pedestrian_tables.append(table)
     elif "delay" in title_lc:
       delay_tables.append(table)
@@ -1454,23 +1510,56 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     "<table><thead><tr><th class=\"editable-text\" contenteditable=\"true\">Parameter</th><th class=\"editable-text\" contenteditable=\"true\">Value</th></tr></thead><tbody><tr><td class=\"editable-text\" contenteditable=\"true\">Pedestrian Detour Distance (m)</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr><tr><td class=\"editable-text\" contenteditable=\"true\">Additional Walking Time (min)</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr><tr><td class=\"editable-text\" contenteditable=\"true\">Pedestrian Delay Classification</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr><tr><td class=\"editable-text\" contenteditable=\"true\">Mitigation Recommended</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr></tbody></table>"
   )
 
-  return (
+  fallback_route_info = (
+    "<table><thead><tr><th class=\"editable-text\" contenteditable=\"true\">Parameter</th><th class=\"editable-text\" contenteditable=\"true\">Details</th></tr></thead><tbody>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Detour Route Name</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Selected Path</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Route Length (km)</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Road Classification</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "</tbody></table><p class=\"editable-text\" contenteditable=\"true\">Edit to insert the selected detour route and path details.</p>"
+  )
+
+  fallback_detour_summary = (
+    "<table><thead><tr><th class=\"editable-text\" contenteditable=\"true\">Direction</th><th class=\"editable-text\" contenteditable=\"true\">LOS</th><th class=\"editable-text\" contenteditable=\"true\">VCR</th><th class=\"editable-text\" contenteditable=\"true\">Capacity (veh/h)</th><th class=\"editable-text\" contenteditable=\"true\">Volume (veh/h)</th></tr></thead><tbody>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">D1</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">D2</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "</tbody></table><p class=\"editable-text\" contenteditable=\"true\">Edit to record the detour road LOS and capacity summary.</p>"
+  )
+
+  base_html = (
     f"<div class=\"report-section report-block detour-route-block\">"
     f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
     f"<h3 class=\"editable-text\" contenteditable=\"true\">{label_esc}</h3>"
     f"{other_html}"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">1. VPD Calculated table</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour Road Directional Capacity Summary</h4>" + _render_group(dir_capacity_tables, fallback_dir_capacity) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Existing Road Status After Diversion</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Estimated Delay - Detour route</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Pedestrian Detour Impact &#8211; Delay calculation</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
-    "</div>"
+    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">1. Detour Route Information</h4>" + _render_group(route_info_tables, fallback_route_info) + "</div>"
   )
 
+  if is_short:
+    # Short report: Table 28 / Estimated Detour Delay Inputs / Pedestrian Delay
+    return (
+      base_html
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Inputs</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "</div>"
+    )
+  else:
+    # Detailed report: Table 28 / VPD Calculated / Detour Road Capacity Summary /
+    # Estimated Detour Delay Inputs / Detour Road Summary (Table 29) /
+    # Road Status After Diversion / Pedestrian Delay
+    return (
+      base_html
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. VPD Calculated</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(dir_capacity_tables + road_capacity_tables, fallback_road_capacity) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(detour_summary_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion (Existing Road)</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "</div>"
+    )
 
-def _build_short_detour_section(detour_tables: list[dict], route_count: int, analysis_map: dict, chart_items: list[dict] | None = None) -> str:
-  """Build the complete Section 5 Detour Analysis HTML."""
+
+def _build_short_detour_section(detour_tables: list[dict], route_count: int, analysis_map: dict, chart_items: list[dict] | None = None, is_short: bool = False, section_num: str = "4") -> str:
+  """Build the Detour Analysis section HTML."""
   if chart_items is None:
     chart_items = []
 
@@ -1480,11 +1569,16 @@ def _build_short_detour_section(detour_tables: list[dict], route_count: int, ana
   from collections import defaultdict
   route_groups: dict[str, list[dict]] = defaultdict(list)
 
-  # Group by exact route number.
+  # Group tables by route number extracted from title; tables named "Table 28-32" go to route 1.
   for table in detour_tables:
     title = _safe_text(table.get("title"), "")
     m = re.search(r"Detour Route\s*(\d+)", title, re.IGNORECASE)
-    key = m.group(1) if m else "1"
+    if m:
+      key = m.group(1)
+    elif re.fullmatch(r"table\s*\d+", title.strip(), re.IGNORECASE):
+      key = "1"  # numbered payload tables belong to route 1
+    else:
+      key = "1"
     route_groups[key].append(table)
 
   effective_count = max(route_count, len(route_groups), 1)
@@ -1493,14 +1587,14 @@ def _build_short_detour_section(detour_tables: list[dict], route_count: int, ana
   for i in range(1, effective_count + 1):
     key = str(i)
     route_label_str = f"Detour Route {i}"
-    block = _render_short_detour_route_block(route_label_str, route_groups.get(key, []), analysis_map, chart_items)
+    block = _render_short_detour_route_block(route_label_str, route_groups.get(key, []), analysis_map, chart_items, is_short=is_short)
     rendered.append(block)
 
   if not rendered:
     return ""
 
   return (
-    "<h2 contenteditable=\"true\">5. Detour Analysis</h2>"
+    f"<h2 contenteditable=\"true\">{section_num}. Detour Analysis</h2>"
     "<div class=\"editable table-note\" contenteditable=\"true\">"
     "<p>This section summarises the detour route analysis. For each alternative route, the road capacity, estimated motorist delay, and pedestrian impact are assessed.</p>"
     "</div>"
@@ -2101,6 +2195,16 @@ def editor_page(draft_id: str) -> str:
         _seen_title_keys.add(title_key)
 
       title_lc = _safe_text(table.get("title", "")).lower()
+      title_stripped = title_lc.strip()
+
+      # Skip numbered stub tables Table 11–18 (duplicates of named analysis tables)
+      if re.fullmatch(r"table\s*(1[1-8])", title_stripped):
+        continue
+
+      # Tables 28–32 are detour route tables — route them directly to detour section
+      if re.fullmatch(r"table\s*(2[89]|3[0-2])", title_stripped):
+        detour_tables.append(table)
+        continue
 
       # Hourly tables — fix: only require "hourly" (not "peak hour") in title
       if "hourly" in title_lc:
@@ -2121,7 +2225,7 @@ def editor_page(draft_id: str) -> str:
           matched_charts,
         )
       )
-    hourly_peak_section_html = "".join(hourly_peak_blocks)
+    hourly_peak_section_html = "" if is_short else "".join(hourly_peak_blocks)
 
     table_blocks: list[str] = []
     for table in other_tables:
@@ -2141,19 +2245,24 @@ def editor_page(draft_id: str) -> str:
     raw_js = payload.get("raw_js_results", {}) if isinstance(payload.get("raw_js_results"), dict) else {}
     detour_route_count = int(raw_js.get("detour_route_count") or 0)
 
+    # Detour Analysis is always section 4.
+    sec_detour_num = "4"
+
     # Notice we now pass detour_tables and chart_items_to_render explicitly
     short_detour_section_html = _build_short_detour_section(
-        detour_tables, detour_route_count, table_analysis_map, chart_items_to_render
+        detour_tables, detour_route_count, table_analysis_map, chart_items_to_render,
+        is_short=is_short, section_num=sec_detour_num,
     )
 
-    # Engineering Observations section has been removed.
-    # Adjust remaining section numbers based on whether detour data exists.
+    # Section numbering (Executive Explanation Notes removed → 1-indexed from Exec Summary):
+    # 1. Executive Summary  2. Design & Traffic Inputs  3. Traffic Analysis & Results
+    # 4. Detour Analysis (if present)  5. Charts (detailed only)  6. Conclusion
     if is_short:
-      sec_chart_num = ""  # No charts section in short report
-      sec_comm_num  = "6" if short_detour_section_html else "5"
+      sec_chart_num = ""
+      sec_comm_num  = "5" if short_detour_section_html else "4"
     else:
-      sec_chart_num = "6" if short_detour_section_html else "5"
-      sec_comm_num  = "7" if short_detour_section_html else "6"
+      sec_chart_num = "5" if short_detour_section_html else "4"
+      sec_comm_num  = "6" if short_detour_section_html else "5"
 
     chart_section_block = (
       f'<h2 contenteditable="true">{sec_chart_num}. Charts</h2>\n    <div id="chartSectionContent">{chart_sections}</div>'
@@ -2617,14 +2726,11 @@ def editor_page(draft_id: str) -> str:
       <p><em>Click here to refine the executive narrative, project-specific implications, and stakeholder-facing conclusions.</em></p>
     </div>
 
-    <h2 class=\"avoid-break\" contenteditable=\"true\">2. Executive Explanation Notes</h2>
-    <ul>{executive_notes_html}</ul>
-
-    <h2 contenteditable=\"true\">3. Design &amp; Traffic Inputs</h2>
+    <h2 contenteditable=\"true\">2. Design &amp; Traffic Inputs</h2>
     {inputs_section_html}
     {site_section_html}
 
-    <h2 contenteditable=\"true\">4. Traffic Analysis &amp; Results</h2>
+    <h2 contenteditable=\"true\">3. Traffic Analysis &amp; Results</h2>
     {results_section_html}
     {hourly_peak_section_html}
 
@@ -2634,16 +2740,20 @@ def editor_page(draft_id: str) -> str:
 
     {chart_section_block}
 
-    <h2 contenteditable=\"true\">{sec_comm_num}. Professional Commentary &amp; Conclusion</h2>
+    <h2 contenteditable=\"true\">{sec_comm_num}. Conclusion</h2>
     {commentary_html}
 
     <div class=\"avoid-break\" style=\"margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);\">
-      <h3 contenteditable=\"true\">Report Certification</h3>
       <div style=\"display: flex; gap: 40px; margin-top: 20px;\">
         <div style=\"flex: 1;\">
-          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Certified By</div>
+          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Prepared By</div>
           <div contenteditable=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--brand);\">{prepared_by}</div>
-          <div contenteditable=\"true\" style=\"font-size: 0.95rem; color: var(--muted);\">Registered Traffic Engineer</div>
+          <div contenteditable=\"true\" style=\"font-size: 0.95rem; color: var(--muted);\">Planner's Name</div>
+        </div>
+        <div style=\"flex: 1;\">
+          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Reviewed By</div>
+          <div contenteditable=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--brand);\">Reviewer Name</div>
+          <div contenteditable=\"true\" style=\"font-size: 0.95rem; color: var(--muted);\">Reviewer's Name</div>
         </div>
         <div style=\"flex: 1;\">
           <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Digital Authentication</div>
