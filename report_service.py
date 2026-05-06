@@ -508,14 +508,14 @@ def _build_fallback_table_analysis(table_data: dict[str, Any], payload: dict[str
     return {
       "title": title,
       "summary": (
-        f"{title} sets out the hourly queue result for the selected {wait_minutes}-minute wait criterion. "
+        f"{title} sets out the hourly queue result based on a standard {wait_minutes}-minute hold and release cycle. "
         f"The controlling queue occurs around {peak_time} on {peak_direction}, where the peak queue reaches approximately {peak_value} m."
       ),
       "scenario": (
-        "Review this section to confirm when queue storage becomes critical, whether the queue is isolated to one direction, and whether the selected wait-time assumption is appropriate for site operations and stakeholder expectations."
+        f"Review this section to confirm when queue storage becomes critical under the {wait_minutes}-minute cycle, whether the queue is isolated to one direction, and whether the modeled wait-time is appropriate for site-specific stakeholder expectations."
       ),
       "chart_caption": (
-        f"Hourly queue plot using the selected {wait_minutes}-minute wait assumption. The controlling queue occurs around {peak_time} on {peak_direction}."
+        f"Hourly queue plot assuming a standard {wait_minutes}-minute hold and release cycle. The controlling queue occurs around {peak_time} on {peak_direction}."
       ),
     }
 
@@ -763,6 +763,7 @@ def _request_gemini_report_notes(payload: dict[str, Any]) -> dict[str, Any] | No
       "For pedestrian detour tables, explain the added travel time burden on pedestrians.",
       "Each table summary should be 2-4 sentences of professional engineering narrative.",
       "Each scenario field should explain when and why the condition in the table typically becomes critical.",
+      "Emphasize the standard 2-minute hold and release cycle as the primary basis for queue length interpretations.",
       "Use the exact supplied table titles in the response so they can be mapped deterministically.",
       "Provide 3 professional commentary paragraphs and 3 to 5 conclusion points.",
       "Write as though this will be read by a council traffic engineer or road authority reviewer."
@@ -1248,7 +1249,7 @@ def _infer_result_context(key: str, value: str) -> str:
   if "los" in key_lc or "level of service" in key_lc:
     return "Level of Service — A=free-flow, F=breakdown"
   if "queue" in key_lc:
-    return "Maximum queue length during study period"
+    return "Maximum queue length based on a standard 2-minute hold and release cycle"
   if "delay" in key_lc:
     return "Average per-vehicle delay at the intersection"
   if "growth" in key_lc:
@@ -2047,46 +2048,94 @@ def editor_page(draft_id: str) -> str:
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
   <title>{project_name}</title>
   <style>
-    /* Professional Engineering Document Variables */
+    /* Premium Engineering Document Variables */
     :root {{
-      --ink: #111827;
-      --muted: #4b5563;
+      --ink: #0f172a;
+      --muted: #64748b;
       --brand: #0f2f32;
       --accent: #1f5e63;
-      --border: #d1d5db;
-      --bg-light: #f9fafb;
+      --accent-light: #e6f2f3;
+      --border: #e2e8f0;
+      --bg-light: #f8fafc;
+      --surface: #ffffff;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
     }}
 
     /* Global Styles */
     body {{
-      font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;
+      font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
       margin: 0;
-      background: #e5e7eb;
+      background: #f1f5f9;
       color: var(--ink);
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }}
 
     /* Print Layout Configuration */
     @page {{
       size: A4;
-      margin: 20mm;
+      margin: 15mm;
     }}
 
     .document-wrapper {{
       max-width: 210mm;
-      margin: 20px auto;
-      background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      padding: 30px 40px;
+      margin: 40px auto;
+      background: var(--surface);
+      box-shadow: var(--shadow-lg);
+      padding: 40px 60px;
+      border-radius: var(--radius-sm);
+      position: relative;
+      overflow: hidden;
     }}
 
     /* Typography */
-    h1, h2, h3, h4 {{ color: var(--brand); font-family: \"Georgia\", serif; }}
-    h1 {{ font-size: 2.2rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }}
-    h2 {{ font-size: 1.6rem; border-bottom: 2px solid var(--accent); padding-bottom: 5px; margin-top: 2rem; page-break-after: avoid; }}
-    h3 {{ font-size: 1.2rem; margin-top: 1.5rem; color: var(--accent); }}
-    p {{ margin-bottom: 1rem; text-align: justify; }}
-    .meta {{ color: var(--muted); font-size: 0.9rem; font-style: italic; }}
+    h1, h2, h3, h4, .cover-subtitle {{ 
+      color: var(--brand); 
+      font-family: 'Space Grotesk', sans-serif; 
+      font-weight: 700;
+      line-height: 1.2;
+    }}
+    
+    h1 {{ 
+      font-size: 2.8rem; 
+      margin-bottom: 0.5rem; 
+      letter-spacing: -0.02em;
+    }}
+    
+    h2 {{ 
+      font-size: 1.8rem; 
+      border-bottom: 2px solid var(--accent); 
+      padding-bottom: 10px; 
+      margin-top: 3rem; 
+      page-break-after: avoid; 
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }}
+    
+    h3 {{ 
+      font-size: 1.4rem; 
+      margin-top: 2rem; 
+      color: var(--accent);
+      font-weight: 600;
+    }}
+
+    h4 {{
+      font-size: 1.1rem;
+      margin-top: 1.5rem;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }}
+
+    p {{ margin-bottom: 1.2rem; text-align: justify; color: #334155; }}
+    
+    .meta {{ color: var(--muted); font-size: 0.9rem; }}
 
     /* Layout Components */
     .cover-page {{
@@ -2096,80 +2145,249 @@ def editor_page(draft_id: str) -> str:
       justify-content: center;
       align-items: center;
       text-align: center;
+      position: relative;
     }}
-    .cover-logo {{ max-width: 200px; margin-bottom: 2rem; }}
-    .cover-subtitle {{ font-size: 1.4rem; color: var(--muted); margin-bottom: 3rem; }}
-    .cover-details table {{ width: 60%; margin: 0 auto; border: none; }}
-    .cover-details th, .cover-details td {{ border: none; padding: 8px; text-align: left; font-size: 1.1rem; }}
+
+    .cover-page::before {{
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+      opacity: 0.5;
+      z-index: 0;
+    }}
+
+    .cover-logo {{ max-width: 240px; margin-bottom: 3rem; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }}
+    
+    .cover-subtitle {{ 
+      font-size: 1.6rem; 
+      color: var(--muted); 
+      margin-bottom: 4rem; 
+      font-weight: 500;
+      position: relative; 
+      z-index: 1;
+    }}
+    
+    .cover-details {{
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      background: var(--bg-light);
+      padding: 30px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
+      box-shadow: var(--shadow-md);
+    }}
+
+    .cover-details table {{ width: 100%; margin: 0; border: none; }}
+    .cover-details th, .cover-details td {{ border: none; padding: 10px; text-align: left; font-size: 1.1rem; }}
+    .cover-details th {{ width: 40%; color: var(--muted); font-weight: 500; background: transparent; border-bottom: none; }}
+    .cover-details td {{ font-weight: 600; color: var(--brand); }}
 
     .page-break {{ page-break-before: always; }}
     .avoid-break {{ page-break-inside: avoid; }}
 
     /* Tables */
-    table {{ width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }}
-    th, td {{ border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }}
-    th {{ background-color: var(--bg-light); font-weight: 600; color: var(--brand); border-bottom: 2px solid var(--accent); }}
-    .kv-table th {{ width: 35%; background-color: var(--bg-light); }}
+    table {{ 
+      width: 100%; 
+      border-collapse: separate; 
+      border-spacing: 0;
+      margin: 1.5rem 0; 
+      font-size: 0.95rem; 
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }}
+
+    th, td {{ 
+      padding: 14px 16px; 
+      text-align: left; 
+      vertical-align: middle; 
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }}
+    
+    th:last-child, td:last-child {{ border-right: none; }}
+    tr:last-child td {{ border-bottom: none; }}
+
+    th {{ 
+      background-color: var(--bg-light); 
+      font-weight: 600; 
+      color: var(--brand); 
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }}
+    
+    .kv-table th {{ width: 35%; background-color: #f1f5f9; }}
+    
     .wide-table {{ table-layout: fixed; font-size: 0.84rem; }}
-    .wide-table th, .wide-table td {{ padding: 7px 6px; word-break: break-word; }}
+    .wide-table th, .wide-table td {{ padding: 8px 10px; word-break: break-word; }}
+
+    tr:nth-child(even) {{ background-color: #fcfcfc; }}
+    tr:hover {{ background-color: var(--accent-light); }}
 
     /* Interactive Elements & Editor Styles */
-    .toolbar {{ display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }}
-    .btn {{ background: var(--accent); color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; }}
-    .btn.secondary {{ background: #0f766e; }}
-    .btn.ghost {{ background: #475569; }}
-    .no-print {{ display: block; }}
-    .section-controls {{ display: flex; justify-content: flex-end; margin: 4px 0 8px; }}
-    .mini-btn {{ background: #9a3412; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }}
-    .mini-btn:hover {{ filter: brightness(1.06); }}
-    .editable {{ padding: 10px; border: 1px dashed var(--border); background: #fafafa; min-height: 80px; transition: border 0.3s; }}
-    .editable:focus {{ border: 1px solid var(--accent); outline: none; background: #fff; }}
-    .editable-text, [contenteditable="true"] {{ cursor: text; user-select: text; -webkit-user-modify: read-write; }}
-    th[contenteditable="true"], td[contenteditable="true"] {{ min-width: 48px; background-clip: padding-box; }}
-    th[contenteditable="true"]:focus, td[contenteditable="true"]:focus, .editable-text:focus {{ outline: 2px solid rgba(31, 94, 99, 0.22); outline-offset: -2px; background: #fffef7; }}
-    .table-note {{ min-height: 48px; margin: 8px 0; }}
-    .table-note p {{ margin: 0; text-align: left; }}
-    .table-detail-lead {{ margin: 10px 0 8px; padding: 8px 12px; border-left: 4px solid var(--accent); background: #f3f8f9; color: #244448; font-style: italic; }}
+    .toolbar {{ 
+      display: flex; 
+      justify-content: flex-end; 
+      gap: 12px; 
+      margin-bottom: 20px; 
+      flex-wrap: wrap; 
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 10px;
+      z-index: 100;
+    }}
+
+    .btn {{ 
+      background: var(--brand); 
+      color: white; 
+      border: none; 
+      padding: 10px 24px; 
+      font-size: 0.95rem; 
+      border-radius: var(--radius-sm); 
+      cursor: pointer; 
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }}
+
+    .btn:hover {{ background: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-md); }}
+    .btn.secondary {{ background: #0d9488; }}
+    .btn.ghost {{ background: #64748b; }}
+    
+    .section-controls {{ display: flex; justify-content: flex-end; margin: 8px 0; gap: 6px; }}
+    
+    .mini-btn {{ 
+      background: #f1f5f9; 
+      color: #475569; 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-sm); 
+      padding: 6px 12px; 
+      font-size: 0.75rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.15s ease;
+    }}
+    
+    .mini-btn:hover {{ background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }}
+    .mini-btn.remove {{ background: #fee2e2; color: #991b1b; border-color: #fecaca; }}
+    .mini-btn.remove:hover {{ background: #fecaca; color: #7f1d1d; }}
+
+    .editable {{ 
+      padding: 16px; 
+      border: 2px dashed #e2e8f0; 
+      background: #fbfbfc; 
+      border-radius: var(--radius-md);
+      min-height: 60px; 
+      transition: all 0.2s ease; 
+      margin: 12px 0;
+    }}
+    
+    .editable:focus {{ 
+      border-color: var(--accent); 
+      outline: none; 
+      background: #ffffff; 
+      box-shadow: 0 0 0 4px var(--accent-light);
+    }}
+    
+    .editable-text, [contenteditable="true"] {{ cursor: text; }}
+    
+    .table-note {{ font-style: italic; color: var(--muted); margin: 12px 0; font-size: 0.92rem; }}
+    .table-detail-lead {{ 
+      margin: 20px 0 12px; 
+      padding: 12px 20px; 
+      border-left: 5px solid var(--accent); 
+      background: var(--accent-light); 
+      color: var(--brand); 
+      font-weight: 500;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }}
     .commentary-block {{ min-height: 140px; }}
     .conclusion-list {{ margin-top: 8px; }}
 
     /* Charts */
     .chart-block {{ width: 100%; max-width: 100%; margin: 0 0 16px; }}
     .chart-title {{ margin-bottom: 8px; }}
-    .embedded-chart {{ margin: 12px 0 14px; padding: 12px; border: 1px solid #bfd3d8; border-radius: 8px; background: linear-gradient(180deg, #ffffff 0%, #f6fbfc 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }}
-    .chart-img {{ width: auto; max-width: 100%; height: auto; border: 1px solid var(--border); display: block; margin: 10px auto; object-fit: contain; image-rendering: auto; background: #ffffff; }}
-    .chart-caption {{ min-height: 48px; }}
+    .embedded-chart {{ 
+      margin: 2rem 0; 
+      padding: 24px; 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-lg); 
+      background: #ffffff; 
+      box-shadow: var(--shadow-md); 
+    }}
+    
+    .chart-img {{ 
+      width: 100%; 
+      max-height: 500px;
+      border-radius: var(--radius-md);
+      display: block; 
+      margin: 20px auto; 
+      object-fit: contain; 
+    }}
+    
+    .chart-caption {{ 
+      text-align: center; 
+      color: var(--muted); 
+      font-size: 0.9rem; 
+      margin-top: 12px;
+      padding: 0 40px;
+    }}
 
     /* Table of Contents Styles */
-    .toc-container {{ margin: 2rem 0; padding: 20px; background: #ffffff; border: 1px solid var(--border); border-radius: 4px; }}
-    .toc-title {{ margin-top: 0; border-bottom: none; }}
-    .toc-item {{ display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1rem; }}
-    .toc-h2 {{ font-weight: 600; color: var(--brand); margin-top: 15px; }}
-    .toc-h3 {{ margin-left: 20px; color: var(--muted); font-size: 0.95rem; }}
-    .toc-link {{ text-decoration: none; color: inherit; border-bottom: 1px dotted var(--muted); flex-grow: 1; margin-right: 10px; }}
-    .toc-link:hover {{ color: var(--accent); border-bottom-color: var(--accent); }}
+    .toc-container {{ 
+      margin: 3rem 0; 
+      padding: 30px; 
+      background: var(--bg-light); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-lg); 
+    }}
+    
+    .toc-title {{ margin-top: 0; border-bottom: none; font-size: 1.5rem; }}
+    .toc-item {{ margin-bottom: 12px; }}
+    .toc-h2 {{ font-weight: 700; color: var(--brand); margin-top: 20px; }}
+    .toc-h3 {{ margin-left: 24px; color: var(--muted); font-size: 0.95rem; }}
+    .toc-link {{ text-decoration: none; color: inherit; transition: color 0.2s; display: block; }}
+    .toc-link:hover {{ color: var(--accent); }}
 
     /* Print Overrides */
     @media print {{
-      * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
       body {{ background: #fff; }}
-      .document-wrapper {{ box-shadow: none; margin: 0; padding: 0; max-width: 100%; }}
-      .toolbar {{ display: none; }}
-      .no-print {{ display: none !important; }}
+      .document-wrapper {{ box-shadow: none; margin: 0; padding: 0; max-width: 100%; border: none; }}
+      .toolbar, .no-print, .section-controls {{ display: none !important; }}
       .editable {{ border: none; background: transparent; padding: 0; }}
-      .toc-container {{ border: none; padding: 0; }}
-      .toc-link {{ border-bottom: none; }}
-      .embedded-chart {{ border: 1px solid #bfd3d8; background: #fff; }}
-      .detour-sub-block {{ border: 1px solid var(--border); background: #fff; }}
+      .toc-container {{ border: 1px solid var(--border); background: #fff; }}
+      .embedded-chart {{ box-shadow: none; border: 1px solid var(--border); }}
     }}
 
-    /* Three-column results table */
-    .results-3col .context-col {{ color: var(--muted); font-size: 0.88rem; font-style: italic; min-width: 140px; }}
+    /* Results 3-column */
+    .results-3col .context-col {{ color: var(--muted); font-size: 0.85rem; font-style: italic; background: #f8fafc; }}
 
-    /* Detour subsection blocks */
-    .detour-subsections {{ margin-top: 8px; }}
-    .detour-sub-block {{ margin: 16px 0; padding: 12px 16px; border-left: 4px solid var(--accent); background: #f3f8f9; border-radius: 4px; }}
-    .detour-sub-block h5 {{ margin: 0 0 8px; color: var(--brand); font-size: 1rem; }}
+    /* Detour blocks */
+    .detour-sub-block {{ 
+      margin: 20px 0; 
+      padding: 20px; 
+      border-left: 5px solid var(--accent); 
+      background: #f8fafc; 
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      box-shadow: var(--shadow-sm);
+    }}
+    
+    .detour-sub-block h4, .detour-sub-block h5 {{ margin: 0 0 12px; color: var(--brand); }}
 
     /* Engineering observations */
     .obs-subsection {{ margin-bottom: 16px; }}
@@ -2244,8 +2462,33 @@ def editor_page(draft_id: str) -> str:
 
     {chart_section_block}
 
+    <div class=\"page-break\"></div>
+
     <h2 contenteditable=\"true\">{sec_comm_num}. Professional Commentary &amp; Conclusion</h2>
     {commentary_html}
+
+    <div class=\"avoid-break\" style=\"margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);\">
+      <h3 contenteditable=\"true\">Report Certification</h3>
+      <div style=\"display: flex; gap: 40px; margin-top: 20px;\">
+        <div style=\"flex: 1;\">
+          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Certified By</div>
+          <div contenteditable=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--brand);\">{prepared_by}</div>
+          <div contenteditable=\"true\" style=\"font-size: 0.95rem; color: var(--muted);\">Registered Traffic Engineer</div>
+        </div>
+        <div style=\"flex: 1;\">
+          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Digital Authentication</div>
+          <div style=\"font-family: monospace; font-size: 0.75rem; color: var(--muted); border: 1px dashed var(--border); padding: 10px; border-radius: var(--radius-sm); background: var(--bg-light);\">
+            AUTH-ID: {cc_number}<br>
+            TIMESTAMP: {report_date}<br>
+            STATUS: ELECTRONICALLY SIGNED
+          </div>
+        </div>
+      </div>
+      
+      <div style=\"margin-top: 3rem; padding: 20px; background: #fff1f2; border: 1px solid #fecaca; border-radius: var(--radius-md); font-size: 0.85rem; color: #991b1b;\">
+        <strong>ENGINEERING DISCLAIMER:</strong> This Traffic Impact Assessment (TIA) report has been prepared based on site-specific observations and industry-standard modeling assumptions. While every effort has been made to ensure accuracy, real-world traffic conditions are subject to variables including driver behavior, weather, and external network incidents. This report is intended for use by planning authorities and should be reviewed in the context of the complete project documentation.
+      </div>
+    </div>
 
   </main>
 
