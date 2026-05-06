@@ -592,54 +592,46 @@ def _build_fallback_table_analysis(table_data: dict[str, Any], payload: dict[str
   summary_parts = []
   title_lower = title_key
 
-  # Build a more readable, natural-language fallback summary
   if "peak hour" in title_lower and "hourly" in title_lower:
-    # Hourly peak hour analysis tables
     if analysis["top_numeric"]:
       top_value, row_label, column_label = analysis["top_numeric"][0]
+      periods = ", ".join(analysis["labels"][:3]) if analysis["labels"] else "the surveyed periods"
       summary_parts.append(
-        f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
-      )
-      if analysis["labels"]:
-        summary_parts.append(f"The leading labels cover {', '.join(analysis['labels'][:4])}.")
-      if analysis["numeric_count"]:
-        summary_parts.append(
-          f"Reported numeric values range from {_format_number(analysis['numeric_min'], 2)} to {_format_number(analysis['numeric_max'], 2)}."
-        )
-      summary_parts.append(
-        f"The strongest reported value is {_format_number(top_value, 2)} for {row_label} in {column_label}."
+        f"{title} records peak-hour traffic volumes across {periods}. "
+        f"The highest recorded volume is {_format_number(top_value, 0)} veh/h for {row_label} in the {column_label} period."
       )
     else:
-      summary_parts.append(f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s).")
+      periods = ", ".join(analysis["labels"][:3]) if analysis["labels"] else "the surveyed periods"
+      summary_parts.append(f"{title} provides peak-hour traffic volumes across {periods}.")
   elif "grouped" in title_lower and "direction" in title_lower:
-    summary_parts.append(
-      f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
-    )
-    if analysis["labels"]:
-      summary_parts.append(f"The leading labels cover {', '.join(analysis['labels'][:4])}.")
-    if analysis["numeric_count"]:
-      summary_parts.append(
-        f"Reported numeric values range from {_format_number(analysis['numeric_min'], 2)} to {_format_number(analysis['numeric_max'], 2)}."
-      )
     if analysis["top_numeric"]:
       top_value, row_label, column_label = analysis["top_numeric"][0]
+      periods = ", ".join(analysis["labels"][:3]) if analysis["labels"] else "the surveyed periods"
       summary_parts.append(
-        f"The strongest reported value is {_format_number(top_value, 2)} for {row_label} in {column_label}."
+        f"The directional traffic summary covers {periods}. "
+        f"The highest recorded value is {_format_number(top_value, 0)} for {row_label} in the {column_label} column."
       )
+      if analysis["numeric_min"] is not None and analysis["numeric_max"] is not None and analysis["numeric_min"] != analysis["numeric_max"]:
+        summary_parts.append(
+          f"Values range from {_format_number(analysis['numeric_min'], 0)} to {_format_number(analysis['numeric_max'], 0)} across all periods."
+        )
+    else:
+      summary_parts.append(f"The directional traffic summary is presented for review and confirmation.")
   else:
-    summary_parts.append(
-      f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
-    )
-    if analysis["labels"]:
-      summary_parts.append(f"The leading labels cover {', '.join(analysis['labels'][:4])}.")
-    if analysis["numeric_count"]:
-      summary_parts.append(
-        f"Reported numeric values range from {_format_number(analysis['numeric_min'], 2)} to {_format_number(analysis['numeric_max'], 2)}."
-      )
     if analysis["top_numeric"]:
       top_value, row_label, column_label = analysis["top_numeric"][0]
+      periods_text = f"covering {', '.join(analysis['labels'][:3])}" if analysis["labels"] else ""
       summary_parts.append(
-        f"The strongest reported value is {_format_number(top_value, 2)} for {row_label} in {column_label}."
+        f"{title} sets out the {analysis['row_count']}-row result dataset"
+        + (f" {periods_text}" if periods_text else "")
+        + f". The highest recorded value is {_format_number(top_value, 2)} for {row_label} ({column_label})."
+      )
+    elif analysis["labels"]:
+      summary_parts.append(f"{title} covers {', '.join(analysis['labels'][:4])}.")
+    else:
+      summary_parts.append(
+        f"{title} provides reference data supporting the assessment findings. "
+        "Review and confirm values against site-specific conditions."
       )
 
   chart_caption = (
@@ -1289,11 +1281,15 @@ def _infer_result_context(key: str, value: str) -> str:
       raw = re.sub(r"[^\d.]", "", str(value or "").split()[0])
       v = float(raw) if raw else None
       if v is not None:
+        if v >= 1.5:
+          return "Significantly over capacity (LOS F) — urgent mitigation required"
+        if v >= 1.0:
+          return "Over capacity (LOS F) — mitigation required"
         if v >= 0.9:
-          return "Near or at capacity — mitigation likely required"
+          return "Near or at capacity (LOS E) — mitigation likely required"
         if v >= 0.75:
-          return "Approaching capacity — monitor closely"
-        return "Within acceptable capacity threshold"
+          return "Approaching capacity (LOS D) — monitor closely"
+        return "Within acceptable capacity threshold (LOS A–C)"
     except Exception:
       pass
     return "Volume-to-Capacity Ratio — compare against LOS thresholds"
@@ -1504,7 +1500,6 @@ def _build_short_detour_section(detour_tables: list[dict], route_count: int, ana
     return ""
 
   return (
-    "<div class=\"page-break\"></div>"
     "<h2 contenteditable=\"true\">5. Detour Analysis</h2>"
     "<div class=\"editable table-note\" contenteditable=\"true\">"
     "<p>This section summarises the detour route analysis. For each alternative route, the road capacity, estimated motorist delay, and pedestrian impact are assessed.</p>"
@@ -1781,7 +1776,7 @@ def _render_data_table(
 
     informative_default = (analysis or {}).get(
       "summary",
-      f"This table presents {_safe_text(title)} with {row_count} row(s) and {col_count} column(s). "
+      f"This table presents {_safe_text(title)} supporting the assessment. "
       "Edit this text to add assumptions, methodology, or interpretation for stakeholders."
     )
 
@@ -1799,14 +1794,13 @@ def _render_data_table(
       n_max = max(numeric_values)
       summary_default = (analysis or {}).get(
           "scenario",
-          f"Summary: {row_count} row(s) reviewed. Numeric values range from {n_min:,.2f} to {n_max:,.2f}. "
+          f"Numeric values in this table range from {n_min:,.2f} to {n_max:,.2f}. "
           "Edit this summary to capture key implications and recommended actions."
       )
     else:
       summary_default = (analysis or {}).get(
           "scenario",
-          f"Summary: {row_count} row(s) reviewed for {_safe_text(title)}. "
-          "Edit this summary to record key findings and decisions."
+          f"Review {_safe_text(title)} against site-specific conditions and edit this summary to record key findings and decisions."
       )
 
     _title_key_norm = _normalize_title_key(title)
@@ -1982,7 +1976,6 @@ def editor_page(draft_id: str) -> str:
     selected_site_details = ctx.get("selected_site_details", {}) if isinstance(ctx.get("selected_site_details"), dict) else {}
 
     notes_html = _render_notes(notes)
-    engineering_obs_html = _render_engineering_observations(notes)
     raw_tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
     tables = [table for table in raw_tables if isinstance(table, dict)]
     table_analysis_map = {
@@ -2064,6 +2057,9 @@ def editor_page(draft_id: str) -> str:
         results_charts,
       )
     selected_site_section_html = _render_selected_site_details_section(selected_site_details)
+    # If the DOM Analysis Parameters table exists it already contains site-specific
+    # fields; suppress the separate Selected Site Details block to avoid duplication.
+    site_section_html = "" if _ap_dom_table else selected_site_section_html
 
     # --- Table classification with deduplication ---
     # Titles that are already covered by dedicated rendered sections and must NOT
@@ -2150,15 +2146,14 @@ def editor_page(draft_id: str) -> str:
         detour_tables, detour_route_count, table_analysis_map, chart_items_to_render
     )
 
-    # Adjust section numbers dynamically based on whether detour data exists.
-    # MUST be computed before chart_section_block which references sec_chart_num.
-    sec_eng_num   = "6" if short_detour_section_html else "5"
+    # Engineering Observations section has been removed.
+    # Adjust remaining section numbers based on whether detour data exists.
     if is_short:
       sec_chart_num = ""  # No charts section in short report
-      sec_comm_num  = "7" if short_detour_section_html else "6"
+      sec_comm_num  = "6" if short_detour_section_html else "5"
     else:
-      sec_chart_num = "7" if short_detour_section_html else "6"
-      sec_comm_num  = "8" if short_detour_section_html else "7"
+      sec_chart_num = "6" if short_detour_section_html else "5"
+      sec_comm_num  = "7" if short_detour_section_html else "6"
 
     chart_section_block = (
       f'<h2 contenteditable="true">{sec_chart_num}. Charts</h2>\n    <div id="chartSectionContent">{chart_sections}</div>'
@@ -2242,17 +2237,20 @@ def editor_page(draft_id: str) -> str:
       letter-spacing: -0.02em;
     }}
     
-    h2 {{ 
-      font-size: 1.55rem; 
-      border-bottom: 2.5px solid var(--accent); 
-      padding-bottom: 10px; 
+    h2 {{
+      font-size: 1.55rem;
+      border-bottom: 2.5px solid var(--accent);
+      padding-bottom: 10px;
       margin-top: 3rem;
       margin-bottom: 1.5rem;
-      page-break-after: avoid; 
+      page-break-before: always;
+      page-break-after: avoid;
       display: flex;
       align-items: center;
       gap: 12px;
     }}
+
+    h2.toc-title {{ page-break-before: auto; }}
 
     h2::before {{
       content: '';
@@ -2613,8 +2611,6 @@ def editor_page(draft_id: str) -> str:
       <div id=\"toc-content\"></div>
     </div>
 
-    <div class=\"page-break\"></div>
-
     <h2 contenteditable=\"true\">1. Executive Summary</h2>
     <div class=\"editable\" contenteditable=\"true\">
       {executive_summary_html}
@@ -2626,9 +2622,7 @@ def editor_page(draft_id: str) -> str:
 
     <h2 contenteditable=\"true\">3. Design &amp; Traffic Inputs</h2>
     {inputs_section_html}
-    {selected_site_section_html}
-
-    <div class=\"page-break\"></div>
+    {site_section_html}
 
     <h2 contenteditable=\"true\">4. Traffic Analysis &amp; Results</h2>
     {results_section_html}
@@ -2638,14 +2632,7 @@ def editor_page(draft_id: str) -> str:
 
     {short_detour_section_html}
 
-    <div class=\"page-break\"></div>
-
-    <h2 contenteditable=\"true\">{sec_eng_num}. Engineering Observations &amp; Notes</h2>
-    {engineering_obs_html}
-
     {chart_section_block}
-
-    <div class=\"page-break\"></div>
 
     <h2 contenteditable=\"true\">{sec_comm_num}. Professional Commentary &amp; Conclusion</h2>
     {commentary_html}
