@@ -184,6 +184,7 @@
         <option value="pro+">Pro+</option>
       </select>
       <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+      <button class="btn" id="migrateAuthBtn" style="background:#fff7ed;color:#9a3412;border:1px solid #fdba74;" onclick="migrateAllUsersToFirebaseAuth()">Migrate Users to Auth + Reset</button>
       <button class="btn" id="syncBtn" style="background:#e0f2f1;color:#1f5e63;border:1px solid #b2dfdb;" onclick="manualSync()">&#8635; Sync from Cloud</button>
       <button class="btn" style="background:#f3f4f6;color:#374151;" onclick="exportCSV()">Export CSV</button>
     </div>
@@ -418,6 +419,111 @@
       msgEl.textContent = 'Reset link sent to ' + email + '. Please check inbox/spam.';
     } catch (error) {
       errEl.textContent = 'Could not send reset link: ' + error.message;
+    }
+  }
+
+  async function migrateAllUsersToFirebaseAuth() {
+    const proceed = confirm(
+      'This will migrate all existing users with valid email addresses into Firebase Authentication and send password reset links. Continue?'
+    );
+    if (!proceed) return;
+
+    const migrateBtn = document.getElementById('migrateAuthBtn');
+    const previousLabel = migrateBtn ? migrateBtn.textContent : '';
+    if (migrateBtn) {
+      migrateBtn.disabled = true;
+      migrateBtn.textContent = 'Migrating...';
+    }
+
+    try {
+      if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+        try { await TIASync.pullAll(); } catch (_) {}
+      }
+
+      const db = getDB();
+      const allUsers = Object.values(db).filter(u => u && !u.deleted);
+      const candidates = allUsers
+        .map(u => ({
+          username: String(u.username || '').trim(),
+          email: String(u.email || '').trim().toLowerCase(),
+          isAdmin: !!u.isAdmin
+        }))
+        .filter(u => u.username && u.email && u.email.includes('@'));
+
+      if (!candidates.length) {
+        showToast('No valid users with email found to migrate.');
+        return;
+      }
+
+      const auth = getFirebaseAuth();
+      if (!auth) {
+        showToast('Firebase Auth unavailable. Refresh and try again.');
+        return;
+      }
+
+      let provisionApp = null;
+      let provisionAuth = null;
+      try {
+        if (window.firebase && typeof firebase.initializeApp === 'function' && typeof FIREBASE_CONFIG !== 'undefined') {
+          provisionApp = firebase.initializeApp(FIREBASE_CONFIG, 'authProvisioning_' + Date.now());
+          provisionAuth = provisionApp.auth();
+        }
+      } catch (_) {}
+
+      let created = 0;
+      let existing = 0;
+      let resetSent = 0;
+      let failed = 0;
+
+      for (const user of candidates) {
+        const tempPw = 'Temp!' + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8);
+        let wasCreated = false;
+
+        try {
+          if (provisionAuth) {
+            await provisionAuth.createUserWithEmailAndPassword(user.email, tempPw);
+            await provisionAuth.signOut();
+            wasCreated = true;
+            created++;
+          } else {
+            await auth.createUserWithEmailAndPassword(user.email, tempPw);
+            await auth.signOut();
+            wasCreated = true;
+            created++;
+          }
+        } catch (createErr) {
+          const code = String((createErr && createErr.code) || '');
+          if (code === 'auth/email-already-in-use') {
+            existing++;
+          } else {
+            failed++;
+            continue;
+          }
+        }
+
+        try {
+          await auth.sendPasswordResetEmail(user.email);
+          resetSent++;
+        } catch (_) {
+          // If reset cannot be sent for one user, continue the bulk run.
+          if (wasCreated) {
+            failed++;
+          }
+        }
+      }
+
+      if (provisionApp && typeof provisionApp.delete === 'function') {
+        try { await provisionApp.delete(); } catch (_) {}
+      }
+
+      showToast(
+        'Auth migration done. Created: ' + created + ', Existing: ' + existing + ', Reset sent: ' + resetSent + ', Failed: ' + failed
+      );
+    } finally {
+      if (migrateBtn) {
+        migrateBtn.disabled = false;
+        migrateBtn.textContent = previousLabel || 'Migrate Users to Auth + Reset';
+      }
     }
   }
 
