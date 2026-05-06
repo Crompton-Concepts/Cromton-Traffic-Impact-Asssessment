@@ -229,6 +229,32 @@ def _format_au_date(value: Any, fallback: str | None = None) -> str:
   return text
 
 
+def _table_rows_to_mapping(table: dict[str, Any]) -> dict[str, Any]:
+  if not isinstance(table, dict):
+    return {}
+  rows = table.get("rows", []) if isinstance(table.get("rows"), list) else []
+  mapping: dict[str, Any] = {}
+  for row in rows:
+    if not isinstance(row, list) or len(row) < 2:
+      continue
+    key = _normalize_title_key(row[0])
+    if not key:
+      continue
+    mapping[key] = row[1]
+  return mapping
+
+
+def _find_payload_table(payload: dict[str, Any], title_keywords: tuple[str, ...]) -> dict[str, Any] | None:
+  tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+  for table in tables:
+    if not isinstance(table, dict):
+      continue
+    title_key = _normalize_title_key(_safe_text(table.get("title"), ""))
+    if all(keyword in title_key for keyword in title_keywords):
+      return table
+  return None
+
+
 def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   project = payload.get("project", {}) if isinstance(payload.get("project"), dict) else {}
   inputs = payload.get("inputs", {}) if isinstance(payload.get("inputs"), dict) else {}
@@ -237,6 +263,15 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   notes = payload.get("notes", []) if isinstance(payload.get("notes"), list) else []
   site_details = payload.get("selected_site_details", {}) if isinstance(payload.get("selected_site_details"), dict) else {}
   peak_diagnostics = payload.get("peak_diagnostics", {}) if isinstance(payload.get("peak_diagnostics"), dict) else {}
+  summary_results_table = _find_payload_table(payload, ("summary", "computed", "results"))
+  summary_results_map = _table_rows_to_mapping(summary_results_table or {})
+
+  def _from_summary(*keys: str) -> Any:
+    for key in keys:
+      normalized = _normalize_title_key(key)
+      if normalized in summary_results_map:
+        return summary_results_map.get(normalized)
+    return None
 
   d1_vadt = _to_float(
     inputs.get("d1_vadt_opening_year") or inputs.get("d1_vadt") or raw.get("d1_vadt")
@@ -250,8 +285,16 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   base_year_aadt = _to_float(inputs.get("base_year_aadt") or inputs.get("aadt") or raw.get("vadt"))
   opening_year = _safe_text(inputs.get("opening_year") or raw.get("opening_year"), "")
   growth_rate = _to_float(inputs.get("growth_rate_percent") or raw.get("growth_rate_percent"))
-  worst_vcr = _to_float(results.get("worst_vcr") or raw.get("worst_vcr"))
-  queue_peak = _to_float(results.get("queue_peak_m") or raw.get("queue_peak_m"))
+  worst_vcr = _to_float(
+    _from_summary("worst_vcr", "worst v c ratio", "worst hourly vcr")
+    or results.get("worst_vcr")
+    or raw.get("worst_vcr")
+  )
+  queue_peak = _to_float(
+    _from_summary("queue_peak_m", "peak_queue_m", "peak queue")
+    or results.get("queue_peak_m")
+    or raw.get("queue_peak_m")
+  )
   d1_queue_peak = _to_float(raw.get("d1_queue_peak_m"))
   d2_queue_peak = _to_float(raw.get("d2_queue_peak_m"))
 
@@ -279,8 +322,8 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
     "queue_peak": queue_peak,
     "d1_queue_peak": d1_queue_peak,
     "d2_queue_peak": d2_queue_peak,
-    "los": _safe_text(results.get("los"), "-"),
-    "detour_recommended": _to_bool(results.get("detour_recommended")),
+    "los": _safe_text(_from_summary("los", "level of service") or results.get("los"), "-"),
+    "detour_recommended": _to_bool(_from_summary("detour_recommended", "detour recommended") or results.get("detour_recommended")),
     "notes": [str(note).strip() for note in notes if str(note).strip()],
     "selected_site_details": {
       _safe_text(key, ""): _safe_text(value, "")
@@ -324,10 +367,18 @@ def _build_report_tables(payload: dict[str, Any]) -> list[dict[str, Any]]:
   results = payload.get("results", {}) if isinstance(payload.get("results"), dict) else {}
   payload_tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
 
+  # Check what title keys already exist in the payload tables to avoid duplicates
+  existing_title_keys = {
+    _normalize_title_key(_safe_text(t.get("title"), ""))
+    for t in payload_tables
+    if isinstance(t, dict)
+  }
+
   tables: list[dict[str, Any]] = []
-  if inputs:
+  # Only add simplified fallback tables if the richer DOM versions aren't already present
+  if inputs and not any("analysis parameters" in k for k in existing_title_keys):
     tables.append(_mapping_to_table("Analysis Parameters", inputs, "Parameter", "Value", "analysis_parameters"))
-  if results:
+  if results and not any("summary of computed results" in k for k in existing_title_keys):
     tables.append(_mapping_to_table("Summary of Computed Results", results, "Metric", "Value", "summary_computed_results"))
   tables.extend(table for table in payload_tables if isinstance(table, dict))
   return tables
@@ -501,7 +552,7 @@ def _build_fallback_table_analysis(table_data: dict[str, Any], payload: dict[str
     }
 
   if "hourly queue" in title_key:
-    wait_minutes = _format_number(peak.get("queue_wait_minutes"), 0, "2")
+    wait_minutes = "2"
     peak_time = _safe_text(peak.get("queue_peak_time"), "the controlling hour")
     peak_direction = _safe_text(peak.get("queue_peak_direction"), "the controlling direction")
     peak_value = _format_number(peak.get("queue_peak_value_m"), 0, "-")
@@ -926,7 +977,7 @@ def _render_paragraph_block(paragraphs: list[str]) -> str:
   return "".join(f"<p>{_escape(item)}</p>" for item in cleaned)
 
 
-def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, str]]:
+def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
   def _safe_data_image_url(value: Any) -> str:
     text = _safe_text(value, "")
     if not text:
@@ -938,7 +989,7 @@ def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, str]]:
     return text
 
   raw_charts = payload.get("charts", []) if isinstance(payload.get("charts"), list) else []
-  chart_items: list[dict[str, str]] = []
+  chart_items: list[dict[str, Any]] = []
 
   for idx, chart in enumerate(raw_charts):
     if not isinstance(chart, dict):
@@ -971,7 +1022,7 @@ def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, str]]:
   return chart_items
 
 
-def _score_chart_match(table_data: dict[str, Any], chart_item: dict[str, str]) -> int:
+def _score_chart_match(table_data: dict[str, Any], chart_item: dict[str, Any]) -> int:
   score = 0
   table_title = _safe_text(table_data.get("title"), "")
   table_id = _normalize_title_key(table_data.get("table_id"))
@@ -1043,10 +1094,10 @@ def _score_chart_match(table_data: dict[str, Any], chart_item: dict[str, str]) -
 
 def _select_charts_for_table(
   table_data: dict[str, Any],
-  chart_items: list[dict[str, str]],
-) -> list[dict[str, str]]:
+  chart_items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
   table_id = _normalize_title_key(table_data.get("table_id"))
-  explicit_matches: list[dict[str, str]] = []
+  explicit_matches: list[dict[str, Any]] = []
   has_explicit_links = False
 
   for chart_item in chart_items:
@@ -1069,7 +1120,7 @@ def _select_charts_for_table(
   if has_explicit_links:
     return []
 
-  scored: list[tuple[int, dict[str, str]]] = []
+  scored: list[tuple[int, dict[str, Any]]] = []
   for chart_item in chart_items:
     score = _score_chart_match(table_data, chart_item)
     if score <= 0:
@@ -1085,7 +1136,7 @@ def _select_charts_for_table(
   return selected[:2]
 
 
-def _render_embedded_chart(chart_item: dict[str, str] | None, title: str, caption: str) -> str:
+def _render_embedded_chart(chart_item: dict[str, Any] | None, title: str, caption: str) -> str:
   if not chart_item:
     return ""
   chart_title = _escape(_safe_text(chart_item.get("title"), title))
@@ -1103,7 +1154,7 @@ def _render_embedded_chart(chart_item: dict[str, str] | None, title: str, captio
   )
 
 
-def _render_embedded_charts(chart_items: list[dict[str, str]] | None, title: str, caption: str) -> str:
+def _render_embedded_charts(chart_items: list[dict[str, Any]] | None, title: str, caption: str) -> str:
   if not chart_items:
     return ""
   return "".join(_render_embedded_chart(item, title, caption) for item in chart_items)
@@ -1113,7 +1164,7 @@ def _render_key_value_table(
   title: str,
   data: dict[str, Any],
   analysis: dict[str, str] | None = None,
-  chart_items: list[dict[str, str]] | None = None,
+  chart_items: list[dict[str, Any]] | None = None,
 ) -> str:
   if not isinstance(data, dict) or not data:
     return ""
@@ -1271,7 +1322,7 @@ def _render_computed_results_section(
   title: str,
   results: dict[str, Any],
   analysis: dict[str, str] | None = None,
-  chart_items: list[dict[str, str]] | None = None,
+  chart_items: list[dict[str, Any]] | None = None,
 ) -> str:
   """Render the Summary of Computed Results as a 3-column table (Metric | Value | Context/When)."""
   if not isinstance(results, dict) or not results:
@@ -1326,7 +1377,7 @@ def _render_computed_results_section(
   )
 
 
-def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict, chart_items: list[dict] = None) -> str:
+def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict, chart_items: list[dict] | None = None) -> str:
   """Render a 6-subsection detour block per route, in the required order:
   1. VPD Calculated  2. Detour Road Directional Capacity Summary
   3. Detour Road Capacity Summary  4. Existing Road Status After Diversion
@@ -1422,7 +1473,7 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   )
 
 
-def _build_short_detour_section(detour_tables: list[dict], route_count: int, analysis_map: dict, chart_items: list[dict] = None) -> str:
+def _build_short_detour_section(detour_tables: list[dict], route_count: int, analysis_map: dict, chart_items: list[dict] | None = None) -> str:
   """Build the complete Section 5 Detour Analysis HTML."""
   if chart_items is None:
     chart_items = []
@@ -1646,7 +1697,7 @@ def _render_engineering_observations(notes: Any) -> str:
 def _render_data_table(
     table_data: Any,
     analysis: dict[str, str] | None = None,
-  chart_items: list[dict[str, str]] | None = None,
+  chart_items: list[dict[str, Any]] | None = None,
 ) -> str:
     if not isinstance(table_data, dict):
         return ""
@@ -1758,18 +1809,26 @@ def _render_data_table(
           "Edit this summary to record key findings and decisions."
       )
 
-    table_classes = "wide-table" if col_count >= 10 else ""
-    chart_html = _render_embedded_charts(chart_items, title, (analysis or {}).get("chart_caption", ""))
+    _title_key_norm = _normalize_title_key(title)
+    # Major classification tables get h3 (section-level), others get h4 (sub-section)
+    _is_major_table = any(kw in _title_key_norm for kw in [
+      "grouped directional", "directional queue", "directional vcr",
+      "hourly queue", "hourly vcr", "analysis parameters"
+    ])
+    heading_tag = "h3" if _is_major_table else "h4"
 
     detail_lead = "Detailed table below sets out the supporting values used for the engineering interpretation."
-    if "queue" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
-    elif "vcr" in _normalize_title_key(title) or "los" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
-    elif "detour" in _normalize_title_key(title) or "pedestrian" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
-    elif "peak hour" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
+    if "queue" in _title_key_norm:
+      detail_lead = "The table below provides queue length results by time period and direction."
+    elif "vcr" in _title_key_norm or "los" in _title_key_norm:
+      detail_lead = "The table below provides volume-to-capacity ratio and Level of Service results by time period."
+    elif "detour" in _title_key_norm or "pedestrian" in _title_key_norm:
+      detail_lead = "The table below provides supporting values for the detour or pedestrian impact assessment."
+    elif "peak hour" in _title_key_norm:
+      detail_lead = "The table below provides peak-hour traffic volumes by period and direction."
+
+    table_classes = "wide-table" if col_count >= 10 else ""
+    chart_html = _render_embedded_charts(chart_items, title, (analysis or {}).get("chart_caption", ""))
 
     return (
         f"<div class=\"report-section report-block avoid-break\">"
@@ -1780,27 +1839,30 @@ def _render_data_table(
         f"<button type=\"button\" class=\"mini-btn\" onclick=\"removeTableLastColumn(this)\">➖ Col</button> "
         f"<button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button>"
         f"</div>"
-        f"<h4 class=\"editable-text\" contenteditable=\"true\">{title}</h4>"
+        f"<{heading_tag} class=\"editable-text\" contenteditable=\"true\">{title}</{heading_tag}>"
         f"<div class=\"editable table-note table-note-top\" contenteditable=\"true\"><p>{_escape(informative_default)}</p></div>"
         f"{chart_html}"
         f"<div class=\"table-detail-lead editable-text\" contenteditable=\"true\">{detail_lead}</div>"
-      f"<table class=\"{table_classes}\">{head_html}{body_html}</table>"
+        f"<table class=\"{table_classes}\">{head_html}{body_html}</table>"
         f"<div class=\"editable table-note table-note-bottom\" contenteditable=\"true\"><p>{_escape(summary_default)}</p></div>"
         f"</div>"
     )
 
 
 def _render_additional_chart_blocks(
-  chart_items: list[dict[str, str]],
+  chart_items: list[dict[str, Any]],
   embedded_chart_keys: set[str],
 ) -> str:
-  # Section 6 shows ALL charts for easy reference, regardless of whether they
-  # are also embedded inline with their associated tables in Section 4.
+  # Only show charts that were NOT already embedded inline with their associated tables.
+  # This prevents the same chart appearing twice (once inline, once in the Charts section).
   if not chart_items:
     return ""
 
   blocks: list[str] = []
   for idx, item in enumerate(chart_items):
+    item_key = _normalize_title_key(item.get("canvas_id") or item.get("title") or "")
+    if item_key and item_key in embedded_chart_keys:
+      continue  # Already shown inline — skip to avoid duplication
     blocks.append(
       "<figure class=\"report-section report-block chart-block avoid-break\">"
       "<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
@@ -1956,33 +2018,96 @@ def editor_page(draft_id: str) -> str:
       "columns": ["Metric", "Value"],
       "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in results.items()],
     }
+    # Prefer the rich DOM "Analysis Parameters Summary" table from payload.tables
+    # (25+ fields) over the simplified payload.inputs (8 fields) so Section 3
+    # faithfully reflects what the HTML displays.
+    _ap_dom_table: dict[str, Any] | None = None
+    _sr_dom_table: dict[str, Any] | None = None
+    for _t in tables:
+      _title_key = _normalize_title_key(_safe_text(_t.get("title"), ""))
+      if "analysis parameters" in _title_key:
+        _ap_dom_table = _t
+      if "summary of computed results" in _title_key:
+        _sr_dom_table = _t
+
     input_charts = _select_charts_for_table(analysis_parameters_table, chart_items_to_render)
     results_charts = _select_charts_for_table(computed_results_table, chart_items_to_render)
     embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in input_charts)
     embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
-    inputs_section_html = _render_key_value_table(
-      'Analysis Parameters',
-      inputs,
-      table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
-      input_charts,
-    )
-    results_section_html = _render_computed_results_section(
-      'Summary of Computed Results',
-      results,
-      table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
-      results_charts,
-    )
+
+    if _ap_dom_table:
+      # Use the full DOM table for Section 3 — shows Site ID, Terrain, Lanes, HV%, etc.
+      inputs_section_html = _render_data_table(
+        _ap_dom_table,
+        table_analysis_map.get(_normalize_title_key(_safe_text(_ap_dom_table.get("title"), ""))),
+        input_charts,
+      )
+    else:
+      inputs_section_html = _render_key_value_table(
+        'Analysis Parameters',
+        inputs,
+        table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
+        input_charts,
+      )
+    if _sr_dom_table:
+      # Use DOM-calculated summary table so Section 4 reflects exact HTML outputs.
+      results_section_html = _render_data_table(
+        _sr_dom_table,
+        table_analysis_map.get(_normalize_title_key(_safe_text(_sr_dom_table.get("title"), ""))),
+        results_charts,
+      )
+    else:
+      results_section_html = _render_computed_results_section(
+        'Summary of Computed Results',
+        results,
+        table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
+        results_charts,
+      )
     selected_site_section_html = _render_selected_site_details_section(selected_site_details)
 
-    # Separate hourly peak-hour tables and detour tables.
-    # Detour tables MUST be isolated here so they don't randomly mix into the main report.
+    # --- Table classification with deduplication ---
+    # Titles that are already covered by dedicated rendered sections and must NOT
+    # appear again in the general table_sections block.
+    _DEDICATED_TABLE_PATTERNS = [
+      "analysis parameters",    # Section 3 inputs_section_html
+      "summary of computed results", # Section 4 results_section_html
+      "input summary",          # DOM-generated "Input Summary Table" per card (redundant)
+      "selected site",          # Section 3 selected_site_section_html
+    ]
+
+    def _is_dedicated_section_table(tbl: Any) -> bool:
+      tkey = _normalize_title_key(_safe_text(tbl.get("title") if isinstance(tbl, dict) else "", ""))
+      return any(pat in tkey for pat in _DEDICATED_TABLE_PATTERNS)
+
     hourly_peak_tables: list[Any] = []
     detour_tables: list[Any] = []
     other_tables: list[Any] = []
+    _seen_table_ids: set[str] = set()
+    _seen_title_keys: set[str] = set()
 
     for table in prioritized_tables:
+      # Skip tables that belong to dedicated rendered sections
+      if _is_dedicated_section_table(table):
+        continue
+
+      table_id = _safe_text(table.get("table_id", ""), "")
+      title_key = _normalize_title_key(_safe_text(table.get("title", ""), ""))
+
+      # Deduplicate by table_id
+      if table_id:
+        if table_id in _seen_table_ids:
+          continue
+        _seen_table_ids.add(table_id)
+      elif title_key:
+        # For tables without an explicit ID, deduplicate by normalised title
+        if title_key in _seen_title_keys:
+          continue
+        _seen_title_keys.add(title_key)
+
       title_lc = _safe_text(table.get("title", "")).lower()
-      if "hourly" in title_lc and "peak hour" in title_lc:
+
+      # Hourly tables — fix: only require "hourly" (not "peak hour") in title
+      if "hourly" in title_lc:
         hourly_peak_tables.append(table)
       elif any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
         detour_tables.append(table)
@@ -2055,6 +2180,7 @@ def editor_page(draft_id: str) -> str:
       --brand: #0f2f32;
       --accent: #1f5e63;
       --accent-light: #e6f2f3;
+      --accent-mid: #c8e6e9;
       --border: #e2e8f0;
       --bg-light: #f8fafc;
       --surface: #ffffff;
@@ -2070,16 +2196,16 @@ def editor_page(draft_id: str) -> str:
     body {{
       font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
       margin: 0;
-      background: #f1f5f9;
+      background: #e8edf2;
       color: var(--ink);
-      line-height: 1.6;
+      line-height: 1.65;
       -webkit-font-smoothing: antialiased;
     }}
 
     /* Print Layout Configuration */
     @page {{
       size: A4;
-      margin: 15mm;
+      margin: 18mm 15mm 18mm 15mm;
     }}
 
     .document-wrapper {{
@@ -2087,10 +2213,19 @@ def editor_page(draft_id: str) -> str:
       margin: 40px auto;
       background: var(--surface);
       box-shadow: var(--shadow-lg);
-      padding: 40px 60px;
+      padding: 48px 64px;
       border-radius: var(--radius-sm);
       position: relative;
       overflow: hidden;
+    }}
+
+    /* Running header stripe */
+    .document-wrapper::before {{
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 60%, #0d9488 100%);
     }}
 
     /* Typography */
@@ -2102,38 +2237,54 @@ def editor_page(draft_id: str) -> str:
     }}
     
     h1 {{ 
-      font-size: 2.8rem; 
+      font-size: 2.6rem; 
       margin-bottom: 0.5rem; 
       letter-spacing: -0.02em;
     }}
     
     h2 {{ 
-      font-size: 1.8rem; 
-      border-bottom: 2px solid var(--accent); 
+      font-size: 1.55rem; 
+      border-bottom: 2.5px solid var(--accent); 
       padding-bottom: 10px; 
-      margin-top: 3rem; 
+      margin-top: 3rem;
+      margin-bottom: 1.5rem;
       page-break-after: avoid; 
       display: flex;
       align-items: center;
       gap: 12px;
     }}
+
+    h2::before {{
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 1.55rem;
+      background: var(--accent);
+      border-radius: 3px;
+      flex-shrink: 0;
+    }}
     
     h3 {{ 
-      font-size: 1.4rem; 
-      margin-top: 2rem; 
+      font-size: 1.25rem; 
+      margin-top: 2rem;
+      margin-bottom: 1rem;
       color: var(--accent);
       font-weight: 600;
+      border-left: 4px solid var(--accent-mid);
+      padding-left: 12px;
     }}
 
     h4 {{
-      font-size: 1.1rem;
+      font-size: 1rem;
       margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
       color: var(--brand);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
+      font-weight: 700;
     }}
 
-    p {{ margin-bottom: 1.2rem; text-align: justify; color: #334155; }}
+    p {{ margin-bottom: 1.2rem; text-align: justify; color: #334155; line-height: 1.7; }}
     
     .meta {{ color: var(--muted); font-size: 0.9rem; }}
 
@@ -2156,27 +2307,28 @@ def editor_page(draft_id: str) -> str:
       width: 400px;
       height: 400px;
       background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
-      opacity: 0.5;
+      opacity: 0.6;
       z-index: 0;
     }}
 
     .cover-logo {{ max-width: 240px; margin-bottom: 3rem; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }}
     
     .cover-subtitle {{ 
-      font-size: 1.6rem; 
+      font-size: 1.4rem; 
       color: var(--muted); 
-      margin-bottom: 4rem; 
+      margin-bottom: 3.5rem; 
       font-weight: 500;
       position: relative; 
       z-index: 1;
+      letter-spacing: 0.02em;
     }}
     
     .cover-details {{
       width: 100%;
-      max-width: 500px;
+      max-width: 480px;
       margin: 0 auto;
       background: var(--bg-light);
-      padding: 30px;
+      padding: 28px 32px;
       border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       position: relative;
@@ -2184,13 +2336,22 @@ def editor_page(draft_id: str) -> str:
       box-shadow: var(--shadow-md);
     }}
 
-    .cover-details table {{ width: 100%; margin: 0; border: none; }}
-    .cover-details th, .cover-details td {{ border: none; padding: 10px; text-align: left; font-size: 1.1rem; }}
-    .cover-details th {{ width: 40%; color: var(--muted); font-weight: 500; background: transparent; border-bottom: none; }}
+    .cover-details table {{ width: 100%; margin: 0; border: none; box-shadow: none; border-radius: 0; }}
+    .cover-details th, .cover-details td {{ border: none; padding: 9px 12px; text-align: left; font-size: 1rem; background: transparent !important; }}
+    .cover-details th {{ width: 40%; color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 0.95rem; }}
     .cover-details td {{ font-weight: 600; color: var(--brand); }}
+    .cover-details tr:hover {{ background: transparent !important; }}
 
     .page-break {{ page-break-before: always; }}
     .avoid-break {{ page-break-inside: avoid; }}
+
+    /* TOC */
+    .toc-container {{ margin-bottom: 2rem; }}
+    .toc-link {{ color: var(--accent); text-decoration: none; }}
+    .toc-link:hover {{ text-decoration: underline; }}
+    .toc-item {{ padding: 4px 0; font-size: 0.93rem; }}
+    .toc-h2 {{ font-weight: 600; color: var(--brand); margin-top: 6px; }}
+    .toc-h3 {{ padding-left: 18px; color: var(--muted); }}
 
     /* Tables */
     table {{ 
@@ -2198,7 +2359,7 @@ def editor_page(draft_id: str) -> str:
       border-collapse: separate; 
       border-spacing: 0;
       margin: 1.5rem 0; 
-      font-size: 0.95rem; 
+      font-size: 0.92rem; 
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       overflow: hidden;
@@ -2206,7 +2367,7 @@ def editor_page(draft_id: str) -> str:
     }}
 
     th, td {{ 
-      padding: 14px 16px; 
+      padding: 11px 14px; 
       text-align: left; 
       vertical-align: middle; 
       border-bottom: 1px solid var(--border);
@@ -2217,70 +2378,80 @@ def editor_page(draft_id: str) -> str:
     tr:last-child td {{ border-bottom: none; }}
 
     th {{ 
-      background-color: var(--bg-light); 
-      font-weight: 600; 
+      background: linear-gradient(180deg, #f1f5f9 0%, #e9eef4 100%);
+      font-weight: 700; 
       color: var(--brand); 
       text-transform: uppercase;
-      font-size: 0.8rem;
-      letter-spacing: 0.05em;
+      font-size: 0.78rem;
+      letter-spacing: 0.07em;
     }}
     
-    .kv-table th {{ width: 35%; background-color: #f1f5f9; }}
+    .kv-table th {{ width: 35%; background: linear-gradient(180deg, #f1f5f9 0%, #e9eef4 100%); }}
+    .results-3col th:last-child {{ color: var(--muted); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 0.82rem; }}
     
-    .wide-table {{ table-layout: fixed; font-size: 0.84rem; }}
-    .wide-table th, .wide-table td {{ padding: 8px 10px; word-break: break-word; }}
+    .wide-table {{ table-layout: fixed; font-size: 0.82rem; }}
+    .wide-table th, .wide-table td {{ padding: 7px 9px; word-break: break-word; }}
 
-    tr:nth-child(even) {{ background-color: #fcfcfc; }}
-    tr:hover {{ background-color: var(--accent-light); }}
+    tr:nth-child(even) {{ background-color: #fafbfc; }}
+    tr:hover {{ background-color: var(--accent-light); transition: background 0.12s; }}
+
+    /* Report section blocks */
+    .report-section {{
+      margin-bottom: 2rem;
+      padding: 0;
+    }}
 
     /* Interactive Elements & Editor Styles */
     .toolbar {{ 
       display: flex; 
       justify-content: flex-end; 
-      gap: 12px; 
-      margin-bottom: 20px; 
+      gap: 10px; 
+      margin-bottom: 24px; 
       flex-wrap: wrap; 
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(8px);
-      padding: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 12px 16px;
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-md);
       position: sticky;
       top: 10px;
       z-index: 100;
+      border: 1px solid var(--border);
     }}
 
     .btn {{ 
       background: var(--brand); 
       color: white; 
       border: none; 
-      padding: 10px 24px; 
-      font-size: 0.95rem; 
+      padding: 9px 20px; 
+      font-size: 0.88rem; 
       border-radius: var(--radius-sm); 
       cursor: pointer; 
       font-weight: 600;
-      transition: all 0.2s ease;
+      transition: all 0.18s ease;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
+      letter-spacing: 0.01em;
     }}
 
     .btn:hover {{ background: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-md); }}
     .btn.secondary {{ background: #0d9488; }}
     .btn.ghost {{ background: #64748b; }}
     
-    .section-controls {{ display: flex; justify-content: flex-end; margin: 8px 0; gap: 6px; }}
+    .section-controls {{ display: flex; justify-content: flex-end; margin: 6px 0; gap: 5px; }}
     
     .mini-btn {{ 
       background: #f1f5f9; 
       color: #475569; 
       border: 1px solid var(--border); 
       border-radius: var(--radius-sm); 
-      padding: 6px 12px; 
-      font-size: 0.75rem; 
+      padding: 5px 11px; 
+      font-size: 0.72rem; 
       font-weight: 600; 
       cursor: pointer; 
-      transition: all 0.15s ease;
+      transition: all 0.12s ease;
+      letter-spacing: 0.01em;
     }}
     
     .mini-btn:hover {{ background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }}
@@ -2288,64 +2459,76 @@ def editor_page(draft_id: str) -> str:
     .mini-btn.remove:hover {{ background: #fecaca; color: #7f1d1d; }}
 
     .editable {{ 
-      padding: 16px; 
-      border: 2px dashed #e2e8f0; 
-      background: #fbfbfc; 
+      padding: 14px 18px; 
+      border: 1.5px dashed #cbd5e1; 
+      background: #fafbfc; 
       border-radius: var(--radius-md);
-      min-height: 60px; 
-      transition: all 0.2s ease; 
-      margin: 12px 0;
+      min-height: 56px; 
+      transition: all 0.18s ease; 
+      margin: 10px 0;
     }}
     
     .editable:focus {{ 
       border-color: var(--accent); 
       outline: none; 
       background: #ffffff; 
-      box-shadow: 0 0 0 4px var(--accent-light);
+      box-shadow: 0 0 0 3px var(--accent-light);
     }}
     
     .editable-text, [contenteditable="true"] {{ cursor: text; }}
     
-    .table-note {{ font-style: italic; color: var(--muted); margin: 12px 0; font-size: 0.92rem; }}
+    .table-note {{ 
+      font-style: italic; 
+      color: #475569; 
+      margin: 10px 0; 
+      font-size: 0.91rem; 
+      line-height: 1.6;
+    }}
+    .table-note-top {{ border-left: 3px solid var(--accent-mid); padding-left: 12px; background: transparent; border: none; }}
+    .table-note-bottom {{ color: var(--muted); font-size: 0.88rem; }}
+
     .table-detail-lead {{ 
-      margin: 20px 0 12px; 
-      padding: 12px 20px; 
-      border-left: 5px solid var(--accent); 
+      margin: 16px 0 10px; 
+      padding: 10px 18px; 
+      border-left: 4px solid var(--accent); 
       background: var(--accent-light); 
       color: var(--brand); 
-      font-weight: 500;
+      font-weight: 600;
+      font-size: 0.91rem;
       border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     }}
-    .commentary-block {{ min-height: 140px; }}
-    .conclusion-list {{ margin-top: 8px; }}
+    .commentary-block {{ min-height: 120px; }}
+    .conclusion-list {{ margin-top: 10px; }}
+    .conclusion-list li {{ margin-bottom: 6px; color: #334155; }}
 
     /* Charts */
     .chart-block {{ width: 100%; max-width: 100%; margin: 0 0 16px; }}
     .chart-title {{ margin-bottom: 8px; }}
     .embedded-chart {{ 
       margin: 2rem 0; 
-      padding: 24px; 
+      padding: 24px 28px; 
       border: 1px solid var(--border); 
       border-radius: var(--radius-lg); 
-      background: #ffffff; 
+      background: #fdfdfd; 
       box-shadow: var(--shadow-md); 
     }}
     
     .chart-img {{ 
       width: 100%; 
-      max-height: 500px;
+      max-height: 480px;
       border-radius: var(--radius-md);
       display: block; 
-      margin: 20px auto; 
+      margin: 16px auto; 
       object-fit: contain; 
     }}
     
     .chart-caption {{ 
       text-align: center; 
       color: var(--muted); 
-      font-size: 0.9rem; 
-      margin-top: 12px;
-      padding: 0 40px;
+      font-size: 0.88rem; 
+      margin-top: 10px;
+      padding: 0 32px;
+      font-style: italic;
     }}
 
     /* Table of Contents Styles */
