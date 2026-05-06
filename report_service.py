@@ -229,32 +229,6 @@ def _format_au_date(value: Any, fallback: str | None = None) -> str:
   return text
 
 
-def _table_rows_to_mapping(table: dict[str, Any]) -> dict[str, Any]:
-  if not isinstance(table, dict):
-    return {}
-  rows = table.get("rows", []) if isinstance(table.get("rows"), list) else []
-  mapping: dict[str, Any] = {}
-  for row in rows:
-    if not isinstance(row, list) or len(row) < 2:
-      continue
-    key = _normalize_title_key(row[0])
-    if not key:
-      continue
-    mapping[key] = row[1]
-  return mapping
-
-
-def _find_payload_table(payload: dict[str, Any], title_keywords: tuple[str, ...]) -> dict[str, Any] | None:
-  tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
-  for table in tables:
-    if not isinstance(table, dict):
-      continue
-    title_key = _normalize_title_key(_safe_text(table.get("title"), ""))
-    if all(keyword in title_key for keyword in title_keywords):
-      return table
-  return None
-
-
 def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   project = payload.get("project", {}) if isinstance(payload.get("project"), dict) else {}
   inputs = payload.get("inputs", {}) if isinstance(payload.get("inputs"), dict) else {}
@@ -263,15 +237,6 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   notes = payload.get("notes", []) if isinstance(payload.get("notes"), list) else []
   site_details = payload.get("selected_site_details", {}) if isinstance(payload.get("selected_site_details"), dict) else {}
   peak_diagnostics = payload.get("peak_diagnostics", {}) if isinstance(payload.get("peak_diagnostics"), dict) else {}
-  summary_results_table = _find_payload_table(payload, ("summary", "computed", "results"))
-  summary_results_map = _table_rows_to_mapping(summary_results_table or {})
-
-  def _from_summary(*keys: str) -> Any:
-    for key in keys:
-      normalized = _normalize_title_key(key)
-      if normalized in summary_results_map:
-        return summary_results_map.get(normalized)
-    return None
 
   d1_vadt = _to_float(
     inputs.get("d1_vadt_opening_year") or inputs.get("d1_vadt") or raw.get("d1_vadt")
@@ -285,16 +250,8 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   base_year_aadt = _to_float(inputs.get("base_year_aadt") or inputs.get("aadt") or raw.get("vadt"))
   opening_year = _safe_text(inputs.get("opening_year") or raw.get("opening_year"), "")
   growth_rate = _to_float(inputs.get("growth_rate_percent") or raw.get("growth_rate_percent"))
-  worst_vcr = _to_float(
-    _from_summary("worst_vcr", "worst v c ratio", "worst hourly vcr")
-    or results.get("worst_vcr")
-    or raw.get("worst_vcr")
-  )
-  queue_peak = _to_float(
-    _from_summary("queue_peak_m", "peak_queue_m", "peak queue")
-    or results.get("queue_peak_m")
-    or raw.get("queue_peak_m")
-  )
+  worst_vcr = _to_float(results.get("worst_vcr") or raw.get("worst_vcr"))
+  queue_peak = _to_float(results.get("queue_peak_m") or raw.get("queue_peak_m"))
   d1_queue_peak = _to_float(raw.get("d1_queue_peak_m"))
   d2_queue_peak = _to_float(raw.get("d2_queue_peak_m"))
 
@@ -322,8 +279,8 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
     "queue_peak": queue_peak,
     "d1_queue_peak": d1_queue_peak,
     "d2_queue_peak": d2_queue_peak,
-    "los": _safe_text(_from_summary("los", "level of service") or results.get("los"), "-"),
-    "detour_recommended": _to_bool(_from_summary("detour_recommended", "detour recommended") or results.get("detour_recommended")),
+    "los": _safe_text(results.get("los"), "-"),
+    "detour_recommended": _to_bool(results.get("detour_recommended")),
     "notes": [str(note).strip() for note in notes if str(note).strip()],
     "selected_site_details": {
       _safe_text(key, ""): _safe_text(value, "")
@@ -552,7 +509,7 @@ def _build_fallback_table_analysis(table_data: dict[str, Any], payload: dict[str
     }
 
   if "hourly queue" in title_key:
-    wait_minutes = "2"
+    wait_minutes = _format_number(peak.get("queue_wait_minutes"), 0, "2")
     peak_time = _safe_text(peak.get("queue_peak_time"), "the controlling hour")
     peak_direction = _safe_text(peak.get("queue_peak_direction"), "the controlling direction")
     peak_value = _format_number(peak.get("queue_peak_value_m"), 0, "-")
@@ -1853,16 +1810,15 @@ def _render_additional_chart_blocks(
   chart_items: list[dict[str, Any]],
   embedded_chart_keys: set[str],
 ) -> str:
-  # Only show charts that were NOT already embedded inline with their associated tables.
-  # This prevents the same chart appearing twice (once inline, once in the Charts section).
+  # Section 7 (Charts) shows ALL charts as a consolidated reference gallery.
+  # Even if a chart was already embedded inline with its associated table in
+  # Section 4, including it here gives the reader a single place to flip to
+  # all visualisations and prevents the section from being empty.
   if not chart_items:
     return ""
 
   blocks: list[str] = []
   for idx, item in enumerate(chart_items):
-    item_key = _normalize_title_key(item.get("canvas_id") or item.get("title") or "")
-    if item_key and item_key in embedded_chart_keys:
-      continue  # Already shown inline — skip to avoid duplication
     blocks.append(
       "<figure class=\"report-section report-block chart-block avoid-break\">"
       "<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
@@ -2006,11 +1962,90 @@ def editor_page(draft_id: str) -> str:
         return 2
 
     prioritized_tables = sorted(tables, key=_table_priority)
+
+    # --- Build a RICH Analysis Parameters table that matches HTML data ---
+    # The Python report service is invoked WITHOUT the browser entering report mode,
+    # so the DOM-generated "Analysis Parameters Summary" table (25+ fields) is NOT
+    # present in payload.tables. We must therefore build a comprehensive table here
+    # from inputs + inputs_snapshot. To avoid duplication with the Selected Site
+    # Details section, this table focuses on ANALYSIS settings (year, growth,
+    # lanes, HV%, closure mode) — site identity goes in Selected Site Details.
+    inputs_snapshot = payload.get("inputs_snapshot", []) if isinstance(payload.get("inputs_snapshot"), list) else []
+    snapshot_map: dict[str, str] = {}
+    for _item in inputs_snapshot:
+      if not isinstance(_item, dict):
+        continue
+      _label = _safe_text(_item.get("label"), "")
+      _value = _safe_text(_item.get("value"), "")
+      if _label and _value:
+        snapshot_map[_label] = _value
+
+    def _ap_row(label: str, value: Any) -> list[str] | None:
+      v = _safe_text(value, "")
+      if not v or v == "-":
+        return None
+      return [label, v]
+
+    ap_rows: list[list[str]] = []
+
+    # Year & growth context
+    for _row in [
+      _ap_row("Base Year", inputs.get("base_year")),
+      _ap_row("Target / Opening Year", inputs.get("opening_year")),
+      _ap_row("Growth Rate (% p.a.)", inputs.get("growth_rate_percent")),
+      _ap_row("Road Operation Mode", inputs.get("road_operation_mode")),
+    ]:
+      if _row:
+        ap_rows.append(_row)
+
+    # Base year VADT (for analysis context)
+    for _row in [
+      _ap_row("Base Year AADT (Total)", inputs.get("base_year_aadt") or selected_site_details.get("total_vadt")),
+      _ap_row("Base Year D1 VADT", selected_site_details.get("d1_vadt")),
+      _ap_row("Base Year D2 VADT", selected_site_details.get("d2_vadt")),
+    ]:
+      if _row:
+        ap_rows.append(_row)
+
+    # Opening year predictions
+    for _row in [
+      _ap_row("Predicted Total VADT @ Opening Year", inputs.get("opening_year_aadt")),
+      _ap_row("Predicted D1 VADT @ Opening Year", inputs.get("d1_vadt_opening_year")),
+      _ap_row("Predicted D2 VADT @ Opening Year", inputs.get("d2_vadt_opening_year")),
+    ]:
+      if _row:
+        ap_rows.append(_row)
+
+    # Vehicle mix — applied values
+    for _row in [
+      _ap_row("Applied D1 HV%", selected_site_details.get("applied_d1_hv_percent")),
+      _ap_row("Applied D2 HV%", selected_site_details.get("applied_d2_hv_percent")),
+      _ap_row("Applied D1 RT%", selected_site_details.get("applied_d1_rt_percent")),
+      _ap_row("Applied D2 RT%", selected_site_details.get("applied_d2_rt_percent")),
+    ]:
+      if _row:
+        ap_rows.append(_row)
+
+    # Lane / closure / work plan (from inputs_snapshot — these come from form fields)
+    for _label_key, _display_label in [
+      ("Lane closure mode", "Lane Closure Mode"),
+      ("Road lanes", "Road Lanes (D1 / D2)"),
+      ("Work duration (days)", "Work Duration (days)"),
+      ("Work hours / day", "Work Hours / Day"),
+      ("AM peak hour factor (%)", "AM Peak Hour Factor (%)"),
+      ("PM peak hour factor (%)", "PM Peak Hour Factor (%)"),
+    ]:
+      v = snapshot_map.get(_label_key)
+      if v:
+        ap_rows.append([_display_label, v])
+
     analysis_parameters_table = {
       "table_id": "analysis_parameters",
       "title": "Analysis Parameters",
       "columns": ["Parameter", "Value"],
-      "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in inputs.items()],
+      "rows": ap_rows if ap_rows else [
+        [str(key).replace("_", " ").title(), _safe_text(value)] for key, value in inputs.items()
+      ],
     }
     computed_results_table = {
       "table_id": "summary_computed_results",
@@ -2018,51 +2053,24 @@ def editor_page(draft_id: str) -> str:
       "columns": ["Metric", "Value"],
       "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in results.items()],
     }
-    # Prefer the rich DOM "Analysis Parameters Summary" table from payload.tables
-    # (25+ fields) over the simplified payload.inputs (8 fields) so Section 3
-    # faithfully reflects what the HTML displays.
-    _ap_dom_table: dict[str, Any] | None = None
-    _sr_dom_table: dict[str, Any] | None = None
-    for _t in tables:
-      _title_key = _normalize_title_key(_safe_text(_t.get("title"), ""))
-      if "analysis parameters" in _title_key:
-        _ap_dom_table = _t
-      if "summary of computed results" in _title_key:
-        _sr_dom_table = _t
 
     input_charts = _select_charts_for_table(analysis_parameters_table, chart_items_to_render)
     results_charts = _select_charts_for_table(computed_results_table, chart_items_to_render)
     embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in input_charts)
     embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
 
-    if _ap_dom_table:
-      # Use the full DOM table for Section 3 — shows Site ID, Terrain, Lanes, HV%, etc.
-      inputs_section_html = _render_data_table(
-        _ap_dom_table,
-        table_analysis_map.get(_normalize_title_key(_safe_text(_ap_dom_table.get("title"), ""))),
-        input_charts,
-      )
-    else:
-      inputs_section_html = _render_key_value_table(
-        'Analysis Parameters',
-        inputs,
-        table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
-        input_charts,
-      )
-    if _sr_dom_table:
-      # Use DOM-calculated summary table so Section 4 reflects exact HTML outputs.
-      results_section_html = _render_data_table(
-        _sr_dom_table,
-        table_analysis_map.get(_normalize_title_key(_safe_text(_sr_dom_table.get("title"), ""))),
-        results_charts,
-      )
-    else:
-      results_section_html = _render_computed_results_section(
-        'Summary of Computed Results',
-        results,
-        table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
-        results_charts,
-      )
+    # Render the rich Analysis Parameters as a key-value table (Parameter | Value)
+    inputs_section_html = _render_data_table(
+      analysis_parameters_table,
+      table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
+      input_charts,
+    )
+    results_section_html = _render_computed_results_section(
+      'Summary of Computed Results',
+      results,
+      table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
+      results_charts,
+    )
     selected_site_section_html = _render_selected_site_details_section(selected_site_details)
 
     # --- Table classification with deduplication ---
@@ -2070,7 +2078,6 @@ def editor_page(draft_id: str) -> str:
     # appear again in the general table_sections block.
     _DEDICATED_TABLE_PATTERNS = [
       "analysis parameters",    # Section 3 inputs_section_html
-      "summary of computed results", # Section 4 results_section_html
       "input summary",          # DOM-generated "Input Summary Table" per card (redundant)
       "selected site",          # Section 3 selected_site_section_html
     ]
@@ -2079,11 +2086,48 @@ def editor_page(draft_id: str) -> str:
       tkey = _normalize_title_key(_safe_text(tbl.get("title") if isinstance(tbl, dict) else "", ""))
       return any(pat in tkey for pat in _DEDICATED_TABLE_PATTERNS)
 
+    def _table_data_signature(tbl: Any) -> str:
+      """Compute a stable hash signature from a table's row data so we can detect
+      duplicate tables that come from different DOM locations (e.g. the Notes &
+      Application Guidance card which re-displays the VCR/queue tables)."""
+      if not isinstance(tbl, dict):
+        return ""
+      rows = tbl.get("rows", []) if isinstance(tbl.get("rows"), list) else []
+      if not rows:
+        return ""
+      sig_rows: list[str] = []
+      for row in rows[:12]:  # First 12 rows are enough for content fingerprint
+        if not isinstance(row, list):
+          continue
+        # Strip whitespace, lower-case, remove emojis/punctuation for stable matching
+        sig_row = [_normalize_title_key(_safe_text(c, "")) for c in row]
+        sig_rows.append("|".join(sig_row))
+      return "::".join(sig_rows)
+
+    def _is_anonymous_title(tbl: Any) -> bool:
+      """Returns True for tables whose only title is the fallback 'Table N' pattern,
+      i.e. tables collected from the DOM without any meaningful heading. These are
+      almost always duplicate copies of named tables in summary panels."""
+      title = _safe_text(tbl.get("title") if isinstance(tbl, dict) else "", "")
+      return bool(re.match(r"^table\s+\d+$", title.strip(), re.IGNORECASE))
+
     hourly_peak_tables: list[Any] = []
     detour_tables: list[Any] = []
     other_tables: list[Any] = []
     _seen_table_ids: set[str] = set()
     _seen_title_keys: set[str] = set()
+    _seen_data_sigs: set[str] = set()
+
+    # First pass — register data signatures for tables WITH proper titles so that
+    # duplicate anonymous "Table N" entries can be detected against them.
+    for table in prioritized_tables:
+      if _is_dedicated_section_table(table):
+        continue
+      if _is_anonymous_title(table):
+        continue
+      sig = _table_data_signature(table)
+      if sig:
+        _seen_data_sigs.add(sig)
 
     for table in prioritized_tables:
       # Skip tables that belong to dedicated rendered sections
@@ -2103,6 +2147,14 @@ def editor_page(draft_id: str) -> str:
         if title_key in _seen_title_keys:
           continue
         _seen_title_keys.add(title_key)
+
+      # Content-based dedup — catches anonymous "Table N" duplicates from the
+      # Notes & Application Guidance summary card that re-display existing tables.
+      data_sig = _table_data_signature(table)
+      if data_sig:
+        if data_sig in _seen_data_sigs and _is_anonymous_title(table):
+          continue  # This anonymous table is a duplicate of a named one
+        _seen_data_sigs.add(data_sig)
 
       title_lc = _safe_text(table.get("title", "")).lower()
 
