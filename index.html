@@ -505,26 +505,73 @@
     .navbar {
       display: flex;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 14px;
+      gap: 5px;
+      padding: 0 14px;
+      height: 58px;
+      background: linear-gradient(135deg, #0c2b2e 0%, #163d42 55%, #0f3438 100%);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(9, 30, 32, 0.45), 0 1px 0 rgba(255,255,255,0.06) inset;
+      position: relative;
+      overflow: visible;
+    }
+
+    .navbar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
       gap: 10px;
-      padding: 0 18px;
-      height: 50px;
-      background: #ffffff;
-      border: 1px solid #e1ded8;
-      border-radius: 12px;
-      box-shadow: none;
+      flex-shrink: 0;
+      padding-right: 14px;
+      border-right: 1px solid rgba(255,255,255,0.14);
+      margin-right: 6px;
+    }
+
+    .navbar-brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, #2a8a92 0%, #0f5a5e 100%);
+      border-radius: 8px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+    }
+
+    .navbar-acct-sep {
+      display: inline-block;
+      width: 1px;
+      height: 28px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 1px;
+      flex-shrink: 0;
+      margin: 0 4px;
     }
 
     .navbar-user-greeting {
-      flex: 0 1 220px;
+      flex: 0 1 auto;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 0.95rem;
+      font-size: 0.87rem;
       font-weight: 600;
-      color: var(--brand);
-      padding-right: 10px;
+      color: #a8d4d8;
+      letter-spacing: 0.01em;
     }
 
     .navbar-actions {
@@ -540,14 +587,14 @@
     .navbar-account-name {
       display: inline-block;
       min-width: 0;
-      max-width: min(220px, 24vw);
+      max-width: min(200px, 22vw);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 600;
-      color: var(--primary);
-      padding: 0 6px;
+      color: #8ec8cc;
+      padding: 0 4px;
     }
 
     .nav-label-short {
@@ -576,44 +623,51 @@
     }
 
     .home-button {
-      background: transparent;
-      color: var(--brand);
-      padding: 8px 14px;
-      border: none;
+      background: rgba(255,255,255,0.09);
+      color: #daeef0;
+      padding: 7px 13px;
+      border: 1px solid rgba(255,255,255,0.16);
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 14px;
-      transition: background 0.15s ease;
+      font-size: 13px;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       width: auto;
       text-decoration: none;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
     }
 
     .home-button:hover {
-      background: rgba(31, 94, 99, 0.08);
+      background: rgba(255,255,255,0.17);
+      border-color: rgba(255,255,255,0.32);
+      color: #ffffff;
     }
-    .home-button::before { content: '🏠'; font-size: 1.1em; }
+    .home-button::before { content: '🏠'; font-size: 1em; }
 
     .logout-button {
       width: auto;
       margin-top: 0;
-      background: transparent;
-      color: #64748b;
-      border: 1px solid #cbd5e1;
-      padding: 8px 16px;
+      background: rgba(220, 38, 38, 0.13);
+      color: #fca5a5;
+      border: 1px solid rgba(220, 38, 38, 0.35);
+      padding: 7px 14px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 14px;
-      transition: border-color 0.15s ease, color 0.15s ease;
+      font-size: 13px;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
     }
 
     .logout-button:hover {
-      border-color: #dc3545;
-      color: #dc3545;
+      background: rgba(220, 38, 38, 0.27);
+      border-color: #f87171;
+      color: #ffffff;
     }
 
     .contact-dev-wrap {
@@ -625,20 +679,27 @@
     .contact-dev-button {
       width: auto;
       margin-top: 0;
-      background: transparent;
-      color: #64748b;
-      border: 1px solid #cbd5e1;
-      padding: 8px 14px;
+      background: rgba(255,255,255,0.07);
+      color: #cce9eb;
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 7px 12px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
       font-size: 13px;
-      transition: border-color 0.15s ease, color 0.15s ease;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
     }
 
     .contact-dev-button:hover {
-      border-color: var(--brand);
-      color: var(--brand);
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.30);
+      color: #ffffff;
     }
 
     .contact-dev-panel {
@@ -849,27 +910,31 @@
 
     .subtitle {
       text-align: center;
-      margin: 12px auto 24px;
-      color: #4a5568;
-      font-size: 1.05rem;
-      max-width: 880px;
-      padding: 12px 24px;
-      background: linear-gradient(135deg, rgba(31, 94, 99, 0.04) 0%, rgba(15, 47, 50, 0.02) 100%);
+      margin: 10px auto 28px;
+      color: #3a5a5e;
+      font-size: 0.93rem;
+      font-weight: 500;
+      max-width: 720px;
+      padding: 9px 26px;
+      background: rgba(31, 94, 99, 0.06);
       border-radius: 30px;
-      border: 1px solid rgba(31, 94, 99, 0.1);
-      display: inline-block;
+      border: 1px solid rgba(31, 94, 99, 0.16);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       width: auto;
       position: relative;
       left: 50%;
       transform: translateX(-50%);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+      box-shadow: 0 2px 12px rgba(15, 47, 50, 0.08);
       animation: fadeInUp 0.7s ease-out 0.2s backwards;
+      letter-spacing: 0.02em;
     }
     
     .subtitle::before {
       content: '📊';
-      margin-right: 8px;
-      font-size: 1.1em;
+      font-size: 1em;
+      flex-shrink: 0;
     }
 
       .copyright-footer {
@@ -1077,30 +1142,82 @@
     .queue-calculator-card .los-f { background-color: #c62828; color: #ffffff; } /* > 1.00 */
 
     .ux-intro {
-      margin-top: 14px;
+      margin-top: 16px;
       border: 1px solid #cfdde3;
-      border-left: 5px solid var(--brand);
-      border-radius: 12px;
-      background: linear-gradient(180deg, #f6fbfc 0%, #eef6f8 100%);
-      padding: 12px 14px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f4f9fa 0%, #edf5f7 100%);
+      padding: 18px 20px;
     }
 
     .ux-intro-title {
-      margin: 0 0 6px;
+      margin: 0 0 14px;
       color: var(--brand-2);
-      font-size: 0.98rem;
+      font-size: 0.74rem;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ux-intro-title::before {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 3px;
+      background: var(--brand);
+      border-radius: 2px;
+      flex-shrink: 0;
     }
 
     .ux-intro-list {
       margin: 0;
-      padding-left: 18px;
-      color: #3f4d57;
-      font-size: 0.86rem;
-      line-height: 1.45;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      counter-reset: step;
     }
 
-    .ux-intro-list li { margin: 2px 0; }
+    .ux-intro-list li {
+      margin: 0;
+      padding: 10px 12px 10px 38px;
+      background: #ffffff;
+      border: 1px solid #dce8ec;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(15, 47, 50, 0.05);
+      position: relative;
+      counter-increment: step;
+      color: #3a4d55;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .ux-intro-list li::before {
+      content: counter(step);
+      position: absolute;
+      top: 11px;
+      left: 12px;
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #1f5e63, #0f2f32);
+      color: #ffffff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 20px;
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    @media (max-width: 860px) {
+      .ux-intro-list { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+      .ux-intro-list { grid-template-columns: 1fr; }
+    }
 
     .grid { display:grid; grid-template-columns:repeat(4, minmax(180px,1fr)); gap:12px; }
     .grid-2 { display:grid; grid-template-columns:repeat(2, minmax(180px,1fr)); gap:12px; }
@@ -4261,7 +4378,10 @@
     </div>
     
     <div class="navbar">
-      <span id="userGreeting" class="navbar-user-greeting">Hi</span>
+      <div class="navbar-brand">
+        <span class="navbar-brand-mark" aria-hidden="true">CC</span>
+        <span id="userGreeting" class="navbar-user-greeting">Hi</span>
+      </div>
       <a class="home-button" href="#" onclick="window.location.reload(); return false;">Home</a>
       
       <div class="navbar-actions">
@@ -4283,6 +4403,7 @@
             <a class="contact-dev-link" href="tel:+610405535187">📞 +610405535187</a>
           </div>
         </div>
+        <span class="navbar-acct-sep" aria-hidden="true"></span>
         <span id="tierBadgeDisplay" class="tier-badge tier-badge-free" style="display:none;" title="Your current plan"></span>
         <span id="welcomeUserText" class="navbar-account-name" style="display:none;"></span>
         <button id="logoutBtn" type="button" class="logout-button">Logout</button>
