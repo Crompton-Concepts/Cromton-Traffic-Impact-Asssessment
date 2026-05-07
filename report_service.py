@@ -1534,25 +1534,29 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   )
 
   if is_short:
-    # Short report: 1. Detour Route Information / 2. Estimated Delay - Detour route / 3. Estimated Delay - Detour route - Pedestrians
+    # Short report — headings match the Word template exactly:
+    # 1. Detour Route Information / 2. Estimated Detour Delay Inputs and Delay Calculation /
+    # 3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Delay &#8211; Detour route</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Inputs and Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
   else:
-    # Detailed report: 1. Detour Route Information / 2. Detour VPD Calculated / 3. Detour Road Capacity Summary /
-    # 4. Estimated Delay - Detour route / 5. Detour road summary table /
-    # 6. Road Status After Diversion (Existing Road) / 7. Estimated Delay - Detour route - Pedestrians
+    # Detailed report — headings match the Word template exactly:
+    # 1. Detour Route Information / 2. Detour VPD Calculated Table /
+    # 3. Detour Road Capacity Summary / 4. Estimated Detour Delay Inputs and Delay Calculation /
+    # 5. Detour Road Directional Capacity Summary / 6. Road Status After Diversion (Existing Road) /
+    # 7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour VPD Calculated</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour VPD Calculated Table</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Delay &#8211; Detour route</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour road summary table</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs and Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Directional Capacity Summary</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion (Existing Road)</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
 
@@ -2040,15 +2044,13 @@ def editor_page(draft_id: str) -> str:
     notes = payload.get("notes", [])
     executive_content = _build_executive_content(payload)
     executive_summary_html = _render_paragraph_block(executive_content.get("executive_paragraphs", []))
-    
+
     variant_raw = _safe_text(payload.get("report_variant"), "").lower()
     title_hint = _safe_text(draft.get("title", "")).lower()
     is_short = variant_raw == "short" or "short report" in title_hint
 
-    # Short report: Remove executive explanation notes
-    executive_notes_html = ""
-    if not is_short:
-      executive_notes_html = _render_notes(executive_content.get("explanation_notes", []))
+    # Detailed report includes explanation notes; short report omits them.
+    executive_notes_html = "" if is_short else _render_notes(executive_content.get("explanation_notes", []))
 
     commentary_html = _render_commentary_block(
       executive_content.get("professional_commentary_paragraphs", []),
@@ -2086,7 +2088,7 @@ def editor_page(draft_id: str) -> str:
     hydrate_js_call = '' if is_short else 'hydrateChartsFromPayload();'
     embedded_chart_keys: set[str] = set()
 
-    # --- Section 2: Design & Traffic Inputs ---
+    # --- Section 1: Design & Traffic Inputs ---
     analysis_parameters_table = {
       "table_id": "analysis_parameters",
       "title": "Analysis Parameters",
@@ -2140,14 +2142,16 @@ def editor_page(draft_id: str) -> str:
             _hp_blocks.append(_render_data_table(_t, table_analysis_map.get(_t_key), _hp_charts))
         hourly_peak_section_html = (
             "<div class=\"report-section avoid-break\">"
-            "<h3 contenteditable=\"true\">Hourly Traffic Volume and Profile</h3>"
+            "<h3 contenteditable=\"true\">Hourly Traffic Volume (D1 and D2)</h3>"
             + "".join(_hp_blocks)
             + "</div>"
         )
     else:
         hourly_peak_section_html = ""
 
-    # --- Section 3: Traffic Analysis & Results ---
+    # --- Section 2: Traffic Analysis & Results ---
+    # Patterns are matched in order; "swt" is excluded from the base queue/vcr summary patterns
+    # to prevent SWT tables appearing under the wrong heading.
     TA_ORDER = [
       "summary of computed results",
       "hourly queue",
@@ -2155,7 +2159,7 @@ def editor_page(draft_id: str) -> str:
       "grouped directional summary",
       "directional queue summary",
       "directional queue summary swt",
-      "directional vcr summary d1"
+      "directional vcr summary",
     ]
     if is_short:
         TA_ORDER = [
@@ -2163,7 +2167,7 @@ def editor_page(draft_id: str) -> str:
           "grouped directional summary",
           "directional queue summary",
           "directional queue summary swt",
-          "directional vcr summary d1"
+          "directional vcr summary",
         ]
 
     ta_blocks: list[str] = []
@@ -2196,22 +2200,33 @@ def editor_page(draft_id: str) -> str:
         ))
         _seen_ta_patterns.add("summary of computed results")
 
-    # Remaining TA tables
+    # Remaining TA tables — render ALL tables (D1 + D2) matching each pattern.
+    # Deduplication via _seen_ta_table_ids ensures each table appears exactly once.
+    # "directional queue summary" excludes SWT tables (handled by its own pattern below it).
+    _seen_ta_table_ids: set[str] = set()
     for pattern in TA_ORDER:
       if pattern in _seen_ta_patterns: continue
       for table in tables:
         t_title = _safe_text(table.get("title"), "")
         t_key = _normalize_title_key(t_title)
-        if pattern in t_key:
-          matched_charts = _select_charts_for_table(table, chart_items_to_render)
-          embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
-          ta_blocks.append(_render_data_table(
-            table,
-            table_analysis_map.get(t_key),
-            matched_charts,
-          ))
-          _seen_ta_patterns.add(pattern)
-          break
+        if pattern not in t_key:
+          continue
+        # Exclude SWT tables from the base "directional queue summary" pattern so they
+        # are rendered under the dedicated "directional queue summary swt" pattern.
+        if pattern == "directional queue summary" and "swt" in t_key:
+          continue
+        t_id = _safe_text(table.get("table_id", ""), "") or t_key
+        if t_id in _seen_ta_table_ids:
+          continue
+        _seen_ta_table_ids.add(t_id)
+        matched_charts = _select_charts_for_table(table, chart_items_to_render)
+        embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
+        ta_blocks.append(_render_data_table(
+          table,
+          table_analysis_map.get(t_key),
+          matched_charts,
+        ))
+      _seen_ta_patterns.add(pattern)
 
     traffic_analysis_results_html = "".join(ta_blocks)
 
@@ -2718,6 +2733,11 @@ def editor_page(draft_id: str) -> str:
       <div id=\"toc-content\"></div>
     </div>
 
+    <div class=\"toc-container avoid-break\">
+      <h2 class=\"toc-title\">List of Tables</h2>
+      <div id=\"lot-content\"></div>
+    </div>
+
     <h2 contenteditable=\"true\">1. Executive Summary</h2>
     <div class=\"editable\" contenteditable=\"true\">
       {executive_summary_html}
@@ -2842,6 +2862,34 @@ def editor_page(draft_id: str) -> str:
         el.setAttribute('contenteditable', 'true');
         el.classList.add('editable-text');
       }});
+    }}
+
+    function refreshListOfTables() {{
+      const lotContent = document.getElementById("lot-content");
+      if (!lotContent) return;
+
+      // Collect all table-section headings (h3 inside .report-section, h4 inside .detour-sub-block)
+      const tableHeadings = Array.from(document.querySelectorAll(
+        "main .report-section h3, main .report-section h4, main .detour-sub-block h4"
+      )).filter((h) => h && h.isConnected && String(h.innerText || '').trim().length > 0);
+
+      if (tableHeadings.length === 0) {{
+        lotContent.innerHTML = '<div class="toc-item toc-h3">No tables listed.</div>';
+        return;
+      }}
+
+      let lotHTML = "";
+      tableHeadings.forEach((heading, index) => {{
+        if (!heading.id) {{
+          const safeText = heading.innerText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          heading.id = "tbl-" + index + "-" + safeText.substring(0, 40);
+        }}
+        lotHTML += '<div class="toc-item toc-h3">' +
+                     '<a href="#' + heading.id + '" class="toc-link">Table ' + (index + 1) + ': ' + heading.innerText + '</a>' +
+                   '</div>';
+      }});
+
+      lotContent.innerHTML = lotHTML;
     }}
 
     function refreshToc() {{
@@ -3229,6 +3277,7 @@ def editor_page(draft_id: str) -> str:
         }}
       }}
       refreshToc();
+      refreshListOfTables();
       bindTocAutoRefresh();
     }});
   </script>
