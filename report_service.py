@@ -2124,6 +2124,8 @@ def editor_page(draft_id: str) -> str:
     if _ap_dom_table:
       site_section_html = ""
 
+    hourly_peak_section_html = ""
+
     # --- Section 3: Traffic Analysis & Results ---
     TA_ORDER = [
       "summary of computed results",
