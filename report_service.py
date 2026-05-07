@@ -1474,10 +1474,9 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
       )
     return fallback_html
 
-  other_html = "".join(
-    _render_data_table(t, analysis_map.get(_normalize_title_key(t.get("title"))), _select_charts_for_table(t, chart_items))
-    for t in other_tables
-  )
+  # Any unclassified table belongs to "Detour Route Information" (section 1).
+  # This catches route overview tables whose titles don't contain "table 28" literally.
+  route_info_tables.extend(other_tables)
 
   # --- HARDCODED EDITABLE TABLE FALLBACKS ---
   fallback_vpd = (
@@ -1530,7 +1529,6 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     f"<div class=\"report-section report-block detour-route-block\">"
     f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
     f"<h3 class=\"editable-text\" contenteditable=\"true\">{label_esc}</h3>"
-    f"{other_html}"
     "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">1. Detour Route Information</h4>" + _render_group(route_info_tables, fallback_route_info) + "</div>"
   )
 
@@ -1549,9 +1547,9 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     return (
       base_html
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. VPD Calculated</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(dir_capacity_tables + road_capacity_tables, fallback_road_capacity) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(detour_summary_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion (Existing Road)</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
@@ -2254,18 +2252,14 @@ def editor_page(draft_id: str) -> str:
         is_short=is_short, section_num=sec_detour_num,
     )
 
-    # Section numbering (Executive Explanation Notes removed → 1-indexed from Exec Summary):
+    # Section numbering: Charts are embedded inside Conclusion, no separate Charts section.
     # 1. Executive Summary  2. Design & Traffic Inputs  3. Traffic Analysis & Results
-    # 4. Detour Analysis (if present)  5. Charts (detailed only)  6. Conclusion
-    if is_short:
-      sec_chart_num = ""
-      sec_comm_num  = "5" if short_detour_section_html else "4"
-    else:
-      sec_chart_num = "5" if short_detour_section_html else "4"
-      sec_comm_num  = "6" if short_detour_section_html else "5"
+    # 4. Detour Analysis (if present)  5. Conclusion
+    sec_comm_num = "5" if short_detour_section_html else "4"
 
+    # Charts block embeds inside Conclusion — no separate heading
     chart_section_block = (
-      f'<h2 contenteditable="true">{sec_chart_num}. Charts</h2>\n    <div id="chartSectionContent">{chart_sections}</div>'
+      f'<div id="chartSectionContent" class="charts-in-conclusion">{chart_sections}</div>'
       if not is_short else ''
     )
     payload_json = escape(json.dumps(payload))
@@ -2738,9 +2732,8 @@ def editor_page(draft_id: str) -> str:
 
     {short_detour_section_html}
 
-    {chart_section_block}
-
     <h2 contenteditable=\"true\">{sec_comm_num}. Conclusion</h2>
+    {chart_section_block}
     {commentary_html}
 
     <div class=\"avoid-break\" style=\"margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);\">
