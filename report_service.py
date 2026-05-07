@@ -1533,25 +1533,25 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   )
 
   if is_short:
-    # Short report: Table 28 / Estimated Detour Delay Inputs / Pedestrian Delay
+    # Short report: 1. table 28 / 2. Estimated Detour Delay Inputs and delay table / 3. Estimated Delay - Detour route - Pedestrians
     return (
-      base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Inputs</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      base_html.replace("1. Detour Route Information", "1. table 28")
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Inputs and delay table</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
   else:
-    # Detailed report: Table 28 / VPD Calculated / Detour Road Capacity Summary /
-    # Estimated Detour Delay Inputs / Detour Road Summary (Table 29) /
-    # Road Status After Diversion / Pedestrian Delay
+    # Detailed report: 1. Detour Route Information / 2. Detour vpd calculated table / 3. Detour Road Capacity Summary /
+    # 4. Estimated Detour Delay Inputs and delay calculation / 5. Detour road summary table /
+    # 6. Road Status After Diversion (Existing Road) / 7. Estimated Delay - Detour route - Pedestrians
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. VPD Calculated</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour vpd calculated table</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs and delay calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour road summary table</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion (Existing Road)</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
 
@@ -1974,7 +1974,6 @@ def _render_commentary_block(paragraphs: list[str], conclusion_points: list[str]
   )
   return (
     f"<div class=\"editable commentary-block\" contenteditable=\"true\">{paragraph_html}</div>"
-    "<h3 class=\"editable-text\" contenteditable=\"true\">Conclusion</h3>"
     f"<ul class=\"conclusion-list\">{conclusion_html}</ul>"
   )
 
@@ -2040,7 +2039,16 @@ def editor_page(draft_id: str) -> str:
     notes = payload.get("notes", [])
     executive_content = _build_executive_content(payload)
     executive_summary_html = _render_paragraph_block(executive_content.get("executive_paragraphs", []))
-    executive_notes_html = _render_notes(executive_content.get("explanation_notes", []))
+    
+    variant_raw = _safe_text(payload.get("report_variant"), "").lower()
+    title_hint = _safe_text(draft.get("title", "")).lower()
+    is_short = variant_raw == "short" or "short report" in title_hint
+
+    # Short report: Remove executive explanation notes
+    executive_notes_html = ""
+    if not is_short:
+      executive_notes_html = _render_notes(executive_content.get("explanation_notes", []))
+
     commentary_html = _render_commentary_block(
       executive_content.get("professional_commentary_paragraphs", []),
       executive_content.get("conclusion_points", []),
@@ -2048,9 +2056,6 @@ def editor_page(draft_id: str) -> str:
     logo_data_url = _load_logo_data_url()
     cover_logo_html = f'<img class="cover-logo" src="{logo_data_url}" alt="Company Logo" />' if logo_data_url else ""
 
-    variant_raw = _safe_text(payload.get("report_variant"), "").lower()
-    title_hint = _safe_text(draft.get("title", "")).lower()
-    is_short = variant_raw == "short" or "short report" in title_hint
     if is_short:
       report_mode_label = "Python Short Report"
     elif variant_raw == "detailed" or "detailed report" in title_hint:
@@ -2076,36 +2081,18 @@ def editor_page(draft_id: str) -> str:
       if isinstance(item, dict) and _normalize_title_key(item.get("title"))
     }
     chart_items = _collect_chart_items(payload)
-    chart_items_to_render = [] if is_short else chart_items  # short report: no charts
+    chart_items_to_render = [] if is_short else chart_items
     hydrate_js_call = '' if is_short else 'hydrateChartsFromPayload();'
     embedded_chart_keys: set[str] = set()
 
-    def _table_priority(table_obj: Any) -> int:
-        if not isinstance(table_obj, dict):
-            return 999
-        title_lc = _safe_text(table_obj.get("title", "")).lower()
-        if any(k in title_lc for k in ["queue", "vcr", "summary", "peak"]):
-            return 0
-        if any(k in title_lc for k in ["table", "results", "analysis"]):
-            return 1
-        return 2
-
-    prioritized_tables = sorted(tables, key=_table_priority)
+    # --- Section 2: Design & Traffic Inputs ---
     analysis_parameters_table = {
       "table_id": "analysis_parameters",
       "title": "Analysis Parameters",
       "columns": ["Parameter", "Value"],
       "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in inputs.items()],
     }
-    computed_results_table = {
-      "table_id": "summary_computed_results",
-      "title": "Summary of Computed Results",
-      "columns": ["Metric", "Value"],
-      "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in results.items()],
-    }
-    # Prefer the rich DOM "Analysis Parameters Summary" table from payload.tables
-    # (25+ fields) over the simplified payload.inputs (8 fields) so Section 3
-    # faithfully reflects what the HTML displays.
+    
     _ap_dom_table: dict[str, Any] | None = None
     _sr_dom_table: dict[str, Any] | None = None
     for _t in tables:
@@ -2116,12 +2103,9 @@ def editor_page(draft_id: str) -> str:
         _sr_dom_table = _t
 
     input_charts = _select_charts_for_table(analysis_parameters_table, chart_items_to_render)
-    results_charts = _select_charts_for_table(computed_results_table, chart_items_to_render)
     embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in input_charts)
-    embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
 
     if _ap_dom_table:
-      # Use the full DOM table for Section 3 — shows Site ID, Terrain, Lanes, HV%, etc.
       inputs_section_html = _render_data_table(
         _ap_dom_table,
         table_analysis_map.get(_normalize_title_key(_safe_text(_ap_dom_table.get("title"), ""))),
@@ -2134,134 +2118,131 @@ def editor_page(draft_id: str) -> str:
         table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
         input_charts,
       )
-    if _sr_dom_table:
-      # Use DOM-calculated summary table so Section 4 reflects exact HTML outputs.
-      results_section_html = _render_data_table(
-        _sr_dom_table,
-        table_analysis_map.get(_normalize_title_key(_safe_text(_sr_dom_table.get("title"), ""))),
-        results_charts,
-      )
-    else:
-      results_section_html = _render_computed_results_section(
-        'Summary of Computed Results',
-        results,
-        table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
-        results_charts,
-      )
-    selected_site_section_html = _render_selected_site_details_section(selected_site_details)
-    # If the DOM Analysis Parameters table exists it already contains site-specific
-    # fields; suppress the separate Selected Site Details block to avoid duplication.
-    site_section_html = "" if _ap_dom_table else selected_site_section_html
+    
+    site_section_html = _render_selected_site_details_section(selected_site_details)
+    if _ap_dom_table:
+      site_section_html = ""
 
-    # --- Table classification with deduplication ---
-    # Titles that are already covered by dedicated rendered sections and must NOT
-    # appear again in the general table_sections block.
-    _DEDICATED_TABLE_PATTERNS = [
-      "analysis parameters",    # Section 3 inputs_section_html
-      "summary of computed results", # Section 4 results_section_html
-      "input summary",          # DOM-generated "Input Summary Table" per card (redundant)
-      "selected site",          # Section 3 selected_site_section_html
+    # --- Section 3: Traffic Analysis & Results ---
+    TA_ORDER = [
+      "summary of computed results",
+      "hourly traffic profile",
+      "hourly queue",
+      "hourly vcr",
+      "grouped directional summary",
+      "directional queue summary",
+      "directional queue summary swt",
+      "directional vcr summary d1"
     ]
+    if is_short:
+        TA_ORDER = [
+          "summary of computed results",
+          "grouped directional summary",
+          "directional queue summary",
+          "directional queue summary swt",
+          "directional vcr summary d1"
+        ]
 
-    def _is_dedicated_section_table(tbl: Any) -> bool:
-      tkey = _normalize_title_key(_safe_text(tbl.get("title") if isinstance(tbl, dict) else "", ""))
-      return any(pat in tkey for pat in _DEDICATED_TABLE_PATTERNS)
+    ta_blocks: list[str] = []
+    _seen_ta_patterns: set[str] = set()
 
-    hourly_peak_tables: list[Any] = []
+    # Summary table first
+    if _sr_dom_table:
+        results_charts = _select_charts_for_table(_sr_dom_table, chart_items_to_render)
+        embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
+        ta_blocks.append(_render_data_table(
+            _sr_dom_table,
+            table_analysis_map.get(_normalize_title_key(_safe_text(_sr_dom_table.get("title"), ""))),
+            results_charts,
+        ))
+        _seen_ta_patterns.add("summary of computed results")
+    else:
+        computed_results_table = {
+          "table_id": "summary_computed_results",
+          "title": "Summary of Computed Results",
+          "columns": ["Metric", "Value"],
+          "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in results.items()],
+        }
+        results_charts = _select_charts_for_table(computed_results_table, chart_items_to_render)
+        embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
+        ta_blocks.append(_render_computed_results_section(
+            'Summary of Computed Results',
+            results,
+            table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
+            results_charts,
+        ))
+        _seen_ta_patterns.add("summary of computed results")
+
+    # Remaining TA tables
+    for pattern in TA_ORDER:
+      if pattern in _seen_ta_patterns: continue
+      for table in tables:
+        t_title = _safe_text(table.get("title"), "")
+        t_key = _normalize_title_key(t_title)
+        if pattern in t_key:
+          matched_charts = _select_charts_for_table(table, chart_items_to_render)
+          embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
+          ta_blocks.append(_render_data_table(
+            table,
+            table_analysis_map.get(t_key),
+            matched_charts,
+          ))
+          _seen_ta_patterns.add(pattern)
+          break
+
+    traffic_analysis_results_html = "".join(ta_blocks)
+
+    # --- Detour Analysis ---
     detour_tables: list[Any] = []
+    _DEDICATED_TABLE_PATTERNS = ["analysis parameters", "summary of computed results", "input summary", "selected site"]
+    _DEDICATED_TABLE_PATTERNS.extend(TA_ORDER)
+
     other_tables: list[Any] = []
     _seen_table_ids: set[str] = set()
     _seen_title_keys: set[str] = set()
 
-    for table in prioritized_tables:
-      # Skip tables that belong to dedicated rendered sections
-      if _is_dedicated_section_table(table):
-        continue
+    for table in tables:
+      tkey = _normalize_title_key(_safe_text(table.get("title"), ""))
+      if any(pat in tkey for pat in _DEDICATED_TABLE_PATTERNS): continue
 
       table_id = _safe_text(table.get("table_id", ""), "")
-      title_key = _normalize_title_key(_safe_text(table.get("title", ""), ""))
-
-      # Deduplicate by table_id
       if table_id:
-        if table_id in _seen_table_ids:
-          continue
+        if table_id in _seen_table_ids: continue
         _seen_table_ids.add(table_id)
-      elif title_key:
-        # For tables without an explicit ID, deduplicate by normalised title
-        if title_key in _seen_title_keys:
-          continue
-        _seen_title_keys.add(title_key)
+      elif tkey:
+        if tkey in _seen_title_keys: continue
+        _seen_title_keys.add(tkey)
 
-      title_lc = _safe_text(table.get("title", "")).lower()
+      title_lc = tkey
       title_stripped = title_lc.strip()
-
-      # Skip numbered stub tables Table 11–18 (duplicates of named analysis tables)
-      if re.fullmatch(r"table\s*(1[1-8])", title_stripped):
-        continue
-
-      # Tables 28–32 are detour route tables — route them directly to detour section
-      if re.fullmatch(r"table\s*(2[89]|3[0-2])", title_stripped):
-        detour_tables.append(table)
-        continue
-
-      # Hourly tables — fix: only require "hourly" (not "peak hour") in title
-      if "hourly" in title_lc:
-        hourly_peak_tables.append(table)
-      elif any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
+      if re.fullmatch(r"table\s*(1[1-8])", title_stripped): continue
+      if re.fullmatch(r"table\s*(2[89]|3[0-2])", title_stripped) or any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
         detour_tables.append(table)
       else:
         other_tables.append(table)
 
-    hourly_peak_blocks: list[str] = []
-    for table in hourly_peak_tables:
-      matched_charts = _select_charts_for_table(table, chart_items_to_render)
-      embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
-      hourly_peak_blocks.append(
-        _render_data_table(
-          table,
-          table_analysis_map.get(_normalize_title_key(table.get('title'))),
-          matched_charts,
-        )
-      )
-    hourly_peak_section_html = "" if is_short else "".join(hourly_peak_blocks)
+    raw_js = payload.get("raw_js_results", {}) if isinstance(payload.get("raw_js_results"), dict) else {}
+    detour_route_count = int(raw_js.get("detour_route_count") or 0)
+    detour_section_html = _build_short_detour_section(detour_tables, detour_route_count, table_analysis_map, chart_items_to_render, is_short=is_short, section_num="4")
 
-    table_blocks: list[str] = []
+    # --- Other sections and numbering ---
+    other_blocks: list[str] = []
     for table in other_tables:
       matched_charts = _select_charts_for_table(table, chart_items_to_render)
       embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
-      table_blocks.append(
-        _render_data_table(
-          table,
-          table_analysis_map.get(_normalize_title_key(table.get('title'))),
-          matched_charts,
-        )
-      )
-    table_sections = "".join(table_blocks)
-    chart_sections = _render_additional_chart_blocks(chart_items_to_render, embedded_chart_keys)
+      other_blocks.append(_render_data_table(table, table_analysis_map.get(_normalize_title_key(table.get('title'))), matched_charts))
+    other_sections_html = "".join(other_blocks)
 
-    # Build Section 5 Detour Analysis for ALL reports using the isolated tables.
-    raw_js = payload.get("raw_js_results", {}) if isinstance(payload.get("raw_js_results"), dict) else {}
-    detour_route_count = int(raw_js.get("detour_route_count") or 0)
+    if is_short:
+        sec_charts_num = ""
+        sec_conclusion_num = "5"
+        chart_section_html = ""
+    else:
+        sec_charts_num = "5"
+        sec_conclusion_num = "6"
+        chart_sections = _render_additional_chart_blocks(chart_items_to_render, embedded_chart_keys)
+        chart_section_html = f"<h2 contenteditable=\"true\">{sec_charts_num}. Charts</h2>{chart_sections}"
 
-    # Detour Analysis is always section 4.
-    sec_detour_num = "4"
-
-    # Notice we now pass detour_tables and chart_items_to_render explicitly
-    short_detour_section_html = _build_short_detour_section(
-        detour_tables, detour_route_count, table_analysis_map, chart_items_to_render,
-        is_short=is_short, section_num=sec_detour_num,
-    )
-
-    # Section numbering: Charts are embedded inside Conclusion, no separate Charts section.
-    # 1. Executive Summary  2. Design & Traffic Inputs  3. Traffic Analysis & Results
-    # 4. Detour Analysis (if present)  5. Conclusion
-    sec_comm_num = "5" if short_detour_section_html else "4"
-
-    # Charts block embeds inside Conclusion — no separate heading
-    chart_section_block = (
-      f'<div id="chartSectionContent" class="charts-in-conclusion">{chart_sections}</div>'
-      if not is_short else ''
-    )
     payload_json = escape(json.dumps(payload))
 
     return f"""<!DOCTYPE html>
@@ -2717,6 +2698,7 @@ def editor_page(draft_id: str) -> str:
     <h2 contenteditable=\"true\">1. Executive Summary</h2>
     <div class=\"editable\" contenteditable=\"true\">
       {executive_summary_html}
+      {executive_notes_html}
       <p><em>Click here to refine the executive narrative, project-specific implications, and stakeholder-facing conclusions.</em></p>
     </div>
 
@@ -2725,15 +2707,15 @@ def editor_page(draft_id: str) -> str:
     {site_section_html}
 
     <h2 contenteditable=\"true\">3. Traffic Analysis &amp; Results</h2>
-    {results_section_html}
-    {hourly_peak_section_html}
+    {traffic_analysis_results_html}
 
-    {table_sections}
+    {other_sections_html}
 
-    {short_detour_section_html}
+    {detour_section_html}
 
-    <h2 contenteditable=\"true\">{sec_comm_num}. Conclusion</h2>
-    {chart_section_block}
+    {chart_section_html}
+
+    <h2 contenteditable=\"true\">{sec_conclusion_num}. Conclusion</h2>
     {commentary_html}
 
     <div class=\"avoid-break\" style=\"margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);\">
