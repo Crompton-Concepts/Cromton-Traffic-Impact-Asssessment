@@ -1534,22 +1534,22 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   )
 
   if is_short:
-    # Short report: 1. table 28 / 2. Estimated Detour Delay Inputs and delay table / 3. Estimated Delay - Detour route - Pedestrians
+    # Short report: 1. Detour Route Information / 2. Estimated Delay - Detour route / 3. Estimated Delay - Detour route - Pedestrians
     return (
-      base_html.replace("1. Detour Route Information", "1. table 28")
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Inputs and delay table</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      base_html
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Delay &#8211; Detour route</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
   else:
-    # Detailed report: 1. Detour Route Information / 2. Detour vpd calculated table / 3. Detour Road Capacity Summary /
-    # 4. Estimated Detour Delay Inputs and delay calculation / 5. Detour road summary table /
+    # Detailed report: 1. Detour Route Information / 2. Detour VPD Calculated / 3. Detour Road Capacity Summary /
+    # 4. Estimated Delay - Detour route / 5. Detour road summary table /
     # 6. Road Status After Diversion (Existing Road) / 7. Estimated Delay - Detour route - Pedestrians
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour vpd calculated table</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour VPD Calculated</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs and delay calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Delay &#8211; Detour route</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour road summary table</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion (Existing Road)</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
@@ -2124,12 +2124,32 @@ def editor_page(draft_id: str) -> str:
     if _ap_dom_table:
       site_section_html = ""
 
-    hourly_peak_section_html = ""
+    # --- Hourly Traffic Volume & Profile (Section 2, detailed only) ---
+    _hourly_profile_tables_s2: list[Any] = []
+    if not is_short:
+        for _t in tables:
+            _t_key = _normalize_title_key(_safe_text(_t.get("title"), ""))
+            if "hourly traffic profile" in _t_key or "hourly profile" in _t_key:
+                _hourly_profile_tables_s2.append(_t)
+    if _hourly_profile_tables_s2:
+        _hp_blocks: list[str] = []
+        for _t in _hourly_profile_tables_s2:
+            _t_key = _normalize_title_key(_safe_text(_t.get("title"), ""))
+            _hp_charts = _select_charts_for_table(_t, chart_items_to_render)
+            embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in _hp_charts)
+            _hp_blocks.append(_render_data_table(_t, table_analysis_map.get(_t_key), _hp_charts))
+        hourly_peak_section_html = (
+            "<div class=\"report-section avoid-break\">"
+            "<h3 contenteditable=\"true\">Hourly Traffic Volume and Profile</h3>"
+            + "".join(_hp_blocks)
+            + "</div>"
+        )
+    else:
+        hourly_peak_section_html = ""
 
     # --- Section 3: Traffic Analysis & Results ---
     TA_ORDER = [
       "summary of computed results",
-      "hourly traffic profile",
       "hourly queue",
       "hourly vcr",
       "grouped directional summary",
@@ -2197,7 +2217,7 @@ def editor_page(draft_id: str) -> str:
 
     # --- Detour Analysis ---
     detour_tables: list[Any] = []
-    _DEDICATED_TABLE_PATTERNS = ["analysis parameters", "summary of computed results", "input summary", "selected site"]
+    _DEDICATED_TABLE_PATTERNS = ["analysis parameters", "summary of computed results", "input summary", "selected site", "hourly traffic profile", "hourly profile"]
     _DEDICATED_TABLE_PATTERNS.extend(TA_ORDER)
 
     other_tables: list[Any] = []
