@@ -8236,14 +8236,37 @@
     // 2. Detour Road Capacity Summary — per-road parameters
     var capRows = [];
     snap.roads.forEach(function(road) {
-      var designYearVpd = Math.round(road.baseVpd * gf);
-      var surplusVph = road.totalCapacity - convertDailyVpdTo80thHourly(designYearVpd + snap.divertedVpdTotal);
+      var inputData = typeof getDetourManualRoadInput === 'function' ? (getDetourManualRoadInput(road.name) || {}) : {};
+      var est = inputData.estimateMeta || {};
+      var isTripGen = inputData.vpdMethod === 'tripgen';
+      var alignment = String(inputData.detourAlignment || road.detourAlignment || 'parallel').toLowerCase() === 'anti_parallel' ? 'anti_parallel' : 'parallel';
+      var alignmentText = alignment === 'anti_parallel' ? 'Detour D1 acts as Primary D2; Detour D2 acts as Primary D1.' : 'Detour D1 acts as Primary D1; Detour D2 acts as Primary D2.';
+      var speedSrc = inputData.speedLimitSource || 'default';
+      var speedSrcLbl = speedSrc === 'osm' ? 'OSM' : (speedSrc === 'user' ? 'User' : 'Default');
+      var basePeakHr = convertDailyVpdTo80thHourly ? convertDailyVpdTo80thHourly(road.baseVpd) : 0;
+      var divPeakHr = convertDailyVpdTo80thHourly ? convertDailyVpdTo80thHourly(snap.divertedVpdTotal) : 0;
+      var totDemVpd = road.baseVpd + snap.divertedVpdTotal;
+      var totDemPeakHr = basePeakHr + divPeakHr;
+      var capInputs = road.capacityInputs || {};
+      var capBasisStr = (road.laneCount || 1) + ' lanes x ' + (road.perLaneCapacity || 0) + ' vph/lane = ' + (road.totalCapacity || 0) + ' vph total';
+      var isOver = road.maxNewVcr > 1.0;
+      var statusTxt = isOver ? 'Over Capacity' : (road.maxNewVcr > 0.85 ? 'Heavy Congestion' : 'Within Limits');
+
       capRows.push(
-        [road.name + ' - Posted Speed (km/h)', String(road.speedLimitKmh), ''],
-        [road.name + ' - Lanes', String(road.laneCount), ''],
-        [road.name + ' - Total Two-Way Capacity (vph)', String(road.totalCapacity), road.laneCount + ' lanes \u00D7 ' + road.perLaneCapacity + ' vph/lane'],
-        [road.name + ' - Remaining Surplus Capacity (vph)', String(surplusVph), surplusVph < 0 ? 'Over capacity' : 'Within limits'],
-        [road.name + ' - Worst Period VCR', road.maxNewVcr.toFixed(2), road.worstPeriod + ' (' + road.worstDirection + ')']
+        [road.name + ' - Direction Alignment', alignmentText, ''],
+        [road.name + ' - Legal Speed Limit', String(road.speedLimitKmh || 60) + ' km/h', '(' + speedSrcLbl + ')'],
+        [road.name + ' - Weighted Volume Sum (% x VPD)', isTripGen ? 'N/A (Trip Gen)' : String(Math.max(0, Math.round(Number(est.weightedVolumeSum) || 0))) + ' vpd', ''],
+        [road.name + ' - Active Selected Weight', isTripGen ? 'N/A' : String(Math.max(0, Number(est.totalWeightPercent) || 0)) + '%', ''],
+        [road.name + ' - Current Road VPD Used for Capacity', String(road.baseVpd) + ' vpd', isTripGen ? 'Trip Generation' : 'Datapoints'],
+        [road.name + ' - Current Road Peak Hour (80th)', String(basePeakHr) + ' vph', ''],
+        [road.name + ' - Added Diverted Demand (Target Year)', '+' + String(snap.divertedVpdTotal) + ' vpd', ''],
+        [road.name + ' - Added Diverted Peak Hour (80th)', '+' + String(divPeakHr) + ' vph', ''],
+        [road.name + ' - Total Assessed Demand VPD', String(totDemVpd) + ' vpd', ''],
+        [road.name + ' - Total Assessed Peak Hour (80th)', String(totDemPeakHr) + ' vph', ''],
+        [road.name + ' - Capacity Basis', capBasisStr, ''],
+        [road.name + ' - Worst Direction Capacity', road.worstDirectionalCapacity > 0 ? String(road.worstDirectionalCapacity) + ' vph (' + road.worstDirection + ')' : '-', ''],
+        [road.name + ' - Worst Period VCR', Number(road.maxNewVcr || 0).toFixed(2), (road.worstPeriod || '-') + ' (' + (road.worstDirection || '-') + ')'],
+        [road.name + ' - Directional Capacity Status', statusTxt, '']
       );
     });
     tables.push({

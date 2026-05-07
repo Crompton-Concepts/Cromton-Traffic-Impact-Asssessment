@@ -320,7 +320,8 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
     or results.get("worst_vcr")
     or raw.get("worst_vcr")
   )
-  queue_peak = _to_float(
+  q_2min = _find_2min_queue_peak(payload)
+  queue_peak = q_2min if q_2min is not None else _to_float(
     _from_summary("queue_peak_m", "peak_queue_m", "peak queue")
     or results.get("queue_peak_m")
     or raw.get("queue_peak_m")
@@ -1442,14 +1443,14 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     title_raw = _safe_text(table.get("title"), "")
     title_lc = title_raw.lower().strip()
     title_stripped = title_lc.strip()
-    # Table 28 → route info
-    if re.fullmatch(r"table\s*28", title_stripped):
+    # Table 28 -> route info
+    if re.match(r"table\s*28", title_stripped):
       route_info_tables.append(table)
-    # Table 29 → detour road summary
-    elif re.fullmatch(r"table\s*29", title_stripped):
+    # Table 29 -> detour road summary
+    elif re.match(r"table\s*29", title_stripped):
       detour_summary_tables.append(table)
-    # Tables 30-32 → fold into road capacity
-    elif re.fullmatch(r"table\s*(3[0-2])", title_stripped):
+    # Tables 30-32 -> fold into road capacity
+    elif re.match(r"table\s*(3[0-2])", title_stripped):
       road_capacity_tables.append(table)
     elif "pedestrian" in title_lc:
       pedestrian_tables.append(table)
@@ -1573,7 +1574,7 @@ def _build_short_detour_section(detour_tables: list[dict], route_count: int, ana
     m = re.search(r"Detour Route\s*(\d+)", title, re.IGNORECASE)
     if m:
       key = m.group(1)
-    elif re.fullmatch(r"table\s*\d+", title.strip(), re.IGNORECASE):
+    elif re.match(r"table\s*\d+", title.strip(), re.IGNORECASE):
       key = "1"  # numbered payload tables belong to route 1
     else:
       key = "1"
@@ -2215,8 +2216,8 @@ def editor_page(draft_id: str) -> str:
 
       title_lc = tkey
       title_stripped = title_lc.strip()
-      if re.fullmatch(r"table\s*(1[1-8])", title_stripped): continue
-      if re.fullmatch(r"table\s*(2[89]|3[0-2])", title_stripped) or any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
+      if re.match(r"table\s*(1[1-8])", title_stripped): continue
+      if re.match(r"table\s*(2[89]|3[0-2])", title_stripped) or any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
         detour_tables.append(table)
       else:
         other_tables.append(table)
@@ -2705,6 +2706,7 @@ def editor_page(draft_id: str) -> str:
     <h2 contenteditable=\"true\">2. Design &amp; Traffic Inputs</h2>
     {inputs_section_html}
     {site_section_html}
+    {hourly_peak_section_html}
 
     <h2 contenteditable=\"true\">3. Traffic Analysis &amp; Results</h2>
     {traffic_analysis_results_html}
