@@ -14128,7 +14128,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const satFlowVphVeh = Math.max(300, Number(capacityVph) || 1800);
     const qInDemandPl = qInDemandPlVeh * avgPceFactor;
     const satFlowVph = satFlowVphVeh * avgPceFactor;
-    const qInActualPl = Math.min(qInDemandPl, satFlowVph);
+    const qInActualPl = Math.min(qInDemandPl, satFlowVph); // used only for anomaly detection
     const redTimeSec = Math.max(0, Number(durationSeconds) || 0);
 
     if (qInDemandPl <= 0 || redTimeSec <= 0) {
@@ -14148,7 +14148,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       };
     }
 
-    const qIn = qInActualPl / 3600;
+    // Use actual (uncapped) demand for shockwave propagation speed so that
+    // per-period SWT values reflect true demand variation across hours.
+    // Capping to satFlowVph made all anomaly hours produce identical w12 values.
+    const qIn = qInDemandPl / 3600;
     const vf = Math.max(0.1, Number(approachSpeedKmh) || 1) / 3.6;
     const sOut = satFlowVph / 3600;
     const kjVehKm = Math.max(20, 1000 / Math.max(1, avgSpacingMeters));
