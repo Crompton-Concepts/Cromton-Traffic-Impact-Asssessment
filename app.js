@@ -3419,7 +3419,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   async function ensureLeafletLoaded() {
-    if (typeof window.L !== 'undefined') return;
+    const configureLeafletDefaultIcons = () => {
+      if (typeof window.L === 'undefined' || !L.Icon || !L.Icon.Default) return;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+      });
+    };
+
+    if (typeof window.L !== 'undefined') {
+      configureLeafletDefaultIcons();
+      return;
+    }
 
     // Retry with alternate CDN endpoints in case one is blocked.
     const leafletCandidates = [
@@ -3431,6 +3443,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       try {
         await loadExternalScriptOnce(url);
         await waitForLibrary('L', 6000);
+        configureLeafletDefaultIcons();
         return;
       } catch (err) {
         console.warn('[Lib Load] Leaflet fallback failed for', url, err);
@@ -4169,6 +4182,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v4:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const GITHUB_FETCH_TIMEOUT_MS = 60000;
+  const DATASET_REQUEST_BUST_KEY = '2026-05-08';
   const DATASET_MANIFEST_CACHE_KEY = 'crompton_tia_dataset_manifest_sig_v1';
   const DATASET_MANIFEST_LOCAL_URL = './dataset_manifest.json';
   const githubRefreshInflight = new Map();
@@ -6180,6 +6194,23 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const cacheKey = `${GITHUB_CACHE_PREFIX}${url}`;
     const now = Date.now();
 
+    const parseJsonResponse = async (response, sourceUrl) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const rawText = await response.text();
+      const trimmed = String(rawText || '').trim();
+      if (!trimmed) throw new Error('Empty response body');
+      if (/^version\s+https:\/\/git-lfs\.github\.com\/spec\/v1/i.test(trimmed)) {
+        throw new Error(`Git LFS pointer received (not GeoJSON) for ${sourceUrl}`);
+      }
+
+      try {
+        return JSON.parse(trimmed);
+      } catch (parseErr) {
+        const prefix = trimmed.slice(0, 80).replace(/\s+/g, ' ');
+        throw new Error(`Invalid JSON response for ${sourceUrl}. Prefix: \"${prefix}\"`);
+      }
+    };
+
     const readCachedEntry = () => {
       try {
         const raw = localStorage.getItem(cacheKey);
@@ -6217,8 +6248,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const timeoutId = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
           const response = await fetch(url, { signal: controller.signal, cache: 'no-cache' });
           clearTimeout(timeoutId);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
+          const data = await parseJsonResponse(response, url);
           writeCached(data);
         } catch (_) {
           // Keep stale cache if refresh fails.
@@ -6240,10 +6270,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
-      const response = await fetch(url, { signal: controller.signal, cache: 'force-cache' });
+      const response = await fetch(url, {
+        signal: controller.signal,
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, max-age=0',
+          Pragma: 'no-cache'
+        }
+      });
       clearTimeout(timeoutId);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+      const data = await parseJsonResponse(response, url);
       writeCached(data);
       return data;
     } catch (err) {
@@ -6368,25 +6404,63 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`;
   }
 
-  async function fetchDatasetWithFallback(primaryUrl, fallbackUrl, sourceLabel) {
-    if (fallbackUrl && fallbackUrl !== primaryUrl) {
-      const localPreferred = await fetchGitHubData(fallbackUrl);
-      if (isGeoJsonFeatureCollection(localPreferred)) return localPreferred;
+  function appendDatasetBustParam(url) {
+    const rawUrl = String(url || '').trim();
+    if (!rawUrl) return '';
+    const sep = rawUrl.includes('?') ? '&' : '?';
+    return `${rawUrl}${sep}v=${encodeURIComponent(DATASET_REQUEST_BUST_KEY)}`;
+  }
+
+  function buildRawGithubUrlFromMedia(url) {
+    const rawUrl = String(url || '').trim();
+    const m = rawUrl.match(/^https:\/\/media\.githubusercontent\.com\/media\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/i);
+    if (!m) return '';
+    const owner = m[1];
+    const repo = m[2];
+    const branch = m[3];
+    const path = m[4];
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+  }
+
+  function buildDatasetCandidates(primaryUrl, fallbackUrls = []) {
+    const candidates = [];
+    const pushUnique = (candidateUrl) => {
+      const clean = String(candidateUrl || '').trim();
+      if (!clean || candidates.includes(clean)) return;
+      candidates.push(clean);
+    };
+
+    const localList = Array.isArray(fallbackUrls) ? fallbackUrls : [fallbackUrls];
+    const primary = String(primaryUrl || '').trim();
+    const rawFromMedia = buildRawGithubUrlFromMedia(primary);
+    const mirrorUrl = buildGithubCdnMirrorUrl(rawFromMedia || primary);
+
+    // Prefer remote immutable URLs first, then local files.
+    pushUnique(primary);
+    pushUnique(rawFromMedia);
+    pushUnique(mirrorUrl);
+    localList.forEach((localUrl) => pushUnique(localUrl));
+
+    // Add cache-busted variants to avoid stale service-worker/browser cache content.
+    const withBust = candidates.map((candidateUrl) => appendDatasetBustParam(candidateUrl));
+    withBust.forEach((candidateUrl) => pushUnique(candidateUrl));
+
+    return candidates;
+  }
+
+  async function fetchDatasetWithFallback(primaryUrl, fallbackUrls, sourceLabel) {
+    const localList = Array.isArray(fallbackUrls) ? fallbackUrls : [fallbackUrls];
+    const candidates = buildDatasetCandidates(primaryUrl, localList);
+    const failedCandidates = [];
+
+    for (const candidateUrl of candidates) {
+      const data = await fetchGitHubData(candidateUrl);
+      if (isGeoJsonFeatureCollection(data)) return data;
+      failedCandidates.push(candidateUrl);
     }
 
-    const primary = await fetchGitHubData(primaryUrl);
-    if (isGeoJsonFeatureCollection(primary)) return primary;
-
-    const mirrorUrl = buildGithubCdnMirrorUrl(primaryUrl);
-    if (mirrorUrl) {
-      const mirrorData = await fetchGitHubData(mirrorUrl);
-      if (isGeoJsonFeatureCollection(mirrorData)) return mirrorData;
-    }
-
-    console.warn(`[Data Load] ${sourceLabel} remote sources failed or returned invalid GeoJSON. Falling back to local file: ${fallbackUrl}`);
-    if (!fallbackUrl || fallbackUrl === primaryUrl) return null;
-    const localData = await fetchGitHubData(fallbackUrl);
-    return isGeoJsonFeatureCollection(localData) ? localData : null;
+    console.warn(`[Data Load] ${sourceLabel} sources failed or returned invalid GeoJSON. Tried:`, failedCandidates);
+    return null;
   }
 
   function parseMacroTrafficData(jsonData, sourceName = 'TMR') {
@@ -7590,20 +7664,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (requestedScope === 'NSW') {
         setLoadingState('Downloading live records...', 'Fetching NSW 2026 traffic feed.', 42);
         [nswData2026, nswDataLegacy] = await Promise.all([
-          fetchDatasetWithFallback(GITHUB_NSW_2026_URL, './nsw_2026.geojson', 'NSW 2026'),
-          fetchDatasetWithFallback(GITHUB_NSW_TNSW_URL, './tnsw.geojson', 'NSW Legacy')
+          fetchDatasetWithFallback(GITHUB_NSW_2026_URL, ['./nsw_2026.geojson', './NSW/nsw_2026.geojson'], 'NSW 2026'),
+          fetchDatasetWithFallback(GITHUB_NSW_TNSW_URL, ['./tnsw.geojson', './NSW/latest_nsw_traffic_volume.geojson', './NSW/nsw.geojson'], 'NSW Legacy')
         ]);
         setLoadingState('Downloading live records...', 'Fetched NSW traffic feeds.', 68);
       } else {
         setLoadingState('Downloading live records...', 'Fetching Queensland traffic feeds.', 42);
         [tmrData, goldCoastData, brisbaneData, ipswichData, loganData, toowoombaData, tewantinData] = await Promise.all([
-          fetchDatasetWithFallback(GITHUB_TMR_URL, './tmr.geojson', 'TMR'),
-          fetchDatasetWithFallback(GITHUB_GOLDCOAST_URL, './goldcoast.geojson', 'Gold Coast'),
-          fetchDatasetWithFallback(GITHUB_BRISBANE_URL, './Brisbane.geojson', 'Brisbane'),
-          fetchDatasetWithFallback(GITHUB_IPSWICH_URL, './Ipswich.geojson', 'Ipswich'),
-          fetchDatasetWithFallback(GITHUB_LOGAN_URL, './logan.geojson', 'Logan'),
-          fetchDatasetWithFallback(GITHUB_TOOWOOMBA_URL, './toowoomba.geojson', 'Toowoomba'),
-          fetchDatasetWithFallback(GITHUB_TEWANTIN_URL, './tewantin.geojson', 'Tewantin')
+          fetchDatasetWithFallback(GITHUB_TMR_URL, ['./tmr.geojson', './QLD/tmr.geojson'], 'TMR'),
+          fetchDatasetWithFallback(GITHUB_GOLDCOAST_URL, ['./goldcoast.geojson', './QLD/goldcoast.geojson'], 'Gold Coast'),
+          fetchDatasetWithFallback(GITHUB_BRISBANE_URL, ['./Brisbane.geojson', './QLD/Brisbane.geojson'], 'Brisbane'),
+          fetchDatasetWithFallback(GITHUB_IPSWICH_URL, ['./Ipswich.geojson', './QLD/Ipswich.geojson'], 'Ipswich'),
+          fetchDatasetWithFallback(GITHUB_LOGAN_URL, ['./logan.geojson', './QLD/logan.geojson'], 'Logan'),
+          fetchDatasetWithFallback(GITHUB_TOOWOOMBA_URL, ['./toowoomba.geojson', './QLD/toowoomba.geojson'], 'Toowoomba'),
+          fetchDatasetWithFallback(GITHUB_TEWANTIN_URL, ['./tewantin.geojson'], 'Tewantin')
         ]);
         setLoadingState('Downloading live records...', 'Fetched Queensland traffic feeds.', 66);
       }
