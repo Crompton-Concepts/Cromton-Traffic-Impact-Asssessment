@@ -1,0 +1,653 @@
+- generic [ref=e1]:
+  - text: 
+  - status [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - article [ref=e5]:
+          - paragraph [ref=e6]: Interesting Traffic Facts
+          - paragraph [ref=e7]: Short data checks at 15-minute intervals usually reveal peak-direction shifts earlier than daily totals.
+        - article [ref=e8]:
+          - paragraph [ref=e9]: Recommended By System
+          - paragraph [ref=e10]: "Recommended: use quick search first, then verify connectivity before applying calculated values."
+      - generic [ref=e11]:
+        - generic [ref=e12]: Crompton Traffic Systems
+        - generic [ref=e14]: Applying directional inference...
+        - generic [ref=e15]: Processing directional splits in responsive batches.
+        - generic [ref=e18]: 66%
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: Traffic control says the coffee truck can pass after one more cycle.
+        - generic [ref=e21]:
+          - generic [ref=e23]: ðŸš§
+          - generic [ref=e24]: ðŸš§
+          - generic [ref=e25]: ðŸš§
+          - generic [ref=e26]: ðŸš§
+          - generic [ref=e27]:
+            - generic [ref=e28]: ðŸ‘·
+            - generic [ref=e29]: ðŸ›‘
+            - generic [ref=e30]: Hold
+          - generic [ref=e31]:
+            - generic [ref=e32]: ðŸ‘·
+            - generic [ref=e33]: âœ…
+            - generic [ref=e34]: Wave
+          - generic [ref=e35]: ðŸšš
+          - generic [ref=e36]: ðŸš“
+  - text:                      
+  - generic [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e40]: Hi
+      - link "🏠 Home" [ref=e41] [cursor=pointer]:
+        - /url: "#"
+      - generic [ref=e42]:
+        - text: "ðŸ“\x8d"
+        - button "User Manual" [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: 📖
+          - generic [ref=e45]: User Manual
+        - link "Formula View" [ref=e46] [cursor=pointer]:
+          - /url: /Cromton-Traffic-Impact-Asssessment/index_formulas.html
+          - generic [ref=e47]: 📘
+          - generic [ref=e48]: Formula View
+        - link "Developer View" [ref=e49] [cursor=pointer]:
+          - /url: /Cromton-Traffic-Impact-Asssessment/index_developer.html
+          - generic [ref=e50]: 🧪
+          - generic [ref=e51]: Developer View
+        - button "Contact Developer" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: 💬
+          - generic [ref=e55]: Contact Developer
+        - button "Logout" [ref=e57] [cursor=pointer]
+    - heading "Traffic Impact Assessment" [level=1] [ref=e58]
+    - paragraph [ref=e59]: ðŸ“Š database-integrated directional traffic, queue metrics, and capacity checks
+    - generic "Quick start guide" [ref=e60]:
+      - paragraph [ref=e61]: Quick start guide
+      - list [ref=e62]:
+        - listitem [ref=e63]: Search and apply a site/address first, then confirm the auto-filled parameters.
+        - listitem [ref=e64]: Review user-input fields marked with red labels before calculating.
+        - listitem [ref=e65]:
+          - text: Use
+          - strong [ref=e66]: Calculate All Metrics
+          - text: to refresh all tables/charts together from one source of truth.
+        - listitem [ref=e67]: Optional modules are exploratory; validate outputs with engineering judgement before reporting.
+    - generic [ref=e69]:
+      - 'button "Include in Print: Yes" [pressed] [ref=e71] [cursor=pointer]'
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - heading "ðŸš— Search Address" [level=2] [ref=e74]
+          - paragraph [ref=e75]: Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
+        - generic [ref=e76]:
+          - button "Import Saved JSON" [ref=e77] [cursor=pointer]
+          - generic [ref=e78]: No session file loaded
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - generic [ref=e81]: State Database
+          - combobox "State Database" [ref=e82]:
+            - option "Queensland (QLD)" [selected]
+            - option "New South Wales (NSW)"
+        - generic [ref=e83]: "Current database: Queensland (QLD)"
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - combobox "eg. Brisbane Road, Bellbird Park, Rockhampton" [active] [ref=e86]
+          - paragraph [ref=e87]: "Tip: Include suburb/city to improve geocoding reliability and speed."
+        - 'button "ðŸ” Search" [ref=e88] [cursor=pointer]'
+    - generic "Input color guide" [ref=e89]:
+      - paragraph [ref=e90]: Input Guide
+      - generic [ref=e91]:
+        - paragraph [ref=e92]: ðŸ”´ Red input boxes require user entry/review and are editable.
+        - paragraph [ref=e93]: ðŸŸ¢ Green input boxes are auto-filled or read-only. If marked editable, they can still be adjusted.
+    - generic [ref=e94]:
+      - heading "1. Select Site from Map or Manual Entry (Site ID)" [level=2] [ref=e95]
+      - 'button "Include in Print: Yes" [pressed] [ref=e97] [cursor=pointer]'
+      - paragraph [ref=e98]: Use either the database search or map marker selection. Once a site is selected, values below are synchronized automatically.
+      - generic [ref=e100]:
+        - generic [ref=e101]: Search & Select from Database
+        - generic [ref=e102]:
+          - generic [ref=e103]: Data Source
+          - combobox "Data Source" [ref=e104]:
+            - option "All Sources (QLD + NSW)" [selected]
+            - option "TMR Only"
+            - option "Gold Coast Only"
+            - option "Brisbane Only"
+            - option "Ipswich Only"
+            - option "Logan Only"
+            - option "Toowoomba Only"
+            - option "Tewantin Only"
+            - option "NSW Only"
+        - generic [ref=e105]:
+          - button "â¬† Upload Custom Data (CSV/JSON)" [ref=e106] [cursor=pointer]
+          - button "Clear Custom Uploads" [ref=e107] [cursor=pointer]
+        - generic [ref=e108]: No custom upload loaded.
+        - combobox "Type Site ID or Name to autofill..." [ref=e109]
+        - paragraph [ref=e110]: Or manually enter VADT & parameters below
+      - generic [ref=e111]:
+        - heading "Site Location" [level=3] [ref=e112]
+        - paragraph [ref=e113]: Select a site from search or click a marker to auto-fill inputs.
+        - paragraph [ref=e116]:
+          - strong [ref=e117]: "Map Status:"
+          - text: Waiting for site data...
+    - generic [ref=e118]:
+      - heading "Analysis Parameters ðŸ”´ User Input | ðŸŸ¢ Auto-filled" [level=2] [ref=e119]:
+        - text: Analysis Parameters
+        - generic [ref=e120]: ðŸ”´ User Input | ðŸŸ¢ Auto-filled
+      - 'button "Include in Print: Yes" [pressed] [ref=e122] [cursor=pointer]'
+      - paragraph [ref=e123]: All manual entry fields are shown in red. All auto-filled fields are shown in green, and each editable auto-filled field is explicitly marked.
+      - group "âœ“ Auto-filled from Database" [ref=e124]:
+        - generic [ref=e125]: âœ“ Auto-filled from Database
+        - paragraph [ref=e126]: ðŸŸ¢ Green fields are auto-filled. If a label says "editable", you can adjust that value; otherwise treat it as read-only source data.
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - generic [ref=e129]: Site ID
+            - textbox [ref=e130]
+          - generic [ref=e131]:
+            - generic [ref=e132]: Base Year
+            - spinbutton [ref=e133]
+          - generic [ref=e134]:
+            - generic [ref=e135]: HV % (from DB)
+            - spinbutton [ref=e136]
+          - generic [ref=e137]:
+            - generic [ref=e138]: D1 VADT (from DB)
+            - spinbutton [ref=e139]
+          - generic [ref=e140]:
+            - generic [ref=e141]: D2 VADT (from DB)
+            - spinbutton [ref=e142]
+          - generic [ref=e143]:
+            - generic [ref=e144]: VADT (Auto-calc)
+            - spinbutton [ref=e145]
+          - generic [ref=e146]:
+            - generic [ref=e147]: AM Peak Flow (Inbound Direction)
+            - paragraph [ref=e148]: Select the primary direction of travel during the morning commute.
+            - combobox [ref=e149]:
+              - option "Direction 1, Gazettal" [selected]
+              - option "Direction 2, Against Gazettal"
+              - option "Even Split (Industrial/Commercial)"
+          - generic [ref=e151]:
+            - generic [ref=e152]: Growth Rate (% p.a.) (Auto-filled, editable)
+            - paragraph [ref=e153]: (from DB if available, else defaults to 2.5%; editable)
+            - generic [ref=e154]:
+              - spinbutton "Growth Rate (% p.a.) (Auto-filled, editable)" [ref=e155]: "2.5"
+              - generic: "%"
+          - generic [ref=e156]:
+            - generic [ref=e157]: Target Year (Auto-filled, editable)
+            - spinbutton [ref=e158]: "2026"
+          - generic [ref=e159]: Target Year Projection (Grouped)
+          - generic [ref=e160]:
+            - generic [ref=e161]: Predicted VADT @ Opening Year
+            - spinbutton [ref=e162]
+          - generic [ref=e163]:
+            - generic [ref=e164]: Predicted D1 VADT @ Opening Year
+            - spinbutton [ref=e165]
+          - generic [ref=e166]:
+            - generic [ref=e167]: Predicted D2 VADT @ Opening Year
+            - spinbutton [ref=e168]
+          - generic [ref=e169]:
+            - generic [ref=e170]: DTCA (Auto-detect)
+            - combobox:
+              - option "Yes" [selected]
+              - option "No"
+      - group "âœŽ You Must Fill These" [ref=e171]:
+        - generic [ref=e172]: âœŽ You Must Fill These
+        - paragraph [ref=e173]: ðŸ”´ Red fields require user input/review before running calculations. These values are intended to be editable.
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - generic [ref=e176]: Terrain *
+            - combobox [ref=e177]:
+              - option "Flat" [selected]
+              - option "Rolling"
+              - option "Mountainous"
+          - generic [ref=e178]:
+            - generic [ref=e179]: Road Trains (RTR)? *
+            - combobox [ref=e180]:
+              - option "No" [selected]
+              - option "Yes"
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - generic [ref=e183]: Road Operation *
+            - combobox [ref=e184]:
+              - option "Two-way" [selected]
+              - option "One-way"
+          - generic [ref=e185]:
+            - generic [ref=e186]: D1 Lanes *
+            - paragraph [ref=e187]: (auto-filled if in DB; editable when needed)
+            - spinbutton [ref=e188]: "1"
+          - generic [ref=e189]:
+            - generic [ref=e190]: D2 Lanes *
+            - paragraph [ref=e191]: (auto-filled if in DB; editable when needed)
+            - spinbutton [ref=e192]: "1"
+          - generic [ref=e193]:
+            - generic [ref=e194]: Road Classification (Cap.) *
+            - paragraph [ref=e195]: Physical per-lane capacity for V/C ratio denominator
+            - combobox [ref=e196]:
+              - option "Freeway / Motorway (1,800 vph/lane)"
+              - option "Multi-lane Arterial (1,600 vph/lane)"
+              - option "Urban Arterial 60â€“80 km/h (1,500 vph/lane)" [selected]
+              - option "Sub-arterial / Collector (1,200 vph/lane)"
+              - option "Local Street â‰¤50 km/h (900 vph/lane)"
+              - option "Rural Highway (1,000 vph/lane)"
+        - generic [ref=e197]:
+          - generic [ref=e198]: Traffic Mix Controls (HV / RT)
+          - generic [ref=e199]:
+            - generic [ref=e200]: HV (%) *
+            - paragraph [ref=e201]: (auto-filled if in DB; editable when needed)
+            - spinbutton [ref=e202]: "5"
+          - generic [ref=e203]:
+            - generic [ref=e204]: DHVPA *
+            - combobox [ref=e205]:
+              - option "Yes"
+              - option "No" [selected]
+          - generic [ref=e206]:
+            - generic [ref=e207]: RTP (%) *
+            - spinbutton [ref=e208]: "0"
+          - generic [ref=e209]:
+            - generic [ref=e210]: DRTPA *
+            - combobox [ref=e211]:
+              - option "Yes"
+              - option "No" [selected]
+        - generic [ref=e212]:
+          - generic [ref=e213]: Directional Overrides (used only when DHVPA/DRTPA = Yes)
+          - generic [ref=e214]:
+            - generic [ref=e215]: D1 HV% *
+            - spinbutton "Auto-linked from overall percentage while allocation is set to No" [ref=e216]: "5"
+          - generic [ref=e217]:
+            - generic [ref=e218]: D2 HV% *
+            - spinbutton "Auto-linked from overall percentage while allocation is set to No" [ref=e219]: "5"
+          - generic [ref=e220]:
+            - generic [ref=e221]: D1 RT% *
+            - spinbutton "Auto-linked from overall percentage while allocation is set to No" [ref=e222]: "0"
+          - generic [ref=e223]:
+            - generic [ref=e224]: D2 RT% *
+            - spinbutton "Auto-linked from overall percentage while allocation is set to No" [ref=e225]: "0"
+      - generic [ref=e226]:
+        - button "ðŸš€ Calculate All Metrics" [ref=e227] [cursor=pointer]
+        - button "âœ“ Verify Formulas" [ref=e228] [cursor=pointer]
+        - paragraph [ref=e229]: This updates directional summary, queue, VCR/LOS, optional diagnostics, and charts in one pass.
+    - generic [ref=e230]:
+      - heading "Grouped Directional Summary" [level=2] [ref=e231]
+      - 'button "Include in Print: Yes" [pressed] [ref=e233] [cursor=pointer]'
+      - paragraph [ref=e234]: Compares AM/OP/PM/EV directional splits and totals used by downstream queue and VCR calculations.
+      - heading "ðŸ”´ Direction 2, Against Gazettal" [level=3] [ref=e235]
+      - button "Copy Table" [ref=e237] [cursor=pointer]
+      - table [ref=e239]:
+        - rowgroup [ref=e240]:
+          - row "Year AM OP PM EV Total" [ref=e241]:
+            - columnheader "Year" [ref=e242]
+            - columnheader "AM" [ref=e243]
+            - columnheader "OP" [ref=e244]
+            - columnheader "PM" [ref=e245]
+            - columnheader "EV" [ref=e246]
+            - columnheader "Total" [ref=e247]
+          - row "LV HV RT LV HV RT LV HV RT LV HV RT" [ref=e248]:
+            - columnheader "LV" [ref=e249]
+            - columnheader "HV" [ref=e250]
+            - columnheader "RT" [ref=e251]
+            - columnheader "LV" [ref=e252]
+            - columnheader "HV" [ref=e253]
+            - columnheader "RT" [ref=e254]
+            - columnheader "LV" [ref=e255]
+            - columnheader "HV" [ref=e256]
+            - columnheader "RT" [ref=e257]
+            - columnheader "LV" [ref=e258]
+            - columnheader "HV" [ref=e259]
+            - columnheader "RT" [ref=e260]
+        - rowgroup
+      - heading "ðŸŸ¢ Direction 1, Gazettal" [level=3] [ref=e261]
+      - button "Copy Table" [ref=e263] [cursor=pointer]
+      - table [ref=e265]:
+        - rowgroup [ref=e266]:
+          - row "Year AM OP PM EV Total" [ref=e267]:
+            - columnheader "Year" [ref=e268]
+            - columnheader "AM" [ref=e269]
+            - columnheader "OP" [ref=e270]
+            - columnheader "PM" [ref=e271]
+            - columnheader "EV" [ref=e272]
+            - columnheader "Total" [ref=e273]
+          - row "LV HV RT LV HV RT LV HV RT LV HV RT" [ref=e274]:
+            - columnheader "LV" [ref=e275]
+            - columnheader "HV" [ref=e276]
+            - columnheader "RT" [ref=e277]
+            - columnheader "LV" [ref=e278]
+            - columnheader "HV" [ref=e279]
+            - columnheader "RT" [ref=e280]
+            - columnheader "LV" [ref=e281]
+            - columnheader "HV" [ref=e282]
+            - columnheader "RT" [ref=e283]
+            - columnheader "LV" [ref=e284]
+            - columnheader "HV" [ref=e285]
+            - columnheader "RT" [ref=e286]
+        - rowgroup
+    - generic [ref=e287]:
+      - heading "Queue Length Estimation" [level=2] [ref=e288]:
+        - generic [ref=e290]: 
+        - text: Queue Length Estimation
+      - 'button "Include in Print: Yes" [pressed] [ref=e292] [cursor=pointer]'
+      - paragraph [ref=e293]: Toggle between table and chart views. Queue values are shown by duration window and period for both directions.
+      - generic [ref=e294]:
+        - button "Table" [ref=e295] [cursor=pointer]
+        - button "Chart" [ref=e296] [cursor=pointer]
+      - generic [ref=e297]:
+        - heading "ðŸ”´ Direction 2, Against Gazettal" [level=3] [ref=e298]
+        - button "Copy Table" [ref=e300] [cursor=pointer]
+        - table [ref=e302]:
+          - rowgroup [ref=e303]:
+            - row "Queue Duration AM OP PM EV Max Queue" [ref=e304]:
+              - columnheader "Queue Duration" [ref=e305]
+              - columnheader "AM" [ref=e306]
+              - columnheader "OP" [ref=e307]
+              - columnheader "PM" [ref=e308]
+              - columnheader "EV" [ref=e309]
+              - columnheader "Max Queue" [ref=e310]
+          - rowgroup
+        - heading "ðŸŸ¢ Direction 1, Gazettal" [level=3] [ref=e311]
+        - button "Copy Table" [ref=e313] [cursor=pointer]
+        - table [ref=e315]:
+          - rowgroup [ref=e316]:
+            - row "Queue Duration AM OP PM EV Max Queue" [ref=e317]:
+              - columnheader "Queue Duration" [ref=e318]
+              - columnheader "AM" [ref=e319]
+              - columnheader "OP" [ref=e320]
+              - columnheader "PM" [ref=e321]
+              - columnheader "EV" [ref=e322]
+              - columnheader "Max Queue" [ref=e323]
+          - rowgroup
+        - generic [ref=e324]:
+          - heading "ðŸŸ SWT Queue Summary" [level=3] [ref=e325]
+          - button "Copy Table" [ref=e327] [cursor=pointer]
+          - table [ref=e329]:
+            - rowgroup [ref=e330]:
+              - row "Direction AM OP PM EV Max SWT Queue" [ref=e331]:
+                - columnheader "Direction" [ref=e332]
+                - columnheader "AM" [ref=e333]
+                - columnheader "OP" [ref=e334]
+                - columnheader "PM" [ref=e335]
+                - columnheader "EV" [ref=e336]
+                - columnheader "Max SWT Queue" [ref=e337]
+            - rowgroup
+    - generic [ref=e338]:
+      - heading "VCR / LOS Analysis" [level=2] [ref=e339]:
+        - generic [ref=e341]: 
+        - text: VCR / LOS Analysis
+      - 'button "Include in Print: Yes" [pressed] [ref=e343] [cursor=pointer]'
+      - paragraph [ref=e344]: Tracks directional and network stress across periods using LOS color bands. Use this as primary capacity risk screening.
+      - paragraph [ref=e345]: "Work VCR assumes: Single Lane Closure (default)"
+      - generic [ref=e346]:
+        - button "Table" [ref=e347] [cursor=pointer]
+        - button "Chart" [ref=e348] [cursor=pointer]
+      - generic [ref=e349]:
+        - heading "ðŸ”´ Direction 2, Against Gazettal" [level=3] [ref=e350]
+        - button "Copy Table" [ref=e352] [cursor=pointer]
+        - table [ref=e354]:
+          - rowgroup [ref=e355]:
+            - row "Metric AM OP PM EV" [ref=e356]:
+              - columnheader "Metric" [ref=e357]
+              - columnheader "AM" [ref=e358]
+              - columnheader "OP" [ref=e359]
+              - columnheader "PM" [ref=e360]
+              - columnheader "EV" [ref=e361]
+          - rowgroup
+        - heading "ðŸŸ¢ Direction 1, Gazettal" [level=3] [ref=e362]
+        - button "Copy Table" [ref=e364] [cursor=pointer]
+        - table [ref=e366]:
+          - rowgroup [ref=e367]:
+            - row "Metric AM OP PM EV" [ref=e368]:
+              - columnheader "Metric" [ref=e369]
+              - columnheader "AM" [ref=e370]
+              - columnheader "OP" [ref=e371]
+              - columnheader "PM" [ref=e372]
+              - columnheader "EV" [ref=e373]
+          - rowgroup
+      - paragraph [ref=e374]: "* Design capacity uses Austroads/TMR practical per-lane capacity adjusted for terrain, geometry and HV/RT mix, with a minimum of 500 vph/lane."
+    - button "▶ Generate TGS TIA Sheet" [ref=e376] [cursor=pointer]
+    - group [ref=e377]:
+      - generic "HOURLY ESTIMATE" [ref=e378] [cursor=pointer]
+      - 'button "Include in Print: Yes" [pressed] [ref=e380] [cursor=pointer]'
+      - paragraph [ref=e381]:
+        - strong [ref=e382]: "Bucket Definition:"
+        - text: AM (07:00-09:00, MORNING PEAK), OP (09:00-16:00, MORNING OFF PEAK), PM (16:00-18:00, EVENING PEAK), EV (18:00-07:00, EVENING OFF PEAK).
+      - generic [ref=e383]:
+        - generic [ref=e384]: SWT Red Time Per Cycle (seconds)
+        - generic [ref=e385]:
+          - generic [ref=e386]: Operation Type
+          - combobox "Operation Type" [ref=e387]:
+            - option "Temporary Work Zone (Stop/Go)" [selected]
+            - option "Permanent Signalized Intersection"
+        - spinbutton [ref=e388]: "120"
+        - generic [ref=e389]: Use red time per cycle, NOT total hourly accumulation. Temporary work-zone stop/go commonly uses around 120s in a 240s cycle.
+      - generic [ref=e390]:
+        - heading "Max Back-of-Queue Calculator" [level=3] [ref=e391]
+        - generic [ref=e392]: Auto-filled from calculated VPD/hourly profile and direction settings.
+        - generic [ref=e393]:
+          - generic [ref=e394]:
+            - generic [ref=e395]: "Arrival Volume (vph, auto):"
+            - generic [ref=e396]:
+              - spinbutton "Arrival Volume (vph, auto):" [ref=e397]
+              - generic: vph
+          - generic [ref=e398]:
+            - generic [ref=e399]: "Effective Red Time (s, auto):"
+            - generic [ref=e400]:
+              - spinbutton "Effective Red Time (s, auto):" [ref=e401]
+              - generic: s
+          - generic [ref=e402]:
+            - generic [ref=e403]: "Saturation Flow (vph, auto):"
+            - generic [ref=e404]:
+              - spinbutton "Saturation Flow (vph, auto):" [ref=e405]
+              - generic: vph
+          - generic [ref=e406]:
+            - generic [ref=e407]: "Average Vehicle Spacing (m, auto):"
+            - generic [ref=e408]:
+              - spinbutton "Average Vehicle Spacing (m, auto):" [ref=e409]
+              - generic: m
+        - generic [ref=e410]:
+          - button "Refresh from Calculated Data" [ref=e411] [cursor=pointer]
+          - 'heading "Estimated Max Queue: --" [level=4] [ref=e413]'
+      - heading "1. QUEUE LENGTH (Hourly Basis)" [level=3] [ref=e414]
+      - generic [ref=e415]:
+        - generic [ref=e416]: Queue Wait Time
+        - combobox "Queue Wait Time" [ref=e417]:
+          - option "2 minutes (Default)" [selected]
+          - option "5 minutes"
+          - option "10 minutes"
+          - option "15 minutes"
+          - option "Custom (minutes)"
+      - generic [ref=e418]:
+        - button "Table" [ref=e419] [cursor=pointer]
+        - button "Chart" [ref=e420] [cursor=pointer]
+      - generic [ref=e422]:
+        - heading "Direction 1" [level=4] [ref=e423]
+        - button "Copy Table" [ref=e425] [cursor=pointer]
+        - table [ref=e427]:
+          - rowgroup [ref=e428]:
+            - row "Hour Hour Type Volume (vph) AGTTM Queue (m) SWT Queue (m) Max Physical Reach (m)" [ref=e429]:
+              - columnheader "Hour" [ref=e430]
+              - columnheader "Hour Type" [ref=e431]
+              - columnheader "Volume (vph)" [ref=e432]
+              - columnheader "AGTTM Queue (m)" [ref=e433]
+              - columnheader "SWT Queue (m)" [ref=e434]
+              - columnheader "Max Physical Reach (m)" [ref=e435]
+          - rowgroup
+        - heading "Direction 2" [level=4] [ref=e436]
+        - button "Copy Table" [ref=e438] [cursor=pointer]
+        - table [ref=e440]:
+          - rowgroup [ref=e441]:
+            - row "Hour Hour Type Volume (vph) AGTTM Queue (m) SWT Queue (m) Max Physical Reach (m)" [ref=e442]:
+              - columnheader "Hour" [ref=e443]
+              - columnheader "Hour Type" [ref=e444]
+              - columnheader "Volume (vph)" [ref=e445]
+              - columnheader "AGTTM Queue (m)" [ref=e446]
+              - columnheader "SWT Queue (m)" [ref=e447]
+              - columnheader "Max Physical Reach (m)" [ref=e448]
+          - rowgroup
+      - heading "2. VCR (Hourly Basis)" [level=3] [ref=e449]
+      - generic [ref=e450]:
+        - button "Table" [ref=e451] [cursor=pointer]
+        - button "Chart" [ref=e452] [cursor=pointer]
+      - generic [ref=e454]:
+        - heading "Direction 1" [level=4] [ref=e455]
+        - button "Copy Table" [ref=e457] [cursor=pointer]
+        - table [ref=e459]:
+          - rowgroup [ref=e460]:
+            - row "Hour Base VCR (LOS) Work VCR (LOS)" [ref=e461]:
+              - columnheader "Hour" [ref=e462]
+              - columnheader "Base VCR (LOS)" [ref=e463]
+              - columnheader "Work VCR (LOS)" [ref=e464]
+          - rowgroup
+        - heading "Direction 2" [level=4] [ref=e465]
+        - button "Copy Table" [ref=e467] [cursor=pointer]
+        - table [ref=e469]:
+          - rowgroup [ref=e470]:
+            - row "Hour Base VCR (LOS) Work VCR (LOS)" [ref=e471]:
+              - columnheader "Hour" [ref=e472]
+              - columnheader "Base VCR (LOS)" [ref=e473]
+              - columnheader "Work VCR (LOS)" [ref=e474]
+          - rowgroup
+    - group [ref=e475]:
+      - generic "Detour Analysis" [ref=e476] [cursor=pointer]
+      - generic [ref=e477]:
+        - 'heading "ðŸ”„ Detailed Detour Route Capacity Include in Print: Yes" [level=2] [ref=e478]':
+          - text: ðŸ”„ Detailed Detour Route Capacity
+          - 'button "Include in Print: Yes" [pressed] [ref=e479] [cursor=pointer]'
+        - paragraph [ref=e480]: Merges the 24-hour hourly profile of the primary site with selected detour roads to identify specific peak-period failures.
+        - generic [ref=e481]:
+          - generic [ref=e482]:
+            - generic [ref=e483]:
+              - generic [ref=e484]: Detour Route Scenarios
+              - generic [ref=e485]: Configure how many detour routes need separate analysis. Each route keeps its own selected path, weights, and detour inputs.
+            - button "Set Route Count" [ref=e486] [cursor=pointer]
+          - generic [ref=e487]: "1 route configured. Active route: 1."
+          - button "Route 1" [ref=e489] [cursor=pointer]
+        - generic [ref=e491]:
+          - generic [ref=e492]:
+            - generic [ref=e493]: Diversion Rate (%)
+            - spinbutton [ref=e494]: "80"
+            - generic [ref=e495]: User-defined diversion percentage (e.g., keep local/emergency access on the primary road).
+          - generic [ref=e496]:
+            - generic [ref=e497]: Closure Type
+            - combobox [ref=e498]:
+              - option "Full Road Detour (Both Directions Closed)"
+              - option "One Way Detour (Single Direction Closed)" [selected]
+            - generic [ref=e499]:
+              - generic [ref=e500]: Closed Direction
+              - combobox [ref=e501]:
+                - option "Direction 1, Gazettal" [selected]
+                - option "Direction 2, Against Gazettal"
+            - generic [ref=e502]:
+              - checkbox "Heavy Vehicle Route Suitability Confirmed" [ref=e503] [cursor=pointer]
+              - text: Heavy Vehicle Route Suitability Confirmed
+            - generic [ref=e504]: Confirm bridge load limits, low-clearance structures, and swept-path suitability before adopting detour capacity outputs.
+          - generic [ref=e505]:
+            - generic [ref=e506]: Nearby Street Name Finder
+            - paragraph [ref=e507]: Select one or more streets to define the traffic detour path.
+            - generic [ref=e508]:
+              - generic [ref=e509]: "0.2"
+              - slider [ref=e510]: "200"
+              - spinbutton "Detour nearby road radius (meters)" [ref=e511]: "200"
+              - generic [ref=e512]: 0.2 km
+              - button "Scan" [ref=e513] [cursor=pointer]
+            - generic [ref=e514]: "Selected path: -"
+            - generic [ref=e516]: Select a primary site/search, then scan.
+      - generic [ref=e519]:
+        - 'heading "Pedestrian Detour Impact Include in Print: Yes" [level=2] [ref=e520]':
+          - generic [ref=e522]: 
+          - text: Pedestrian Detour Impact
+          - 'button "Include in Print: Yes" [pressed] [ref=e523] [cursor=pointer]'
+        - generic [ref=e524]:
+          - generic [ref=e525]: New Detour Route Name
+          - textbox "New Detour Route Name" [ref=e526]:
+            - /placeholder: Enter new detour route name
+          - generic [ref=e528] [cursor=pointer]:
+            - checkbox "Apply the same detour route to pedestrians?" [ref=e529]
+            - text: Apply the same detour route to pedestrians?
+          - generic [ref=e530]:
+            - generic [ref=e531]: "0.2"
+            - slider [ref=e532]: "200"
+            - spinbutton "Pedestrian nearby road radius (meters)" [ref=e533]: "200"
+            - generic [ref=e534]: 0.2 km
+            - button "Scan" [ref=e535] [cursor=pointer]
+          - generic [ref=e536]: "Selected path: -"
+          - generic [ref=e538]: Scan map to choose pedestrian detour streets.
+        - heading "Estimated Delay - Detour route (-)" [level=4] [ref=e539]
+        - generic [ref=e540]:
+          - 'link "ðŸ“ Measure Distance (Google Maps)" [ref=e541] [cursor=pointer]':
+            - /url: javascript:void(0)
+          - 'link "ðŸ“ Measure Distance (MetroMaps)" [ref=e542] [cursor=pointer]':
+            - /url: javascript:void(0)
+        - paragraph [ref=e543]: Calculates estimated maximum pedestrian delay using route distances, walking speed, and controlled/uncontrolled crossing delays.
+        - generic [ref=e544]:
+          - generic [ref=e545]:
+            - generic [ref=e546]: Normal Path Length (m)
+            - spinbutton [ref=e547]: "100"
+          - generic [ref=e548]:
+            - generic [ref=e549]: Detour Path Length (m)
+            - spinbutton [ref=e550]: "250"
+          - generic [ref=e551]:
+            - generic [ref=e552]: No. Controlled Crossings
+            - spinbutton [ref=e553]: "2"
+          - generic [ref=e554]:
+            - generic [ref=e555]: No. Uncontrolled Crossings
+            - spinbutton [ref=e556]: "0"
+          - generic [ref=e557]:
+            - generic [ref=e558]: Pedestrian Speed (m/s)
+            - spinbutton [ref=e559]: "1.2"
+          - generic [ref=e560]:
+            - generic [ref=e561]: Controlled Crossing Delay (s)
+            - spinbutton [ref=e562]: "60"
+          - generic [ref=e563]:
+            - generic [ref=e564]: Uncontrolled Crossing Delay (s)
+            - spinbutton [ref=e565]: "10"
+        - generic [ref=e567]:
+          - generic [ref=e568]: Estimated Maximum Added Delay
+          - generic [ref=e569]: "-"
+          - generic [ref=e570]: Existing time + detour time + crossing delay model
+        - button "Copy Table" [ref=e572] [cursor=pointer]
+        - table [ref=e574]:
+          - rowgroup [ref=e575]:
+            - row "Existing Route Time (s) Detoured Route Time (s) Crossing Delay (s) Added Delay (s) Added Delay (min)" [ref=e576]:
+              - columnheader "Existing Route Time (s)" [ref=e577]
+              - columnheader "Detoured Route Time (s)" [ref=e578]
+              - columnheader "Crossing Delay (s)" [ref=e579]
+              - columnheader "Added Delay (s)" [ref=e580]
+              - columnheader "Added Delay (min)" [ref=e581]
+          - rowgroup [ref=e582]:
+            - row "- - - - -" [ref=e583]:
+              - cell "-" [ref=e584]
+              - cell "-" [ref=e585]
+              - cell "-" [ref=e586]
+              - cell "-" [ref=e587]
+              - cell "-" [ref=e588]
+    - button "▶ Generate Detour TIA Sheet" [ref=e590] [cursor=pointer]
+    - group [ref=e591]:
+      - 'generic "ðŸ–¨ï¸ Print Customization (All Sections & Tables) (Click to Expand)" [ref=e592] [cursor=pointer]'
+    - group [ref=e593]:
+      - generic "Beta Features (Click to Expand)" [ref=e594] [cursor=pointer]
+      - option "Urban Arterial (60-80 km/h)" [selected]
+      - option "Urban Local/Collector (<=50 km/h)"
+      - option "Rural Highway (>=100 km/h)"
+      - option "Freeway / Motorway"
+      - option "40 km/h or less"
+      - option "50 km/h"
+      - option "60 km/h" [selected]
+      - option "70 km/h"
+      - option "80 km/h"
+      - option "90 km/h"
+      - option "100 km/h"
+      - option "110 km/h"
+      - option "40 km/h"
+      - option "50 km/h"
+      - option "60 km/h" [selected]
+      - option "70 km/h"
+      - option "80 km/h"
+      - option "90 km/h"
+      - option "100 km/h"
+      - option "110 km/h"
+      - option "1.5s (Alert / Urban)"
+      - option "2.0s (Normal / General)"
+      - option "2.5s (Austroads AGRD Â§5.4 / Rural â€” default)" [selected]
+      - text: 
+      - option "-- Select Template --" [selected]
+      - option "Single Lane Closure (Multi-lane Road)"
+      - option "Stop/Go Shuttle (Single Lane Road)"
+      - option "Side-track / Deviation"
+    - group [ref=e595]:
+      - generic "Formula Trace" [ref=e596] [cursor=pointer]
+    - generic [ref=e597]:
+      - 'button "ðŸ“ HTML Detailed Report" [ref=e598] [cursor=pointer]'
+      - button "ðŸ“„ HTML Short Report" [ref=e599] [cursor=pointer]
+      - 'button "ðŸ Detailed Python Report" [ref=e600] [cursor=pointer]'
+      - 'button "ðŸ Python Short Report" [ref=e601] [cursor=pointer]'
+      - button "ðŸ’¾ Export Session JSON" [ref=e602] [cursor=pointer]
+  - generic [ref=e603]: Â© 2026 Crompton Concepts. All rights reserved.

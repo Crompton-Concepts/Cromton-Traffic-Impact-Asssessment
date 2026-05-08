@@ -10410,6 +10410,88 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   setupContactDeveloperButton();
   setupUserManualModal();
   setupPythonSetupModal();
+  installMojibakeAutoRepair();
+
+  function normalizeMojibakeString(value) {
+    const text = String(value || '');
+    if (!text || !/[ÃÂâð]/.test(text)) return text;
+    try {
+      const fixed = decodeURIComponent(escape(text));
+      return fixed || text;
+    } catch (_) {
+      return text;
+    }
+  }
+
+  function repairMojibakeInNode(rootNode) {
+    if (!rootNode) return;
+    const skipParents = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA']);
+
+    const normalizeTextNode = (textNode) => {
+      if (!textNode || !textNode.parentElement) return;
+      if (skipParents.has(textNode.parentElement.tagName)) return;
+      const original = textNode.nodeValue || '';
+      const fixed = normalizeMojibakeString(original);
+      if (fixed !== original) textNode.nodeValue = fixed;
+    };
+
+    if (rootNode.nodeType === Node.TEXT_NODE) {
+      normalizeTextNode(rootNode);
+      return;
+    }
+
+    if (rootNode.nodeType !== Node.ELEMENT_NODE) return;
+
+    const normalizeAttrs = (el) => {
+      ['title', 'placeholder', 'aria-label'].forEach((attr) => {
+        if (!el.hasAttribute(attr)) return;
+        const original = el.getAttribute(attr) || '';
+        const fixed = normalizeMojibakeString(original);
+        if (fixed !== original) el.setAttribute(attr, fixed);
+      });
+    };
+
+    normalizeAttrs(rootNode);
+    const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    textNodes.forEach(normalizeTextNode);
+
+    rootNode.querySelectorAll('*').forEach(normalizeAttrs);
+  }
+
+  function installMojibakeAutoRepair() {
+    const root = document.body;
+    if (!root) return;
+
+    repairMojibakeInNode(root);
+
+    let scheduled = false;
+    const pendingNodes = new Set();
+    const scheduleRepair = (node) => {
+      if (!node) return;
+      pendingNodes.add(node);
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        Array.from(pendingNodes).forEach(repairMojibakeInNode);
+        pendingNodes.clear();
+      });
+    };
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'characterData') {
+          scheduleRepair(mutation.target);
+          return;
+        }
+        mutation.addedNodes.forEach((node) => scheduleRepair(node));
+      });
+    });
+
+    observer.observe(root, { childList: true, subtree: true, characterData: true });
+  }
 
   function resolveRepoRelativePath(fileName) {
     const cleanName = String(fileName || '').replace(/^\.\//, '');
