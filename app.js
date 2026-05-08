@@ -6272,11 +6272,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const timeoutId = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
       const response = await fetch(url, {
         signal: controller.signal,
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, max-age=0',
-          Pragma: 'no-cache'
-        }
+        cache: 'no-cache'
       });
       clearTimeout(timeoutId);
       const data = await parseJsonResponse(response, url);
