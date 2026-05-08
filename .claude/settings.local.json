@@ -1,4 +1,5 @@
 {
+  "worktrees": false,
   "permissions": {
     "allow": [
       "PowerShell(Get-ChildItem -Path \"d:\\\\Crompton Labs\\\\APPS\\\\Cromton-Traffic-Impact-Asssessment\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName } | Sort-Object)",
