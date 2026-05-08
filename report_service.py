@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import functools
 import uuid
 import base64
 import re
@@ -151,6 +152,7 @@ def _prune_drafts(now: datetime | None = None) -> None:
       DRAFTS.pop(draft_id, None)
 
 
+@functools.lru_cache()
 def _load_logo_data_url() -> str:
     logo_path = Path(__file__).with_name("logo.jpeg")
     if not logo_path.exists():
