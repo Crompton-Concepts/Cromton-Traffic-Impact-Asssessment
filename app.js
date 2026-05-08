@@ -3710,6 +3710,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
     }
 
+    // Tab switching between Sign In and Create Account
+    const tabSignIn = document.getElementById('tabSignIn');
+    const tabCreate = document.getElementById('tabCreate');
+    const paneCreate = document.getElementById('paneCreate');
+
+    if (tabSignIn && tabCreate && paneSignIn && paneCreate) {
+      tabSignIn.addEventListener('click', (e) => {
+        e.preventDefault();
+        tabSignIn.classList.add('active');
+        tabSignIn.setAttribute('aria-selected', 'true');
+        tabCreate.classList.remove('active');
+        tabCreate.setAttribute('aria-selected', 'false');
+        paneSignIn.style.display = 'block';
+        paneSignIn.classList.add('active');
+        paneCreate.style.display = 'none';
+        paneCreate.classList.remove('active');
+        loginUser.focus();
+      });
+
+      tabCreate.addEventListener('click', (e) => {
+        e.preventDefault();
+        tabCreate.classList.add('active');
+        tabCreate.setAttribute('aria-selected', 'true');
+        tabSignIn.classList.remove('active');
+        tabSignIn.setAttribute('aria-selected', 'false');
+        paneCreate.style.display = 'block';
+        paneCreate.classList.add('active');
+        paneSignIn.style.display = 'none';
+        paneSignIn.classList.remove('active');
+        document.getElementById('newFullName').focus();
+      });
+    }
+
     if (resetPasswordForm) {
       resetPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -3948,7 +3981,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
-  setupLoginGate();
+  function initializeLoginGateWhenFirebaseReady(attempt = 0) {
+    const firebaseReady = typeof window.firebase !== 'undefined'
+      && window.firebase
+      && typeof window.firebase.auth === 'function';
+
+    if (firebaseReady) {
+      setupLoginGate();
+      return;
+    }
+
+    if (attempt >= 40) {
+      console.error('[Login] Firebase did not initialize in time.');
+      const loginError = document.getElementById('loginError');
+      if (loginError) {
+        loginError.textContent = 'Authentication service unavailable. Please refresh and try again.';
+      }
+      return;
+    }
+
+    setTimeout(() => initializeLoginGateWhenFirebaseReady(attempt + 1), 250);
+  }
+
+  initializeLoginGateWhenFirebaseReady();
   setupLogoutButton();
   setupContactDeveloperButton();
   setupUserManualModal();
