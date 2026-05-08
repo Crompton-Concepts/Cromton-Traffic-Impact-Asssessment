@@ -626,7 +626,7 @@
       background: rgba(255,255,255,0.20);
       border-color: rgba(255,255,255,0.44);
     }
-    .home-button::before { content: 'ðŸ '; font-size: 1em; }
+    .home-button::before { content: ''; font-size: 1em; }
 
     .logout-button {
       width: auto;
@@ -4369,19 +4369,19 @@
         <span class="sites-loaded-badge">
           <strong>Sites Loaded:</strong> <span id="sitesLoadedCount">0</span>
         </span>
-        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal">ðŸ“– <span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
-        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View">ðŸ“˜ <span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
-        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View">ðŸ§ª <span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
+        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal"><span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
+        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View"><span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
+        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View"><span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
         <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="display:none; text-decoration: none;" title="Open Admin Portal"><span class="nav-label-full">Admin Portal</span><span class="nav-label-short">Admin</span></a>
         <div class="contact-dev-wrap">
-          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel">ðŸ’¬ <span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
+          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel"><span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
           <div id="contactDevPanel" class="contact-dev-panel hidden" role="dialog" aria-label="Developer contact details">
             <p class="contact-dev-title">Feedback or issue report</p>
             <p class="contact-dev-note">Share any bug details, screenshots, and steps to reproduce.</p>
-            <a class="contact-dev-link" href="mailto:SANJU@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">ðŸ“§ SANJU@CROMPTONCONCEPTS.COM.AU</a>
-            <a class="contact-dev-link" href="tel:+610405535187">ðŸ“ž +610405535187</a>
-            <a class="contact-dev-link" href="mailto:AARON@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">ðŸ“§ AARON@CROMPTONCONCEPTS.COM.AU</a>
-            <a class="contact-dev-link" href="tel:+610405535187">ðŸ“ž +610405535187</a>
+            <a class="contact-dev-link" href="mailto:SANJU@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">Email: SANJU@CROMPTONCONCEPTS.COM.AU</a>
+            <a class="contact-dev-link" href="tel:+610405535187">Phone: +610405535187</a>
+            <a class="contact-dev-link" href="mailto:AARON@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">Email: AARON@CROMPTONCONCEPTS.COM.AU</a>
+            <a class="contact-dev-link" href="tel:+610405535187">Phone: +610405535187</a>
           </div>
         </div>
         <span class="navbar-acct-sep" aria-hidden="true"></span>
@@ -4392,7 +4392,7 @@
     <!-- Developer View PIN Modal -->
     <div id="devPinModal" role="dialog" aria-modal="true" aria-labelledby="devPinModalTitle" style="display:none; position:fixed; inset:0; background:rgba(7,20,22,0.75); z-index:200000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);">
       <div style="background:#fff; border-radius:12px; border:1px solid #dbe2ea; box-shadow:0 16px 40px rgba(0,0,0,0.3); padding:36px 32px; max-width:340px; width:100%; text-align:center;">
-        <div style="font-size:2.2rem; margin-bottom:8px;">ðŸ”’</div>
+        <div style="font-size:2.2rem; margin-bottom:8px;">LOCK</div>
         <h2 id="devPinModalTitle" style="margin:0 0 6px; color:#0f2f32; font-size:1.2rem;">Developer Access</h2>
         <p style="margin:0 0 20px; color:#5a7a7d; font-size:0.9rem;">Enter PIN to open Developer View</p>
         <input id="devPinModalInput" type="password" inputmode="numeric" maxlength="10" placeholder="Enter PIN" autocomplete="off"
@@ -12313,7 +12313,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const updateButtonState = () => {
           const active = getActiveFullscreenElement();
           const isActive = !!(active && (active === targetElement || targetElement.contains(active)));
-          button.textContent = isActive ? 'âœ•' : 'â›¶';
+          button.textContent = isActive ? 'X' : '[ ]';
           button.title = isActive ? 'Exit fullscreen map' : 'Fullscreen map';
         };
 
