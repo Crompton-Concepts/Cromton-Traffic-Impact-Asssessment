@@ -7,6 +7,8 @@
 // defined in index.html and must run in that page context.
 // ============================================================
   const AUTH_SESSION_KEY = 'crompton_tia_auth';
+  const USER_SESSION_KEY = 'crompton_tia_user';
+  const TIER_SESSION_KEY = 'crompton_tia_tier';
   let loadingHintTimer = null;
   let loadingFunnyCommentTimer = null;
   let loadingProgressPulseTimer = null;
