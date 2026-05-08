@@ -7319,8 +7319,11 @@
         cellEls.slice(2).forEach((cellEl) => {
           const parts = extractDirectionalCellParts(cellEl);
           if (parts) {
-            directionalValues.D1.push(parts.D1 || '-');
-            directionalValues.D2.push(parts.D2 || '-');
+            // Labels may include extra text e.g. "D1 (Pri D1)" — find by prefix
+            var _d1Key = Object.prototype.hasOwnProperty.call(parts, 'D1') ? 'D1' : Object.keys(parts).find(function(k) { return /^D1/i.test(k); });
+            var _d2Key = Object.prototype.hasOwnProperty.call(parts, 'D2') ? 'D2' : Object.keys(parts).find(function(k) { return /^D2/i.test(k); });
+            directionalValues.D1.push(_d1Key ? (parts[_d1Key] || '-') : '-');
+            directionalValues.D2.push(_d2Key ? (parts[_d2Key] || '-') : '-');
             hasDirectionalData = true;
           } else {
             const text = getCellPlainText(cellEl) || '-';
@@ -7759,6 +7762,22 @@
     var tables = [];
     var gf = snap.growthFactor || 1;
     var gfStr = gf !== 1 ? gf.toFixed(3) : '1.000';
+
+    // 0. Route Information table
+    var _routeNames = snap.roads.map(function(r) { return r.name; }).join(', ');
+    var _routeLength = (snap.delay && Number(snap.delay.detourLengthKm) > 0) ? String(snap.delay.detourLengthKm) : '-';
+    var _roadClass = snap.roads.length > 0 && snap.roads[0].speedLimitKmh ? String(snap.roads[0].speedLimitKmh) + ' km/h speed zone' : '-';
+    tables.push({
+      table_id: 'syntheticRouteInfo',
+      title: 'Detour Route Information',
+      columns: ['Parameter', 'Details'],
+      rows: [
+        ['Detour Route Name', _routeNames || '-'],
+        ['Selected Path', _routeNames || '-'],
+        ['Route Length (km)', _routeLength],
+        ['Road Classification', _roadClass]
+      ]
+    });
 
     // 1. VPD Calculated table â€” one row per detour road
     var vpdRows = snap.roads.map(function(road) {

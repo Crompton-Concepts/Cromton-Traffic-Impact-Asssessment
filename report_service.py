@@ -1951,9 +1951,6 @@ def _render_additional_chart_blocks(
 
   blocks: list[str] = []
   for idx, item in enumerate(chart_items):
-    item_key = _normalize_title_key(item.get("canvas_id") or item.get("title") or "")
-    if item_key and item_key in embedded_chart_keys:
-      continue  # Already shown inline — skip to avoid duplication
     blocks.append(
       "<figure class=\"report-section report-block chart-block avoid-break\">"
       "<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
@@ -2279,7 +2276,7 @@ def editor_page(draft_id: str) -> str:
         sec_charts_num = "5"
         sec_conclusion_num = "6"
         chart_sections = _render_additional_chart_blocks(chart_items_to_render, embedded_chart_keys)
-        chart_section_html = f"<h2 contenteditable=\"true\">{sec_charts_num}. Charts</h2>{chart_sections}"
+        chart_section_html = f"<h2 contenteditable=\"true\">{sec_charts_num}. Charts</h2>{chart_sections}" if chart_sections else ""
 
     payload_json = escape(json.dumps(payload))
 
