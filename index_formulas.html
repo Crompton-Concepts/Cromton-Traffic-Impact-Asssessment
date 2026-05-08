@@ -9968,6 +9968,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     loginUser.focus();
 
+    const hashPasswordLocal = async (pw) => {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
@@ -9975,9 +9980,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       loginError.textContent = 'Authenticating...';
 
-      // Pull latest users from Firebase before checking credentials.
+      // Pull latest users from Firebase before checking credentials (4 s budget).
       if (window.TIASync && TIASync.isEnabled()) {
-        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 2000))]); } catch (_) {}
+        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 4000))]); } catch (_) {}
       }
 
       const db = getUserDb();
@@ -9985,28 +9990,51 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const email = found ? found.record.email : (userIdentifier.includes('@') ? userIdentifier : null);
 
       if (!email) {
-        loginError.textContent = 'Invalid username or email format.';
+        loginError.textContent = 'Username not recognised. Please sign in using your email address instead.';
         return;
       }
 
       try {
         const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
         const user = userCredential.user;
-        
-        // Sync record if found
-        const finalUname = found ? found.record.username : user.email.split('@')[0];
-        const finalRec = found ? found.record : { username: finalUname, email: user.email, tier: 'free' };
+
+        // Post-auth pull: now authenticated, Firebase DB reads succeed — gets correct tier/admin.
+        if (window.TIASync && TIASync.isEnabled()) {
+          try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 5000))]); } catch (_) {}
+        }
+
+        const freshDb = getUserDb();
+        const freshFound = findUserRecord(freshDb, userIdentifier) || findUserRecord(freshDb, user.email);
+        const finalUname = freshFound ? freshFound.record.username : user.email.split('@')[0];
+        const finalRec   = freshFound ? freshFound.record : { username: finalUname, email: user.email, tier: 'free' };
 
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, finalUname);
         sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
         sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
-        
+
         loginError.textContent = '';
         await unlockApplication({ useFunnyLoading: true });
-      } catch (error) {
-        console.error('[Login] Firebase Auth error:', error);
-        loginError.textContent = 'Login failed: ' + error.message;
+      } catch (firebaseError) {
+        const code = String(firebaseError.code || '');
+        // Fallback for users created via the admin portal: they have a passwordHash but no
+        // Firebase Auth account yet (auth/user-not-found or auth/invalid-credential).
+        if ((code === 'auth/user-not-found' || code === 'auth/invalid-credential') && found && found.record.passwordHash) {
+          try {
+            const hash = await hashPasswordLocal(enteredPassword);
+            if (hash === found.record.passwordHash) {
+              sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+              sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
+              sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
+              sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
+              loginError.textContent = '';
+              await unlockApplication({ useFunnyLoading: true });
+              return;
+            }
+          } catch (_) {}
+        }
+        console.error('[Login] Firebase Auth error:', firebaseError);
+        loginError.textContent = 'Login failed: ' + firebaseError.message;
         loginPassword.value = '';
         loginPassword.focus();
       }
