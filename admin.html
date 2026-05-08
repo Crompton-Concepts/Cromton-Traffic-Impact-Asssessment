@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TIA Admin — Crompton Concepts</title>
+  <script>
+    (function () {
+      var path = (window.location.pathname || '').toLowerCase();
+      if (!path.endsWith('/maintenance.html') && !path.endsWith('maintenance.html')) {
+        window.location.replace('maintenance.html');
+      }
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {

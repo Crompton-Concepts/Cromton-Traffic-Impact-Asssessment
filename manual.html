@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TIA User Manual</title>
+  <script>
+    (function () {
+      var path = (window.location.pathname || '').toLowerCase();
+      if (!path.endsWith('/maintenance.html') && !path.endsWith('maintenance.html')) {
+        window.location.replace('maintenance.html');
+      }
+    })();
+  </script>
   <style>
     :root {
       --bg: #f5f7fa;

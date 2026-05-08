@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Under Maintenance</title>
+  <style>
+    :root {
+      --bg1: #0f2f32;
+      --bg2: #1f5e63;
+      --card: rgba(255, 255, 255, 0.95);
+      --line: #d2dee0;
+      --ink: #17373a;
+      --muted: #476266;
+      --accent: #0f2f32;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.14) 0%, transparent 35%),
+        radial-gradient(circle at 85% 90%, rgba(255, 255, 255, 0.12) 0%, transparent 42%),
+        linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+      padding: 20px;
+    }
+
+    .card {
+      width: min(640px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.24);
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #ffffff;
+      background: var(--accent);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      color: #0f2f32;
+    }
+
+    p {
+      margin: 12px auto 0;
+      max-width: 52ch;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+
+    .small {
+      margin-top: 16px;
+      font-size: 0.88rem;
+      color: #5d777b;
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-live="polite">
+    <div class="badge">Service Notice</div>
+    <h1>Under Maintenance</h1>
+    <p>The Traffic Impact Assessment platform is temporarily locked for maintenance.</p>
+    <p>Please check back shortly.</p>
+    <p class="small">Thank you for your patience.</p>
+  </main>
+</body>
+</html>
