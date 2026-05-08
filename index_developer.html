@@ -10121,39 +10121,68 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Create account form (Firebase Auth)
     const createForm = document.getElementById('createAccountForm');
     if (createForm) {
+      // Wire up tier selection cards
+      const tierCards = document.querySelectorAll('#tierSelectCards .tier-card');
+      const tierInput = document.getElementById('selectedTierInput');
+      if (tierCards.length && tierInput) {
+        tierCards.forEach(card => {
+          card.addEventListener('click', () => {
+            tierCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked', 'false'); });
+            card.classList.add('selected');
+            card.setAttribute('aria-checked', 'true');
+            tierInput.value = card.dataset.tier || 'free';
+          });
+          card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+          });
+        });
+      }
+
       createForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         const errEl = document.getElementById('createError');
         const okEl  = document.getElementById('createSuccess');
         if (errEl) errEl.textContent = '';
         if (okEl) okEl.textContent = '';
-        
+
         const fullName= String((document.getElementById('newFullName') || {}).value || '').trim();
         const uname   = String((document.getElementById('newUsername') || {}).value || '').trim().toLowerCase();
         const email   = String((document.getElementById('newEmail') || {}).value || '').trim();
-        const pw1     = String((document.getElementById('newPassword') || {}).value || '').trim();
-        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '').trim();
+        const pw1     = String((document.getElementById('newPassword') || {}).value || '');
+        const pw2     = String((document.getElementById('newPasswordConfirm') || {}).value || '');
         const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
 
         if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
+        if (!/^[a-z0-9_.-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, underscores, hyphens, and dots.'; return; }
         if (!email || !email.includes('@')) { if (errEl) errEl.textContent = 'Please enter a valid email address.'; return; }
         if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
         if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
 
-        okEl.textContent = 'Creating account...';
+        if (okEl) okEl.textContent = 'Checking availability...';
+
+        // Pull latest user DB to catch usernames/emails registered by others
+        if (window.TIASync && TIASync.isEnabled()) {
+          try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 4000))]); } catch (_) {}
+        }
+
+        const db = getUserDb();
+        if (db[uname]) { if (okEl) okEl.textContent = ''; if (errEl) errEl.textContent = 'That username is already taken. Please choose another.'; return; }
+        const emailTaken = Object.values(db).some(u => (u.email || '').toLowerCase() === email.toLowerCase());
+        if (emailTaken) { if (okEl) okEl.textContent = ''; if (errEl) errEl.textContent = 'An account with that email already exists. Try signing in instead.'; return; }
+
+        if (okEl) okEl.textContent = 'Creating account...';
 
         try {
           const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, pw1);
           const user = userCredential.user;
-          
-          const db = getUserDb();
+
           const record = { username: uname, fullName, email, tier, createdAt: new Date().toISOString() };
           db[uname] = record;
           localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
 
           if (window.TIASync) await TIASync.saveUser(uname, record);
 
-          okEl.textContent = 'Account created! Signing you in...';
+          if (okEl) okEl.textContent = 'Account created! Signing you in...';
           sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
           sessionStorage.setItem(USER_SESSION_KEY, uname);
           sessionStorage.setItem(TIER_SESSION_KEY, tier);
@@ -10165,8 +10194,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           }, 800);
         } catch (error) {
           console.error('[Create] Firebase error:', error);
-          okEl.textContent = '';
-          errEl.textContent = 'Error: ' + error.message;
+          if (okEl) okEl.textContent = '';
+          const code = String(error.code || '');
+          let msg = 'Could not create account. Please try again.';
+          if (code === 'auth/email-already-in-use') msg = 'An account with that email already exists. Try signing in instead.';
+          else if (code === 'auth/invalid-email') msg = 'That email address is not valid.';
+          else if (code === 'auth/weak-password') msg = 'Password is too weak. Please use at least 8 characters with a mix of letters and numbers.';
+          else if (code === 'auth/operation-not-allowed') msg = 'Account creation is currently disabled. Please contact support.';
+          else if (code === 'auth/unauthorized-domain') msg = 'Sign-up is not authorised from this domain. Please contact support.';
+          else if (code === 'auth/network-request-failed') msg = 'Network error. Please check your connection and try again.';
+          if (errEl) errEl.textContent = msg;
         }
       });
     }
