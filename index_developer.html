@@ -10153,7 +10153,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const tier    = String((document.getElementById('selectedTierInput') || {}).value || 'free');
 
         if (!uname || uname.length < 3) { if (errEl) errEl.textContent = 'Username must be at least 3 characters.'; return; }
-        if (!/^[a-z0-9_.-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, underscores, hyphens, and dots.'; return; }
+        if (!/^[a-z0-9_-]+$/.test(uname)) { if (errEl) errEl.textContent = 'Username may only contain letters, numbers, underscores, and hyphens.'; return; }
         if (!email || !email.includes('@')) { if (errEl) errEl.textContent = 'Please enter a valid email address.'; return; }
         if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
         if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
@@ -10180,7 +10180,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           db[uname] = record;
           localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
 
-          if (window.TIASync) await TIASync.saveUser(uname, record);
+          if (window.TIASync && TIASync.isEnabled()) {
+            const syncSaved = await TIASync.saveUser(uname, record);
+            if (!syncSaved) {
+              // Prevent creating local-only ghost accounts when cross-device sync is expected.
+              delete db[uname];
+              localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+              try { await user.delete(); } catch (_) {}
+              throw new Error('SYNC_SAVE_FAILED');
+            }
+          }
 
           if (okEl) okEl.textContent = 'Account created! Signing you in...';
           sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
@@ -10203,6 +10212,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           else if (code === 'auth/operation-not-allowed') msg = 'Account creation is currently disabled. Please contact support.';
           else if (code === 'auth/unauthorized-domain') msg = 'Sign-up is not authorised from this domain. Please contact support.';
           else if (code === 'auth/network-request-failed') msg = 'Network error. Please check your connection and try again.';
+          else if ((error && error.message) === 'SYNC_SAVE_FAILED') msg = 'Account service is temporarily unavailable. Please try again in a few minutes.';
           if (errEl) errEl.textContent = msg;
         }
       });
