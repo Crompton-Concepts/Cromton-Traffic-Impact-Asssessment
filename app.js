@@ -1904,10 +1904,14 @@
 
     const scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
 
-    // Single route (or no scenarios): add synthetic tables alongside the visible ones
+    // Single route (or no scenarios): refresh calculation so snapshot and DOM are fresh,
+    // then re-scrape detour tables so period values are populated (not stale dashes).
     if (scenarios.length <= 1) {
+      if (typeof calculateDetourOverlay === 'function') calculateDetourOverlay();
       const syntheticTables = buildSyntheticDetourTables();
-      return [...tables, ...syntheticTables];
+      const nonDetourTables = tables.filter((table) => !isDetourReportTable(table));
+      const freshDetourTables = collectVisibleTables().filter((table) => isDetourReportTable(table));
+      return [...nonDetourTables, ...freshDetourTables, ...syntheticTables];
     }
 
     const nonDetourTables = tables.filter((table) => !isDetourReportTable(table));
@@ -1940,7 +1944,7 @@
   async function buildEditableReportPayload() {
     // Temporarily unhide all chart containers to ensure Chart.js renders them with valid dimensions
     const hiddenContainers = [];
-    const chartIds = ['queueChartView', 'vcrChartView', 'hourlyQueueChartView', 'hourlyVcrChartView', 'vizCanvasContainer', 'scenarioTableWrap'];
+    const chartIds = ['queueChartView', 'vcrChartView', 'hourlyQueueChartView', 'hourlyVcrChartView', 'vizCanvasContainer', 'scenarioTableWrap', 'macroDataVizSection'];
 
     chartIds.forEach(id => {
       const el = document.getElementById(id);
@@ -13426,9 +13430,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d2W12Red = normalizeHourlyQueueToVehicleLength((Number(d2SwtResult.w12) || 0) * swtRedTimePerCycle, d2Vol, true);
         const periodKey = getTrafficBucket(hour).key;
         if (Object.prototype.hasOwnProperty.call(swtQueuePeriodD1, periodKey)) {
-          // Keep SWT summary metric consistent for both directions (w12 * red-time queue reach).
-          swtQueuePeriodD1[periodKey] = Math.max(swtQueuePeriodD1[periodKey], Number(d1W12Red) || 0);
-          swtQueuePeriodD2[periodKey] = Math.max(swtQueuePeriodD2[periodKey], Number(d2W12Red) || 0);
+          // Use true SWT maximum queue xMax = w12 * w23 * R / (w23 - w12), not w12 * R (queue at end of red).
+          swtQueuePeriodD1[periodKey] = Math.max(swtQueuePeriodD1[periodKey], Number(d1SwtQueue) || 0);
+          swtQueuePeriodD2[periodKey] = Math.max(swtQueuePeriodD2[periodKey], Number(d2SwtQueue) || 0);
         }
 
         if (networkMax > worstQueueValue) {
