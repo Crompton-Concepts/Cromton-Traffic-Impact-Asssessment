@@ -5,6 +5,7 @@ import uuid
 import base64
 import re
 import os
+import functools
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta
@@ -151,7 +152,9 @@ def _prune_drafts(now: datetime | None = None) -> None:
       DRAFTS.pop(draft_id, None)
 
 
+@functools.lru_cache(maxsize=1)
 def _load_logo_data_url() -> str:
+    # ⚡ Bolt: Cache base64 encoded logo in memory to avoid reading from disk on every report generation call
     logo_path = Path(__file__).with_name("logo.jpeg")
     if not logo_path.exists():
         return ""
