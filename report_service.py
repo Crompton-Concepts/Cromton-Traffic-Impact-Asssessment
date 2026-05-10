@@ -7,6 +7,7 @@ import re
 import os
 import urllib.error
 import urllib.request
+import asyncio
 from datetime import datetime, timedelta
 from html import escape
 from pathlib import Path
@@ -3370,7 +3371,9 @@ async def verify_formulas(req: FormulaVerifyRequest):
     if not req.failures:
         return {"status": "ok", "analysis": "No failures to analyse."}
 
-    analysis = _call_claude_verify(req.failures)
+    # ⚡ Bolt: Offload synchronous I/O (_call_claude_verify using urllib) to a separate thread.
+    # This prevents blocking the FastAPI async event loop, improving concurrency and latency.
+    analysis = await asyncio.to_thread(_call_claude_verify, req.failures)
     return {
         "status": "failures_analysed",
         "failure_count": len(req.failures),
