@@ -229,6 +229,62 @@ def _format_au_date(value: Any, fallback: str | None = None) -> str:
   return text
 
 
+def _table_rows_to_mapping(table: dict[str, Any]) -> dict[str, Any]:
+  if not isinstance(table, dict):
+    return {}
+  rows = table.get("rows", []) if isinstance(table.get("rows"), list) else []
+  mapping: dict[str, Any] = {}
+  for row in rows:
+    if not isinstance(row, list) or len(row) < 2:
+      continue
+    key = _normalize_title_key(row[0])
+    if not key:
+      continue
+    mapping[key] = row[1]
+  return mapping
+
+
+def _find_payload_table(payload: dict[str, Any], title_keywords: tuple[str, ...]) -> dict[str, Any] | None:
+  tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+  for table in tables:
+    if not isinstance(table, dict):
+      continue
+    title_key = _normalize_title_key(_safe_text(table.get("title"), ""))
+    if all(keyword in title_key for keyword in title_keywords):
+      return table
+  return None
+
+
+def _find_2min_queue_peak(payload: dict[str, Any]) -> float | None:
+  """Return the highest 2-minute hold-cycle queue value across all Directional Queue Summary tables."""
+  tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
+  best: float | None = None
+  for tbl in tables:
+    if not isinstance(tbl, dict):
+      continue
+    title_lc = _safe_text(tbl.get("title"), "").lower()
+    if "queue" not in title_lc:
+      continue
+    rows = tbl.get("rows", []) if isinstance(tbl.get("rows"), list) else []
+    columns = tbl.get("columns", []) if isinstance(tbl.get("columns"), list) else []
+    col_keys = [_safe_text(c, "").lower() for c in columns]
+    for row in rows:
+      if not isinstance(row, list) or not row:
+        continue
+      label = _safe_text(row[0], "").lower()
+      if "2 min" not in label and "2min" not in label and "per 2" not in label and "agttm" not in label:
+        continue
+      for idx, cell in enumerate(row[1:], start=1):
+        val_str = re.sub(r"[^\d.]", "", _safe_text(cell, ""))
+        try:
+          val = float(val_str)
+          if best is None or val > best:
+            best = val
+        except (ValueError, TypeError):
+          pass
+  return best
+
+
 def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   project = payload.get("project", {}) if isinstance(payload.get("project"), dict) else {}
   inputs = payload.get("inputs", {}) if isinstance(payload.get("inputs"), dict) else {}
@@ -237,6 +293,15 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   notes = payload.get("notes", []) if isinstance(payload.get("notes"), list) else []
   site_details = payload.get("selected_site_details", {}) if isinstance(payload.get("selected_site_details"), dict) else {}
   peak_diagnostics = payload.get("peak_diagnostics", {}) if isinstance(payload.get("peak_diagnostics"), dict) else {}
+  summary_results_table = _find_payload_table(payload, ("summary", "computed", "results"))
+  summary_results_map = _table_rows_to_mapping(summary_results_table or {})
+
+  def _from_summary(*keys: str) -> Any:
+    for key in keys:
+      normalized = _normalize_title_key(key)
+      if normalized in summary_results_map:
+        return summary_results_map.get(normalized)
+    return None
 
   d1_vadt = _to_float(
     inputs.get("d1_vadt_opening_year") or inputs.get("d1_vadt") or raw.get("d1_vadt")
@@ -250,8 +315,17 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
   base_year_aadt = _to_float(inputs.get("base_year_aadt") or inputs.get("aadt") or raw.get("vadt"))
   opening_year = _safe_text(inputs.get("opening_year") or raw.get("opening_year"), "")
   growth_rate = _to_float(inputs.get("growth_rate_percent") or raw.get("growth_rate_percent"))
-  worst_vcr = _to_float(results.get("worst_vcr") or raw.get("worst_vcr"))
-  queue_peak = _to_float(results.get("queue_peak_m") or raw.get("queue_peak_m"))
+  worst_vcr = _to_float(
+    _from_summary("worst_vcr", "worst v c ratio", "worst hourly vcr")
+    or results.get("worst_vcr")
+    or raw.get("worst_vcr")
+  )
+  q_2min = _find_2min_queue_peak(payload)
+  queue_peak = q_2min if q_2min is not None else _to_float(
+    _from_summary("queue_peak_m", "peak_queue_m", "peak queue")
+    or results.get("queue_peak_m")
+    or raw.get("queue_peak_m")
+  )
   d1_queue_peak = _to_float(raw.get("d1_queue_peak_m"))
   d2_queue_peak = _to_float(raw.get("d2_queue_peak_m"))
 
@@ -277,10 +351,11 @@ def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
     "growth_rate": growth_rate,
     "worst_vcr": worst_vcr,
     "queue_peak": queue_peak,
+    "queue_2min_peak": _find_2min_queue_peak(payload),
     "d1_queue_peak": d1_queue_peak,
     "d2_queue_peak": d2_queue_peak,
-    "los": _safe_text(results.get("los"), "-"),
-    "detour_recommended": _to_bool(results.get("detour_recommended")),
+    "los": _safe_text(_from_summary("los", "level of service") or results.get("los"), "-"),
+    "detour_recommended": _to_bool(_from_summary("detour_recommended", "detour recommended") or results.get("detour_recommended")),
     "notes": [str(note).strip() for note in notes if str(note).strip()],
     "selected_site_details": {
       _safe_text(key, ""): _safe_text(value, "")
@@ -324,10 +399,18 @@ def _build_report_tables(payload: dict[str, Any]) -> list[dict[str, Any]]:
   results = payload.get("results", {}) if isinstance(payload.get("results"), dict) else {}
   payload_tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
 
+  # Check what title keys already exist in the payload tables to avoid duplicates
+  existing_title_keys = {
+    _normalize_title_key(_safe_text(t.get("title"), ""))
+    for t in payload_tables
+    if isinstance(t, dict)
+  }
+
   tables: list[dict[str, Any]] = []
-  if inputs:
+  # Only add simplified fallback tables if the richer DOM versions aren't already present
+  if inputs and not any("analysis parameters" in k for k in existing_title_keys):
     tables.append(_mapping_to_table("Analysis Parameters", inputs, "Parameter", "Value", "analysis_parameters"))
-  if results:
+  if results and not any("summary of computed results" in k for k in existing_title_keys):
     tables.append(_mapping_to_table("Summary of Computed Results", results, "Metric", "Value", "summary_computed_results"))
   tables.extend(table for table in payload_tables if isinstance(table, dict))
   return tables
@@ -501,21 +584,21 @@ def _build_fallback_table_analysis(table_data: dict[str, Any], payload: dict[str
     }
 
   if "hourly queue" in title_key:
-    wait_minutes = _format_number(peak.get("queue_wait_minutes"), 0, "2")
+    wait_minutes = "2"
     peak_time = _safe_text(peak.get("queue_peak_time"), "the controlling hour")
     peak_direction = _safe_text(peak.get("queue_peak_direction"), "the controlling direction")
     peak_value = _format_number(peak.get("queue_peak_value_m"), 0, "-")
     return {
       "title": title,
       "summary": (
-        f"{title} sets out the hourly queue result for the selected {wait_minutes}-minute wait criterion. "
+        f"{title} sets out the hourly queue result based on a standard {wait_minutes}-minute hold and release cycle. "
         f"The controlling queue occurs around {peak_time} on {peak_direction}, where the peak queue reaches approximately {peak_value} m."
       ),
       "scenario": (
-        "Review this section to confirm when queue storage becomes critical, whether the queue is isolated to one direction, and whether the selected wait-time assumption is appropriate for site operations and stakeholder expectations."
+        f"Review this section to confirm when queue storage becomes critical under the {wait_minutes}-minute cycle, whether the queue is isolated to one direction, and whether the modeled wait-time is appropriate for site-specific stakeholder expectations."
       ),
       "chart_caption": (
-        f"Hourly queue plot using the selected {wait_minutes}-minute wait assumption. The controlling queue occurs around {peak_time} on {peak_direction}."
+        f"Hourly queue plot assuming a standard {wait_minutes}-minute hold and release cycle. The controlling queue occurs around {peak_time} on {peak_direction}."
       ),
     }
 
@@ -541,54 +624,46 @@ def _build_fallback_table_analysis(table_data: dict[str, Any], payload: dict[str
   summary_parts = []
   title_lower = title_key
 
-  # Build a more readable, natural-language fallback summary
   if "peak hour" in title_lower and "hourly" in title_lower:
-    # Hourly peak hour analysis tables
     if analysis["top_numeric"]:
       top_value, row_label, column_label = analysis["top_numeric"][0]
+      periods = ", ".join(analysis["labels"][:3]) if analysis["labels"] else "the surveyed periods"
       summary_parts.append(
-        f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
-      )
-      if analysis["labels"]:
-        summary_parts.append(f"The leading labels cover {', '.join(analysis['labels'][:4])}.")
-      if analysis["numeric_count"]:
-        summary_parts.append(
-          f"Reported numeric values range from {_format_number(analysis['numeric_min'], 2)} to {_format_number(analysis['numeric_max'], 2)}."
-        )
-      summary_parts.append(
-        f"The strongest reported value is {_format_number(top_value, 2)} for {row_label} in {column_label}."
+        f"{title} records peak-hour traffic volumes across {periods}. "
+        f"The highest recorded volume is {_format_number(top_value, 0)} veh/h for {row_label} in the {column_label} period."
       )
     else:
-      summary_parts.append(f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s).")
+      periods = ", ".join(analysis["labels"][:3]) if analysis["labels"] else "the surveyed periods"
+      summary_parts.append(f"{title} provides peak-hour traffic volumes across {periods}.")
   elif "grouped" in title_lower and "direction" in title_lower:
-    summary_parts.append(
-      f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
-    )
-    if analysis["labels"]:
-      summary_parts.append(f"The leading labels cover {', '.join(analysis['labels'][:4])}.")
-    if analysis["numeric_count"]:
-      summary_parts.append(
-        f"Reported numeric values range from {_format_number(analysis['numeric_min'], 2)} to {_format_number(analysis['numeric_max'], 2)}."
-      )
     if analysis["top_numeric"]:
       top_value, row_label, column_label = analysis["top_numeric"][0]
+      periods = ", ".join(analysis["labels"][:3]) if analysis["labels"] else "the surveyed periods"
       summary_parts.append(
-        f"The strongest reported value is {_format_number(top_value, 2)} for {row_label} in {column_label}."
+        f"The directional traffic summary covers {periods}. "
+        f"The highest recorded value is {_format_number(top_value, 0)} for {row_label} in the {column_label} column."
       )
+      if analysis["numeric_min"] is not None and analysis["numeric_max"] is not None and analysis["numeric_min"] != analysis["numeric_max"]:
+        summary_parts.append(
+          f"Values range from {_format_number(analysis['numeric_min'], 0)} to {_format_number(analysis['numeric_max'], 0)} across all periods."
+        )
+    else:
+      summary_parts.append(f"The directional traffic summary is presented for review and confirmation.")
   else:
-    summary_parts.append(
-      f"{title} presents {analysis['row_count']} row(s) across {analysis['column_count']} column(s)."
-    )
-    if analysis["labels"]:
-      summary_parts.append(f"The leading labels cover {', '.join(analysis['labels'][:4])}.")
-    if analysis["numeric_count"]:
-      summary_parts.append(
-        f"Reported numeric values range from {_format_number(analysis['numeric_min'], 2)} to {_format_number(analysis['numeric_max'], 2)}."
-      )
     if analysis["top_numeric"]:
       top_value, row_label, column_label = analysis["top_numeric"][0]
+      periods_text = f"covering {', '.join(analysis['labels'][:3])}" if analysis["labels"] else ""
       summary_parts.append(
-        f"The strongest reported value is {_format_number(top_value, 2)} for {row_label} in {column_label}."
+        f"{title} sets out the {analysis['row_count']}-row result dataset"
+        + (f" {periods_text}" if periods_text else "")
+        + f". The highest recorded value is {_format_number(top_value, 2)} for {row_label} ({column_label})."
+      )
+    elif analysis["labels"]:
+      summary_parts.append(f"{title} covers {', '.join(analysis['labels'][:4])}.")
+    else:
+      summary_parts.append(
+        f"{title} provides reference data supporting the assessment findings. "
+        "Review and confirm values against site-specific conditions."
       )
 
   chart_caption = (
@@ -625,8 +700,12 @@ def _build_fallback_professional_commentary(
   performance_bits: list[str] = []
   if ctx["worst_vcr"] is not None:
     performance_bits.append(f"a worst V/C ratio of {_format_number(ctx['worst_vcr'], 2)} corresponding to LOS {ctx['los']}")
-  if ctx["queue_peak"] is not None:
-    performance_bits.append(f"a peak queue on the order of {_format_number(ctx['queue_peak'])} m")
+  _q2 = ctx.get("queue_2min_peak")
+  _qfallback = ctx["queue_peak"]
+  _q_display = _q2 if _q2 is not None else _qfallback
+  _q_label = f"{_format_number(_q_display)} m (2-minute hold cycle)" if _q2 is not None else f"{_format_number(_qfallback)} m"
+  if _q_display is not None:
+    performance_bits.append(f"a peak queue on the order of {_q_label}")
   if performance_bits:
     commentary.append(
       "Operationally, the model points to " + " and ".join(performance_bits) + ". "
@@ -694,8 +773,12 @@ def _build_fallback_executive_paragraphs(payload: dict[str, Any]) -> list[str]:
   operational_bits: list[str] = []
   if ctx["worst_vcr"] is not None:
     operational_bits.append(f"the worst modeled V/C ratio is {_format_number(ctx['worst_vcr'], 2)} (LOS {ctx['los']})")
-  if ctx["queue_peak"] is not None:
-    operational_bits.append(f"the peak queue demand is approximately {_format_number(ctx['queue_peak'])} m")
+  _q2 = ctx.get("queue_2min_peak")
+  _qf = ctx["queue_peak"]
+  _qv = _q2 if _q2 is not None else _qf
+  _ql = f"{_format_number(_qv)} m (e.g. {_format_number(_qv, 0)} m queue for 2-minute hold)" if _q2 is not None else f"{_format_number(_qf)} m"
+  if _qv is not None:
+    operational_bits.append(f"the peak queue demand is approximately {_ql}")
   if ctx["d1_queue_peak"] is not None or ctx["d2_queue_peak"] is not None:
     operational_bits.append(f"directional peak queues are D1 {_format_number(ctx['d1_queue_peak'])} m and D2 {_format_number(ctx['d2_queue_peak'])} m")
   if operational_bits:
@@ -725,9 +808,13 @@ def _build_fallback_explanation_notes(payload: dict[str, Any]) -> list[str]:
     notes.append(
       f"Network performance: worst V/C ratio is {_format_number(ctx['worst_vcr'], 2)}, which places the controlling condition at LOS {ctx['los']}."
     )
-  if ctx["queue_peak"] is not None:
+  _q2 = ctx.get("queue_2min_peak")
+  _qf = ctx["queue_peak"]
+  _qv = _q2 if _q2 is not None else _qf
+  if _qv is not None:
+    _suffix = " (2-minute hold cycle)" if _q2 is not None else ""
     notes.append(
-      f"Queue implications: the longest modeled queue is approximately {_format_number(ctx['queue_peak'])} m, with D1 peak queue {_format_number(ctx['d1_queue_peak'])} m and D2 peak queue {_format_number(ctx['d2_queue_peak'])} m."
+      f"Queue implications: the longest modeled queue is approximately {_format_number(_qv, 0)} m{_suffix}, with D1 peak queue {_format_number(ctx['d1_queue_peak'])} m and D2 peak queue {_format_number(ctx['d2_queue_peak'])} m."
     )
   notes.append(
     "Mitigation interpretation: detour planning is recommended because the modeled queue and/or capacity outcomes indicate material operational risk during the work stage."
@@ -763,6 +850,7 @@ def _request_gemini_report_notes(payload: dict[str, Any]) -> dict[str, Any] | No
       "For pedestrian detour tables, explain the added travel time burden on pedestrians.",
       "Each table summary should be 2-4 sentences of professional engineering narrative.",
       "Each scenario field should explain when and why the condition in the table typically becomes critical.",
+      "Emphasize the standard 2-minute hold and release cycle as the primary basis for queue length interpretations.",
       "Use the exact supplied table titles in the response so they can be mapped deterministically.",
       "Provide 3 professional commentary paragraphs and 3 to 5 conclusion points.",
       "Write as though this will be read by a council traffic engineer or road authority reviewer."
@@ -925,7 +1013,7 @@ def _render_paragraph_block(paragraphs: list[str]) -> str:
   return "".join(f"<p>{_escape(item)}</p>" for item in cleaned)
 
 
-def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, str]]:
+def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
   def _safe_data_image_url(value: Any) -> str:
     text = _safe_text(value, "")
     if not text:
@@ -937,7 +1025,7 @@ def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, str]]:
     return text
 
   raw_charts = payload.get("charts", []) if isinstance(payload.get("charts"), list) else []
-  chart_items: list[dict[str, str]] = []
+  chart_items: list[dict[str, Any]] = []
 
   for idx, chart in enumerate(raw_charts):
     if not isinstance(chart, dict):
@@ -970,7 +1058,7 @@ def _collect_chart_items(payload: dict[str, Any]) -> list[dict[str, str]]:
   return chart_items
 
 
-def _score_chart_match(table_data: dict[str, Any], chart_item: dict[str, str]) -> int:
+def _score_chart_match(table_data: dict[str, Any], chart_item: dict[str, Any]) -> int:
   score = 0
   table_title = _safe_text(table_data.get("title"), "")
   table_id = _normalize_title_key(table_data.get("table_id"))
@@ -1042,10 +1130,10 @@ def _score_chart_match(table_data: dict[str, Any], chart_item: dict[str, str]) -
 
 def _select_charts_for_table(
   table_data: dict[str, Any],
-  chart_items: list[dict[str, str]],
-) -> list[dict[str, str]]:
+  chart_items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
   table_id = _normalize_title_key(table_data.get("table_id"))
-  explicit_matches: list[dict[str, str]] = []
+  explicit_matches: list[dict[str, Any]] = []
   has_explicit_links = False
 
   for chart_item in chart_items:
@@ -1068,7 +1156,7 @@ def _select_charts_for_table(
   if has_explicit_links:
     return []
 
-  scored: list[tuple[int, dict[str, str]]] = []
+  scored: list[tuple[int, dict[str, Any]]] = []
   for chart_item in chart_items:
     score = _score_chart_match(table_data, chart_item)
     if score <= 0:
@@ -1084,7 +1172,7 @@ def _select_charts_for_table(
   return selected[:2]
 
 
-def _render_embedded_chart(chart_item: dict[str, str] | None, title: str, caption: str) -> str:
+def _render_embedded_chart(chart_item: dict[str, Any] | None, title: str, caption: str) -> str:
   if not chart_item:
     return ""
   chart_title = _escape(_safe_text(chart_item.get("title"), title))
@@ -1102,7 +1190,7 @@ def _render_embedded_chart(chart_item: dict[str, str] | None, title: str, captio
   )
 
 
-def _render_embedded_charts(chart_items: list[dict[str, str]] | None, title: str, caption: str) -> str:
+def _render_embedded_charts(chart_items: list[dict[str, Any]] | None, title: str, caption: str) -> str:
   if not chart_items:
     return ""
   return "".join(_render_embedded_chart(item, title, caption) for item in chart_items)
@@ -1112,7 +1200,7 @@ def _render_key_value_table(
   title: str,
   data: dict[str, Any],
   analysis: dict[str, str] | None = None,
-  chart_items: list[dict[str, str]] | None = None,
+  chart_items: list[dict[str, Any]] | None = None,
 ) -> str:
   if not isinstance(data, dict) or not data:
     return ""
@@ -1237,18 +1325,22 @@ def _infer_result_context(key: str, value: str) -> str:
       raw = re.sub(r"[^\d.]", "", str(value or "").split()[0])
       v = float(raw) if raw else None
       if v is not None:
+        if v >= 1.5:
+          return "Significantly over capacity (LOS F) — urgent mitigation required"
+        if v >= 1.0:
+          return "Over capacity (LOS F) — mitigation required"
         if v >= 0.9:
-          return "Near or at capacity — mitigation likely required"
+          return "Near or at capacity (LOS E) — mitigation likely required"
         if v >= 0.75:
-          return "Approaching capacity — monitor closely"
-        return "Within acceptable capacity threshold"
+          return "Approaching capacity (LOS D) — monitor closely"
+        return "Within acceptable capacity threshold (LOS A–C)"
     except Exception:
       pass
     return "Volume-to-Capacity Ratio — compare against LOS thresholds"
   if "los" in key_lc or "level of service" in key_lc:
     return "Level of Service — A=free-flow, F=breakdown"
   if "queue" in key_lc:
-    return "Maximum queue length during study period"
+    return "Maximum queue length based on a standard 2-minute hold and release cycle"
   if "delay" in key_lc:
     return "Average per-vehicle delay at the intersection"
   if "growth" in key_lc:
@@ -1270,7 +1362,7 @@ def _render_computed_results_section(
   title: str,
   results: dict[str, Any],
   analysis: dict[str, str] | None = None,
-  chart_items: list[dict[str, str]] | None = None,
+  chart_items: list[dict[str, Any]] | None = None,
 ) -> str:
   """Render the Summary of Computed Results as a 3-column table (Metric | Value | Context/When)."""
   if not isinstance(results, dict) or not results:
@@ -1325,29 +1417,42 @@ def _render_computed_results_section(
   )
 
 
-def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict, chart_items: list[dict] = None) -> str:
-  """Render a 6-subsection detour block per route, in the required order:
-  1. VPD Calculated  2. Detour Road Directional Capacity Summary
-  3. Detour Road Capacity Summary  4. Existing Road Status After Diversion
-  5. Estimated Delay – Detour route  6. Pedestrian Detour Impact – Delay calculation
+def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict, chart_items: list[dict] | None = None, is_short: bool = False) -> str:
+  """Render the detour block per route.
+  Detailed: Table 28 / VPD Calculated / Detour Road Capacity Summary /
+            Estimated Detour Delay Inputs / Detour Road Summary (Table 29) /
+            Road Status After Diversion / Pedestrian Delay
+  Short:    Table 28 / Estimated Detour Delay Inputs / Pedestrian Delay
   """
   if chart_items is None:
     chart_items = []
   label_esc = _escape(route_label)
 
-  # Classify each table into one of the 6 ordered slots.
-  # Fixed keywords to match exact titles coming from the HTML front-end.
+  # Classify each table into ordered slots.
+  route_info_tables: list[dict] = []   # Table 28 — route overview
   vpd_tables: list[dict] = []
   dir_capacity_tables: list[dict] = []
   road_capacity_tables: list[dict] = []
   road_status_tables: list[dict] = []
   delay_tables: list[dict] = []
   pedestrian_tables: list[dict] = []
+  detour_summary_tables: list[dict] = []  # Table 29 — detour road summary
   other_tables: list[dict] = []
 
   for table in route_tables:
-    title_lc = _safe_text(table.get("title"), "").lower()
-    if "pedestrian" in title_lc:
+    title_raw = _safe_text(table.get("title"), "")
+    title_lc = title_raw.lower().strip()
+    title_stripped = title_lc.strip()
+    # Table 28 -> route info
+    if re.match(r"table\s*28", title_stripped):
+      route_info_tables.append(table)
+    # Table 29 -> detour road summary
+    elif re.match(r"table\s*29", title_stripped):
+      detour_summary_tables.append(table)
+    # Tables 30-32 -> fold into road capacity
+    elif re.match(r"table\s*(3[0-2])", title_stripped):
+      road_capacity_tables.append(table)
+    elif "pedestrian" in title_lc:
       pedestrian_tables.append(table)
     elif "delay" in title_lc:
       delay_tables.append(table)
@@ -1370,10 +1475,9 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
       )
     return fallback_html
 
-  other_html = "".join(
-    _render_data_table(t, analysis_map.get(_normalize_title_key(t.get("title"))), _select_charts_for_table(t, chart_items))
-    for t in other_tables
-  )
+  # Any unclassified table belongs to "Detour Route Information" (section 1).
+  # This catches route overview tables whose titles don't contain "table 28" literally.
+  route_info_tables.extend(other_tables)
 
   # --- HARDCODED EDITABLE TABLE FALLBACKS ---
   fallback_vpd = (
@@ -1406,23 +1510,59 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     "<table><thead><tr><th class=\"editable-text\" contenteditable=\"true\">Parameter</th><th class=\"editable-text\" contenteditable=\"true\">Value</th></tr></thead><tbody><tr><td class=\"editable-text\" contenteditable=\"true\">Pedestrian Detour Distance (m)</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr><tr><td class=\"editable-text\" contenteditable=\"true\">Additional Walking Time (min)</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr><tr><td class=\"editable-text\" contenteditable=\"true\">Pedestrian Delay Classification</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr><tr><td class=\"editable-text\" contenteditable=\"true\">Mitigation Recommended</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr></tbody></table>"
   )
 
-  return (
+  fallback_route_info = (
+    "<table><thead><tr><th class=\"editable-text\" contenteditable=\"true\">Parameter</th><th class=\"editable-text\" contenteditable=\"true\">Details</th></tr></thead><tbody>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Detour Route Name</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Selected Path</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Route Length (km)</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">Road Classification</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "</tbody></table><p class=\"editable-text\" contenteditable=\"true\">Edit to insert the selected detour route and path details.</p>"
+  )
+
+  fallback_detour_summary = (
+    "<table><thead><tr><th class=\"editable-text\" contenteditable=\"true\">Direction</th><th class=\"editable-text\" contenteditable=\"true\">LOS</th><th class=\"editable-text\" contenteditable=\"true\">VCR</th><th class=\"editable-text\" contenteditable=\"true\">Capacity (veh/h)</th><th class=\"editable-text\" contenteditable=\"true\">Volume (veh/h)</th></tr></thead><tbody>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">D1</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "<tr><td class=\"editable-text\" contenteditable=\"true\">D2</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td><td class=\"editable-text\" contenteditable=\"true\">—</td></tr>"
+    "</tbody></table><p class=\"editable-text\" contenteditable=\"true\">Edit to record the detour road LOS and capacity summary.</p>"
+  )
+
+  base_html = (
     f"<div class=\"report-section report-block detour-route-block\">"
     f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
     f"<h3 class=\"editable-text\" contenteditable=\"true\">{label_esc}</h3>"
-    f"{other_html}"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">1. VPD Calculated table</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour Road Directional Capacity Summary</h4>" + _render_group(dir_capacity_tables, fallback_dir_capacity) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Existing Road Status After Diversion</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Estimated Delay - Detour route</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Pedestrian Detour Impact &#8211; Delay calculation</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
-    "</div>"
+    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">1. Detour Route Information</h4>" + _render_group(route_info_tables, fallback_route_info) + "</div>"
   )
 
+  if is_short:
+    # Short report — headings match the Word template exactly:
+    # 1. Detour Route Information / 2. Estimated Detour Delay Inputs and Delay Calculation /
+    # 3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians
+    return (
+      base_html
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Inputs and Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "</div>"
+    )
+  else:
+    # Detailed report — headings match the Word template exactly:
+    # 1. Detour Route Information / 2. Detour VPD Calculated Table /
+    # 3. Detour Road Capacity Summary / 4. Estimated Detour Delay Inputs and Delay Calculation /
+    # 5. Detour Road Directional Capacity Summary / 6. Road Status After Diversion (Existing Road) /
+    # 7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians
+    return (
+      base_html
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour VPD Calculated Table</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs and Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Directional Capacity Summary</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion (Existing Road)</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "</div>"
+    )
 
-def _build_short_detour_section(detour_tables: list[dict], route_count: int, analysis_map: dict, chart_items: list[dict] = None) -> str:
-  """Build the complete Section 5 Detour Analysis HTML."""
+
+def _build_short_detour_section(detour_tables: list[dict], route_count: int, analysis_map: dict, chart_items: list[dict] | None = None, is_short: bool = False, section_num: str = "4") -> str:
+  """Build the Detour Analysis section HTML."""
   if chart_items is None:
     chart_items = []
 
@@ -1432,11 +1572,16 @@ def _build_short_detour_section(detour_tables: list[dict], route_count: int, ana
   from collections import defaultdict
   route_groups: dict[str, list[dict]] = defaultdict(list)
 
-  # Group by exact route number.
+  # Group tables by route number extracted from title; tables named "Table 28-32" go to route 1.
   for table in detour_tables:
     title = _safe_text(table.get("title"), "")
     m = re.search(r"Detour Route\s*(\d+)", title, re.IGNORECASE)
-    key = m.group(1) if m else "1"
+    if m:
+      key = m.group(1)
+    elif re.match(r"table\s*\d+", title.strip(), re.IGNORECASE):
+      key = "1"  # numbered payload tables belong to route 1
+    else:
+      key = "1"
     route_groups[key].append(table)
 
   effective_count = max(route_count, len(route_groups), 1)
@@ -1445,15 +1590,14 @@ def _build_short_detour_section(detour_tables: list[dict], route_count: int, ana
   for i in range(1, effective_count + 1):
     key = str(i)
     route_label_str = f"Detour Route {i}"
-    block = _render_short_detour_route_block(route_label_str, route_groups.get(key, []), analysis_map, chart_items)
+    block = _render_short_detour_route_block(route_label_str, route_groups.get(key, []), analysis_map, chart_items, is_short=is_short)
     rendered.append(block)
 
   if not rendered:
     return ""
 
   return (
-    "<div class=\"page-break\"></div>"
-    "<h2 contenteditable=\"true\">5. Detour Analysis</h2>"
+    f"<h2 contenteditable=\"true\">{section_num}. Detour Analysis</h2>"
     "<div class=\"editable table-note\" contenteditable=\"true\">"
     "<p>This section summarises the detour route analysis. For each alternative route, the road capacity, estimated motorist delay, and pedestrian impact are assessed.</p>"
     "</div>"
@@ -1645,7 +1789,7 @@ def _render_engineering_observations(notes: Any) -> str:
 def _render_data_table(
     table_data: Any,
     analysis: dict[str, str] | None = None,
-  chart_items: list[dict[str, str]] | None = None,
+  chart_items: list[dict[str, Any]] | None = None,
 ) -> str:
     if not isinstance(table_data, dict):
         return ""
@@ -1729,7 +1873,7 @@ def _render_data_table(
 
     informative_default = (analysis or {}).get(
       "summary",
-      f"This table presents {_safe_text(title)} with {row_count} row(s) and {col_count} column(s). "
+      f"This table presents {_safe_text(title)} supporting the assessment. "
       "Edit this text to add assumptions, methodology, or interpretation for stakeholders."
     )
 
@@ -1747,28 +1891,35 @@ def _render_data_table(
       n_max = max(numeric_values)
       summary_default = (analysis or {}).get(
           "scenario",
-          f"Summary: {row_count} row(s) reviewed. Numeric values range from {n_min:,.2f} to {n_max:,.2f}. "
+          f"Numeric values in this table range from {n_min:,.2f} to {n_max:,.2f}. "
           "Edit this summary to capture key implications and recommended actions."
       )
     else:
       summary_default = (analysis or {}).get(
           "scenario",
-          f"Summary: {row_count} row(s) reviewed for {_safe_text(title)}. "
-          "Edit this summary to record key findings and decisions."
+          f"Review {_safe_text(title)} against site-specific conditions and edit this summary to record key findings and decisions."
       )
+
+    _title_key_norm = _normalize_title_key(title)
+    # Major classification tables get h3 (section-level), others get h4 (sub-section)
+    _is_major_table = any(kw in _title_key_norm for kw in [
+      "grouped directional", "directional queue", "directional vcr",
+      "hourly queue", "hourly vcr", "analysis parameters"
+    ])
+    heading_tag = "h3" if _is_major_table else "h4"
+
+    detail_lead = "Detailed table below sets out the supporting values used for the engineering interpretation."
+    if "queue" in _title_key_norm:
+      detail_lead = "The table below provides queue length results by time period and direction."
+    elif "vcr" in _title_key_norm or "los" in _title_key_norm:
+      detail_lead = "The table below provides volume-to-capacity ratio and Level of Service results by time period."
+    elif "detour" in _title_key_norm or "pedestrian" in _title_key_norm:
+      detail_lead = "The table below provides supporting values for the detour or pedestrian impact assessment."
+    elif "peak hour" in _title_key_norm:
+      detail_lead = "The table below provides peak-hour traffic volumes by period and direction."
 
     table_classes = "wide-table" if col_count >= 10 else ""
     chart_html = _render_embedded_charts(chart_items, title, (analysis or {}).get("chart_caption", ""))
-
-    detail_lead = "Detailed table below sets out the supporting values used for the engineering interpretation."
-    if "queue" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
-    elif "vcr" in _normalize_title_key(title) or "los" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
-    elif "detour" in _normalize_title_key(title) or "pedestrian" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
-    elif "peak hour" in _normalize_title_key(title):
-      detail_lead = "Detailed table below provides the supporting values behind the narrative and chart summary."
 
     return (
         f"<div class=\"report-section report-block avoid-break\">"
@@ -1779,22 +1930,22 @@ def _render_data_table(
         f"<button type=\"button\" class=\"mini-btn\" onclick=\"removeTableLastColumn(this)\">➖ Col</button> "
         f"<button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button>"
         f"</div>"
-        f"<h4 class=\"editable-text\" contenteditable=\"true\">{title}</h4>"
+        f"<{heading_tag} class=\"editable-text\" contenteditable=\"true\">{title}</{heading_tag}>"
         f"<div class=\"editable table-note table-note-top\" contenteditable=\"true\"><p>{_escape(informative_default)}</p></div>"
         f"{chart_html}"
         f"<div class=\"table-detail-lead editable-text\" contenteditable=\"true\">{detail_lead}</div>"
-      f"<table class=\"{table_classes}\">{head_html}{body_html}</table>"
+        f"<table class=\"{table_classes}\">{head_html}{body_html}</table>"
         f"<div class=\"editable table-note table-note-bottom\" contenteditable=\"true\"><p>{_escape(summary_default)}</p></div>"
         f"</div>"
     )
 
 
 def _render_additional_chart_blocks(
-  chart_items: list[dict[str, str]],
+  chart_items: list[dict[str, Any]],
   embedded_chart_keys: set[str],
 ) -> str:
-  # Section 6 shows ALL charts for easy reference, regardless of whether they
-  # are also embedded inline with their associated tables in Section 4.
+  # Only show charts that were NOT already embedded inline with their associated tables.
+  # This prevents the same chart appearing twice (once inline, once in the Charts section).
   if not chart_items:
     return ""
 
@@ -1825,7 +1976,6 @@ def _render_commentary_block(paragraphs: list[str], conclusion_points: list[str]
   )
   return (
     f"<div class=\"editable commentary-block\" contenteditable=\"true\">{paragraph_html}</div>"
-    "<h3 class=\"editable-text\" contenteditable=\"true\">Conclusion</h3>"
     f"<ul class=\"conclusion-list\">{conclusion_html}</ul>"
   )
 
@@ -1891,7 +2041,14 @@ def editor_page(draft_id: str) -> str:
     notes = payload.get("notes", [])
     executive_content = _build_executive_content(payload)
     executive_summary_html = _render_paragraph_block(executive_content.get("executive_paragraphs", []))
-    executive_notes_html = _render_notes(executive_content.get("explanation_notes", []))
+
+    variant_raw = _safe_text(payload.get("report_variant"), "").lower()
+    title_hint = _safe_text(draft.get("title", "")).lower()
+    is_short = variant_raw == "short" or "short report" in title_hint
+
+    # Detailed report includes explanation notes; short report omits them.
+    executive_notes_html = "" if is_short else _render_notes(executive_content.get("explanation_notes", []))
+
     commentary_html = _render_commentary_block(
       executive_content.get("professional_commentary_paragraphs", []),
       executive_content.get("conclusion_points", []),
@@ -1899,9 +2056,6 @@ def editor_page(draft_id: str) -> str:
     logo_data_url = _load_logo_data_url()
     cover_logo_html = f'<img class="cover-logo" src="{logo_data_url}" alt="Company Logo" />' if logo_data_url else ""
 
-    variant_raw = _safe_text(payload.get("report_variant"), "").lower()
-    title_hint = _safe_text(draft.get("title", "")).lower()
-    is_short = variant_raw == "short" or "short report" in title_hint
     if is_short:
       report_mode_label = "Python Short Report"
     elif variant_raw == "detailed" or "detailed report" in title_hint:
@@ -1919,7 +2073,6 @@ def editor_page(draft_id: str) -> str:
     selected_site_details = ctx.get("selected_site_details", {}) if isinstance(ctx.get("selected_site_details"), dict) else {}
 
     notes_html = _render_notes(notes)
-    engineering_obs_html = _render_engineering_observations(notes)
     raw_tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
     tables = [table for table in raw_tables if isinstance(table, dict)]
     table_analysis_map = {
@@ -1928,116 +2081,203 @@ def editor_page(draft_id: str) -> str:
       if isinstance(item, dict) and _normalize_title_key(item.get("title"))
     }
     chart_items = _collect_chart_items(payload)
-    chart_items_to_render = [] if is_short else chart_items  # short report: no charts
+    chart_items_to_render = [] if is_short else chart_items
     hydrate_js_call = '' if is_short else 'hydrateChartsFromPayload();'
     embedded_chart_keys: set[str] = set()
 
-    def _table_priority(table_obj: Any) -> int:
-        if not isinstance(table_obj, dict):
-            return 999
-        title_lc = _safe_text(table_obj.get("title", "")).lower()
-        if any(k in title_lc for k in ["queue", "vcr", "summary", "peak"]):
-            return 0
-        if any(k in title_lc for k in ["table", "results", "analysis"]):
-            return 1
-        return 2
-
-    prioritized_tables = sorted(tables, key=_table_priority)
+    # --- Section 1: Design & Traffic Inputs ---
     analysis_parameters_table = {
       "table_id": "analysis_parameters",
       "title": "Analysis Parameters",
       "columns": ["Parameter", "Value"],
       "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in inputs.items()],
     }
-    computed_results_table = {
-      "table_id": "summary_computed_results",
-      "title": "Summary of Computed Results",
-      "columns": ["Metric", "Value"],
-      "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in results.items()],
-    }
+    
+    _ap_dom_table: dict[str, Any] | None = None
+    _sr_dom_table: dict[str, Any] | None = None
+    for _t in tables:
+      _title_key = _normalize_title_key(_safe_text(_t.get("title"), ""))
+      if "analysis parameters" in _title_key:
+        _ap_dom_table = _t
+      if "summary of computed results" in _title_key:
+        _sr_dom_table = _t
+
     input_charts = _select_charts_for_table(analysis_parameters_table, chart_items_to_render)
-    results_charts = _select_charts_for_table(computed_results_table, chart_items_to_render)
     embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in input_charts)
-    embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
-    inputs_section_html = _render_key_value_table(
-      'Analysis Parameters',
-      inputs,
-      table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
-      input_charts,
-    )
-    results_section_html = _render_computed_results_section(
-      'Summary of Computed Results',
-      results,
-      table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
-      results_charts,
-    )
-    selected_site_section_html = _render_selected_site_details_section(selected_site_details)
 
-    # Separate hourly peak-hour tables and detour tables.
-    # Detour tables MUST be isolated here so they don't randomly mix into the main report.
-    hourly_peak_tables: list[Any] = []
+    if _ap_dom_table:
+      inputs_section_html = _render_data_table(
+        _ap_dom_table,
+        table_analysis_map.get(_normalize_title_key(_safe_text(_ap_dom_table.get("title"), ""))),
+        input_charts,
+      )
+    else:
+      inputs_section_html = _render_key_value_table(
+        'Analysis Parameters',
+        inputs,
+        table_analysis_map.get(_normalize_title_key('Analysis Parameters')),
+        input_charts,
+      )
+    
+    site_section_html = _render_selected_site_details_section(selected_site_details)
+    if _ap_dom_table:
+      site_section_html = ""
+
+    # --- Hourly Traffic Volume & Profile (Section 2, detailed only) ---
+    _hourly_profile_tables_s2: list[Any] = []
+    if not is_short:
+        for _t in tables:
+            _t_key = _normalize_title_key(_safe_text(_t.get("title"), ""))
+            if "hourly traffic profile" in _t_key or "hourly profile" in _t_key:
+                _hourly_profile_tables_s2.append(_t)
+    if _hourly_profile_tables_s2:
+        _hp_blocks: list[str] = []
+        for _t in _hourly_profile_tables_s2:
+            _t_key = _normalize_title_key(_safe_text(_t.get("title"), ""))
+            _hp_charts = _select_charts_for_table(_t, chart_items_to_render)
+            embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in _hp_charts)
+            _hp_blocks.append(_render_data_table(_t, table_analysis_map.get(_t_key), _hp_charts))
+        hourly_peak_section_html = (
+            "<div class=\"report-section avoid-break\">"
+            "<h3 contenteditable=\"true\">Hourly Traffic Volume (D1 and D2)</h3>"
+            + "".join(_hp_blocks)
+            + "</div>"
+        )
+    else:
+        hourly_peak_section_html = ""
+
+    # --- Section 2: Traffic Analysis & Results ---
+    # Patterns are matched in order; "swt" is excluded from the base queue/vcr summary patterns
+    # to prevent SWT tables appearing under the wrong heading.
+    TA_ORDER = [
+      "summary of computed results",
+      "hourly queue",
+      "hourly vcr",
+      "grouped directional summary",
+      "directional queue summary",
+      "directional queue summary swt",
+      "directional vcr summary",
+    ]
+    if is_short:
+        TA_ORDER = [
+          "summary of computed results",
+          "grouped directional summary",
+          "directional queue summary",
+          "directional queue summary swt",
+          "directional vcr summary",
+        ]
+
+    ta_blocks: list[str] = []
+    _seen_ta_patterns: set[str] = set()
+
+    # Summary table first
+    if _sr_dom_table:
+        results_charts = _select_charts_for_table(_sr_dom_table, chart_items_to_render)
+        embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
+        ta_blocks.append(_render_data_table(
+            _sr_dom_table,
+            table_analysis_map.get(_normalize_title_key(_safe_text(_sr_dom_table.get("title"), ""))),
+            results_charts,
+        ))
+        _seen_ta_patterns.add("summary of computed results")
+    else:
+        computed_results_table = {
+          "table_id": "summary_computed_results",
+          "title": "Summary of Computed Results",
+          "columns": ["Metric", "Value"],
+          "rows": [[str(key).replace("_", " ").title(), _safe_text(value)] for key, value in results.items()],
+        }
+        results_charts = _select_charts_for_table(computed_results_table, chart_items_to_render)
+        embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in results_charts)
+        ta_blocks.append(_render_computed_results_section(
+            'Summary of Computed Results',
+            results,
+            table_analysis_map.get(_normalize_title_key('Summary of Computed Results')),
+            results_charts,
+        ))
+        _seen_ta_patterns.add("summary of computed results")
+
+    # Remaining TA tables — render ALL tables (D1 + D2) matching each pattern.
+    # Deduplication via _seen_ta_table_ids ensures each table appears exactly once.
+    # "directional queue summary" excludes SWT tables (handled by its own pattern below it).
+    _seen_ta_table_ids: set[str] = set()
+    for pattern in TA_ORDER:
+      if pattern in _seen_ta_patterns: continue
+      for table in tables:
+        t_title = _safe_text(table.get("title"), "")
+        t_key = _normalize_title_key(t_title)
+        if pattern not in t_key:
+          continue
+        # Exclude SWT tables from the base "directional queue summary" pattern so they
+        # are rendered under the dedicated "directional queue summary swt" pattern.
+        if pattern == "directional queue summary" and "swt" in t_key:
+          continue
+        t_id = _safe_text(table.get("table_id", ""), "") or t_key
+        if t_id in _seen_ta_table_ids:
+          continue
+        _seen_ta_table_ids.add(t_id)
+        matched_charts = _select_charts_for_table(table, chart_items_to_render)
+        embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
+        ta_blocks.append(_render_data_table(
+          table,
+          table_analysis_map.get(t_key),
+          matched_charts,
+        ))
+      _seen_ta_patterns.add(pattern)
+
+    traffic_analysis_results_html = "".join(ta_blocks)
+
+    # --- Detour Analysis ---
     detour_tables: list[Any] = []
-    other_tables: list[Any] = []
+    _DEDICATED_TABLE_PATTERNS = ["analysis parameters", "summary of computed results", "input summary", "selected site", "hourly traffic profile", "hourly profile"]
+    _DEDICATED_TABLE_PATTERNS.extend(TA_ORDER)
 
-    for table in prioritized_tables:
-      title_lc = _safe_text(table.get("title", "")).lower()
-      if "hourly" in title_lc and "peak hour" in title_lc:
-        hourly_peak_tables.append(table)
-      elif any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
+    other_tables: list[Any] = []
+    _seen_table_ids: set[str] = set()
+    _seen_title_keys: set[str] = set()
+
+    for table in tables:
+      tkey = _normalize_title_key(_safe_text(table.get("title"), ""))
+      if any(pat in tkey for pat in _DEDICATED_TABLE_PATTERNS): continue
+
+      table_id = _safe_text(table.get("table_id", ""), "")
+      if table_id:
+        if table_id in _seen_table_ids: continue
+        _seen_table_ids.add(table_id)
+      elif tkey:
+        if tkey in _seen_title_keys: continue
+        _seen_title_keys.add(tkey)
+
+      title_lc = tkey
+      title_stripped = title_lc.strip()
+      if re.match(r"table\s*(1[1-8])", title_stripped): continue
+      if re.match(r"table\s*(2[89]|3[0-2])", title_stripped) or any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
         detour_tables.append(table)
       else:
         other_tables.append(table)
 
-    hourly_peak_blocks: list[str] = []
-    for table in hourly_peak_tables:
-      matched_charts = _select_charts_for_table(table, chart_items_to_render)
-      embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
-      hourly_peak_blocks.append(
-        _render_data_table(
-          table,
-          table_analysis_map.get(_normalize_title_key(table.get('title'))),
-          matched_charts,
-        )
-      )
-    hourly_peak_section_html = "".join(hourly_peak_blocks)
+    raw_js = payload.get("raw_js_results", {}) if isinstance(payload.get("raw_js_results"), dict) else {}
+    detour_route_count = int(raw_js.get("detour_route_count") or 0)
+    detour_section_html = _build_short_detour_section(detour_tables, detour_route_count, table_analysis_map, chart_items_to_render, is_short=is_short, section_num="4")
 
-    table_blocks: list[str] = []
+    # --- Other sections and numbering ---
+    other_blocks: list[str] = []
     for table in other_tables:
       matched_charts = _select_charts_for_table(table, chart_items_to_render)
       embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
-      table_blocks.append(
-        _render_data_table(
-          table,
-          table_analysis_map.get(_normalize_title_key(table.get('title'))),
-          matched_charts,
-        )
-      )
-    table_sections = "".join(table_blocks)
-    chart_sections = _render_additional_chart_blocks(chart_items_to_render, embedded_chart_keys)
+      other_blocks.append(_render_data_table(table, table_analysis_map.get(_normalize_title_key(table.get('title'))), matched_charts))
+    other_sections_html = "".join(other_blocks)
 
-    # Build Section 5 Detour Analysis for ALL reports using the isolated tables.
-    raw_js = payload.get("raw_js_results", {}) if isinstance(payload.get("raw_js_results"), dict) else {}
-    detour_route_count = int(raw_js.get("detour_route_count") or 0)
-
-    # Notice we now pass detour_tables and chart_items_to_render explicitly
-    short_detour_section_html = _build_short_detour_section(
-        detour_tables, detour_route_count, table_analysis_map, chart_items_to_render
-    )
-
-    # Adjust section numbers dynamically based on whether detour data exists.
-    # MUST be computed before chart_section_block which references sec_chart_num.
-    sec_eng_num   = "6" if short_detour_section_html else "5"
     if is_short:
-      sec_chart_num = ""  # No charts section in short report
-      sec_comm_num  = "7" if short_detour_section_html else "6"
+        sec_charts_num = ""
+        sec_conclusion_num = "5"
+        chart_section_html = ""
     else:
-      sec_chart_num = "7" if short_detour_section_html else "6"
-      sec_comm_num  = "8" if short_detour_section_html else "7"
+        sec_charts_num = "5"
+        sec_conclusion_num = "6"
+        chart_sections = _render_additional_chart_blocks(chart_items_to_render, embedded_chart_keys)
+        chart_section_html = f"<h2 contenteditable=\"true\">{sec_charts_num}. Charts</h2>{chart_sections}" if chart_sections else ""
 
-    chart_section_block = (
-      f'<h2 contenteditable="true">{sec_chart_num}. Charts</h2>\n    <div id="chartSectionContent">{chart_sections}</div>'
-      if not is_short else ''
-    )
     payload_json = escape(json.dumps(payload))
 
     return f"""<!DOCTYPE html>
@@ -2047,46 +2287,123 @@ def editor_page(draft_id: str) -> str:
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
   <title>{project_name}</title>
   <style>
-    /* Professional Engineering Document Variables */
+    /* Premium Engineering Document Variables */
     :root {{
-      --ink: #111827;
-      --muted: #4b5563;
+      --ink: #0f172a;
+      --muted: #64748b;
       --brand: #0f2f32;
       --accent: #1f5e63;
-      --border: #d1d5db;
-      --bg-light: #f9fafb;
+      --accent-light: #e6f2f3;
+      --accent-mid: #c8e6e9;
+      --border: #e2e8f0;
+      --bg-light: #f8fafc;
+      --surface: #ffffff;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
     }}
 
     /* Global Styles */
     body {{
-      font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;
+      font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
       margin: 0;
-      background: #e5e7eb;
+      background: #e8edf2;
       color: var(--ink);
-      line-height: 1.6;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
     }}
 
     /* Print Layout Configuration */
     @page {{
       size: A4;
-      margin: 20mm;
+      margin: 18mm 15mm 18mm 15mm;
     }}
 
     .document-wrapper {{
       max-width: 210mm;
-      margin: 20px auto;
-      background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      padding: 30px 40px;
+      margin: 40px auto;
+      background: var(--surface);
+      box-shadow: var(--shadow-lg);
+      padding: 48px 64px;
+      border-radius: var(--radius-sm);
+      position: relative;
+      overflow: hidden;
+    }}
+
+    /* Running header stripe */
+    .document-wrapper::before {{
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 60%, #0d9488 100%);
     }}
 
     /* Typography */
-    h1, h2, h3, h4 {{ color: var(--brand); font-family: \"Georgia\", serif; }}
-    h1 {{ font-size: 2.2rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }}
-    h2 {{ font-size: 1.6rem; border-bottom: 2px solid var(--accent); padding-bottom: 5px; margin-top: 2rem; page-break-after: avoid; }}
-    h3 {{ font-size: 1.2rem; margin-top: 1.5rem; color: var(--accent); }}
-    p {{ margin-bottom: 1rem; text-align: justify; }}
-    .meta {{ color: var(--muted); font-size: 0.9rem; font-style: italic; }}
+    h1, h2, h3, h4, .cover-subtitle {{ 
+      color: var(--brand); 
+      font-family: 'Space Grotesk', sans-serif; 
+      font-weight: 700;
+      line-height: 1.2;
+    }}
+    
+    h1 {{ 
+      font-size: 2.6rem; 
+      margin-bottom: 0.5rem; 
+      letter-spacing: -0.02em;
+    }}
+    
+    h2 {{
+      font-size: 1.55rem;
+      border-bottom: 2.5px solid var(--accent);
+      padding-bottom: 10px;
+      margin-top: 3rem;
+      margin-bottom: 1.5rem;
+      page-break-before: always;
+      page-break-after: avoid;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }}
+
+    h2.toc-title {{ page-break-before: auto; }}
+
+    h2::before {{
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 1.55rem;
+      background: var(--accent);
+      border-radius: 3px;
+      flex-shrink: 0;
+    }}
+    
+    h3 {{ 
+      font-size: 1.25rem; 
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      color: var(--accent);
+      font-weight: 600;
+      border-left: 4px solid var(--accent-mid);
+      padding-left: 12px;
+    }}
+
+    h4 {{
+      font-size: 1rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }}
+
+    p {{ margin-bottom: 1.2rem; text-align: justify; color: #334155; line-height: 1.7; }}
+    
+    .meta {{ color: var(--muted); font-size: 0.9rem; }}
 
     /* Layout Components */
     .cover-page {{
@@ -2096,80 +2413,281 @@ def editor_page(draft_id: str) -> str:
       justify-content: center;
       align-items: center;
       text-align: center;
+      position: relative;
     }}
-    .cover-logo {{ max-width: 200px; margin-bottom: 2rem; }}
-    .cover-subtitle {{ font-size: 1.4rem; color: var(--muted); margin-bottom: 3rem; }}
-    .cover-details table {{ width: 60%; margin: 0 auto; border: none; }}
-    .cover-details th, .cover-details td {{ border: none; padding: 8px; text-align: left; font-size: 1.1rem; }}
+
+    .cover-page::before {{
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+      opacity: 0.6;
+      z-index: 0;
+    }}
+
+    .cover-logo {{ max-width: 240px; margin-bottom: 3rem; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }}
+    
+    .cover-subtitle {{ 
+      font-size: 1.4rem; 
+      color: var(--muted); 
+      margin-bottom: 3.5rem; 
+      font-weight: 500;
+      position: relative; 
+      z-index: 1;
+      letter-spacing: 0.02em;
+    }}
+    
+    .cover-details {{
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--bg-light);
+      padding: 28px 32px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
+      box-shadow: var(--shadow-md);
+    }}
+
+    .cover-details table {{ width: 100%; margin: 0; border: none; box-shadow: none; border-radius: 0; }}
+    .cover-details th, .cover-details td {{ border: none; padding: 9px 12px; text-align: left; font-size: 1rem; background: transparent !important; }}
+    .cover-details th {{ width: 40%; color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 0.95rem; }}
+    .cover-details td {{ font-weight: 600; color: var(--brand); }}
+    .cover-details tr:hover {{ background: transparent !important; }}
 
     .page-break {{ page-break-before: always; }}
     .avoid-break {{ page-break-inside: avoid; }}
 
+    /* TOC */
+    .toc-container {{ margin-bottom: 2rem; }}
+    .toc-link {{ color: var(--accent); text-decoration: none; }}
+    .toc-link:hover {{ text-decoration: underline; }}
+    .toc-item {{ padding: 4px 0; font-size: 0.93rem; }}
+    .toc-h2 {{ font-weight: 600; color: var(--brand); margin-top: 6px; }}
+    .toc-h3 {{ padding-left: 18px; color: var(--muted); }}
+
     /* Tables */
-    table {{ width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }}
-    th, td {{ border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }}
-    th {{ background-color: var(--bg-light); font-weight: 600; color: var(--brand); border-bottom: 2px solid var(--accent); }}
-    .kv-table th {{ width: 35%; background-color: var(--bg-light); }}
-    .wide-table {{ table-layout: fixed; font-size: 0.84rem; }}
-    .wide-table th, .wide-table td {{ padding: 7px 6px; word-break: break-word; }}
+    table {{ 
+      width: 100%; 
+      border-collapse: separate; 
+      border-spacing: 0;
+      margin: 1.5rem 0; 
+      font-size: 0.92rem; 
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }}
+
+    th, td {{ 
+      padding: 11px 14px; 
+      text-align: left; 
+      vertical-align: middle; 
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }}
+    
+    th:last-child, td:last-child {{ border-right: none; }}
+    tr:last-child td {{ border-bottom: none; }}
+
+    th {{ 
+      background: linear-gradient(180deg, #f1f5f9 0%, #e9eef4 100%);
+      font-weight: 700; 
+      color: var(--brand); 
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.07em;
+    }}
+    
+    .kv-table th {{ width: 35%; background: linear-gradient(180deg, #f1f5f9 0%, #e9eef4 100%); }}
+    .results-3col th:last-child {{ color: var(--muted); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 0.82rem; }}
+    
+    .wide-table {{ table-layout: fixed; font-size: 0.82rem; }}
+    .wide-table th, .wide-table td {{ padding: 7px 9px; word-break: break-word; }}
+
+    tr:nth-child(even) {{ background-color: #fafbfc; }}
+    tr:hover {{ background-color: var(--accent-light); transition: background 0.12s; }}
+
+    /* Report section blocks */
+    .report-section {{
+      margin-bottom: 2rem;
+      padding: 0;
+    }}
 
     /* Interactive Elements & Editor Styles */
-    .toolbar {{ display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }}
-    .btn {{ background: var(--accent); color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; }}
-    .btn.secondary {{ background: #0f766e; }}
-    .btn.ghost {{ background: #475569; }}
-    .no-print {{ display: block; }}
-    .section-controls {{ display: flex; justify-content: flex-end; margin: 4px 0 8px; }}
-    .mini-btn {{ background: #9a3412; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }}
-    .mini-btn:hover {{ filter: brightness(1.06); }}
-    .editable {{ padding: 10px; border: 1px dashed var(--border); background: #fafafa; min-height: 80px; transition: border 0.3s; }}
-    .editable:focus {{ border: 1px solid var(--accent); outline: none; background: #fff; }}
-    .editable-text, [contenteditable="true"] {{ cursor: text; user-select: text; -webkit-user-modify: read-write; }}
-    th[contenteditable="true"], td[contenteditable="true"] {{ min-width: 48px; background-clip: padding-box; }}
-    th[contenteditable="true"]:focus, td[contenteditable="true"]:focus, .editable-text:focus {{ outline: 2px solid rgba(31, 94, 99, 0.22); outline-offset: -2px; background: #fffef7; }}
-    .table-note {{ min-height: 48px; margin: 8px 0; }}
-    .table-note p {{ margin: 0; text-align: left; }}
-    .table-detail-lead {{ margin: 10px 0 8px; padding: 8px 12px; border-left: 4px solid var(--accent); background: #f3f8f9; color: #244448; font-style: italic; }}
-    .commentary-block {{ min-height: 140px; }}
-    .conclusion-list {{ margin-top: 8px; }}
+    .toolbar {{ 
+      display: flex; 
+      justify-content: flex-end; 
+      gap: 10px; 
+      margin-bottom: 24px; 
+      flex-wrap: wrap; 
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 10px;
+      z-index: 100;
+      border: 1px solid var(--border);
+    }}
+
+    .btn {{ 
+      background: var(--brand); 
+      color: white; 
+      border: none; 
+      padding: 9px 20px; 
+      font-size: 0.88rem; 
+      border-radius: var(--radius-sm); 
+      cursor: pointer; 
+      font-weight: 600;
+      transition: all 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      letter-spacing: 0.01em;
+    }}
+
+    .btn:hover {{ background: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-md); }}
+    .btn.secondary {{ background: #0d9488; }}
+    .btn.ghost {{ background: #64748b; }}
+    
+    .section-controls {{ display: flex; justify-content: flex-end; margin: 6px 0; gap: 5px; }}
+    
+    .mini-btn {{ 
+      background: #f1f5f9; 
+      color: #475569; 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-sm); 
+      padding: 5px 11px; 
+      font-size: 0.72rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.12s ease;
+      letter-spacing: 0.01em;
+    }}
+    
+    .mini-btn:hover {{ background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }}
+    .mini-btn.remove {{ background: #fee2e2; color: #991b1b; border-color: #fecaca; }}
+    .mini-btn.remove:hover {{ background: #fecaca; color: #7f1d1d; }}
+
+    .editable {{ 
+      padding: 14px 18px; 
+      border: 1.5px dashed #cbd5e1; 
+      background: #fafbfc; 
+      border-radius: var(--radius-md);
+      min-height: 56px; 
+      transition: all 0.18s ease; 
+      margin: 10px 0;
+    }}
+    
+    .editable:focus {{ 
+      border-color: var(--accent); 
+      outline: none; 
+      background: #ffffff; 
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }}
+    
+    .editable-text, [contenteditable="true"] {{ cursor: text; }}
+    
+    .table-note {{ 
+      font-style: italic; 
+      color: #475569; 
+      margin: 10px 0; 
+      font-size: 0.91rem; 
+      line-height: 1.6;
+    }}
+    .table-note-top {{ border-left: 3px solid var(--accent-mid); padding-left: 12px; background: transparent; border: none; }}
+    .table-note-bottom {{ color: var(--muted); font-size: 0.88rem; }}
+
+    .table-detail-lead {{ 
+      margin: 16px 0 10px; 
+      padding: 10px 18px; 
+      border-left: 4px solid var(--accent); 
+      background: var(--accent-light); 
+      color: var(--brand); 
+      font-weight: 600;
+      font-size: 0.91rem;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }}
+    .commentary-block {{ min-height: 120px; }}
+    .conclusion-list {{ margin-top: 10px; }}
+    .conclusion-list li {{ margin-bottom: 6px; color: #334155; }}
 
     /* Charts */
     .chart-block {{ width: 100%; max-width: 100%; margin: 0 0 16px; }}
     .chart-title {{ margin-bottom: 8px; }}
-    .embedded-chart {{ margin: 12px 0 14px; padding: 12px; border: 1px solid #bfd3d8; border-radius: 8px; background: linear-gradient(180deg, #ffffff 0%, #f6fbfc 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }}
-    .chart-img {{ width: auto; max-width: 100%; height: auto; border: 1px solid var(--border); display: block; margin: 10px auto; object-fit: contain; image-rendering: auto; background: #ffffff; }}
-    .chart-caption {{ min-height: 48px; }}
+    .embedded-chart {{ 
+      margin: 2rem 0; 
+      padding: 24px 28px; 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-lg); 
+      background: #fdfdfd; 
+      box-shadow: var(--shadow-md); 
+    }}
+    
+    .chart-img {{ 
+      width: 100%; 
+      max-height: 480px;
+      border-radius: var(--radius-md);
+      display: block; 
+      margin: 16px auto; 
+      object-fit: contain; 
+    }}
+    
+    .chart-caption {{ 
+      text-align: center; 
+      color: var(--muted); 
+      font-size: 0.88rem; 
+      margin-top: 10px;
+      padding: 0 32px;
+      font-style: italic;
+    }}
 
     /* Table of Contents Styles */
-    .toc-container {{ margin: 2rem 0; padding: 20px; background: #ffffff; border: 1px solid var(--border); border-radius: 4px; }}
-    .toc-title {{ margin-top: 0; border-bottom: none; }}
-    .toc-item {{ display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1rem; }}
-    .toc-h2 {{ font-weight: 600; color: var(--brand); margin-top: 15px; }}
-    .toc-h3 {{ margin-left: 20px; color: var(--muted); font-size: 0.95rem; }}
-    .toc-link {{ text-decoration: none; color: inherit; border-bottom: 1px dotted var(--muted); flex-grow: 1; margin-right: 10px; }}
-    .toc-link:hover {{ color: var(--accent); border-bottom-color: var(--accent); }}
+    .toc-container {{ 
+      margin: 3rem 0; 
+      padding: 30px; 
+      background: var(--bg-light); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-lg); 
+    }}
+    
+    .toc-title {{ margin-top: 0; border-bottom: none; font-size: 1.5rem; }}
+    .toc-item {{ margin-bottom: 12px; }}
+    .toc-h2 {{ font-weight: 700; color: var(--brand); margin-top: 20px; }}
+    .toc-h3 {{ margin-left: 24px; color: var(--muted); font-size: 0.95rem; }}
+    .toc-link {{ text-decoration: none; color: inherit; transition: color 0.2s; display: block; }}
+    .toc-link:hover {{ color: var(--accent); }}
 
     /* Print Overrides */
     @media print {{
-      * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
       body {{ background: #fff; }}
-      .document-wrapper {{ box-shadow: none; margin: 0; padding: 0; max-width: 100%; }}
-      .toolbar {{ display: none; }}
-      .no-print {{ display: none !important; }}
+      .document-wrapper {{ box-shadow: none; margin: 0; padding: 0; max-width: 100%; border: none; }}
+      .toolbar, .no-print, .section-controls {{ display: none !important; }}
       .editable {{ border: none; background: transparent; padding: 0; }}
-      .toc-container {{ border: none; padding: 0; }}
-      .toc-link {{ border-bottom: none; }}
-      .embedded-chart {{ border: 1px solid #bfd3d8; background: #fff; }}
-      .detour-sub-block {{ border: 1px solid var(--border); background: #fff; }}
+      .toc-container {{ border: 1px solid var(--border); background: #fff; }}
+      .embedded-chart {{ box-shadow: none; border: 1px solid var(--border); }}
     }}
 
-    /* Three-column results table */
-    .results-3col .context-col {{ color: var(--muted); font-size: 0.88rem; font-style: italic; min-width: 140px; }}
+    /* Results 3-column */
+    .results-3col .context-col {{ color: var(--muted); font-size: 0.85rem; font-style: italic; background: #f8fafc; }}
 
-    /* Detour subsection blocks */
-    .detour-subsections {{ margin-top: 8px; }}
-    .detour-sub-block {{ margin: 16px 0; padding: 12px 16px; border-left: 4px solid var(--accent); background: #f3f8f9; border-radius: 4px; }}
-    .detour-sub-block h5 {{ margin: 0 0 8px; color: var(--brand); font-size: 1rem; }}
+    /* Detour blocks */
+    .detour-sub-block {{ 
+      margin: 20px 0; 
+      padding: 20px; 
+      border-left: 5px solid var(--accent); 
+      background: #f8fafc; 
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      box-shadow: var(--shadow-sm);
+    }}
+    
+    .detour-sub-block h4, .detour-sub-block h5 {{ margin: 0 0 12px; color: var(--brand); }}
 
     /* Engineering observations */
     .obs-subsection {{ margin-bottom: 16px; }}
@@ -2212,40 +2730,61 @@ def editor_page(draft_id: str) -> str:
       <div id=\"toc-content\"></div>
     </div>
 
-    <div class=\"page-break\"></div>
+    <div class=\"toc-container avoid-break\">
+      <h2 class=\"toc-title\">List of Tables</h2>
+      <div id=\"lot-content\"></div>
+    </div>
 
     <h2 contenteditable=\"true\">1. Executive Summary</h2>
     <div class=\"editable\" contenteditable=\"true\">
       {executive_summary_html}
+      {executive_notes_html}
       <p><em>Click here to refine the executive narrative, project-specific implications, and stakeholder-facing conclusions.</em></p>
     </div>
 
-    <h2 class=\"avoid-break\" contenteditable=\"true\">2. Executive Explanation Notes</h2>
-    <ul>{executive_notes_html}</ul>
-
-    <h2 contenteditable=\"true\">3. Design &amp; Traffic Inputs</h2>
+    <h2 contenteditable=\"true\">2. Design &amp; Traffic Inputs</h2>
     {inputs_section_html}
-    {selected_site_section_html}
-
-    <div class=\"page-break\"></div>
-
-    <h2 contenteditable=\"true\">4. Traffic Analysis &amp; Results</h2>
-    {results_section_html}
+    {site_section_html}
     {hourly_peak_section_html}
 
-    {table_sections}
+    <h2 contenteditable=\"true\">3. Traffic Analysis &amp; Results</h2>
+    {traffic_analysis_results_html}
 
-    {short_detour_section_html}
+    {other_sections_html}
 
-    <div class=\"page-break\"></div>
+    {detour_section_html}
 
-    <h2 contenteditable=\"true\">{sec_eng_num}. Engineering Observations &amp; Notes</h2>
-    {engineering_obs_html}
+    {chart_section_html}
 
-    {chart_section_block}
-
-    <h2 contenteditable=\"true\">{sec_comm_num}. Professional Commentary &amp; Conclusion</h2>
+    <h2 contenteditable=\"true\">{sec_conclusion_num}. Conclusion</h2>
     {commentary_html}
+
+    <div class=\"avoid-break\" style=\"margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);\">
+      <div style=\"display: flex; gap: 40px; margin-top: 20px;\">
+        <div style=\"flex: 1;\">
+          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Prepared By</div>
+          <div contenteditable=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--brand);\">{prepared_by}</div>
+          <div contenteditable=\"true\" style=\"font-size: 0.95rem; color: var(--muted);\">Planner's Name</div>
+        </div>
+        <div style=\"flex: 1;\">
+          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Reviewed By</div>
+          <div contenteditable=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--brand);\">Reviewer Name</div>
+          <div contenteditable=\"true\" style=\"font-size: 0.95rem; color: var(--muted);\">Reviewer's Name</div>
+        </div>
+        <div style=\"flex: 1;\">
+          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Digital Authentication</div>
+          <div style=\"font-family: monospace; font-size: 0.75rem; color: var(--muted); border: 1px dashed var(--border); padding: 10px; border-radius: var(--radius-sm); background: var(--bg-light);\">
+            AUTH-ID: {cc_number}<br>
+            TIMESTAMP: {report_date}<br>
+            STATUS: ELECTRONICALLY SIGNED
+          </div>
+        </div>
+      </div>
+      
+      <div style=\"margin-top: 3rem; padding: 20px; background: #fff1f2; border: 1px solid #fecaca; border-radius: var(--radius-md); font-size: 0.85rem; color: #991b1b;\">
+        <strong>ENGINEERING DISCLAIMER:</strong> This Traffic Impact Assessment (TIA) report has been prepared based on site-specific observations and industry-standard modeling assumptions. While every effort has been made to ensure accuracy, real-world traffic conditions are subject to variables including driver behavior, weather, and external network incidents. This report is intended for use by planning authorities and should be reviewed in the context of the complete project documentation.
+      </div>
+    </div>
 
   </main>
 
@@ -2320,6 +2859,34 @@ def editor_page(draft_id: str) -> str:
         el.setAttribute('contenteditable', 'true');
         el.classList.add('editable-text');
       }});
+    }}
+
+    function refreshListOfTables() {{
+      const lotContent = document.getElementById("lot-content");
+      if (!lotContent) return;
+
+      // Collect all table-section headings (h3 inside .report-section, h4 inside .detour-sub-block)
+      const tableHeadings = Array.from(document.querySelectorAll(
+        "main .report-section h3, main .report-section h4, main .detour-sub-block h4"
+      )).filter((h) => h && h.isConnected && String(h.innerText || '').trim().length > 0);
+
+      if (tableHeadings.length === 0) {{
+        lotContent.innerHTML = '<div class="toc-item toc-h3">No tables listed.</div>';
+        return;
+      }}
+
+      let lotHTML = "";
+      tableHeadings.forEach((heading, index) => {{
+        if (!heading.id) {{
+          const safeText = heading.innerText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          heading.id = "tbl-" + index + "-" + safeText.substring(0, 40);
+        }}
+        lotHTML += '<div class="toc-item toc-h3">' +
+                     '<a href="#' + heading.id + '" class="toc-link">Table ' + (index + 1) + ': ' + heading.innerText + '</a>' +
+                   '</div>';
+      }});
+
+      lotContent.innerHTML = lotHTML;
     }}
 
     function refreshToc() {{
@@ -2707,6 +3274,7 @@ def editor_page(draft_id: str) -> str:
         }}
       }}
       refreshToc();
+      refreshListOfTables();
       bindTocAutoRefresh();
     }});
   </script>
