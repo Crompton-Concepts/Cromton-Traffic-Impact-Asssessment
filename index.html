@@ -2343,7 +2343,34 @@
     details.card > summary { cursor: pointer; user-select: none; transition: background 0.18s ease; }
     details.card > summary:hover { background: linear-gradient(180deg, #f3f9fa 0%, #eaf4f5 100%); }
     details.card > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 8px; }
-    .navbar { background: linear-gradient(180deg, #ffffff 0%, #fafcfc 100%); border-color: #dde6e6; }
+    .navbar { background: linear-gradient(180deg, #ffffff 0%, #fafcfc 100%); border-color: #dde6e6; box-shadow: 0 10px 24px rgba(15,47,50,0.22), 0 1px 0 rgba(255,255,255,0.95) inset; }
+    .navbar::after { background: linear-gradient(180deg, rgba(31,94,99,0.08) 0%, transparent 44%); }
+    .navbar-brand { border-right-color: rgba(31,94,99,0.20); }
+    .navbar-acct-sep { background: rgba(31,94,99,0.24); }
+    .navbar-user-greeting { color: #1f5e63; }
+    .navbar-account-name { color: #3a5f63; }
+    .home-button,
+    .contact-dev-button {
+      background: #eef4f4;
+      color: #16464a;
+      border-color: #c6d6d8;
+    }
+    .home-button:hover,
+    .contact-dev-button:hover {
+      background: #e3eeef;
+      border-color: #9db5b8;
+      color: #10363a;
+    }
+    .logout-button {
+      background: #fff1f1;
+      color: #c23c3c;
+      border-color: #efb4b4;
+    }
+    .logout-button:hover {
+      background: #e45555;
+      border-color: #d44848;
+      color: #ffffff;
+    }
     .card, details.card { box-shadow: 0 2px 8px rgba(15,47,50,0.07), 0 0 0 1px rgba(15,47,50,0.04); transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
     .card:hover, details.card:hover { box-shadow: 0 8px 22px rgba(15,47,50,0.12), 0 0 0 1px rgba(31,94,99,0.08); border-color: #c8d8da; }
     input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(31,94,99,0.14), 0 2px 8px rgba(31,94,99,0.08); }
