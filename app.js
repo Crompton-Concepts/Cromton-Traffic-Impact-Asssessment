@@ -20566,43 +20566,84 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const BASE_SEARCH_RADIUS_KM = 1.0;
     const SEARCH_STEP_KM = 1.0;
     const PREFERRED_MAX_RADIUS_KM = 5.0;
-    const counters = Array.isArray(allDatabaseCounters)
-      ? allDatabaseCounters
-      : Object.entries(allDatabaseCounters || {}).map(([id, data]) => ({
-          ...(data || {}),
-          id,
-          data,
-          lat: Number((data && (data.latitude ?? data.Latitude ?? data.lat ?? data.Lat)) ?? NaN),
-          lon: Number((data && (data.longitude ?? data.Longitude ?? data.lon ?? data.Lon ?? data.lng ?? data.Lng ?? data.long ?? data.Long)) ?? NaN),
-          roadName: String((data && (data.road_name || data.description)) || ''),
-          Description: String((data && (data.description || data.road_name)) || ''),
-          VADT: Number(data && data.vadt) || 0,
-          Total_VADT: Number(data && data.vadt) || 0,
-          rawCount: Number(data && data.vadt) || 0,
-          Year: Number(data && (data.countYear || data.count_year)) || 0,
-          HV_Percent: Number(data && (data.hv_percent || data.hvPercent)) || 0,
-          Lanes: Number(data && data.lanes) || 1,
-          Growth_Rate: Number(data && (data.growth_rate || data.Growth_Rate)) || 2.5,
-          roadType: String((data && (data.road_type || data.roadType || data.road_class || data.road_class_raw || data.Road_Class || data.classification)) || ''),
-          direction: typeof getBearingDirection === 'function' ? getBearingDirection(userLat, userLon, Number(data && data.latitude), Number(data && data.longitude)) : 'Nearby'
-        }));
+
+    // Performance optimization: fast bounding box check
+    const countersIterable = Array.isArray(allDatabaseCounters)
+        ? allDatabaseCounters
+        : Object.entries(allDatabaseCounters || {});
+
+    const dLatThreshold = 0.05;
+    const dLonThreshold = 0.06;
 
     const analyzed = [];
-    counters.forEach((counter) => {
-      const cLat = Number(counter && counter.lat);
-      const cLon = Number(counter && counter.lon);
-      if (!Number.isFinite(cLat) || !Number.isFinite(cLon)) return;
 
-      const dist = calculateDistance(userLat, userLon, cLat, cLon);
-      if (!Number.isFinite(dist)) return;
+    for (let i = 0; i < countersIterable.length; i++) {
+        const item = countersIterable[i];
+        const isArray = Array.isArray(item);
+        const data = isArray ? item[1] : item;
 
-      analyzed.push({
-        ...counter,
-        distanceKm: dist,
-        distanceMeters: Math.round(dist * 1000),
-        __roadNorm: normalizeRoadName(counter.roadName || counter.Description || counter.description || '')
-      });
-    });
+        const cLat = Number((data && (data.latitude ?? data.Latitude ?? data.lat ?? data.Lat)) ?? NaN);
+        const cLon = Number((data && (data.longitude ?? data.Longitude ?? data.lon ?? data.Lon ?? data.lng ?? data.Lng ?? data.long ?? data.Long)) ?? NaN);
+
+        if (!Number.isFinite(cLat) || !Number.isFinite(cLon)) continue;
+
+        const dLat = Math.abs(cLat - userLat);
+        const dLon = Math.abs(cLon - userLon);
+
+        if (dLat > dLatThreshold || dLon > dLonThreshold) continue;
+
+        const dist = calculateDistance(userLat, userLon, cLat, cLon);
+        if (!Number.isFinite(dist)) continue;
+
+        analyzed.push({
+            id: isArray ? item[0] : item.id,
+            data,
+            cLat,
+            cLon,
+            distanceKm: dist
+        });
+    }
+
+    if (analyzed.length === 0) {
+        let nearestDist = Infinity;
+        let nearestIdx = -1;
+
+        for (let i = 0; i < countersIterable.length; i++) {
+            const item = countersIterable[i];
+            const isArray = Array.isArray(item);
+            const data = isArray ? item[1] : item;
+
+            const cLat = Number((data && (data.latitude ?? data.Latitude ?? data.lat ?? data.Lat)) ?? NaN);
+            const cLon = Number((data && (data.longitude ?? data.Longitude ?? data.lon ?? data.Lon ?? data.lng ?? data.Lng ?? data.long ?? data.Long)) ?? NaN);
+
+            if (!Number.isFinite(cLat) || !Number.isFinite(cLon)) continue;
+
+            const dLatDiff = cLat - userLat;
+            const dLonDiff = cLon - userLon;
+            const approxDistSq = dLatDiff*dLatDiff + dLonDiff*dLonDiff;
+
+            if (approxDistSq < nearestDist) {
+                nearestDist = approxDistSq;
+                nearestIdx = i;
+            }
+        }
+
+        if (nearestIdx !== -1) {
+            const item = countersIterable[nearestIdx];
+            const isArray = Array.isArray(item);
+            const data = isArray ? item[1] : item;
+            const cLat = Number((data && (data.latitude ?? data.Latitude ?? data.lat ?? data.Lat)) ?? NaN);
+            const cLon = Number((data && (data.longitude ?? data.Longitude ?? data.lon ?? data.Lon ?? data.lng ?? data.Lng ?? data.long ?? data.Long)) ?? NaN);
+            const dist = calculateDistance(userLat, userLon, cLat, cLon);
+            analyzed.push({
+                id: isArray ? item[0] : item.id,
+                data,
+                cLat,
+                cLon,
+                distanceKm: dist
+            });
+        }
+    }
 
     if (!analyzed.length) {
       return {
@@ -20615,23 +20656,57 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       };
     }
 
-    const nearestDistanceKm = analyzed.reduce((minVal, item) => Math.min(minVal, item.distanceKm), Number.POSITIVE_INFINITY);
-    const hasAnyWithinPreferredMax = analyzed.some((item) => item.distanceKm <= PREFERRED_MAX_RADIUS_KM);
+    analyzed.sort((a, b) => a.distanceKm - b.distanceKm);
+
+    const nearestDistanceKm = analyzed[0].distanceKm;
+    const hasAnyWithinPreferredMax = nearestDistanceKm <= PREFERRED_MAX_RADIUS_KM;
     let maxRadiusToSearchKm = PREFERRED_MAX_RADIUS_KM;
 
-    // Expand beyond 5km only when nothing is available within 5km.
-    if (!hasAnyWithinPreferredMax && Number.isFinite(nearestDistanceKm)) {
+    if (!hasAnyWithinPreferredMax) {
       maxRadiusToSearchKm = Math.max(
         PREFERRED_MAX_RADIUS_KM,
         Math.ceil(nearestDistanceKm / SEARCH_STEP_KM) * SEARCH_STEP_KM
       );
     }
 
+    const processedAnalyzed = [];
+    for (let i = 0; i < analyzed.length; i++) {
+        const item = analyzed[i];
+        if (item.distanceKm > maxRadiusToSearchKm + 1e-9) break;
+
+        const data = item.data;
+        const counter = {
+            ...(data || {}),
+            id: item.id,
+            data,
+            lat: item.cLat,
+            lon: item.cLon,
+            roadName: String((data && (data.road_name || data.description)) || ''),
+            Description: String((data && (data.description || data.road_name)) || ''),
+            VADT: Number(data && data.vadt) || 0,
+            Total_VADT: Number(data && data.vadt) || 0,
+            rawCount: Number(data && data.vadt) || 0,
+            Year: Number(data && (data.countYear || data.count_year)) || 0,
+            HV_Percent: Number(data && (data.hv_percent || data.hvPercent)) || 0,
+            Lanes: Number(data && data.lanes) || 1,
+            Growth_Rate: Number(data && (data.growth_rate || data.Growth_Rate)) || 2.5,
+            roadType: String((data && (data.road_type || data.roadType || data.road_class || data.road_class_raw || data.Road_Class || data.classification)) || ''),
+            direction: typeof getBearingDirection === 'function' ? getBearingDirection(userLat, userLon, item.cLat, item.cLon) : 'Nearby'
+        };
+
+        processedAnalyzed.push({
+            ...counter,
+            distanceKm: item.distanceKm,
+            distanceMeters: Math.round(item.distanceKm * 1000),
+            __roadNorm: normalizeRoadName(counter.roadName || counter.Description || counter.description || '')
+        });
+    }
+
     for (let radiusKm = BASE_SEARCH_RADIUS_KM; radiusKm <= maxRadiusToSearchKm + 1e-9; radiusKm += SEARCH_STEP_KM) {
       const exactMatches = [];
       const nearbyMatches = [];
 
-      analyzed.forEach((entry) => {
+      processedAnalyzed.forEach((entry) => {
         if (entry.distanceKm > radiusKm) return;
 
         const isRoadMatch = !!(
@@ -20671,7 +20746,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
-    const nearbyWithinPreferred = analyzed
+    const nearbyWithinPreferred = processedAnalyzed
       .filter((entry) => Number(entry.distanceKm) <= PREFERRED_MAX_RADIUS_KM)
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, 5)
@@ -21303,13 +21378,57 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     runBackgroundCoordinateFallback(location, searchInput);
     
     // 2. Map distances and bearings to all sites
-    const sites = Object.entries(macroSitesData).map(([id, data]) => {
+    // OPTIMIZED: Pre-filter by bounding box to avoid expensive math for points far away
+    const dLatThreshold = 0.05; // ~5.5km
+    const dLonThreshold = 0.06; // ~5.5km at typical AU latitudes
+
+    const sites = [];
+    for (const id in macroSitesData) {
+      if (!Object.prototype.hasOwnProperty.call(macroSitesData, id)) continue;
+      const data = macroSitesData[id];
       const coords = getSiteCoordinates(data);
-      if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lon)) return null;
+      if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lon)) continue;
+
+      const dLat = Math.abs(coords.lat - location.lat);
+      const dLon = Math.abs(coords.lon - location.lon);
+
+      // Fast rejection for points clearly beyond ~5km
+      if (dLat > dLatThreshold || dLon > dLonThreshold) continue;
+
       const dist = haversineDistance(location.lat, location.lon, coords.lat, coords.lon);
-      const direction = getBearingDirection(location.lat, location.lon, coords.lat, coords.lon);
-      return { id, data, dist, direction, lat: coords.lat, lon: coords.lon };
-    }).filter(Boolean);
+      const direction = typeof getBearingDirection === 'function' ? getBearingDirection(location.lat, location.lon, coords.lat, coords.lon) : 'Nearby';
+      sites.push({ id, data, dist, direction, lat: coords.lat, lon: coords.lon });
+    }
+
+    // Fallback if absolutely no points near (e.g. rural area)
+    if (sites.length === 0) {
+      let nearestDistSq = Infinity;
+      let nearestId = null;
+      let nearestCoords = null;
+
+      for (const id in macroSitesData) {
+        if (!Object.prototype.hasOwnProperty.call(macroSitesData, id)) continue;
+        const data = macroSitesData[id];
+        const coords = getSiteCoordinates(data);
+        if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lon)) continue;
+
+        const dLat = coords.lat - location.lat;
+        const dLon = coords.lon - location.lon;
+        const distSq = dLat*dLat + dLon*dLon;
+        if (distSq < nearestDistSq) {
+          nearestDistSq = distSq;
+          nearestId = id;
+          nearestCoords = coords;
+        }
+      }
+
+      if (nearestId) {
+        const data = macroSitesData[nearestId];
+        const dist = haversineDistance(location.lat, location.lon, nearestCoords.lat, nearestCoords.lon);
+        const direction = typeof getBearingDirection === 'function' ? getBearingDirection(location.lat, location.lon, nearestCoords.lat, nearestCoords.lon) : 'Nearby';
+        sites.push({ id: nearestId, data, dist, direction, lat: nearestCoords.lat, lon: nearestCoords.lon });
+      }
+    }
 
     // Lightweight nearest preview cards (top-3 within 3km) requested by user.
     const nearestWithin3Km = sites
