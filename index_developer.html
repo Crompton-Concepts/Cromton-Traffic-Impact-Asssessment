@@ -550,8 +550,9 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: 0.88rem;
-      font-weight: 700;
-      color: #e4f4f5;
+      font-weight: 800;
+      color: #f4fcfd;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.32);
       letter-spacing: 0.015em;
     }
 
@@ -573,9 +574,15 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: 0.8rem;
-      font-weight: 600;
-      color: #8ec8cc;
+      font-weight: 800;
+      color: #d8eef1;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
       padding: 0 4px;
+    }
+
+    .nav-label-full,
+    .nav-label-short {
+      font-weight: 800;
     }
 
     .nav-label-short {
@@ -610,7 +617,7 @@
       border: 1px solid rgba(255,255,255,0.22);
       border-radius: 8px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 13px;
       transition: background 0.18s ease, border-color 0.18s ease;
       display: inline-flex;
@@ -632,12 +639,12 @@
       width: auto;
       margin-top: 0;
       background: rgba(220, 38, 38, 0.18);
-      color: #ffb3b3;
+      color: #ffdede;
       border: 1px solid rgba(220, 38, 38, 0.50);
       padding: 7px 16px;
       border-radius: 8px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 13px;
       transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
       letter-spacing: 0.02em;
@@ -660,12 +667,12 @@
       width: auto;
       margin-top: 0;
       background: rgba(255,255,255,0.09);
-      color: #f0fafb;
+      color: #ffffff;
       border: 1px solid rgba(255,255,255,0.20);
       padding: 7px 12px;
       border-radius: 8px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 13px;
       transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
       text-decoration: none;
@@ -2205,13 +2212,13 @@
     .tier-card-price { font-size:0.8rem; color:var(--brand); font-weight:700; margin-top:3px; }
     .tier-card-desc { font-size:0.72rem; color:var(--muted); margin-top:3px; line-height:1.3; }
     /* Tier badge in navbar */
-    .tier-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; border: 1.5px solid transparent; white-space: nowrap; }
+    .tier-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; border: 1.5px solid transparent; white-space: nowrap; }
     /* On dark navbar these overrides apply */
     .navbar .tier-badge { font-size: 0.70rem; padding: 4px 10px; }
-    .tier-badge-free { background: rgba(255,255,255,0.12); color: #c8dfe2; border-color: rgba(255,255,255,0.28); }
-    .tier-badge-basic { background: rgba(59,130,246,0.22); color: #93c5fd; border-color: rgba(59,130,246,0.50); }
-    .tier-badge-pro { background: rgba(34,197,94,0.20); color: #86efac; border-color: rgba(34,197,94,0.48); }
-    .tier-badge-proplus { background: linear-gradient(135deg, rgba(168,85,247,0.28), rgba(234,179,8,0.22)); color: #e9d5ff; border-color: rgba(168,85,247,0.55); }
+    .tier-badge-free { background: rgba(255,255,255,0.20); color: #ffffff; border-color: rgba(255,255,255,0.42); text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); }
+    .tier-badge-basic { background: rgba(59,130,246,0.34); color: #f0f7ff; border-color: rgba(147,197,253,0.78); text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); }
+    .tier-badge-pro { background: rgba(34,197,94,0.32); color: #f0fff4; border-color: rgba(134,239,172,0.78); text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); }
+    .tier-badge-proplus { background: linear-gradient(135deg, rgba(245,232,255,0.98), rgba(255,243,199,0.98)); color: #4c1d95; border-color: #8b5cf6; }
     /* Feature lock overlay */
     .feature-lock-wrap { position: relative; }
     .feature-lock-overlay { position: absolute; inset: 0; z-index: 55; background: rgba(248,250,252,0.92); backdrop-filter: blur(3px); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; text-align: center; padding: 24px 20px; }
