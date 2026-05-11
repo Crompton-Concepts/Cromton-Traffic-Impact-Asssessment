@@ -1419,10 +1419,11 @@ def _render_computed_results_section(
 
 def _render_short_detour_route_block(route_label: str, route_tables: list[dict], analysis_map: dict, chart_items: list[dict] | None = None, is_short: bool = False) -> str:
   """Render the detour block per route.
-  Detailed: Table 28 / VPD Calculated / Detour Road Capacity Summary /
-            Estimated Detour Delay Inputs / Detour Road Summary (Table 29) /
-            Road Status After Diversion / Pedestrian Delay
-  Short:    Table 28 / Estimated Detour Delay Inputs / Pedestrian Delay
+  Detailed: Detour Route Information / VPD Calculation / Detour Road Capacity Summary /
+            Estimated Detour Delay Calculation / Detour Road Summary /
+            Road Status After Diversion / Pedestrian Detour Impact
+  Short:    Detour Route Information / Estimated Detour Delay Calculation /
+            Pedestrian Detour Impact
   """
   if chart_items is None:
     chart_items = []
@@ -1534,29 +1535,32 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   )
 
   if is_short:
-    # Short report — headings match the Word template exactly:
-    # 1. Detour Route Information / 2. Estimated Detour Delay Inputs and Delay Calculation /
-    # 3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians
+    # Short report:
+    # 1. Detour Route Information / 2. Estimated Detour Delay Calculation /
+    # 3. Pedestrian Detour Impact
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Inputs and Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Pedestrian Detour Impact</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
   else:
-    # Detailed report — headings match the Word template exactly:
-    # 1. Detour Route Information / 2. Detour VPD Calculated Table /
-    # 3. Detour Road Capacity Summary / 4. Estimated Detour Delay Inputs and Delay Calculation /
-    # 5. Detour Road Directional Capacity Summary / 6. Road Status After Diversion (Existing Road) /
-    # 7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians
+    # Detailed report:
+    # 1. Detour Route Information
+    # 2. VPD Calculation for the Detour Route Roads
+    # 3. Detour Road Capacity Summary
+    # 4. Estimated Detour Delay Calculation
+    # 5. Detour Road Summary
+    # 6. Road Status After Diversion
+    # 7. Pedestrian Detour Impact
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Detour VPD Calculated Table</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Inputs and Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Directional Capacity Summary</h4>" + _render_group(dir_capacity_tables + detour_summary_tables, fallback_detour_summary) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion (Existing Road)</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Estimated Delay &#8211; Detour Route &#8211; Pedestrians</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. VPD Calculation for the Detour Route Roads</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables + dir_capacity_tables, fallback_road_capacity) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(detour_summary_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Pedestrian Detour Impact</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
 
