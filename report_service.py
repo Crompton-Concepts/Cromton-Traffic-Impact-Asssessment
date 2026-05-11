@@ -1558,7 +1558,7 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. VPD Calculation for the Detour Route Roads</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(detour_summary_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(detour_summary_tables + dir_capacity_tables, fallback_detour_summary) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">7. Pedestrian Detour Impact</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
