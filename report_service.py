@@ -1430,25 +1430,25 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   label_esc = _escape(route_label)
 
   # Classify each table into ordered slots.
-  route_info_tables: list[dict] = []   # Table 28 — route overview
+  route_info_tables: list[dict] = []   # Table 27 — route overview
   vpd_tables: list[dict] = []
   dir_capacity_tables: list[dict] = []
   road_capacity_tables: list[dict] = []
   road_status_tables: list[dict] = []
   delay_tables: list[dict] = []
   pedestrian_tables: list[dict] = []
-  detour_summary_tables: list[dict] = []  # Table 29 — detour road summary
+  detour_summary_tables: list[dict] = []  # Table 28/29 — detour road summary
   other_tables: list[dict] = []
 
   for table in route_tables:
     title_raw = _safe_text(table.get("title"), "")
     title_lc = title_raw.lower().strip()
     title_stripped = title_lc.strip()
-    # Table 28 -> route info
-    if re.match(r"table\s*28", title_stripped):
+    # Table 27 -> route info
+    if re.match(r"table\s*27", title_stripped):
       route_info_tables.append(table)
-    # Table 29 -> detour road summary
-    elif re.match(r"table\s*29", title_stripped):
+    # Table 28/29 -> detour road summary
+    elif re.match(r"table\s*(28|29)", title_stripped):
       detour_summary_tables.append(table)
     # Tables 30-32 -> fold into road capacity
     elif re.match(r"table\s*(3[0-2])", title_stripped):
@@ -1556,7 +1556,7 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     return (
       base_html
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. VPD Calculation for the Detour Route Roads</h4>" + _render_group(vpd_tables, fallback_vpd) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables + dir_capacity_tables, fallback_road_capacity) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Detour Road Capacity Summary</h4>" + _render_group(road_capacity_tables, fallback_road_capacity) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. Estimated Detour Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">5. Detour Road Summary</h4>" + _render_group(detour_summary_tables, fallback_detour_summary) + "</div>"
       + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">6. Road Status After Diversion</h4>" + _render_group(road_status_tables, fallback_road_status) + "</div>"
