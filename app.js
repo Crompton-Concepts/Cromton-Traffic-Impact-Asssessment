@@ -4169,6 +4169,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   setupPdfPreviewModal();
 
   // ===== DATA CONFIG & LOADING =====
+  // Firebase Storage — primary source (Google CDN, fastest)
+  const FIREBASE_STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/traffic-impact-assessment.firebasestorage.app/o/datasets%2F';
+  const FIREBASE_STORAGE_SUFFIX = '?alt=media';
+  const FIREBASE_TMR_URL       = `${FIREBASE_STORAGE_BASE}tmr.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_GOLDCOAST_URL = `${FIREBASE_STORAGE_BASE}goldcoast.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_BRISBANE_URL  = `${FIREBASE_STORAGE_BASE}Brisbane.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_IPSWICH_URL   = `${FIREBASE_STORAGE_BASE}Ipswich.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_LOGAN_URL     = `${FIREBASE_STORAGE_BASE}logan.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_TOOWOOMBA_URL = `${FIREBASE_STORAGE_BASE}toowoomba.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_TEWANTIN_URL  = `${FIREBASE_STORAGE_BASE}tewantin.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_NSW_2026_URL  = `${FIREBASE_STORAGE_BASE}nsw_2026.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_NSW_TNSW_URL  = `${FIREBASE_STORAGE_BASE}tnsw.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_DATASET_MANIFEST_URL = `${FIREBASE_STORAGE_BASE}dataset_manifest.json${FIREBASE_STORAGE_SUFFIX}`;
+
+  // GitHub — fallback source
   const GITHUB_TMR_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tmr.geojson';
   const GITHUB_GOLDCOAST_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/goldcoast.geojson';
   const GITHUB_BRISBANE_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/Brisbane.geojson';
@@ -6336,13 +6351,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   async function syncDatasetCacheWithManifest() {
     let manifest = null;
+    // Try Firebase Storage first, then GitHub, then local.
     try {
-      manifest = await fetchJsonNoCache(GITHUB_DATASET_MANIFEST_URL);
+      manifest = await fetchJsonNoCache(FIREBASE_DATASET_MANIFEST_URL);
     } catch (_) {
       try {
-        manifest = await fetchJsonNoCache(DATASET_MANIFEST_LOCAL_URL);
+        manifest = await fetchJsonNoCache(GITHUB_DATASET_MANIFEST_URL);
       } catch (_) {
-        manifest = null;
+        try {
+          manifest = await fetchJsonNoCache(DATASET_MANIFEST_LOCAL_URL);
+        } catch (_) {
+          manifest = null;
+        }
       }
     }
 
@@ -6418,7 +6438,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
   }
 
-  function buildDatasetCandidates(primaryUrl, fallbackUrls = []) {
+  function buildDatasetCandidates(firebaseUrl, primaryUrl, fallbackUrls = []) {
     const candidates = [];
     const pushUnique = (candidateUrl) => {
       const clean = String(candidateUrl || '').trim();
@@ -6431,22 +6451,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const rawFromMedia = buildRawGithubUrlFromMedia(primary);
     const mirrorUrl = buildGithubCdnMirrorUrl(rawFromMedia || primary);
 
-    // Prefer remote immutable URLs first, then local files.
+    // Priority: Firebase Storage (Google CDN) → GitHub media → GitHub raw → jsDelivr → local files.
+    pushUnique(firebaseUrl);
     pushUnique(primary);
     pushUnique(rawFromMedia);
     pushUnique(mirrorUrl);
     localList.forEach((localUrl) => pushUnique(localUrl));
 
-    // Add cache-busted variants to avoid stale service-worker/browser cache content.
-    const withBust = candidates.map((candidateUrl) => appendDatasetBustParam(candidateUrl));
+    // Add cache-busted variants (skipped for Firebase which uses its own versioning).
+    const withBust = candidates
+      .filter((u) => !u.includes('firebasestorage.googleapis.com'))
+      .map((candidateUrl) => appendDatasetBustParam(candidateUrl));
     withBust.forEach((candidateUrl) => pushUnique(candidateUrl));
 
     return candidates;
   }
 
-  async function fetchDatasetWithFallback(primaryUrl, fallbackUrls, sourceLabel) {
+  async function fetchDatasetWithFallback(firebaseUrl, primaryUrl, fallbackUrls, sourceLabel) {
     const localList = Array.isArray(fallbackUrls) ? fallbackUrls : [fallbackUrls];
-    const candidates = buildDatasetCandidates(primaryUrl, localList);
+    const candidates = buildDatasetCandidates(firebaseUrl, primaryUrl, localList);
     const failedCandidates = [];
 
     for (const candidateUrl of candidates) {
@@ -7660,20 +7683,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (requestedScope === 'NSW') {
         setLoadingState('Downloading live records...', 'Fetching NSW 2026 traffic feed.', 42);
         [nswData2026, nswDataLegacy] = await Promise.all([
-          fetchDatasetWithFallback(GITHUB_NSW_2026_URL, ['./nsw_2026.geojson', './NSW/nsw_2026.geojson'], 'NSW 2026'),
-          fetchDatasetWithFallback(GITHUB_NSW_TNSW_URL, ['./tnsw.geojson', './NSW/latest_nsw_traffic_volume.geojson', './NSW/nsw.geojson'], 'NSW Legacy')
+          fetchDatasetWithFallback(FIREBASE_NSW_2026_URL, GITHUB_NSW_2026_URL, ['./nsw_2026.geojson', './NSW/nsw_2026.geojson'], 'NSW 2026'),
+          fetchDatasetWithFallback(FIREBASE_NSW_TNSW_URL, GITHUB_NSW_TNSW_URL, ['./tnsw.geojson', './NSW/latest_nsw_traffic_volume.geojson', './NSW/nsw.geojson'], 'NSW Legacy')
         ]);
         setLoadingState('Downloading live records...', 'Fetched NSW traffic feeds.', 68);
       } else {
         setLoadingState('Downloading live records...', 'Fetching Queensland traffic feeds.', 42);
         [tmrData, goldCoastData, brisbaneData, ipswichData, loganData, toowoombaData, tewantinData] = await Promise.all([
-          fetchDatasetWithFallback(GITHUB_TMR_URL, ['./tmr.geojson', './QLD/tmr.geojson'], 'TMR'),
-          fetchDatasetWithFallback(GITHUB_GOLDCOAST_URL, ['./goldcoast.geojson', './QLD/goldcoast.geojson'], 'Gold Coast'),
-          fetchDatasetWithFallback(GITHUB_BRISBANE_URL, ['./Brisbane.geojson', './QLD/Brisbane.geojson'], 'Brisbane'),
-          fetchDatasetWithFallback(GITHUB_IPSWICH_URL, ['./Ipswich.geojson', './QLD/Ipswich.geojson'], 'Ipswich'),
-          fetchDatasetWithFallback(GITHUB_LOGAN_URL, ['./logan.geojson', './QLD/logan.geojson'], 'Logan'),
-          fetchDatasetWithFallback(GITHUB_TOOWOOMBA_URL, ['./toowoomba.geojson', './QLD/toowoomba.geojson'], 'Toowoomba'),
-          fetchDatasetWithFallback(GITHUB_TEWANTIN_URL, ['./tewantin.geojson'], 'Tewantin')
+          fetchDatasetWithFallback(FIREBASE_TMR_URL, GITHUB_TMR_URL, ['./tmr.geojson', './QLD/tmr.geojson'], 'TMR'),
+          fetchDatasetWithFallback(FIREBASE_GOLDCOAST_URL, GITHUB_GOLDCOAST_URL, ['./goldcoast.geojson', './QLD/goldcoast.geojson'], 'Gold Coast'),
+          fetchDatasetWithFallback(FIREBASE_BRISBANE_URL, GITHUB_BRISBANE_URL, ['./Brisbane.geojson', './QLD/Brisbane.geojson'], 'Brisbane'),
+          fetchDatasetWithFallback(FIREBASE_IPSWICH_URL, GITHUB_IPSWICH_URL, ['./Ipswich.geojson', './QLD/Ipswich.geojson'], 'Ipswich'),
+          fetchDatasetWithFallback(FIREBASE_LOGAN_URL, GITHUB_LOGAN_URL, ['./logan.geojson', './QLD/logan.geojson'], 'Logan'),
+          fetchDatasetWithFallback(FIREBASE_TOOWOOMBA_URL, GITHUB_TOOWOOMBA_URL, ['./toowoomba.geojson', './QLD/toowoomba.geojson'], 'Toowoomba'),
+          fetchDatasetWithFallback(FIREBASE_TEWANTIN_URL, GITHUB_TEWANTIN_URL, ['./tewantin.geojson'], 'Tewantin')
         ]);
         setLoadingState('Downloading live records...', 'Fetched Queensland traffic feeds.', 66);
       }
