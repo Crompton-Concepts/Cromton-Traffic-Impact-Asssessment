@@ -1,0 +1,463 @@
+SMITH STREET CONNECTION
+ROAD
+Traffic Impact Assessment Report
+Location: -
+Date Prepared: 13/05/2026
+Prepared By: Planner's Name
+CC Number: CC0000
+
+Table of Contents
+1. Executive Summary
+2. Design & Traffic Inputs
+Analysis Parameters
+Selected Site Details
+3. Traffic Analysis & Results
+Summary of Computed Results
+4. Detour Analysis
+Detour Route 1
+5. Conclusion
+
+List of Tables
+Table 1: Analysis Parameters
+Table 2: Selected Site Details
+Table 3: Summary of Computed Results
+Table 4: GROUPED DIRECTIONAL SUMMARY - D1 - 🟢  DIRECTION 1, GAZETTAL,
+EASTBOUND
+Table 5: GROUPED DIRECTIONAL SUMMARY - D2 - 🔴  DIRECTION 2, AGAINST
+GAZETTAL, WESTBOUND
+Table 6: DIRECTIONAL QUEUE SUMMARY - D1 - 🟢  DIRECTION 1, GAZETTAL,
+EASTBOUND
+Table 7: DIRECTIONAL QUEUE SUMMARY - D2 - 🔴  DIRECTION 2, AGAINST
+GAZETTAL, WESTBOUND
+Table 8: DIRECTIONAL QUEUE SUMMARY - SWT - 🟠  SWT QUEUE SUMMARY
+Table 9: DIRECTIONAL VCR SUMMARY - D1 - 🟢  DIRECTION 1, GAZETTAL,
+EASTBOUND
+Table 10: DIRECTIONAL VCR SUMMARY - D2 - 🔴  DIRECTION 2, AGAINST GAZETTAL,
+WESTBOUND
+Table 11: TABLE 8
+Table 12: TABLE 9
+Table 13: TABLE 10
+Table 14: TABLE 21
+Table 15: TABLE 22 - PRECISION DRIVE 🧭  D1 -> PRI D1
+Table 16: TABLE 23 - PRECISION DRIVE 🧭  D1 -> PRI D1
+
+Table 17: TABLE 24 - PRECISION DRIVE 🧭  D1 -> PRI D1
+Table 18: TABLE 25 - PRECISION DRIVE 🧭  D1 -> PRI D1
+Table 19: Detour Route 1
+Table 20: 1. DETOUR ROUTE INFORMATION
+Table 21: 2. ESTIMATED DETOUR DELAY CALCULATION
+Table 22: ESTIMATED DELAY - DETOUR ROUTE
+Table 23: 3. PEDESTRIAN DETOUR IMPACT
+Table 24: PEDESTRIAN DETOUR IMPACT INCLUDE IN PRINT: YES - ESTIMATED DELAY -
+DETOUR ROUTE (PRECISION DRIVE >> SMITH STREET MOTORWAY)
+
+1. Executive Summary
+This Traffic Impact Assessment relates to SMITH STREET CONNECTION ROAD at -. The
+assessment has been prepared for 13/05/2026 using the current TWO-WAY operating
+configuration and focuses on queue performance, directional demand balance, and whether
+mitigation or diversion is warranted under the modeled condition.
+Traffic demand context indicates that the modeled daily traffic volume is approximately 77,675
+vehicles per day at opening year (2026), directional demand is split between D1 (37,096 vpd,
+47.8% of total) and D2 (40,579 vpd, 52.2% of total), an annual growth rate of 2.50% has been
+applied (2024 → 2026).
+Operational performance outcomes show that the worst modeled V/C ratio is 2.42 (LOS F); the
+peak queue demand is approximately 1,440 m (e.g. 1,440 m queue for 2-minute hold);
+directional peak queues are D1 4,343 m and D2 5,396 m.
+On the basis of the current queue and capacity outputs, detour planning should be treated as an
+active mitigation requirement. Key supporting observations include: High Risk Period: AM •
+Network Max Queue ≈ 5,396 m; High Risk Period: AM • Worst VCR = 2.358 (LOS F); Pedestrian:
+Existing route 83.34s, detoured route 333.34s, crossing delay 120s.
+Click here to refine the executive narrative, project-specific implications, and stakeholder-facing
+conclusions.
+
+2. Design & Traffic Inputs
+Analysis Parameters
+Analysis parameters capture the selected site, growth, and directional demand assumptions used for the
+opening-year assessment. The assessment is anchored to Site ID 11545; SMITH STREET CONNECTION
+ROAD; count year 2024. The selected site reports HV content of N/A. Applied heavy-vehicle and rigid-truck
+inputs are D1 HV 7.6%, D2 HV 7.6%, D1 RT 0.15%, D2 RT 0.15%. A Google Maps reference is included in the
+Selected Site Details section for field verification.
+Detailed table below sets out the supporting values used for the engineering interpretation.
+ROAD OPERATION MODE TWO-WAY
+BASE YEAR 2024
+OPENING YEAR 2026
+BASE YEAR AADT 73931
+OPENING YEAR AADT 77675
+D1 VADT OPENING YEAR 37096
+D2 VADT OPENING YEAR 40579
+GROWTH RATE PERCENT 2.5
+These inputs should be checked first during review because any change to the selected site source data, opening
+year, growth rate, HV share, or RT share will flow directly through the hourly profile, queue, and V/C outputs.
+
+Selected Site Details
+Selected site details record the source counter, field description, mapping reference, and the heavy-vehicle /
+rigid-truck assumptions that feed the assessment.
+Detailed table below confirms the selected counter, map reference, and applied vehicle-mix
+inputs used in the report.
+SITE ID 11545
+SOURCE TMR
+ROAD NAME SMITH STREET CONNECTION ROAD
+DESCRIPTION East of Precision Dr
+COORDINATES -27.963128, 153.363311
+GOOGLE MAPS View on Google Maps
+COUNT YEAR 2024
+APPLIED GROWTH RATE N/A
+SELECTED SITE HV% N/A
+DATA QUALITY Measured (Hourly)
+D1 DIRECTION Eastbound
+D2 DIRECTION Westbound
+D1 VADT 35,308
+D2 VADT 38,623
+TOTAL VADT 73,931
+APPLIED D1 HV% 7.6
+
+APPLIED D2 HV% 7.6
+APPLIED D1 RT% 0.15
+APPLIED D2 RT% 0.15
+Use this section to verify that the adopted counter, mapped location, and HV / RT settings match the corridor
+actually being assessed before relying on the downstream queue or V/C outputs.
+
+3. Traffic Analysis & Results
+Summary of Computed Results
+Summary of Computed Results sets out the 4-row result dataset covering Queue Peak M, Worst Vcr, Los. The
+highest recorded value is 5,396.00 for Queue Peak M (Value).
+Detailed table below sets out the computed metrics with context on when each controlling
+condition occurs.
+METRIC VALUE Context / When
+QUEUE PEAK M 5396
+Maximum queue length
+based on a standard 2-
+minute hold and release cycle
+WORST VCR 2.42
+Significantly over capacity
+(LOS F) — urgent mitigation
+required
+LOS F Level of Service — A=free-
+flow, F=breakdown
+DETOUR RECOMMENDED True —
+These controlling outputs typically emerge when directional demand, lane closure constraints, and work-zone
+control delays align during the peak operating period. A high queue or V/C outcome usually signals that short
+disturbances, heavy-vehicle platoons, or an extended stop-go cycle can rapidly push the corridor into unstable
+operation.
+
+GROUPED DIRECTIONAL SUMMARY - D1 - 🟢  DIRECTION 1, GAZETTAL,
+EASTBOUND
+The directional traffic summary covers 2024, 2026, Hrly Avg / lane. The highest recorded value is 37,096 for
+2026 in the HV column. Values range from 2 to 37,096 across all periods.
+Detailed table below sets out the supporting values used for the engineering interpretation.
+YEA
+R
+AM
+LV
+AM
+HV
+AM
+RT
+OP
+LV
+OP
+HV
+OP
+RT
+PM
+LV
+PM
+HV
+PM
+RT
+EV
+LV
+EV
+HV
+EV
+RT
+TOT
+AL
+2024 1,88
+9 156 4 2,14
+7 178 4 2,65
+4 219 5 2,33
+5 193 4 35,3
+08
+2026 1,98
+5 164 4 2,25
+7 186 4 2,78
+9 230 5 2,45
+3 203 4 37,0
+96
+Hrly
+Avg
+/
+lane
+993 82 2 1,12
+9 93 2 1,39
+5 115 3 1,22
+7 102 2 -
+The conditions reflected in this table usually become important when multiple moderate effects combine within
+the same operating window. Review the controlling rows and periods together rather than in isolation so the
+mitigation response remains aligned with the actual operational trigger.
+
+GROUPED DIRECTIONAL SUMMARY - D2 - 🔴  DIRECTION 2, AGAINST
+GAZETTAL, WESTBOUND
+The directional traffic summary covers 2024, 2026, Hrly Avg / lane. The highest recorded value is 40,579 for
+2026 in the HV column. Values range from 2 to 40,579 across all periods.
+Detailed table below sets out the supporting values used for the engineering interpretation.
+YEA
+R
+AM
+LV
+AM
+HV
+AM
+RT
+OP
+LV
+OP
+HV
+OP
+RT
+PM
+LV
+PM
+HV
+PM
+RT
+EV
+LV
+EV
+HV
+EV
+RT
+TOT
+AL
+2024 3,32
+7 275 6 2,69
+6 223 5 2,20
+7 182 4 2,17
+0 179 4 38,6
+23
+2026 3,49
+6 289 6 2,83
+3 234 5 2,31
+8 192 4 2,28
+0 188 4 40,5
+79
+Hrly
+Avg
+/
+lane
+1,74
+8 145 3 1,41
+7 117 3 1,16
+0 96 2 1,14
+1 94 2 -
+The conditions reflected in this table usually become important when multiple moderate effects combine within
+the same operating window. Review the controlling rows and periods together rather than in isolation so the
+mitigation response remains aligned with the actual operational trigger.
+
+DIRECTIONAL QUEUE SUMMARY - D1 - 🟢  DIRECTION 1, GAZETTAL,
+EASTBOUND
+Directional Queue Summary - D1 - 🟢  Direction 1, Gazettal, Eastbound sets out the 5-row result dataset
+covering ★  1 Lane Closed (1 open) — Per 5 min, Per 2 min, Per 5 min. The highest recorded value is 8,686.00
+for Per 15 min (PM).
+The table below provides queue length results by time period and direction.
+QUEUE DURATION AM OP PM EV MAX QUEUE
+★  1 Lane Closed (1 open) — Per 5 min 2,104 2,380 2,896 2,584 2,896
+Per 2 min 842 952 1,158 1,034 1,158
+Per 5 min 2,104 2,380 2,896 2,584 2,896
+Per 10 min 4,206 4,758 5,790 5,166 5,790
+Per 15 min 6,310 7,138 8,686 7,750 8,686
+Elevated queue conditions commonly occur when temporary traffic control phases, reduced lane capacity, or
+strong directional peaks limit discharge opportunities. This is the table to review when assessing whether queue
+storage may extend into upstream accesses, intersections, or sensitive frontages.
+
+DIRECTIONAL QUEUE SUMMARY - D2 - 🔴  DIRECTION 2, AGAINST GAZETTAL,
+WESTBOUND
+Directional Queue Summary - D2 - 🔴  Direction 2, Against Gazettal, Westbound sets out the 5-row result
+dataset covering ★  1 Lane Closed (1 open) — Per 5 min, Per 2 min, Per 5 min. The highest recorded value is
+10,792.00 for Per 15 min (AM).
+The table below provides queue length results by time period and direction.
+QUEUE DURATION AM OP PM EV MAX QUEUE
+★  1 Lane Closed (1 open) — Per 5 min 3,598 2,932 2,416 2,398 3,598
+Per 2 min 1,440 1,174 966 960 1,440
+Per 5 min 3,598 2,932 2,416 2,398 3,598
+Per 10 min 7,194 5,862 4,830 4,794 7,194
+Per 15 min 10,792 8,794 7,246 7,192 10,792
+Elevated queue conditions commonly occur when temporary traffic control phases, reduced lane capacity, or
+strong directional peaks limit discharge opportunities. This is the table to review when assessing whether queue
+storage may extend into upstream accesses, intersections, or sensitive frontages.
+
+DIRECTIONAL QUEUE SUMMARY - SWT - 🟠  SWT QUEUE SUMMARY
+Directional Queue Summary - SWT - 🟠  SWT Queue Summary sets out the 3-row result dataset covering
+Direction 2, Against Gazettal, Westbound (Red 120s), Direction 1, Gazettal, Eastbound (Red 120s), ⚠  SWT
+input anomaly (demand capped to sat-flow): Direction 1, Gazettal, Eastbound 13/24 hour(s), Direction 2,
+Against Gazettal, Westbound 14/24 hour(s). The highest recorded value is 278.00 for Direction 2, Against
+Gazettal, Westbound (Red 120s) (AM).
+The table below provides queue length results by time period and direction.
+DIRECTION AM OP PM EV
+MAX
+SWT
+QUEUE
+Direction 2, Against Gazettal, Westbound (Red 120s) 278 278 278 278 278
+Direction 1, Gazettal, Eastbound (Red 120s) 278 278 278 278 278
+⚠  SWT input anomaly (demand capped to sat-flow):
+Direction 1, Gazettal, Eastbound 13/24 hour(s),
+Direction 2, Against Gazettal, Westbound 14/24
+hour(s)
+Elevated queue conditions commonly occur when temporary traffic control phases, reduced lane capacity, or
+strong directional peaks limit discharge opportunities. This is the table to review when assessing whether queue
+storage may extend into upstream accesses, intersections, or sensitive frontages.
+
+DIRECTIONAL VCR SUMMARY - D1 - 🟢  DIRECTION 1, GAZETTAL, EASTBOUND
+Directional VCR Summary - D1 - 🟢  Direction 1, Gazettal, Eastbound sets out the 4-row result dataset
+covering Design Capacity * = 1,568 vph/lane (3,136 vph directional), Base VCR, ★  1 Lane Closed (1 open).
+The highest recorded value is 1.88 for ★  1 Lane Closed (1 open) (PM).
+The table below provides volume-to-capacity ratio and Level of Service results by time period.
+METRIC AM OP PM EV
+Design Capacity * = 1,568 vph/lane
+(3,136 vph directional) - - - -
+Base VCR 0.67 LOS B
+≤0.70
+0.69 LOS B
+≤0.70
+0.94 LOS E
+≤1.00
+0.32 LOS A
+≤0.60
+★  1 Lane Closed (1 open) 1.34 LOS F
+>1.00
+1.38 LOS F
+>1.00
+1.88 LOS F
+>1.00
+0.64 LOS B
+≤0.70
+Single Lane Reversible Flow N/A N/A N/A N/A
+High V/C conditions occur when effective work-zone capacity is constrained by lane closure, heavy vehicles,
+turning friction, or peak directional loading. Values near or above practical capacity indicate the network has
+limited resilience, so relatively minor disturbances can trigger disproportionate delay and recovery time.
+
+DIRECTIONAL VCR SUMMARY - D2 - 🔴  DIRECTION 2, AGAINST GAZETTAL,
+WESTBOUND
+Directional VCR Summary - D2 - 🔴  Direction 2, Against Gazettal, Westbound sets out the 4-row result
+dataset covering Design Capacity * = 1,568 vph/lane (3,136 vph directional), Base VCR, ★  1 Lane Closed (1
+open). The highest recorded value is 2.36 for ★  1 Lane Closed (1 open) (AM).
+The table below provides volume-to-capacity ratio and Level of Service results by time period.
+METRIC AM OP PM EV
+Design Capacity * = 1,568 vph/lane
+(3,136 vph directional) - - - -
+Base VCR 1.18 LOS F
+>1.00
+0.82 LOS D
+≤0.90
+0.80 LOS C
+≤0.80
+0.29 LOS A
+≤0.60
+★  1 Lane Closed (1 open) 2.36 LOS F
+>1.00
+1.65 LOS F
+>1.00
+1.59 LOS F
+>1.00
+0.58 LOS A
+≤0.60
+Single Lane Reversible Flow N/A N/A N/A N/A
+High V/C conditions occur when effective work-zone capacity is constrained by lane closure, heavy vehicles,
+turning friction, or peak directional loading. Values near or above practical capacity indicate the network has
+limited resilience, so relatively minor disturbances can trigger disproportionate delay and recovery time.
+
+4. Detour Analysis
+This section summarises the detour route analysis. For each alternative route, the road capacity, estimated
+motorist delay, and pedestrian impact are assessed.
+Detour Route 1
+1. DETOUR ROUTE INFORMATION
+PARAMETER DETAILS
+Detour Route Name Precision Drive >> Smith Street Motorway
+Selected Path Precision Drive >> Smith Street Motorway
+Route Length (km) 5km
+Road Classification Urban 
+Edit to insert the selected detour route and path details.
+
+2. ESTIMATED DETOUR DELAY CALCULATION
+ESTIMATED DELAY - DETOUR ROUTE
+Estimated Delay - Detour route sets out the 6-row result dataset covering Detour Route Length (km),
+Average Travel Speed on Detour (km/h), Travel Time (seconds). The highest recorded value is 70.00
+for Average Travel Speed on Detour (km/h) (Value).
+The table below provides supporting values for the detour or pedestrian impact
+assessment.
+PARAMETER VALUE
+Detour Route Length (km) 0.4
+Average Travel Speed on Detour (km/h) 70
+Travel Time (seconds) 21
+Total Time incl. Intersections (seconds) 61
+Estimated Additional Travel Time (min) 2
+Delay Classification Moderate (1-5 min)
+Detour pressure becomes material when diverted traffic is reassigned to roads with limited spare
+capacity during the same peak period as the primary corridor impact. These conditions are most
+important where side-road intersections, local access, or school and freight activity are already operating
+close to their normal thresholds.
+
+3. PEDESTRIAN DETOUR IMPACT
+PEDESTRIAN DETOUR IMPACT INCLUDE IN PRINT: YES - ESTIMATED
+DELAY - DETOUR ROUTE (PRECISION DRIVE >> SMITH STREET
+MOTORWAY)
+Pedestrian Detour Impact Include in Print: Yes - Estimated Delay - Detour route (Precision Drive >>
+Smith Street Motorway) sets out the 1-row result dataset covering 83.34. The highest recorded value
+is 370.00 for 83.34 (Added Delay (s)).
+The table below provides supporting values for the detour or pedestrian impact
+assessment.
+EXISTING
+ROUTE TIME (S)
+DETOURED
+ROUTE TIME (S)
+CROSSING
+DELAY (S)
+ADDED
+DELAY (S)
+ADDED
+DELAY
+(MIN)
+83.34 333.34 120 370 6.17
+Detour pressure becomes material when diverted traffic is reassigned to roads with limited spare
+capacity during the same peak period as the primary corridor impact. These conditions are most
+important where side-road intersections, local access, or school and freight activity are already operating
+close to their normal thresholds.
+
+5. Conclusion
+The assessment for SMITH STREET CONNECTION ROAD at - indicates that the modeled road
+network should be interpreted as a constrained work-stage environment rather than a normal
+operating condition with approximately 77,675 vehicles per day and a growth allowance of
+2.50% per annum. The reported outputs are therefore most useful as a screening tool for
+operational risk, queue storage exposure, and the timing of mitigation triggers.
+Operationally, the model points to a worst V/C ratio of 2.42 corresponding to LOS F and a peak
+queue on the order of 1,440 m (2-minute hold cycle). These values suggest that traffic
+performance is being controlled by a limited number of peak-period constraints, so site
+management should focus on those controlling periods rather than average daily conditions.
+From an engineering perspective, mitigation should prioritise maintaining discharge
+opportunities, reducing unnecessary blockage time, and protecting upstream intersections and
+accesses from queue spillback. Where detour planning is triggered, the diversion strategy should
+be treated as an operational management measure with active monitoring rather than a one-off
+desktop assumption.
+Detour planning should be retained as an active mitigation measure because the modeled
+condition indicates insufficient resilience under the controlling scenario.
+The controlling risk is concentrated in peak operating periods rather than uniformly across
+the day.
+Queue and V/C results should be used to set monitoring triggers, traffic controller
+response actions, and escalation points for temporary traffic management.
+Any material change in closure duration, lane availability, or directional demand should
+prompt the assessment to be refreshed before implementation.
+The detailed table set has been interpreted together with 28 supporting result table(s) so
+that mitigation can be tied to the specific controlling scenario.
+
+PREPARED BY
+Planner's Name
+Planner's Name
+REVIEWED BY
+Reviewer Name
+Reviewer's Name
+ENGINEERING DISCLAIMER: This Traffic Impact Assessment (TIA) report has been prepared based on
+site-specific observations and industry-standard modeling assumptions. While every effort has been made
+to ensure accuracy, real-world traffic conditions are subject to variables including driver behavior, weather,
+and external network incidents. This report is intended for use by planning authorities and should be
+reviewed in the context of the complete project documentation.

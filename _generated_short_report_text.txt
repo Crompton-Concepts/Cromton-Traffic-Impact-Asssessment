@@ -1,0 +1,1796 @@
+
+
+
+
+
+
+ 
+
+ 
+
+ 
+SMITH STREET CONNECTION ROAD
+
+ 
+
+ /* Premium Engineering Document Variables */
+ :root {
+ --ink: #0f172a;
+ --muted: #64748b;
+ --brand: #0f2f32;
+ --accent: #1f5e63;
+ --accent-light: #e6f2f3;
+ --accent-mid: #c8e6e9;
+ --border: #e2e8f0;
+ --bg-light: #f8fafc;
+ --surface: #ffffff;
+ --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+ --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+ --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+ --radius-sm: 6px;
+ --radius-md: 10px;
+ --radius-lg: 16px;
+ }
+
+ /* Global Styles */
+ body {
+ font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+ margin: 0;
+ background: #e8edf2;
+ color: var(--ink);
+ line-height: 1.65;
+ -webkit-font-smoothing: antialiased;
+ }
+
+ /* Print Layout Configuration */
+ @page {
+ size: A4;
+ margin: 18mm 15mm 18mm 15mm;
+ }
+
+ .document-wrapper {
+ max-width: 210mm;
+ margin: 40px auto;
+ background: var(--surface);
+ box-shadow: var(--shadow-lg);
+ padding: 48px 64px;
+ border-radius: var(--radius-sm);
+ position: relative;
+ overflow: hidden;
+ }
+
+ /* Running header stripe */
+ .document-wrapper::before {
+ content: '';
+ position: absolute;
+ top: 0; left: 0; right: 0;
+ height: 5px;
+ background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 60%, #0d9488 100%);
+ }
+
+ /* Typography */
+ h1, h2, h3, h4, .cover-subtitle { 
+ color: var(--brand); 
+ font-family: 'Space Grotesk', sans-serif; 
+ font-weight: 700;
+ line-height: 1.2;
+ }
+ 
+ h1 { 
+ font-size: 2.6rem; 
+ margin-bottom: 0.5rem; 
+ letter-spacing: -0.02em;
+ }
+ 
+ h2 {
+ font-size: 1.55rem;
+ border-bottom: 2.5px solid var(--accent);
+ padding-bottom: 10px;
+ margin-top: 3rem;
+ margin-bottom: 1.5rem;
+ page-break-before: always;
+ page-break-after: avoid;
+ display: flex;
+ align-items: center;
+ gap: 12px;
+ }
+
+ h2.toc-title { page-break-before: auto; }
+
+ h2::before {
+ content: '';
+ display: inline-block;
+ width: 6px;
+ height: 1.55rem;
+ background: var(--accent);
+ border-radius: 3px;
+ flex-shrink: 0;
+ }
+ 
+ h3 { 
+ font-size: 1.25rem; 
+ margin-top: 2rem;
+ margin-bottom: 1rem;
+ color: var(--accent);
+ font-weight: 600;
+ border-left: 4px solid var(--accent-mid);
+ padding-left: 12px;
+ }
+
+ h4 {
+ font-size: 1rem;
+ margin-top: 1.5rem;
+ margin-bottom: 0.75rem;
+ color: var(--brand);
+ text-transform: uppercase;
+ letter-spacing: 0.06em;
+ font-weight: 700;
+ }
+
+ p { margin-bottom: 1.2rem; text-align: justify; color: #334155; line-height: 1.7; }
+ 
+ .meta { color: var(--muted); font-size: 0.9rem; }
+
+ /* Layout Components */
+ .cover-page {
+ height: 90vh;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-items: center;
+ text-align: center;
+ position: relative;
+ }
+
+ .cover-page::before {
+ content: '';
+ position: absolute;
+ top: -100px;
+ right: -100px;
+ width: 400px;
+ height: 400px;
+ background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+ opacity: 0.6;
+ z-index: 0;
+ }
+
+ .cover-logo { max-width: 240px; margin-bottom: 3rem; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }
+ 
+ .cover-subtitle { 
+ font-size: 1.4rem; 
+ color: var(--muted); 
+ margin-bottom: 3.5rem; 
+ font-weight: 500;
+ position: relative; 
+ z-index: 1;
+ letter-spacing: 0.02em;
+ }
+ 
+ .cover-details {
+ width: 100%;
+ max-width: 480px;
+ margin: 0 auto;
+ background: var(--bg-light);
+ padding: 28px 32px;
+ border-radius: var(--radius-lg);
+ border: 1px solid var(--border);
+ position: relative;
+ z-index: 1;
+ box-shadow: var(--shadow-md);
+ }
+
+ .cover-details table { width: 100%; margin: 0; border: none; box-shadow: none; border-radius: 0; }
+ .cover-details th, .cover-details td { border: none; padding: 9px 12px; text-align: left; font-size: 1rem; background: transparent !important; }
+ .cover-details th { width: 40%; color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 0.95rem; }
+ .cover-details td { font-weight: 600; color: var(--brand); }
+ .cover-details tr:hover { background: transparent !important; }
+
+ .page-break { page-break-before: always; }
+ .avoid-break { page-break-inside: avoid; }
+
+ /* TOC */
+ .toc-container { margin-bottom: 2rem; }
+ .toc-link { color: var(--accent); text-decoration: none; }
+ .toc-link:hover { text-decoration: underline; }
+ .toc-item { padding: 4px 0; font-size: 0.93rem; }
+ .toc-h2 { font-weight: 600; color: var(--brand); margin-top: 6px; }
+ .toc-h3 { padding-left: 18px; color: var(--muted); }
+
+ /* Tables */
+ table { 
+ width: 100%; 
+ border-collapse: separate; 
+ border-spacing: 0;
+ margin: 1.5rem 0; 
+ font-size: 0.92rem; 
+ border: 1px solid var(--border);
+ border-radius: var(--radius-md);
+ overflow: hidden;
+ box-shadow: var(--shadow-sm);
+ }
+
+ th, td { 
+ padding: 11px 14px; 
+ text-align: left; 
+ vertical-align: middle; 
+ border-bottom: 1px solid var(--border);
+ border-right: 1px solid var(--border);
+ }
+ 
+ th:last-child, td:last-child { border-right: none; }
+ tr:last-child td { border-bottom: none; }
+
+ th { 
+ background: linear-gradient(180deg, #f1f5f9 0%, #e9eef4 100%);
+ font-weight: 700; 
+ color: var(--brand); 
+ text-transform: uppercase;
+ font-size: 0.78rem;
+ letter-spacing: 0.07em;
+ }
+ 
+ .kv-table th { width: 35%; background: linear-gradient(180deg, #f1f5f9 0%, #e9eef4 100%); }
+ .results-3col th:last-child { color: var(--muted); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 0.82rem; }
+ 
+ .wide-table { table-layout: fixed; font-size: 0.82rem; }
+ .wide-table th, .wide-table td { padding: 7px 9px; word-break: break-word; }
+
+ tr:nth-child(even) { background-color: #fafbfc; }
+ tr:hover { background-color: var(--accent-light); transition: background 0.12s; }
+
+ /* Report section blocks */
+ .report-section {
+ margin-bottom: 2rem;
+ padding: 0;
+ }
+
+ /* Interactive Elements & Editor Styles */
+ .toolbar { 
+ display: flex; 
+ justify-content: flex-end; 
+ gap: 10px; 
+ margin-bottom: 24px; 
+ flex-wrap: wrap; 
+ background: rgba(255, 255, 255, 0.9);
+ backdrop-filter: blur(10px);
+ padding: 12px 16px;
+ border-radius: var(--radius-md);
+ box-shadow: var(--shadow-md);
+ position: sticky;
+ top: 10px;
+ z-index: 100;
+ border: 1px solid var(--border);
+ }
+
+ .btn { 
+ background: var(--brand); 
+ color: white; 
+ border: none; 
+ padding: 9px 20px; 
+ font-size: 0.88rem; 
+ border-radius: var(--radius-sm); 
+ cursor: pointer; 
+ font-weight: 600;
+ transition: all 0.18s ease;
+ display: inline-flex;
+ align-items: center;
+ gap: 7px;
+ letter-spacing: 0.01em;
+ }
+
+ .btn:hover { background: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+ .btn.secondary { background: #0d9488; }
+ .btn.ghost { background: #64748b; }
+ 
+ .section-controls { display: flex; justify-content: flex-end; margin: 6px 0; gap: 5px; }
+ 
+ .mini-btn { 
+ background: #f1f5f9; 
+ color: #475569; 
+ border: 1px solid var(--border); 
+ border-radius: var(--radius-sm); 
+ padding: 5px 11px; 
+ font-size: 0.72rem; 
+ font-weight: 600; 
+ cursor: pointer; 
+ transition: all 0.12s ease;
+ letter-spacing: 0.01em;
+ }
+ 
+ .mini-btn:hover { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+ .mini-btn.remove { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+ .mini-btn.remove:hover { background: #fecaca; color: #7f1d1d; }
+
+ .editable { 
+ padding: 14px 18px; 
+ border: 1.5px dashed #cbd5e1; 
+ background: #fafbfc; 
+ border-radius: var(--radius-md);
+ min-height: 56px; 
+ transition: all 0.18s ease; 
+ margin: 10px 0;
+ }
+ 
+ .editable:focus { 
+ border-color: var(--accent); 
+ outline: none; 
+ background: #ffffff; 
+ box-shadow: 0 0 0 3px var(--accent-light);
+ }
+ 
+ .editable-text, [contenteditable="true"] { cursor: text; }
+ 
+ .table-note { 
+ font-style: italic; 
+ color: #475569; 
+ margin: 10px 0; 
+ font-size: 0.91rem; 
+ line-height: 1.6;
+ }
+ .table-note-top { border-left: 3px solid var(--accent-mid); padding-left: 12px; background: transparent; border: none; }
+ .table-note-bottom { color: var(--muted); font-size: 0.88rem; }
+
+ .table-detail-lead { 
+ margin: 16px 0 10px; 
+ padding: 10px 18px; 
+ border-left: 4px solid var(--accent); 
+ background: var(--accent-light); 
+ color: var(--brand); 
+ font-weight: 600;
+ font-size: 0.91rem;
+ border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+ }
+ .commentary-block { min-height: 120px; }
+ .conclusion-list { margin-top: 10px; }
+ .conclusion-list li { margin-bottom: 6px; color: #334155; }
+
+ /* Charts */
+ .chart-block { width: 100%; max-width: 100%; margin: 0 0 16px; }
+ .chart-title { margin-bottom: 8px; }
+ .embedded-chart { 
+ margin: 2rem 0; 
+ padding: 24px 28px; 
+ border: 1px solid var(--border); 
+ border-radius: var(--radius-lg); 
+ background: #fdfdfd; 
+ box-shadow: var(--shadow-md); 
+ }
+ 
+ .chart-img { 
+ width: 100%; 
+ max-height: 480px;
+ border-radius: var(--radius-md);
+ display: block; 
+ margin: 16px auto; 
+ object-fit: contain; 
+ }
+ 
+ .chart-caption { 
+ text-align: center; 
+ color: var(--muted); 
+ font-size: 0.88rem; 
+ margin-top: 10px;
+ padding: 0 32px;
+ font-style: italic;
+ }
+
+ /* Table of Contents Styles */
+ .toc-container { 
+ margin: 3rem 0; 
+ padding: 30px; 
+ background: var(--bg-light); 
+ border: 1px solid var(--border); 
+ border-radius: var(--radius-lg); 
+ }
+ 
+ .toc-title { margin-top: 0; border-bottom: none; font-size: 1.5rem; }
+ .toc-item { margin-bottom: 12px; }
+ .toc-h2 { font-weight: 700; color: var(--brand); margin-top: 20px; }
+ .toc-h3 { margin-left: 24px; color: var(--muted); font-size: 0.95rem; }
+ .toc-link { text-decoration: none; color: inherit; transition: color 0.2s; display: block; }
+ .toc-link:hover { color: var(--accent); }
+
+ /* Print Overrides */
+ @media print {
+ body { background: #fff; }
+ .document-wrapper { box-shadow: none; margin: 0; padding: 0; max-width: 100%; border: none; }
+ .toolbar, .no-print, .section-controls { display: none !important; }
+ .editable { border: none; background: transparent; padding: 0; }
+ .toc-container { border: 1px solid var(--border); background: #fff; }
+ .embedded-chart { box-shadow: none; border: 1px solid var(--border); }
+ }
+
+ /* Results 3-column */
+ .results-3col .context-col { color: var(--muted); font-size: 0.85rem; font-style: italic; background: #f8fafc; }
+
+ /* Detour blocks */
+ .detour-sub-block { 
+ margin: 20px 0; 
+ padding: 20px; 
+ border-left: 5px solid var(--accent); 
+ background: #f8fafc; 
+ border-radius: 0 var(--radius-md) var(--radius-md) 0;
+ box-shadow: var(--shadow-sm);
+ }
+ 
+ .detour-sub-block h4, .detour-sub-block h5 { margin: 0 0 12px; color: var(--brand); }
+
+ /* Engineering observations */
+ .obs-subsection { margin-bottom: 16px; }
+ .obs-lead { min-height: 48px; margin-bottom: 8px; }
+
+ /* Table add/remove controls */
+ .section-controls .mini-btn { margin-right: 4px; }
+ .section-controls .mini-btn:last-child { margin-right: 0; }
+ 
+
+
+
+
+
+ 
+
+ 
+🖨️ Print to PDF
+
+ 
+💾 Download Edits JSON
+
+ 
+📂 Load Edits JSON
+
+ 
+
+ 
+
+
+ 
+
+
+ 
+
+ 
+
+ 
+SMITH STREET CONNECTION ROAD
+
+ 
+Traffic Impact Assessment Report
+
+
+ 
+
+ 
+
+ 
+
+Location:
+
+-
+
+
+ 
+
+Date Prepared:
+
+13/05/2026
+
+
+ 
+
+Prepared By:
+
+Planner&#x27;s Name
+
+
+ 
+
+CC Number:
+
+CC0000
+
+
+ 
+
+ 
+
+ 
+
+
+ 
+
+
+
+ 
+
+ 
+Table of Contents
+
+ 
+
+
+ 
+
+
+ 
+
+ 
+List of Tables
+
+ 
+
+
+ 
+
+
+ 
+1. Executive Summary
+
+ 
+
+ 
+This Traffic Impact Assessment relates to SMITH STREET CONNECTION ROAD at -. The assessment has been prepared for 13/05/2026 using the current TWO-WAY operating configuration and focuses on queue performance, directional demand balance, and whether mitigation or diversion is warranted under the modeled condition.
+
+Traffic demand context indicates that the modeled daily traffic volume is approximately 77,675 vehicles per day at opening year (2026), directional demand is split between D1 (37,096 vpd, 47.8% of total) and D2 (40,579 vpd, 52.2% of total), an annual growth rate of 2.50% has been applied (2024 → 2026).
+
+Operational performance outcomes show that the worst modeled V/C ratio is 2.42 (LOS F); the peak queue demand is approximately 5,396 m.
+
+On the basis of the current queue and capacity outputs, detour planning should be treated as an active mitigation requirement. Key supporting observations include: High Risk Period: AM | Network Max Queue ~= 5,396 m; High Risk Period: AM | Worst VCR = 2.358 (LOS F).
+
+ 
+ 
+
+Click here to refine the executive narrative, project-specific implications, and stakeholder-facing conclusions.
+
+
+ 
+
+
+ 
+2. Design &amp; Traffic Inputs
+
+ 
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+Analysis Parameters
+
+
+Analysis parameters capture the selected site, growth, and directional demand assumptions used for the opening-year assessment. The assessment is anchored to Site ID 11545; SMITH STREET CONNECTION ROAD; count year 2024. Applied heavy-vehicle and rigid-truck inputs are D1 HV 7.6%, D2 HV 7.6%, D1 RT 0.15%, D2 RT 0.15%. A Google Maps reference is included in the Selected Site Details section for field verification.
+
+
+Detailed table below sets out the supporting values used for the engineering interpretation.
+
+
+
+
+Parameter
+
+Value
+
+
+
+
+
+ROAD OPERATION MODE
+
+TWO-WAY
+
+
+
+
+
+These inputs should be checked first during review because any change to the selected site source data, opening year, growth rate, HV share, or RT share will flow directly through the hourly profile, queue, and V/C outputs.
+
+
+
+ 
+ 
+
+ 
+3. Traffic Analysis &amp; Results
+
+ 
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+Summary of Computed Results
+
+
+Summary of Computed Results sets out the 4-row result dataset covering QUEUE PEAK M, WORST VCR, LOS. The highest recorded value is 5,396.00 for QUEUE PEAK M (Value).
+
+
+Detailed table below sets out the supporting values used for the engineering interpretation.
+
+
+
+
+Metric
+
+Value
+
+
+
+
+
+QUEUE PEAK M
+
+5396
+
+
+
+WORST VCR
+
+2.42
+
+
+
+LOS
+
+F
+
+
+
+DETOUR RECOMMENDED
+
+True
+
+
+
+
+
+These controlling outputs typically emerge when directional demand, lane closure constraints, and work-zone control delays align during the peak operating period. A high queue or V/C outcome usually signals that short disturbances, heavy-vehicle platoons, or an extended stop-go cycle can rapidly push the corridor into unstable operation.
+
+
+
+
+ 
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+GROUPED DIRECTIONAL SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND
+
+
+The directional traffic summary covers 2024, 2026. The highest recorded value is 37,096 for 2026 in the TOTAL column. Values range from 1,889 to 37,096 across all periods.
+
+
+Detailed table below sets out the supporting values used for the engineering interpretation.
+
+
+
+
+YEAR
+
+AM LV
+
+TOTAL
+
+
+
+
+
+2024
+
+1889
+
+35308
+
+
+
+2026
+
+1985
+
+37096
+
+
+
+
+
+The conditions reflected in this table usually become important when multiple moderate effects combine within the same operating window. Review the controlling rows and periods together rather than in isolation so the mitigation response remains aligned with the actual operational trigger.
+
+
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+GROUPED DIRECTIONAL SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND
+
+
+The directional traffic summary covers 2024, 2026. The highest recorded value is 40,579 for 2026 in the TOTAL column. Values range from 3,327 to 40,579 across all periods.
+
+
+Detailed table below sets out the supporting values used for the engineering interpretation.
+
+
+
+
+YEAR
+
+AM LV
+
+TOTAL
+
+
+
+
+
+2024
+
+3327
+
+38623
+
+
+
+2026
+
+3496
+
+40579
+
+
+
+
+
+The conditions reflected in this table usually become important when multiple moderate effects combine within the same operating window. Review the controlling rows and periods together rather than in isolation so the mitigation response remains aligned with the actual operational trigger.
+
+
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+DIRECTIONAL QUEUE SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND
+
+
+DIRECTIONAL QUEUE SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND sets out the 1-row result dataset covering 1 Lane Closed (1 open). The highest recorded value is 4,343.00 for 1 Lane Closed (1 open) (AM).
+
+
+The table below provides queue length results by time period and direction.
+
+
+
+
+Metric
+
+AM
+
+OP
+
+PM
+
+EV
+
+
+
+
+
+1 Lane Closed (1 open)
+
+4343
+
+3000
+
+3200
+
+1200
+
+
+
+
+
+Elevated queue conditions commonly occur when temporary traffic control phases, reduced lane capacity, or strong directional peaks limit discharge opportunities. This is the table to review when assessing whether queue storage may extend into upstream accesses, intersections, or sensitive frontages.
+
+
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+DIRECTIONAL QUEUE SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND
+
+
+DIRECTIONAL QUEUE SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND sets out the 1-row result dataset covering 1 Lane Closed (1 open). The highest recorded value is 5,396.00 for 1 Lane Closed (1 open) (AM).
+
+
+The table below provides queue length results by time period and direction.
+
+
+
+
+Metric
+
+AM
+
+OP
+
+PM
+
+EV
+
+
+
+
+
+1 Lane Closed (1 open)
+
+5396
+
+4000
+
+3800
+
+1400
+
+
+
+
+
+Elevated queue conditions commonly occur when temporary traffic control phases, reduced lane capacity, or strong directional peaks limit discharge opportunities. This is the table to review when assessing whether queue storage may extend into upstream accesses, intersections, or sensitive frontages.
+
+
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+DIRECTIONAL QUEUE SUMMARY - SWT - SWT QUEUE SUMMARY
+
+
+DIRECTIONAL QUEUE SUMMARY - SWT - SWT QUEUE SUMMARY sets out the 1-row result dataset covering Queue Peak. The highest recorded value is 1,440.00 for Queue Peak (AM).
+
+
+The table below provides queue length results by time period and direction.
+
+
+
+
+Metric
+
+AM
+
+OP
+
+PM
+
+EV
+
+
+
+
+
+Queue Peak
+
+1440
+
+800
+
+900
+
+300
+
+
+
+
+
+Elevated queue conditions commonly occur when temporary traffic control phases, reduced lane capacity, or strong directional peaks limit discharge opportunities. This is the table to review when assessing whether queue storage may extend into upstream accesses, intersections, or sensitive frontages.
+
+
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+DIRECTIONAL VCR SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND
+
+
+DIRECTIONAL VCR SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND sets out the 1-row result dataset covering 1 Lane Closed (1 open). The highest recorded value is 2.25 for 1 Lane Closed (1 open) (AM).
+
+
+The table below provides volume-to-capacity ratio and Level of Service results by time period.
+
+
+
+
+Metric
+
+AM
+
+OP
+
+PM
+
+EV
+
+
+
+
+
+1 Lane Closed (1 open)
+
+2.25 LOS F
+
+1.50 LOS F
+
+1.40 LOS F
+
+0.50 LOS A
+
+
+
+
+
+High V/C conditions occur when effective work-zone capacity is constrained by lane closure, heavy vehicles, turning friction, or peak directional loading. Values near or above practical capacity indicate the network has limited resilience, so relatively minor disturbances can trigger disproportionate delay and recovery time.
+
+
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+DIRECTIONAL VCR SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND
+
+
+DIRECTIONAL VCR SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND sets out the 1-row result dataset covering 1 Lane Closed (1 open). The highest recorded value is 2.36 for 1 Lane Closed (1 open) (AM).
+
+
+The table below provides volume-to-capacity ratio and Level of Service results by time period.
+
+
+
+
+Metric
+
+AM
+
+OP
+
+PM
+
+EV
+
+
+
+
+
+1 Lane Closed (1 open)
+
+2.36 LOS F
+
+1.65 LOS F
+
+1.59 LOS F
+
+0.58 LOS A
+
+
+
+
+
+High V/C conditions occur when effective work-zone capacity is constrained by lane closure, heavy vehicles, turning friction, or peak directional loading. Values near or above practical capacity indicate the network has limited resilience, so relatively minor disturbances can trigger disproportionate delay and recovery time.
+
+
+
+
+ 
+4. Detour Analysis
+
+
+This section summarises the detour route analysis. For each alternative route, the road capacity, estimated motorist delay, and pedestrian impact are assessed.
+
+
+
+
+✕ Remove
+
+
+Detour Route 1
+
+
+1. DETOUR ROUTE INFORMATION
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+1. DETOUR ROUTE INFORMATION
+
+
+1. DETOUR ROUTE INFORMATION sets out the 4-row result dataset covering Detour Route Name, Selected Path, Route Length (km). The highest recorded value is 5.00 for Route Length (km) (DETAILS).
+
+
+The table below provides supporting values for the detour or pedestrian impact assessment.
+
+
+
+
+PARAMETER
+
+DETAILS
+
+
+
+
+
+Detour Route Name
+
+Precision Drive &gt;&gt; Smith Street Motorway
+
+
+
+Selected Path
+
+Precision Drive &gt;&gt; Smith Street Motorway
+
+
+
+Route Length (km)
+
+5km
+
+
+
+Road Classification
+
+Urban
+
+
+
+
+
+Detour pressure becomes material when diverted traffic is reassigned to roads with limited spare capacity during the same peak period as the primary corridor impact. These conditions are most important where side-road intersections, local access, or school and freight activity are already operating close to their normal thresholds.
+
+
+
+
+
+2. ESTIMATED DETOUR DELAY CALCULATION
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+ESTIMATED DELAY - DETOUR ROUTE
+
+
+ESTIMATED DELAY - DETOUR ROUTE sets out the 6-row result dataset covering Detour Route Length (km), Average Travel Speed on Detour (km/h), Travel Time (seconds). The highest recorded value is 70.00 for Average Travel Speed on Detour (km/h) (VALUE).
+
+
+The table below provides supporting values for the detour or pedestrian impact assessment.
+
+
+
+
+PARAMETER
+
+VALUE
+
+
+
+
+
+Detour Route Length (km)
+
+0.4
+
+
+
+Average Travel Speed on Detour (km/h)
+
+70
+
+
+
+Travel Time (seconds)
+
+21
+
+
+
+Total Time incl. Intersections (seconds)
+
+61
+
+
+
+Estimated Additional Travel Time (min)
+
+2
+
+
+
+Delay Classification
+
+Moderate (1-5 min)
+
+
+
+
+
+Detour pressure becomes material when diverted traffic is reassigned to roads with limited spare capacity during the same peak period as the primary corridor impact. These conditions are most important where side-road intersections, local access, or school and freight activity are already operating close to their normal thresholds.
+
+
+
+
+
+3. PEDESTRIAN DETOUR IMPACT
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+PEDESTRIAN DETOUR IMPACT INCLUDE IN PRINT: YES - ESTIMATED DELAY - DETOUR ROUTE (PRECISION DRIVE &gt;&gt; SMITH STREET MOTORWAY)
+
+
+PEDESTRIAN DETOUR IMPACT INCLUDE IN PRINT: YES - ESTIMATED DELAY - DETOUR ROUTE (PRECISION DRIVE &gt;&gt; SMITH STREET MOTORWAY) sets out the 1-row result dataset covering 83.34. The highest recorded value is 370.00 for 83.34 (ADDED DELAY (S)).
+
+
+The table below provides supporting values for the detour or pedestrian impact assessment.
+
+
+
+
+EXISTING ROUTE TIME (S)
+
+DETOURED ROUTE TIME (S)
+
+CROSSING DELAY (S)
+
+ADDED DELAY (S)
+
+ADDED DELAY (MIN)
+
+
+
+
+
+83.34
+
+333.34
+
+120
+
+370
+
+6.17
+
+
+
+
+
+Detour pressure becomes material when diverted traffic is reassigned to roads with limited spare capacity during the same peak period as the primary corridor impact. These conditions are most important where side-road intersections, local access, or school and freight activity are already operating close to their normal thresholds.
+
+
+
+
+
+
+ 
+
+ 
+5. Conclusion
+
+ 
+
+The assessment for SMITH STREET CONNECTION ROAD at - indicates that the modeled road network should be interpreted as a constrained work-stage environment rather than a normal operating condition with approximately 77,675 vehicles per day and a growth allowance of 2.50% per annum. The reported outputs are therefore most useful as a screening tool for operational risk, queue storage exposure, and the timing of mitigation triggers.
+
+Operationally, the model points to a worst V/C ratio of 2.42 corresponding to LOS F and a peak queue on the order of 5,396 m. These values suggest that traffic performance is being controlled by a limited number of peak-period constraints, so site management should focus on those controlling periods rather than average daily conditions.
+
+From an engineering perspective, mitigation should prioritise maintaining discharge opportunities, reducing unnecessary blockage time, and protecting upstream intersections and accesses from queue spillback. Where detour planning is triggered, the diversion strategy should be treated as an operational management measure with active monitoring rather than a one-off desktop assumption.
+
+
+
+Detour planning should be retained as an active mitigation measure because the modeled condition indicates insufficient resilience under the controlling scenario.
+
+The controlling risk is concentrated in peak operating periods rather than uniformly across the day.
+
+Queue and V/C results should be used to set monitoring triggers, traffic controller response actions, and escalation points for temporary traffic management.
+
+Any material change in closure duration, lane availability, or directional demand should prompt the assessment to be refreshed before implementation.
+
+The detailed table set has been interpreted together with 12 supporting result table(s) so that mitigation can be tied to the specific controlling scenario.
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+Prepared By
+
+ 
+Planner&#x27;s Name
+
+ 
+Planner's Name
+
+ 
+
+ 
+
+ 
+Reviewed By
+
+ 
+Reviewer Name
+
+ 
+Reviewer's Name
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+ENGINEERING DISCLAIMER:
+ This Traffic Impact Assessment (TIA) report has been prepared based on site-specific observations and industry-standard modeling assumptions. While every effort has been made to ensure accuracy, real-world traffic conditions are subject to variables including driver behavior, weather, and external network incidents. This report is intended for use by planning authorities and should be reviewed in the context of the complete project documentation.
+ 
+
+ 
+
+
+ 
+
+
+ 
+{"report_variant": "short", "project": {"name": "SMITH STREET CONNECTION ROAD", "location": "-", "report_date": "2026-05-13", "prepared_by": "Planner's Name", "cc_number": "CC0000"}, "inputs": {"road_operation_mode": "TWO-WAY", "base_year": "2024", "opening_year": "2026", "base_year_aadt": 73931, "opening_year_aadt": 77675, "d1_vadt_opening_year": 37096, "d2_vadt_opening_year": 40579, "growth_rate_percent": 2.5}, "results": {"queue_peak_m": 5396, "worst_vcr": 2.42, "los": "F", "detour_recommended": true}, "raw_js_results": {"detour_route_count": 1, "base_year": "2024", "opening_year": "2026"}, "selected_site_details": {"site_id": "11545", "source": "TMR", "road_name": "SMITH STREET CONNECTION ROAD", "description": "East of Precision Dr", "coordinates": "-27.963128, 153.363311", "google_maps_url": "https://maps.google.com/?q=-27.963128,153.363311", "count_year": "2024", "d1_direction": "Eastbound", "d2_direction": "Westbound", "d1_vadt": "35,308", "d2_vadt": "38,623", "total_vadt": "73,931", "applied_d1_hv_percent": "7.6", "applied_d2_hv_percent": "7.6", "applied_d1_rt_percent": "0.15", "applied_d2_rt_percent": "0.15"}, "notes": ["High Risk Period: AM | Network Max Queue ~= 5,396 m", "High Risk Period: AM | Worst VCR = 2.358 (LOS F)"], "tables": [{"table_id": "analysis_parameters", "title": "Analysis Parameters", "columns": ["Parameter", "Value"], "rows": [["ROAD OPERATION MODE", "TWO-WAY"]]}, {"table_id": "summary_computed_results", "title": "Summary of Computed Results", "columns": ["Metric", "Value"], "rows": [["QUEUE PEAK M", "5396"], ["WORST VCR", "2.42"], ["LOS", "F"], ["DETOUR RECOMMENDED", "True"]]}, {"table_id": "groupedtabled1", "title": "GROUPED DIRECTIONAL SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["YEAR", "AM LV", "TOTAL"], "rows": [["2024", "1889", "35308"], ["2026", "1985", "37096"]]}, {"table_id": "groupedtabled2", "title": "GROUPED DIRECTIONAL SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["YEAR", "AM LV", "TOTAL"], "rows": [["2024", "3327", "38623"], ["2026", "3496", "40579"]]}, {"table_id": "queuegroupedtabled1", "title": "DIRECTIONAL QUEUE SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "4343", "3000", "3200", "1200"]]}, {"table_id": "queuegroupedtabled2", "title": "DIRECTIONAL QUEUE SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "5396", "4000", "3800", "1400"]]}, {"table_id": "queueswtsummarytable", "title": "DIRECTIONAL QUEUE SUMMARY - SWT - SWT QUEUE SUMMARY", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["Queue Peak", "1440", "800", "900", "300"]]}, {"table_id": "vcrgroupedtabled1", "title": "DIRECTIONAL VCR SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "2.25 LOS F", "1.50 LOS F", "1.40 LOS F", "0.50 LOS A"]]}, {"table_id": "vcrgroupedtabled2", "title": "DIRECTIONAL VCR SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "2.36 LOS F", "1.65 LOS F", "1.59 LOS F", "0.58 LOS A"]]}, {"table_id": "detour_route_1_info", "title": "1. DETOUR ROUTE INFORMATION", "columns": ["PARAMETER", "DETAILS"], "rows": [["Detour Route Name", "Precision Drive >> Smith Street Motorway"], ["Selected Path", "Precision Drive >> Smith Street Motorway"], ["Route Length (km)", "5km"], ["Road Classification", "Urban"]]}, {"table_id": "detour_route_1_delay", "title": "ESTIMATED DELAY - DETOUR ROUTE", "columns": ["PARAMETER", "VALUE"], "rows": [["Detour Route Length (km)", "0.4"], ["Average Travel Speed on Detour (km/h)", "70"], ["Travel Time (seconds)", "21"], ["Total Time incl. Intersections (seconds)", "61"], ["Estimated Additional Travel Time (min)", "2"], ["Delay Classification", "Moderate (1-5 min)"]]}, {"table_id": "detour_route_1_ped", "title": "PEDESTRIAN DETOUR IMPACT INCLUDE IN PRINT: YES - ESTIMATED DELAY - DETOUR ROUTE (PRECISION DRIVE >> SMITH STREET MOTORWAY)", "columns": ["EXISTING ROUTE TIME (S)", "DETOURED ROUTE TIME (S)", "CROSSING DELAY (S)", "ADDED DELAY (S)", "ADDED DELAY (MIN)"], "rows": [["83.34", "333.34", "120", "370", "6.17"]]}]}
+
+ 
+
+ function getEmbeddedReportPayload() {
+ const el = document.getElementById('reportPayloadData');
+ if (!el) return null;
+ try {
+ return JSON.parse(el.textContent || '{}');
+ } catch (_err) {
+ return null;
+ }
+ }
+
+ function buildChartMarkup(title, imageDataUrl, index) {
+ const safeTitle = String(title || ('Chart ' + (index + 1)));
+ const figure = document.createElement('figure');
+ figure.className = 'report-section report-block chart-block avoid-break';
+ figure.innerHTML =
+ '
+
+Remove Chart
+
+' +
+ '
+
+' +
+ '
+' +
+ '
+Describe what this chart shows, assumptions, and interpretation for stakeholders.
+';
+ const titleEl = figure.querySelector('h4');
+ const imgEl = figure.querySelector('img');
+ if (titleEl) titleEl.textContent = safeTitle;
+ if (imgEl) {
+ imgEl.src = imageDataUrl;
+ imgEl.alt = safeTitle;
+ }
+ return figure;
+ }
+
+ function hydrateChartsFromPayload() {
+ const chartWrap = document.getElementById('chartSectionContent');
+ if (!chartWrap) return;
+
+ const existingImages = chartWrap.querySelectorAll('img.chart-img');
+ if (existingImages.length > 0) return;
+
+ const payload = getEmbeddedReportPayload();
+ if (!payload || typeof payload !== 'object') return;
+
+ const charts = Array.isArray(payload.charts)
+ ? payload.charts.filter((item) => item && String(item.image_data_url || '').startsWith('data:image/'))
+ : [];
+ const fallback = String(payload.chart_image_data_url || '');
+
+ if (charts.length === 0 && !fallback.startsWith('data:image/')) return;
+
+ chartWrap.innerHTML = '';
+ if (charts.length > 0) {
+ charts.forEach((chart, index) => {
+ chartWrap.appendChild(buildChartMarkup(chart.title || ('Chart ' + (index + 1)), chart.image_data_url, index));
+ });
+ } else {
+ chartWrap.appendChild(buildChartMarkup('Primary Chart', fallback, 0));
+ }
+ }
+
+ function enableStrongEditability() {
+ const editableSelectors = [
+ 'main h1', 'main h2:not(.toc-title)', 'main h3', 'main h4',
+ 'main p', 'main li', 'main span',
+ 'main th', 'main td', 'main figcaption', 'main .cover-subtitle'
+ ];
+
+ document.querySelectorAll(editableSelectors.join(',')).forEach((el) => {
+ if (!el || el.closest('.section-controls') || el.closest('.toolbar')) return;
+ if (el.tagName && el.tagName.toLowerCase() === 'img') return;
+ el.setAttribute('contenteditable', 'true');
+ el.classList.add('editable-text');
+ });
+ }
+
+ function refreshListOfTables() {
+ const lotContent = document.getElementById("lot-content");
+ if (!lotContent) return;
+
+ // Collect all table-section headings (h3 inside .report-section, h4 inside .detour-sub-block)
+ const tableHeadings = Array.from(document.querySelectorAll(
+ "main .report-section h3, main .report-section h4, main .detour-sub-block h4"
+ )).filter((h) => h && h.isConnected && String(h.innerText || '').trim().length > 0);
+
+ if (tableHeadings.length === 0) {
+ lotContent.innerHTML = '
+No tables listed.
+';
+ return;
+ }
+
+ let lotHTML = "";
+ tableHeadings.forEach((heading, index) => {
+ if (!heading.id) {
+ const safeText = heading.innerText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+ heading.id = "tbl-" + index + "-" + safeText.substring(0, 40);
+ }
+ lotHTML += '
+' +
+ '
+Table ' + (index + 1) + ': ' + heading.innerText + '
+' +
+ '
+';
+ });
+
+ lotContent.innerHTML = lotHTML;
+ }
+
+ function refreshToc() {
+ const tocContent = document.getElementById("toc-content");
+ if (!tocContent) return;
+
+ const headers = Array.from(document.querySelectorAll("main h2:not(.toc-title), main h3, main h4.chart-title"))
+ .filter((header) => header && header.isConnected)
+ .filter((header) => String(header.innerText || '').trim().length > 0);
+
+ if (headers.length === 0) {
+ tocContent.innerHTML = '
+No sections available.
+';
+ return;
+ }
+
+ let tocHTML = "";
+ headers.forEach((header, index) => {
+ if (!header.id) {
+ const safeText = header.innerText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+ header.id = "sec-" + index + "-" + safeText;
+ }
+
+ let levelClass = 'toc-h3';
+ if (header.tagName.toLowerCase() === 'h2') levelClass = 'toc-h2';
+ tocHTML += '
+' +
+ '
+' + header.innerText + '
+' +
+ '
+';
+ });
+
+ tocContent.innerHTML = tocHTML;
+ }
+
+ function bindTocAutoRefresh() {
+ const reportMain = document.querySelector('main.document-wrapper');
+ if (!reportMain) return;
+
+ let refreshHandle = null;
+ const scheduleRefresh = () => {
+ if (refreshHandle) return;
+ refreshHandle = window.setTimeout(() => {
+ refreshHandle = null;
+ refreshToc();
+ }, 80);
+ };
+
+ const observer = new MutationObserver((mutations) => {
+ for (const mutation of mutations) {
+ if (mutation.type === 'childList') {
+ scheduleRefresh();
+ return;
+ }
+ if (mutation.type === 'characterData') {
+ const parent = mutation.target && mutation.target.parentElement;
+ if (parent && parent.matches && parent.matches('h2, h3, h4.chart-title')) {
+ scheduleRefresh();
+ return;
+ }
+ }
+ }
+ });
+
+ observer.observe(reportMain, {
+ childList: true,
+ subtree: true,
+ characterData: true
+ });
+
+ document.addEventListener('input', (event) => {
+ const target = event && event.target;
+ if (target && target.matches && target.matches('h2, h3, h4.chart-title')) {
+ scheduleRefresh();
+ }
+ });
+ }
+
+ function _buildNodePath(node, stopNode) {
+ if (!node || !(node instanceof Element)) return '';
+ const segments = [];
+ let current = node;
+ while (current && current !== stopNode) {
+ const parent = current.parentElement;
+ if (!parent) break;
+ const siblings = Array.from(parent.children).filter((child) => child.tagName === current.tagName);
+ const idx = Math.max(0, siblings.indexOf(current));
+ segments.push(current.tagName.toLowerCase() + ':' + idx);
+ current = parent;
+ }
+ return segments.reverse().join('/');
+ }
+
+ function _resolveNodePath(path, stopNode) {
+ if (!path || !stopNode) return null;
+ const segments = String(path).split('/').filter(Boolean);
+ let cursor = stopNode;
+ for (const segment of segments) {
+ const parts = segment.split(':');
+ if (parts.length !== 2) return null;
+ const tag = parts[0].toUpperCase();
+ const index = Number(parts[1]);
+ if (!Number.isFinite(index) || index 
+ child.tagName === tag);
+ if (!matches[index]) return null;
+ cursor = matches[index];
+ }
+ return cursor;
+ }
+
+ function _isNarrativeEditableTarget(el) {
+ if (!(el instanceof HTMLElement)) return false;
+ if (!el.isContentEditable) return false;
+ if (el.closest('.toolbar') || el.closest('.section-controls')) return false;
+ if (el.closest('#toc-content')) return false;
+ if (el.matches('td, th')) return false;
+ return true;
+ }
+
+ function _collectNarrativeEditEntries() {
+ const root = document.querySelector('main.document-wrapper');
+ if (!root) return [];
+ const candidates = Array.from(root.querySelectorAll('[contenteditable="true"]')).filter(_isNarrativeEditableTarget);
+ return candidates.map((el) => {
+ const path = _buildNodePath(el, root);
+ return {
+ path,
+ html: el.innerHTML,
+ text: el.textContent || ''
+ };
+ }).filter((item) => item.path);
+ }
+
+ const _defaultFontSizePx = 16;
+ let _currentFontSizePx = _defaultFontSizePx;
+ function adjustFontSize(direction) {
+ const doc = document.querySelector('main.document-wrapper');
+ if (!doc) return;
+ if (direction === 0) {
+ _currentFontSizePx = _defaultFontSizePx;
+ } else {
+ _currentFontSizePx = Math.min(28, Math.max(10, _currentFontSizePx + direction * 1));
+ }
+ doc.style.fontSize = _currentFontSizePx + 'px';
+ }
+
+ function downloadEditsProfile() {
+ const payload = getEmbeddedReportPayload() || {};
+ const profile = {
+ schema: 'tia-python-edit-profile-v1',
+ exported_at: new Date().toISOString(),
+ project_name: (payload.project && payload.project.name) || '',
+ report_variant: payload.report_variant || '',
+ entries: _collectNarrativeEditEntries()
+ };
+
+ const blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' });
+ const link = document.createElement('a');
+ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+ const objectUrl = URL.createObjectURL(blob);
+ link.href = objectUrl;
+ link.download = `tia-python-edits-${stamp}.json`;
+ document.body.appendChild(link);
+ link.click();
+ link.remove();
+ URL.revokeObjectURL(objectUrl);
+ }
+
+ function applyEditsProfile(profile) {
+ if (!profile || profile.schema !== 'tia-python-edit-profile-v1' || !Array.isArray(profile.entries)) {
+ throw new Error('Invalid edits profile format.');
+ }
+ const root = document.querySelector('main.document-wrapper');
+ if (!root) throw new Error('Report root not found.');
+
+ let applied = 0;
+ profile.entries.forEach((entry) => {
+ if (!entry || !entry.path) return;
+ const target = _resolveNodePath(entry.path, root);
+ if (!target || !_isNarrativeEditableTarget(target)) return;
+ target.innerHTML = String(entry.html || '');
+ applied += 1;
+ });
+ refreshToc();
+ return applied;
+ }
+
+ function loadEditsProfileFromInput(event) {
+ const input = event && event.target;
+ const file = input && input.files && input.files[0];
+ if (!file) return;
+
+ const reader = new FileReader();
+ reader.onload = function() {
+ try {
+ const parsed = JSON.parse(String(reader.result || '{}'));
+ const appliedCount = applyEditsProfile(parsed);
+ window.alert(`Applied ${appliedCount} text edit(s). Table values remain from the current recalculated data.`);
+ } catch (err) {
+ window.alert(`Could not load edits JSON: ${(err && err.message) || 'Unknown error'}`);
+ } finally {
+ input.value = '';
+ }
+ };
+ reader.readAsText(file);
+ }
+
+ // Track the last focused cell so row/col operations act at the selection point.
+ let _lastFocusedCell = null;
+ document.addEventListener('focusin', function(e) {
+ const cell = e.target && e.target.closest('td, th');
+ if (cell && cell.closest('table')) _lastFocusedCell = cell;
+ }, true);
+
+ function _getTargetTable(btn) {
+ const block = btn && btn.closest('.report-block');
+ if (!block) return { table: null, block: null };
+ // Prefer the table that contains the focused cell, if it's inside this block.
+ if (_lastFocusedCell && block.contains(_lastFocusedCell)) {
+ const t = _lastFocusedCell.closest('table');
+ if (t) return { table: t, block };
+ }
+ return { table: block.querySelector('table'), block };
+ }
+
+ function addTableRow(btn) {
+ const { table } = _getTargetTable(btn);
+ if (!table) return;
+
+ // Insert after the row containing the focused cell, else append to tbody.
+ const targetRow = _lastFocusedCell && table.contains(_lastFocusedCell)
+ ? _lastFocusedCell.closest('tr')
+ : null;
+
+ const tbody = table.querySelector('tbody') || table;
+ const refRow = targetRow || tbody.querySelector('tr:last-child');
+ const cellCount = refRow ? refRow.querySelectorAll('td, th').length : 2;
+
+ const newRow = document.createElement('tr');
+ for (let i = 0; i 
+ {
+ const cells = row.querySelectorAll('td, th');
+ const isHeaderRow = row.closest('thead') != null;
+ const cell = isHeaderRow ? document.createElement('th') : document.createElement('td');
+ cell.className = 'editable-text editable-cell';
+ cell.contentEditable = 'true';
+ cell.textContent = isHeaderRow ? 'New Column' : 'Edit';
+
+ if (insertAfterIndex >= 0 && insertAfterIndex 
+ {
+ const cells = row.querySelectorAll('td, th');
+ if (cells.length 
+= 0 && removeIndex 
+ 0) {
+ _pushUndo({ type: 'column', cells: removedCells });
+ removedCells.forEach(function(item) { item.element.remove(); });
+ }
+ _lastFocusedCell = null;
+ }
+
+ const _undoStack = [];
+ const _MAX_UNDO = 50;
+
+ function _pushUndo(entry) {
+ _undoStack.push(entry);
+ if (_undoStack.length > _MAX_UNDO) _undoStack.shift();
+ }
+
+ function removeReportBlock(btn) {
+ const block = btn && btn.closest('.report-block');
+ if (!block) return;
+ _pushUndo({ type: 'block', element: block, parent: block.parentNode, nextSibling: block.nextSibling });
+ block.remove();
+ refreshToc();
+ }
+
+ document.addEventListener('keydown', function(e) {
+ if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+ const active = document.activeElement;
+ if (active && active.isContentEditable) return;
+ if (!_undoStack.length) return;
+ e.preventDefault();
+ const last = _undoStack.pop();
+ if (last.type === 'block' || last.type === 'row') {
+ if (last.parent && last.parent.isConnected) {
+ last.parent.insertBefore(last.element, last.nextSibling || null);
+ } else if (last.parent) {
+ last.parent.appendChild(last.element);
+ }
+ refreshToc();
+ } else if (last.type === 'column') {
+ last.cells.forEach(function(item) {
+ if (item.parent && item.parent.isConnected) {
+ item.parent.insertBefore(item.element, item.nextSibling || null);
+ } else if (item.parent) {
+ item.parent.appendChild(item.element);
+ }
+ });
+ }
+ }
+ });
+
+ document.addEventListener("DOMContentLoaded", function() {
+ 
+ enableStrongEditability();
+ const payload = getEmbeddedReportPayload();
+ if (payload && payload.editor_edits_profile) {
+ try {
+ applyEditsProfile(payload.editor_edits_profile);
+ } catch (_err) {
+ // Ignore invalid profile payloads and continue loading the report.
+ }
+ }
+ refreshToc();
+ refreshListOfTables();
+ bindTocAutoRefresh();
+ });
+ 
+
+
+
+
+

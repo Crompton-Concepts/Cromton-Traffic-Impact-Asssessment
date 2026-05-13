@@ -1531,7 +1531,7 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     f"<div class=\"report-section report-block detour-route-block\">"
     f"<div class=\"section-controls no-print\"><button type=\"button\" class=\"mini-btn\" onclick=\"removeReportBlock(this)\">✕ Remove</button></div>"
     f"<h3 class=\"editable-text\" contenteditable=\"true\">{label_esc}</h3>"
-    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">1. Detour Route Information</h4>" + _render_group(route_info_tables, fallback_route_info) + "</div>"
+    "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">1. DETOUR ROUTE INFORMATION</h4>" + _render_group(route_info_tables, fallback_route_info) + "</div>"
   )
 
   if is_short:
@@ -1540,8 +1540,8 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     # 3. Pedestrian Detour Impact
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. Estimated Detour Delay Calculation</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. Pedestrian Detour Impact</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. ESTIMATED DETOUR DELAY CALCULATION</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. PEDESTRIAN DETOUR IMPACT</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
   else:
@@ -2048,7 +2048,24 @@ def editor_page(draft_id: str) -> str:
 
     variant_raw = _safe_text(payload.get("report_variant"), "").lower()
     title_hint = _safe_text(draft.get("title", "")).lower()
-    is_short = variant_raw == "short" or "short report" in title_hint
+    is_short_hint = (
+      "short report" in title_hint
+      or "short python report" in title_hint
+      or (
+        "short" in title_hint
+        and "report" in title_hint
+        and "detailed" not in title_hint
+      )
+    )
+    is_detailed_hint = (
+      "detailed report" in title_hint
+      or "detailed python report" in title_hint
+      or (
+        "detailed" in title_hint
+        and "report" in title_hint
+      )
+    )
+    is_short = variant_raw == "short" or is_short_hint
 
     # Detailed report includes explanation notes; short report omits them.
     executive_notes_html = "" if is_short else _render_notes(executive_content.get("explanation_notes", []))
@@ -2062,7 +2079,7 @@ def editor_page(draft_id: str) -> str:
 
     if is_short:
       report_mode_label = "Python Short Report"
-    elif variant_raw == "detailed" or "detailed report" in title_hint:
+    elif variant_raw == "detailed" or is_detailed_hint:
       report_mode_label = "Detailed Python Report"
     else:
       report_mode_label = "Python Report"
@@ -2282,7 +2299,12 @@ def editor_page(draft_id: str) -> str:
         chart_sections = _render_additional_chart_blocks(chart_items_to_render, embedded_chart_keys)
         chart_section_html = f"<h2 contenteditable=\"true\">{sec_charts_num}. Charts</h2>{chart_sections}" if chart_sections else ""
 
-    payload_json = escape(json.dumps(payload))
+    # BUG FIX: Do NOT html.escape() JSON intended for <script type="application/json">.
+    # The HTML parser treats <script> contents as "script data" and does NOT decode HTML
+    # entities, so escape() would turn quotes into literal "&quot;" and make JSON.parse fail.
+    # The only sequence that needs neutralising is "</" (which could close the script tag);
+    # replace it with "<\/" which is a valid JSON-string escape and a no-op for JSON.parse.
+    payload_json = json.dumps(payload).replace("</", "<\\/")
 
     return f"""<!DOCTYPE html>
 <html lang=\"en\">
