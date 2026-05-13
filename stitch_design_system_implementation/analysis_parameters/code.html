@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "secondary": "#0058be",
+                        "surface-container-high": "#eae7e9",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary": "#091426",
+                        "status-info": "#6366F1",
+                        "tertiary-fixed-dim": "#ddc39d",
+                        "inverse-primary": "#bcc7de",
+                        "secondary-container": "#2170e4",
+                        "surface-variant": "#e4e2e3",
+                        "tertiary-fixed": "#fadfb8",
+                        "on-primary-fixed": "#111c2d",
+                        "border-subtle": "#E2E8F0",
+                        "surface-container": "#f0edef",
+                        "on-secondary-fixed": "#001a42",
+                        "inverse-surface": "#303032",
+                        "on-surface-variant": "#45474c",
+                        "vcr-high": "#F97316",
+                        "status-warning": "#F59E0B",
+                        "on-secondary-container": "#fefcff",
+                        "vcr-critical": "#DC2626",
+                        "on-primary": "#ffffff",
+                        "beta-accent": "#8B5CF6",
+                        "on-surface": "#1b1b1d",
+                        "surface-container-highest": "#e4e2e3",
+                        "on-tertiary-container": "#a38c6a",
+                        "surface-card": "#FFFFFF",
+                        "surface-tint": "#545f73",
+                        "outline-variant": "#c5c6cd",
+                        "on-tertiary-fixed-variant": "#564427",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-background": "#1b1b1d",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "status-success": "#10B981",
+                        "on-tertiary-fixed": "#271902",
+                        "vcr-medium": "#EAB308",
+                        "surface-dim": "#dcd9db",
+                        "status-danger": "#EF4444",
+                        "surface-background": "#F8FAFC",
+                        "on-error": "#ffffff",
+                        "outline": "#75777d",
+                        "primary-fixed-dim": "#bcc7de",
+                        "inverse-on-surface": "#f3f0f2",
+                        "on-primary-container": "#8590a6",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "engineering-blue": "#0369A1",
+                        "surface-container-low": "#f5f3f4",
+                        "primary-fixed": "#d8e3fb",
+                        "on-tertiary": "#ffffff",
+                        "vcr-low": "#22C55E",
+                        "tertiary-container": "#35260c",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fbf8fa",
+                        "surface": "#fbf8fa",
+                        "primary-container": "#1e293b",
+                        "background": "#fbf8fa",
+                        "tertiary": "#1e1200"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "table-cell-padding": "8px 12px",
+                        "sidebar-width": "320px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "input-gap": "12px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "formula-ref": ["JetBrains Mono"],
+                        "data-mono": ["JetBrains Mono"],
+                        "body-base": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "formula-ref": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                        "body-base": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "title-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-sm": ["13px", {"lineHeight": "1.4", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #F8FAFC;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-base text-on-background">
+<!-- TopAppBar -->
+<header class="bg-primary dark:bg-primary docked full-width top-0 border-b border-on-primary-container flex justify-between items-center w-full px-gutter h-16 fixed z-50">
+<div class="flex items-center gap-unit">
+<span class="material-symbols-outlined text-on-primary" data-icon="traffic">traffic</span>
+<span class="text-headline-md font-headline-md font-extrabold text-on-primary tracking-tight">Cromton TIA</span>
+</div>
+<button class="bg-secondary-container text-on-secondary-container px-gutter py-2 rounded-lg font-label-caps text-label-caps hover:bg-primary-container transition-colors active:scale-95">
+            Export Report
+        </button>
+</header>
+<main class="pt-20 pb-32 px-gutter max-w-lg mx-auto">
+<!-- Section: Project Identity -->
+<section class="mb-gutter">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="assignment">assignment</span>
+<h2 class="font-title-sm text-title-sm text-primary">Project Identity</h2>
+</div>
+<div class="bg-surface-card border border-border-subtle p-gutter rounded-xl shadow-sm space-y-input-gap">
+<div>
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">LEAD ENGINEER</label>
+<input class="w-full border-0 border-b-2 border-outline-variant focus:border-secondary bg-surface-container-low px-3 py-2 text-body-base rounded-t-lg transition-all outline-none" placeholder="e.g. Sarah Jenkins, P.E." type="text"/>
+</div>
+<div>
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">JURISDICTION</label>
+<input class="w-full border-0 border-b-2 border-outline-variant focus:border-secondary bg-surface-container-low px-3 py-2 text-body-base rounded-t-lg transition-all outline-none" placeholder="Enter City or County" type="text"/>
+</div>
+<div>
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">SITE ID / REFERENCE</label>
+<div class="relative">
+<input class="w-full border-0 border-b-2 border-outline-variant focus:border-secondary bg-surface-container-low px-3 py-2 font-data-mono text-data-mono rounded-t-lg transition-all outline-none" placeholder="TIA-2024-089" type="text"/>
+<span class="absolute right-3 top-2.5 material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="pin">pin</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Traffic Parameters -->
+<section class="mb-gutter">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="tune">tune</span>
+<h2 class="font-title-sm text-title-sm text-primary">Traffic Parameters</h2>
+</div>
+<div class="grid grid-cols-2 gap-input-gap">
+<div class="bg-surface-card border border-border-subtle p-gutter rounded-xl">
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">GROWTH %</label>
+<div class="flex items-center gap-2">
+<input class="w-full border-0 border-b-2 border-outline-variant focus:border-secondary bg-transparent py-1 font-data-mono text-data-mono outline-none" step="0.1" type="number" value="2.0"/>
+<span class="text-on-surface-variant font-data-mono">yr</span>
+</div>
+</div>
+<div class="bg-surface-card border border-border-subtle p-gutter rounded-xl">
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">HGV %</label>
+<div class="flex items-center gap-2">
+<input class="w-full border-0 border-b-2 border-outline-variant focus:border-secondary bg-transparent py-1 font-data-mono text-data-mono outline-none" step="1" type="number" value="5"/>
+<span class="text-on-surface-variant font-data-mono">%</span>
+</div>
+</div>
+<div class="col-span-2 bg-surface-card border border-border-subtle p-gutter rounded-xl flex items-center justify-between">
+<div>
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">PEAK HOUR FACTOR (PHF)</label>
+<p class="text-[10px] text-on-surface-variant opacity-70">Adjusted demand calculation basis</p>
+</div>
+<input class="w-20 border-0 border-b-2 border-outline-variant focus:border-secondary bg-transparent text-right font-data-mono text-data-mono outline-none" step="0.01" type="number" value="0.92"/>
+</div>
+</div>
+</section>
+<!-- Section: Directional Volumes (AM/PM) -->
+<section class="mb-8">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="height">height</span>
+<h2 class="font-title-sm text-title-sm text-primary">Directional Volumes</h2>
+</div>
+<!-- Volume Grid -->
+<div class="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
+<div class="grid grid-cols-3 bg-surface-container-high border-b border-border-subtle">
+<div class="p-2 text-center border-r border-border-subtle">
+<span class="font-label-caps text-label-caps text-on-surface-variant">DIRECTION</span>
+</div>
+<div class="p-2 text-center border-r border-border-subtle bg-primary-fixed/30">
+<span class="font-label-caps text-label-caps text-primary">AM PEAK</span>
+</div>
+<div class="p-2 text-center">
+<span class="font-label-caps text-label-caps text-secondary">PM PEAK</span>
+</div>
+</div>
+<!-- Row: Northbound -->
+<div class="grid grid-cols-3 items-center border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<div class="p-gutter font-label-caps text-label-caps text-on-surface-variant border-r border-border-subtle">NORTHBOUND</div>
+<div class="p-gutter border-r border-border-subtle">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+<div class="p-gutter">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+</div>
+<!-- Row: Southbound -->
+<div class="grid grid-cols-3 items-center border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<div class="p-gutter font-label-caps text-label-caps text-on-surface-variant border-r border-border-subtle">SOUTHBOUND</div>
+<div class="p-gutter border-r border-border-subtle">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+<div class="p-gutter">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+</div>
+<!-- Row: Eastbound -->
+<div class="grid grid-cols-3 items-center border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<div class="p-gutter font-label-caps text-label-caps text-on-surface-variant border-r border-border-subtle">EASTBOUND</div>
+<div class="p-gutter border-r border-border-subtle">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+<div class="p-gutter">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+</div>
+<!-- Row: Westbound -->
+<div class="grid grid-cols-3 items-center hover:bg-surface-container-low transition-colors">
+<div class="p-gutter font-label-caps text-label-caps text-on-surface-variant border-r border-border-subtle">WESTBOUND</div>
+<div class="p-gutter border-r border-border-subtle">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+<div class="p-gutter">
+<input class="w-full bg-transparent border-0 font-data-mono text-data-mono text-center focus:ring-0" placeholder="0" type="number"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Visualization Hint -->
+<div class="rounded-xl overflow-hidden border border-border-subtle mb-8 relative group">
+<img alt="Map representation of traffic flow" class="w-full h-32 object-cover opacity-80" data-alt="A sophisticated digital rendering of an urban traffic intersection with glowing heat-map overlays showing vehicle density. The scene is viewed from a high-angle perspective, emphasizing the systematic flow of commuters. The lighting is bright and technical, with a clean architectural aesthetic that integrates blue and slate grey tones. Sharp digital lines and traffic flow indicators suggest high-precision civil engineering analysis." src="https://lh3.googleusercontent.com/aida-public/AB6AXuASAyaj2Mj_sjhLGL6tY8hIOuzNlkz7h_dZRBCaE7X0JSQrmYIBxXpHDYf57k8IXM87cULce1amHupgP8HlYH59U32eLnfvP2gOhLqMIZ067vTjeE13m9-5WRG7mygtz3yyGqZx4VBiTWTBclCQG6pAWgDrttvFjqpy6as1E5EMD4QGX_WBT0na0QdbCaVgxpNOjJrXfIEJgignX_fMirUoh5TKluu0XIelrBWtqRqsalla7AQrX0QX-vi44rbvCdk-SDeM3N0kho8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent flex items-end p-4">
+<p class="text-on-primary font-body-sm text-[12px]"><span class="font-bold">Live Preview:</span> Intersection configuration detected via Site ID.</p>
+</div>
+</div>
+</main>
+<!-- Calculate FAB -->
+<button class="fixed bottom-24 right-gutter bg-secondary text-on-secondary px-6 py-4 rounded-full shadow-lg flex items-center gap-3 active:scale-95 transition-all z-[60] border-2 border-on-secondary/10">
+<span class="material-symbols-outlined font-bold" data-icon="analytics" data-weight="fill">analytics</span>
+<span class="font-label-caps text-label-caps tracking-widest">CALCULATE VCR &amp; LOS</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container-highest dark:bg-surface-container-lowest fixed bottom-0 w-full z-50 md:hidden border-t border-outline-variant shadow-lg flex justify-around items-center h-16 px-4">
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all py-1">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-[10px]">Dash</span>
+</div>
+<div class="flex flex-col items-center justify-center text-secondary font-bold active:bg-surface-variant transition-all py-1">
+<span class="material-symbols-outlined" data-icon="vertical_align_center" style="font-variation-settings: 'FILL' 1;">vertical_align_center</span>
+<span class="font-label-caps text-[10px]">Queue</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all py-1">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+<span class="font-label-caps text-[10px]">VCR</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all py-1">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-label-caps text-[10px]">Map</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all py-1">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-caps text-[10px]">Docs</span>
+</div>
+</nav>
+</body></html>

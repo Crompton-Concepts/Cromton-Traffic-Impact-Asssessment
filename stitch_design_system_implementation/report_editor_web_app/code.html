@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#d8e2ff",
+                    "on-tertiary": "#ffffff",
+                    "status-success": "#10B981",
+                    "tertiary-fixed": "#fadfb8",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "error-container": "#ffdad6",
+                    "outline": "#75777d",
+                    "border-subtle": "#E2E8F0",
+                    "outline-variant": "#c5c6cd",
+                    "surface-bright": "#fbf8fa",
+                    "inverse-surface": "#303032",
+                    "surface": "#fbf8fa",
+                    "on-background": "#1b1b1d",
+                    "vcr-high": "#F97316",
+                    "vcr-low": "#22C55E",
+                    "primary-fixed": "#d8e3fb",
+                    "beta-accent": "#8B5CF6",
+                    "on-primary-fixed": "#111c2d",
+                    "on-surface-variant": "#45474c",
+                    "tertiary": "#1e1200",
+                    "surface-container-highest": "#e4e2e3",
+                    "secondary": "#0058be",
+                    "primary-container": "#1e293b",
+                    "on-secondary-container": "#fefcff",
+                    "on-tertiary-container": "#a38c6a",
+                    "on-secondary-fixed-variant": "#004395",
+                    "inverse-primary": "#bcc7de",
+                    "background": "#fbf8fa",
+                    "tertiary-fixed-dim": "#ddc39d",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "surface-container-high": "#eae7e9",
+                    "on-surface": "#1b1b1d",
+                    "engineering-blue": "#0369A1",
+                    "surface-background": "#F8FAFC",
+                    "surface-container-low": "#f5f3f4",
+                    "secondary-container": "#2170e4",
+                    "primary": "#091426",
+                    "status-warning": "#F59E0B",
+                    "on-primary-container": "#8590a6",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#dcd9db",
+                    "tertiary-container": "#35260c",
+                    "surface-tint": "#545f73",
+                    "primary-fixed-dim": "#bcc7de",
+                    "surface-container-lowest": "#ffffff",
+                    "status-info": "#6366F1",
+                    "vcr-medium": "#EAB308",
+                    "surface-card": "#FFFFFF",
+                    "on-tertiary-fixed": "#271902",
+                    "inverse-on-surface": "#f3f0f2",
+                    "surface-container": "#f0edef",
+                    "surface-variant": "#e4e2e3",
+                    "vcr-critical": "#DC2626",
+                    "status-danger": "#EF4444",
+                    "on-tertiary-fixed-variant": "#564427",
+                    "on-secondary-fixed": "#001a42",
+                    "on-secondary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "input-gap": "12px",
+                    "table-cell-padding": "8px 12px",
+                    "sidebar-width": "320px",
+                    "container-padding": "24px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "formula-ref": ["JetBrains Mono"],
+                    "data-mono": ["JetBrains Mono"],
+                    "body-sm": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "title-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-base": ["Inter"]
+            },
+            "fontSize": {
+                    "formula-ref": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "data-mono": ["13px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                    "body-sm": ["13px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "label-caps": ["11px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "display-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "title-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-base": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .canvas-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-surface-background font-body-base text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-primary dark:bg-primary-container text-on-primary dark:text-on-primary-container font-headline-md text-headline-md w-full top-0 sticky shadow-sm flex items-center justify-between px-container-padding h-20 w-full z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-display-lg" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-display-lg text-display-lg text-on-primary dark:text-on-primary-container tracking-tight">SiteImpact Pro v2.4</span>
+</div>
+<div class="flex items-center gap-input-gap">
+<div class="flex border-r border-on-primary/20 pr-4 gap-4">
+<button class="text-on-primary-fixed-variant opacity-80 hover:bg-primary-fixed-variant/20 transition-colors px-3 py-1 rounded cursor-pointer active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined">save</span>
+<span class="font-label-caps text-label-caps">Draft Saved</span>
+</button>
+</div>
+<button class="bg-secondary text-on-secondary px-6 py-2.5 rounded-lg flex items-center gap-2 font-semibold hover:opacity-90 transition-all cursor-pointer active:scale-95">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+<span>Export TIA</span>
+</button>
+</div>
+</header>
+<div class="flex min-h-[calc(100vh-80px)]">
+<!-- NavigationDrawer (Left) -->
+<aside class="w-sidebar-width h-screen fixed left-0 top-0 bg-surface-card dark:bg-inverse-surface border-r border-border-subtle dark:border-outline-variant flex flex-col pt-24 pb-8 px-4 gap-input-gap z-40">
+<div class="mb-4">
+<span class="font-label-caps text-label-caps text-outline px-2">Analysis Modules</span>
+</div>
+<nav class="flex flex-col gap-1">
+<div class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container transition-all duration-200 ease-in-out cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-base text-body-base">Dashboard</span>
+</div>
+<div class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container transition-all duration-200 ease-in-out cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">reorder</span>
+<span class="font-body-base text-body-base">Queueing</span>
+</div>
+<div class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container transition-all duration-200 ease-in-out cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">speed</span>
+<span class="font-body-base text-body-base">VCR/LOS</span>
+</div>
+<div class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container transition-all duration-200 ease-in-out cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">alt_route</span>
+<span class="font-body-base text-body-base">Detours</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-secondary-container text-on-secondary-container font-semibold rounded-lg cursor-pointer">
+<span class="material-symbols-outlined">description</span>
+<span class="font-body-base text-body-base">Report Editor</span>
+</div>
+<div class="mt-auto pt-4 border-t border-border-subtle">
+<div class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container transition-all duration-200 ease-in-out cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-base text-body-base">Settings</span>
+</div>
+</div>
+</nav>
+</aside>
+<!-- Main Content (Fluid Stage) -->
+<main class="ml-sidebar-width flex-1 p-container-padding flex gap-gutter overflow-y-auto pb-32">
+<!-- Report Canvas -->
+<div class="flex-1 max-w-4xl mx-auto">
+<div class="bg-surface-card border border-border-subtle p-12 min-h-[1200px] canvas-shadow rounded-sm">
+<!-- Report Header -->
+<div class="border-b-2 border-primary pb-8 mb-12">
+<h1 class="font-display-lg text-display-lg uppercase tracking-tight text-primary">Traffic Impact Analysis Report</h1>
+<p class="font-body-base text-on-surface-variant mt-2">Project: SiteImpact Urban Expansion - Sector 7G</p>
+<p class="font-body-base text-on-surface-variant">Date: October 24, 2023 | Reference: TIA-2023-042</p>
+</div>
+<!-- Executive Summary Section -->
+<section class="mb-12 group relative">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-title-sm text-title-sm text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">segment</span>
+                                Executive Summary
+                            </h2>
+<button class="flex items-center gap-2 px-3 py-1.5 bg-beta-accent text-white text-body-sm font-semibold rounded-full hover:shadow-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                                Enhance with Gemini
+                            </button>
+</div>
+<div class="p-6 bg-surface-container-low border border-border-subtle rounded-lg text-body-base leading-relaxed text-on-surface-variant">
+                            This report evaluates the potential traffic impacts of the proposed 45,000 sq. ft. commercial development at the intersection of Main St and 5th Avenue. Preliminary analysis indicates that the development will generate approximately 450 peak-hour trips. Based on the VCR (Volume-to-Capacity Ratio) assessments, three primary intersections will require signal timing adjustments to maintain LOS D or better during afternoon peak periods.
+                        </div>
+</section>
+<!-- Methodology Section -->
+<section class="mb-12">
+<h2 class="font-title-sm text-title-sm text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">architecture</span>
+                            Analysis Methodology
+                        </h2>
+<p class="text-body-base text-on-surface-variant mb-4">
+                            The analysis follows the Highway Capacity Manual (HCM) 7th Edition standards. Calculations were performed using the SiteImpact Pro v2.4 proprietary engine, utilizing the following core formula for intersection delay:
+                        </p>
+<div class="bg-primary text-on-primary p-4 rounded-lg font-formula-ref text-formula-ref mb-4">
+                            d = d1 * PF + d2 + d3
+                            <br/>
+                            where: d1 = uniform delay, PF = progression factor, d2 = incremental delay, d3 = initial queue delay
+                        </div>
+</section>
+<!-- Results Tables -->
+<section class="mb-12">
+<h2 class="font-title-sm text-title-sm text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">table_chart</span>
+                            Intersection Performance Matrix (LOS/VCR)
+                        </h2>
+<div class="overflow-hidden border border-border-subtle rounded-lg">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-high font-label-caps text-label-caps">
+<tr>
+<th class="p-table-cell-padding border-b border-border-subtle">Intersection ID</th>
+<th class="p-table-cell-padding border-b border-border-subtle">V/C Ratio</th>
+<th class="p-table-cell-padding border-b border-border-subtle">Delay (s/veh)</th>
+<th class="p-table-cell-padding border-b border-border-subtle">LOS</th>
+<th class="p-table-cell-padding border-b border-border-subtle">Status</th>
+</tr>
+</thead>
+<tbody class="font-data-mono text-data-mono">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-table-cell-padding border-b border-border-subtle">INT-01: Main &amp; 5th</td>
+<td class="p-table-cell-padding border-b border-border-subtle">0.84</td>
+<td class="p-table-cell-padding border-b border-border-subtle">38.2</td>
+<td class="p-table-cell-padding border-b border-border-subtle">D</td>
+<td class="p-table-cell-padding border-b border-border-subtle">
+<span class="px-2 py-0.5 bg-vcr-medium/20 text-vcr-medium rounded-full text-[10px] font-bold">MONITOR</span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+<td class="p-table-cell-padding border-b border-border-subtle">INT-02: Broadway Ext</td>
+<td class="p-table-cell-padding border-b border-border-subtle">0.96</td>
+<td class="p-table-cell-padding border-b border-border-subtle">52.4</td>
+<td class="p-table-cell-padding border-b border-border-subtle">E</td>
+<td class="p-table-cell-padding border-b border-border-subtle">
+<span class="px-2 py-0.5 bg-vcr-critical/20 text-vcr-critical rounded-full text-[10px] font-bold">FAILING</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-table-cell-padding">INT-03: North Gate</td>
+<td class="p-table-cell-padding">0.42</td>
+<td class="p-table-cell-padding">12.1</td>
+<td class="p-table-cell-padding">B</td>
+<td class="p-table-cell-padding">
+<span class="px-2 py-0.5 bg-vcr-low/20 text-vcr-low rounded-full text-[10px] font-bold">OPTIMAL</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Map Figure -->
+<section class="mb-12">
+<h2 class="font-title-sm text-title-sm text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">map</span>
+                            Figure 1.1: Project Vicinity &amp; Trip Distribution
+                        </h2>
+<div class="relative w-full aspect-video bg-surface-container rounded-lg border border-border-subtle overflow-hidden">
+<img alt="City Map" class="w-full h-full object-cover grayscale opacity-60" data-alt="A clean, professional bird's-eye view of a modern urban street map designed in a high-contrast engineering style. The layout uses thin gray lines for side streets and bold navy blue paths for major arterials. Semi-transparent circles in vibrant green and orange indicate traffic volume nodes. The overall aesthetic is technical and utilitarian, fitting for a civil engineering traffic impact analysis document." data-location="San Francisco" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFLjlYfTwzc7Ikk8RY8h4iPxN4MNW9WsqAoUzStkMwYUQK8hhShUWl1wsgqTUKT8RR8YUZesV2kAs0en4UYQILm48PuSbpEwk4NA1NTA-CtlnfQy3h7mlpHnJe3owzUx9XCAI_ouXCJAKxN2CahJigt34TI7M1OrW3CkLVNLZfYoqhUyyiz5ChasdSQzCuaUGGzYTJbmnhUiGrZcOza6RMGZ_BAmW4Ie7Sk_fvv5EhTA4whltHCg8s0Bhxr7ace9JtipkZ2hKlL8w"/>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="bg-primary/90 text-white p-4 rounded shadow-xl flex items-center gap-3">
+<span class="material-symbols-outlined">edit_location_alt</span>
+<span class="text-body-sm font-semibold">Map Interactive Layer Active</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Properties Sidebar (Right) -->
+<aside class="w-[300px] flex flex-col gap-gutter">
+<!-- Document Outline -->
+<div class="bg-surface-card border border-border-subtle rounded-lg p-6">
+<h3 class="font-label-caps text-label-caps text-outline mb-4">Document Outline</h3>
+<ul class="flex flex-col gap-2">
+<li class="flex items-center justify-between text-body-sm group cursor-pointer hover:text-secondary transition-colors">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                Executive Summary
+                            </span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-[18px]">drag_indicator</span>
+</li>
+<li class="flex items-center justify-between text-body-sm group cursor-pointer hover:text-secondary transition-colors">
+<span class="flex items-center gap-2 font-semibold text-secondary">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                Analysis Methodology
+                            </span>
+<span class="material-symbols-outlined opacity-100 text-[18px]">drag_indicator</span>
+</li>
+<li class="flex items-center justify-between text-body-sm group cursor-pointer hover:text-secondary transition-colors">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                Performance Results
+                            </span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-[18px]">drag_indicator</span>
+</li>
+<li class="flex items-center justify-between text-body-sm group cursor-pointer hover:text-secondary transition-colors">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                Map Figures
+                            </span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-[18px]">drag_indicator</span>
+</li>
+<li class="flex items-center justify-between text-body-sm group cursor-pointer hover:text-secondary transition-colors opacity-50">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">circle</span>
+                                Mitigation Strategies
+                            </span>
+</li>
+</ul>
+<button class="mt-6 w-full border border-dashed border-outline-variant py-2 rounded text-body-sm text-on-surface-variant hover:bg-surface-container transition-colors">
+                        + Add Section
+                    </button>
+</div>
+<!-- Properties Panel -->
+<div class="bg-surface-card border border-border-subtle rounded-lg p-6">
+<h3 class="font-label-caps text-label-caps text-outline mb-4">Draft Metadata</h3>
+<div class="flex flex-col gap-4">
+<div>
+<label class="text-label-caps text-outline block mb-1">Status</label>
+<div class="flex items-center justify-between bg-surface-container-low px-3 py-2 rounded border border-border-subtle">
+<span class="text-body-sm font-semibold text-status-warning">Internal Review</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</div>
+</div>
+<div>
+<label class="text-label-caps text-outline block mb-1">Lead Engineer</label>
+<input class="w-full text-body-sm bg-transparent border-b border-border-subtle focus:border-secondary outline-none py-1" type="text" value="David Miller, P.E."/>
+</div>
+<div>
+<label class="text-label-caps text-outline block mb-1">Jurisdiction</label>
+<input class="w-full text-body-sm bg-transparent border-b border-border-subtle focus:border-secondary outline-none py-1" type="text" value="Metropolis DOT"/>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<input checked="" class="w-4 h-4 rounded text-secondary border-outline-variant focus:ring-0" type="checkbox"/>
+<span class="text-body-sm">Auto-include Formulas</span>
+</div>
+</div>
+</div>
+<!-- Formula Verification (Special Component) -->
+<div class="rounded-lg overflow-hidden border border-border-subtle shadow-sm">
+<div class="bg-beta-accent p-3 flex items-center justify-between">
+<span class="text-white font-label-caps text-label-caps">Formula Verification</span>
+<span class="material-symbols-outlined text-white text-[18px]">verified</span>
+</div>
+<div class="bg-surface-card p-4">
+<div class="grid grid-cols-2 gap-2 text-[11px] font-formula-ref">
+<div class="text-outline">HCM REF:</div>
+<div class="text-right">Live Result:</div>
+<div class="p-1.5 bg-surface-container text-on-surface rounded">X = 0.842</div>
+<div class="p-1.5 bg-status-success/10 text-status-success rounded text-right">X = 0.842</div>
+</div>
+<div class="mt-3 text-center">
+<span class="text-[10px] text-on-surface-variant font-semibold">Matching HCM Chapter 19</span>
+</div>
+</div>
+</div>
+</aside>
+</main>
+</div>
+<!-- FAB (Suppressed based on Rules - Not relevant for Report Details screen) -->
+</body></html>

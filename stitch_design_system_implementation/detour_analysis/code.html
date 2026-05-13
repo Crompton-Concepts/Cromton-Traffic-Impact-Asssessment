@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Detour Analysis | Cromton TIA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "secondary": "#0058be",
+                        "surface-container-high": "#eae7e9",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary": "#091426",
+                        "status-info": "#6366F1",
+                        "tertiary-fixed-dim": "#ddc39d",
+                        "inverse-primary": "#bcc7de",
+                        "secondary-container": "#2170e4",
+                        "surface-variant": "#e4e2e3",
+                        "tertiary-fixed": "#fadfb8",
+                        "on-primary-fixed": "#111c2d",
+                        "border-subtle": "#E2E8F0",
+                        "surface-container": "#f0edef",
+                        "on-secondary-fixed": "#001a42",
+                        "inverse-surface": "#303032",
+                        "on-surface-variant": "#45474c",
+                        "vcr-high": "#F97316",
+                        "status-warning": "#F59E0B",
+                        "on-secondary-container": "#fefcff",
+                        "vcr-critical": "#DC2626",
+                        "on-primary": "#ffffff",
+                        "beta-accent": "#8B5CF6",
+                        "on-surface": "#1b1b1d",
+                        "surface-container-highest": "#e4e2e3",
+                        "on-tertiary-container": "#a38c6a",
+                        "surface-card": "#FFFFFF",
+                        "surface-tint": "#545f73",
+                        "outline-variant": "#c5c6cd",
+                        "on-tertiary-fixed-variant": "#564427",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-background": "#1b1b1d",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "status-success": "#10B981",
+                        "on-tertiary-fixed": "#271902",
+                        "vcr-medium": "#EAB308",
+                        "surface-dim": "#dcd9db",
+                        "status-danger": "#EF4444",
+                        "surface-background": "#F8FAFC",
+                        "on-error": "#ffffff",
+                        "outline": "#75777d",
+                        "primary-fixed-dim": "#bcc7de",
+                        "inverse-on-surface": "#f3f0f2",
+                        "on-primary-container": "#8590a6",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "engineering-blue": "#0369A1",
+                        "surface-container-low": "#f5f3f4",
+                        "primary-fixed": "#d8e3fb",
+                        "on-tertiary": "#ffffff",
+                        "vcr-low": "#22C55E",
+                        "tertiary-container": "#35260c",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fbf8fa",
+                        "surface": "#fbf8fa",
+                        "primary-container": "#1e293b",
+                        "background": "#fbf8fa",
+                        "tertiary": "#1e1200"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "table-cell-padding": "8px 12px",
+                        "sidebar-width": "320px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "input-gap": "12px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "formula-ref": ["JetBrains Mono"],
+                        "data-mono": ["JetBrains Mono"],
+                        "body-base": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "formula-ref": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                        "body-base": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "title-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-sm": ["13px", {"lineHeight": "1.4", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .map-gradient-overlay {
+            background: linear-gradient(to bottom, rgba(9, 20, 38, 0.4) 0%, rgba(9, 20, 38, 0) 20%, rgba(9, 20, 38, 0) 80%, rgba(9, 20, 38, 0.4) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-background font-body-base text-on-background selection:bg-secondary-fixed">
+<!-- TopAppBar -->
+<header class="bg-primary dark:bg-primary text-on-primary flex justify-between items-center w-full px-gutter h-16 fixed top-0 z-50 border-b border-on-primary-container">
+<div class="flex items-center gap-unit">
+<span class="material-symbols-outlined text-on-primary" data-icon="traffic">traffic</span>
+<h1 class="text-headline-md font-headline-md font-extrabold text-on-primary tracking-tight">Cromton TIA</h1>
+</div>
+<button class="flex items-center gap-2 bg-secondary-container px-4 py-2 rounded-lg text-on-secondary-container font-bold hover:bg-primary-container transition-colors active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+<span class="font-label-caps text-label-caps">Export Report</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-16 pb-20 md:pb-0 min-h-screen flex flex-col">
+<!-- Map Stage (Mobile Focused) -->
+<div class="relative w-full h-[353px] md:h-[442px] bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover grayscale-[0.2]" data-alt="A high-resolution aerial satellite view of a complex urban grid system with multi-lane roads and intersections. The map style is clean and professional, using a muted slate and grey color palette consistent with engineering software. Thin, vibrant blue and orange lines overlay the streets to represent traffic detours and volume-to-capacity ratios. The lighting is even and technical, highlighting civil infrastructure and topographical details." data-location="San Francisco" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDETTrEBUzL3BPiz8km4BsQL-EGfiYK-1MC-UoFa7cQppT0UjF18FPXAn3vy1_f1b1w1nZeiYWmVq602Yz3mLQzFnDkhBWnaV3aaz0r_y1cHdF0Zu20UrAuWxG_ag7ycgrjrI6tgocVclHmu8jh0BAOqkyVMaV9XmI4K0xTPcKbkLGRQ9yR2G7MTWsU1MZ4JtOo6ZTYAHjNtcP3J6zLk_ZpGJTUC4_5oIhz7V1wwVjm8ShadL8ZdT6moPn2i7kdPj2_Q_UlPwhlHMk"/>
+<!-- Map UI Overlays -->
+<div class="absolute inset-0 map-gradient-overlay pointer-events-none"></div>
+<div class="absolute top-4 left-4 flex flex-col gap-2">
+<div class="bg-surface-card p-2 rounded shadow-lg border border-border-subtle flex flex-col gap-2">
+<button class="w-8 h-8 flex items-center justify-center hover:bg-surface-container transition-colors"><span class="material-symbols-outlined" data-icon="add">add</span></button>
+<div class="h-px bg-border-subtle w-full"></div>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-surface-container transition-colors"><span class="material-symbols-outlined" data-icon="remove">remove</span></button>
+</div>
+<button class="bg-surface-card w-8 h-8 rounded shadow-lg border border-border-subtle flex items-center justify-center hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="my_location">my_location</span>
+</button>
+</div>
+<!-- Active Detour Badge -->
+<div class="absolute bottom-4 left-4 right-4">
+<div class="bg-primary/90 backdrop-blur-md text-on-primary p-3 rounded-xl border border-on-primary-container shadow-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-fixed" data-icon="route">route</span>
+<div>
+<p class="font-label-caps text-[10px] opacity-70">CURRENT SELECTION</p>
+<p class="font-title-sm text-[14px]">I-280 Northbound Bypass</p>
+</div>
+</div>
+<span class="bg-secondary px-2 py-1 rounded text-[10px] font-bold">ACTIVE</span>
+</div>
+</div>
+</div>
+<!-- Analysis Panel (Scrollable Section) -->
+<div class="flex-1 px-gutter py-gutter space-y-6 max-w-lg mx-auto w-full">
+<!-- Input Section: Route Configuration -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary" data-icon="settings_input_component">settings_input_component</span>
+<h2 class="font-title-sm text-title-sm text-primary">Analysis Parameters</h2>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<div class="space-y-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant">ROUTE NAME</label>
+<input class="w-full bg-surface-card border-none border-b-2 border-outline-variant focus:border-secondary focus:ring-0 text-body-base py-2 px-0 transition-all" type="text" value="I-280 Northbound Bypass"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant">VEHICLE CLASS</label>
+<select class="w-full bg-surface-card border-none border-b-2 border-outline-variant focus:border-secondary focus:ring-0 text-body-base py-2 px-0">
+<option>Mixed Passenger</option>
+<option>Heavy Logistics</option>
+<option>Emergency Service</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant">PEAK FACTOR</label>
+<input class="w-full bg-surface-card border-none border-b-2 border-outline-variant focus:border-secondary focus:ring-0 text-body-base py-2 px-0" type="number" value="0.92"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Metrics: Detour Route Stress -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-vcr-critical" data-icon="query_stats">query_stats</span>
+<h2 class="font-title-sm text-title-sm text-primary">Detour Route Stress</h2>
+</div>
+<span class="text-data-mono text-data-mono text-vcr-high bg-vcr-high/10 px-2 py-0.5 rounded">HIGH LOAD</span>
+</div>
+<!-- Bento Style Metrics Grid -->
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-card p-4 rounded-xl border border-border-subtle shadow-sm flex flex-col gap-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">TIME DELTA</span>
+<div class="flex items-baseline gap-1">
+<span class="text-display-lg font-display-lg text-primary">+14.2</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">min</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden mt-2">
+<div class="bg-vcr-high h-full w-[72%]"></div>
+</div>
+</div>
+<div class="bg-surface-card p-4 rounded-xl border border-border-subtle shadow-sm flex flex-col gap-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">DIST. DELTA</span>
+<div class="flex items-baseline gap-1">
+<span class="text-display-lg font-display-lg text-primary">3.8</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">mi</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden mt-2">
+<div class="bg-vcr-medium h-full w-[45%]"></div>
+</div>
+</div>
+<div class="col-span-2 bg-primary text-on-primary p-4 rounded-xl border border-on-primary-container shadow-sm flex items-center justify-between">
+<div>
+<span class="font-label-caps text-[10px] opacity-70">CALCULATED LOS</span>
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-headline-md text-vcr-high">LOS D</span>
+<span class="text-body-sm opacity-80">(Approaching Capacity)</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[32px] opacity-20" data-icon="warning">warning</span>
+</div>
+</div>
+</section>
+<!-- Formula Verification (Engineering Detail) -->
+<section class="bg-surface-container p-4 rounded-xl border border-border-subtle space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-beta-accent" data-icon="functions">functions</span>
+<span class="font-label-caps text-label-caps text-primary">FORMULA VERIFICATION</span>
+</div>
+<button class="text-secondary font-label-caps text-[10px] hover:underline">VIEW DOCS</button>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded font-formula-ref text-formula-ref border border-outline-variant overflow-x-auto">
+<code class="text-on-surface-variant">Stress_Index = ((ΔT * W_t) + (ΔD * W_d)) / Capacity_Residue</code>
+<div class="mt-2 text-secondary-fixed-variant">
+                        Result: <span class="font-bold">0.842 (VCR Adjusted)</span>
+</div>
+</div>
+</section>
+<!-- Action Area -->
+<div class="pt-4 space-y-3">
+<button class="w-full bg-secondary text-on-secondary py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-secondary/20 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+                    COMMIT ANALYSIS TO PROJECT
+                </button>
+<button class="w-full border border-outline text-on-surface-variant py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+                    RECALCULATE GEOMETRY
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Shell) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-surface-container-highest dark:bg-surface-container-lowest border-t border-outline-variant shadow-lg h-16 flex justify-around items-center px-4">
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-[10px]">Dash</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all">
+<span class="material-symbols-outlined" data-icon="vertical_align_center">vertical_align_center</span>
+<span class="font-label-caps text-[10px]">Queue</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+<span class="font-label-caps text-[10px]">VCR</span>
+</div>
+<div class="flex flex-col items-center justify-center text-secondary font-bold active:bg-surface-variant transition-all">
+<span class="material-symbols-outlined" data-icon="map" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-label-caps text-[10px]">Map</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-caps text-[10px]">Docs</span>
+</div>
+</nav>
+</body></html>

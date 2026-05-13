@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SiteImpact Pro v2.4 - Detour Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-tertiary": "#ffffff",
+                        "status-success": "#10B981",
+                        "tertiary-fixed": "#fadfb8",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "error-container": "#ffdad6",
+                        "outline": "#75777d",
+                        "border-subtle": "#E2E8F0",
+                        "outline-variant": "#c5c6cd",
+                        "surface-bright": "#fbf8fa",
+                        "inverse-surface": "#303032",
+                        "surface": "#fbf8fa",
+                        "on-background": "#1b1b1d",
+                        "vcr-high": "#F97316",
+                        "vcr-low": "#22C55E",
+                        "primary-fixed": "#d8e3fb",
+                        "beta-accent": "#8B5CF6",
+                        "on-primary-fixed": "#111c2d",
+                        "on-surface-variant": "#45474c",
+                        "tertiary": "#1e1200",
+                        "surface-container-highest": "#e4e2e3",
+                        "secondary": "#0058be",
+                        "primary-container": "#1e293b",
+                        "on-secondary-container": "#fefcff",
+                        "on-tertiary-container": "#a38c6a",
+                        "on-secondary-fixed-variant": "#004395",
+                        "inverse-primary": "#bcc7de",
+                        "background": "#fbf8fa",
+                        "tertiary-fixed-dim": "#ddc39d",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "surface-container-high": "#eae7e9",
+                        "on-surface": "#1b1b1d",
+                        "engineering-blue": "#0369A1",
+                        "surface-background": "#F8FAFC",
+                        "surface-container-low": "#f5f3f4",
+                        "secondary-container": "#2170e4",
+                        "primary": "#091426",
+                        "status-warning": "#F59E0B",
+                        "on-primary-container": "#8590a6",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#dcd9db",
+                        "tertiary-container": "#35260c",
+                        "surface-tint": "#545f73",
+                        "primary-fixed-dim": "#bcc7de",
+                        "surface-container-lowest": "#ffffff",
+                        "status-info": "#6366F1",
+                        "vcr-medium": "#EAB308",
+                        "surface-card": "#FFFFFF",
+                        "on-tertiary-fixed": "#271902",
+                        "inverse-on-surface": "#f3f0f2",
+                        "surface-container": "#f0edef",
+                        "surface-variant": "#e4e2e3",
+                        "vcr-critical": "#DC2626",
+                        "status-danger": "#EF4444",
+                        "on-tertiary-fixed-variant": "#564427",
+                        "on-secondary-fixed": "#001a42",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "input-gap": "12px",
+                        "table-cell-padding": "8px 12px",
+                        "sidebar-width": "320px",
+                        "container-padding": "24px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "formula-ref": ["JetBrains Mono"],
+                        "data-mono": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-base": ["Inter"]
+                    },
+                    "fontSize": {
+                        "formula-ref": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                        "body-sm": ["13px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "title-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "body-base": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .sidebar-active {
+            background-color: #2170e4;
+            color: #fefcff;
+        }
+    </style>
+</head>
+<body class="bg-surface-background text-on-surface font-body-base antialiased overflow-hidden">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-primary dark:bg-primary-container text-on-primary dark:text-on-primary-container shadow-sm flex items-center justify-between px-container-padding h-20 z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-display-lg" data-icon="analytics">analytics</span>
+<h1 class="font-display-lg text-display-lg tracking-tight">SiteImpact Pro v2.4</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-on-primary-fixed-variant opacity-80 hover:bg-primary-fixed-variant/20 transition-colors cursor-pointer active:scale-95 px-3 py-1" href="#">Dashboard</a>
+<a class="text-on-primary font-bold border-b-2 border-on-primary cursor-pointer active:scale-95 px-3 py-1" href="#">Detours</a>
+<a class="text-on-primary-fixed-variant opacity-80 hover:bg-primary-fixed-variant/20 transition-colors cursor-pointer active:scale-95 px-3 py-1" href="#">Analysis</a>
+</nav>
+<button class="bg-secondary text-on-secondary px-6 py-2 rounded font-semibold hover:bg-secondary-container transition-colors active:scale-95">
+            Export TIA
+        </button>
+</div>
+</header>
+<div class="flex h-[calc(100vh-80px)] overflow-hidden">
+<!-- NavigationDrawer (Sidebar) -->
+<aside class="w-sidebar-width h-full flex flex-col bg-surface-card dark:bg-inverse-surface border-r border-border-subtle dark:border-outline-variant pt-8 pb-8 px-4 gap-input-gap shrink-0">
+<div class="mb-4">
+<span class="font-label-caps text-label-caps text-outline uppercase">Analysis Modules</span>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-base">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+<span class="font-body-base">Queueing</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+<span class="font-body-base">VCR/LOS</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container font-semibold rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="alt_route">alt_route</span>
+<span class="font-body-base">Detours</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-base">Settings</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-4 border-t border-border-subtle pt-6">
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-outline">CURRENT SCENARIO</label>
+<select class="w-full bg-surface text-body-base border border-outline-variant rounded px-3 py-2 outline-none focus:border-secondary">
+<option>Peak PM - Detour Active</option>
+<option>Baseline No-Build</option>
+<option>Full Development AM</option>
+</select>
+</div>
+<button class="w-full bg-engineering-blue text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="calculate">calculate</span>
+                Calculate Impact
+            </button>
+</div>
+</aside>
+<!-- Main Workspace (Stage) -->
+<main class="flex-1 relative flex flex-col min-w-0">
+<!-- Interactive Map Area -->
+<div class="flex-1 bg-surface-dim relative">
+<!-- Map Placeholder Image -->
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover grayscale opacity-60" data-alt="A highly detailed top-down GIS satellite map of an urban grid system with complex arterial intersections." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEbM2k50CvCGDbanp5pli1lJvWwArHciMiHhMm7-X9EiTCaVmd_20NF_WZl-uXMKPb17XZCwJf-V4HXdCMilyE40V5THfMOgqgPf374wd9PFGhAmBw5SGe711aoS3d9CRS1pZ-SamXbFZjVQJAPiQPxNAC9T5ZaE9wW-DyqrSOoaZZplGNz_LnNQeCP1nsmTVIBAbMDxrqxsrWXS8KQxyhdA31GUxV1wcQscGGOuEozSnhCxofUNKokPHhiztQk_B61CyktYB1t2A"/>
+</div>
+<!-- Map Overlays (Polylines represented by SVG) -->
+<svg class="absolute inset-0 w-full h-full z-10 pointer-events-none" viewbox="0 0 1000 1000">
+<path class="drop-shadow-md opacity-90" d="M200,800 L400,600 L600,600 L800,400" fill="none" stroke="#0058be" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"></path>
+<path class="drop-shadow-md opacity-90" d="M200,800 L200,400 L500,200 L800,400" fill="none" stroke="#F97316" stroke-dasharray="12,8" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"></path>
+<circle cx="200" cy="800" fill="#1b1b1d" r="10"></circle>
+<circle cx="800" cy="400" fill="#1b1b1d" r="10"></circle>
+</svg>
+<!-- Map Controls (Top Right) -->
+<div class="absolute top-6 right-6 z-20 flex flex-col gap-2">
+<button class="w-10 h-10 bg-white border border-border-subtle rounded flex items-center justify-center shadow-sm hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<button class="w-10 h-10 bg-white border border-border-subtle rounded flex items-center justify-center shadow-sm hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+<button class="w-10 h-10 bg-white border border-border-subtle rounded flex items-center justify-center shadow-sm hover:bg-surface-container-high mt-4 transition-colors">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+</button>
+</div>
+<!-- Floating Toolset (Top Left) -->
+<div class="absolute top-6 left-6 z-20 flex gap-2">
+<button class="bg-white border border-border-subtle px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-engineering-blue" data-icon="edit_road">edit_road</span>
+<span class="font-body-base font-medium">Add Route Segment</span>
+</button>
+<button class="bg-white border border-border-subtle px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-status-danger" data-icon="block">block</span>
+<span class="font-body-base font-medium">Clear Nodes</span>
+</button>
+</div>
+</div>
+<!-- Analysis Panel (Bottom Grid Matrix) -->
+<div class="h-[35%] bg-surface-card border-t border-border-subtle p-gutter grid grid-cols-12 gap-gutter overflow-y-auto">
+<!-- Metrics Card 1: Detour Route Stress -->
+<div class="col-span-4 bg-surface-background rounded-lg border border-border-subtle p-4 flex flex-col">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-title-sm text-title-sm">Detour Route Stress</h3>
+<span class="bg-vcr-high/10 text-vcr-high px-2 py-0.5 rounded text-[10px] font-bold">WARNING LEVEL 2</span>
+</div>
+<div class="grid grid-cols-2 gap-4 flex-1">
+<div class="p-3 bg-white rounded border border-border-subtle flex flex-col justify-center">
+<span class="text-outline font-label-caps text-label-caps">TIME DELTA</span>
+<span class="font-data-mono text-headline-md text-status-danger">+14.2 min</span>
+</div>
+<div class="p-3 bg-white rounded border border-border-subtle flex flex-col justify-center">
+<span class="text-outline font-label-caps text-label-caps">DIST. DELTA</span>
+<span class="font-data-mono text-headline-md text-engineering-blue">+3.8 km</span>
+</div>
+</div>
+</div>
+<!-- Metrics Card 2: Link Capacity Analysis -->
+<div class="col-span-8 bg-surface-background rounded-lg border border-border-subtle p-4">
+<div class="flex items-center justify-between mb-2">
+<h3 class="font-title-sm text-title-sm">Segment-Level Performance Matrix</h3>
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-label-caps"><span class="w-3 h-3 bg-vcr-low rounded-full"></span> LOS A-C</span>
+<span class="flex items-center gap-1 text-label-caps"><span class="w-3 h-3 bg-vcr-medium rounded-full"></span> LOS D</span>
+<span class="flex items-center gap-1 text-label-caps"><span class="w-3 h-3 bg-vcr-critical rounded-full"></span> LOS F</span>
+</div>
+</div>
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-high border-b border-border-subtle">
+<th class="p-table-cell-padding font-label-caps text-label-caps text-outline">LINK SEGMENT ID</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-outline">V/C RATIO</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-outline">DELAY (S)</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-outline">LOS</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-outline">SATURATION</th>
+</tr>
+</thead>
+<tbody class="font-data-mono divide-y divide-border-subtle">
+<tr class="hover:bg-surface-container transition-colors">
+<td class="p-table-cell-padding text-body-sm">LINK_A240_EB</td>
+<td class="p-table-cell-padding">0.88</td>
+<td class="p-table-cell-padding">42.4</td>
+<td class="p-table-cell-padding"><span class="bg-vcr-medium text-white px-2 py-0.5 rounded text-[10px]">D</span></td>
+<td class="p-table-cell-padding">
+<div class="w-full bg-outline-variant h-2 rounded-full overflow-hidden">
+<div class="bg-vcr-medium h-full" style="width: 88%"></div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors">
+<td class="p-table-cell-padding text-body-sm">LINK_M510_NB</td>
+<td class="p-table-cell-padding text-status-danger">1.14</td>
+<td class="p-table-cell-padding text-status-danger">128.9</td>
+<td class="p-table-cell-padding"><span class="bg-vcr-critical text-white px-2 py-0.5 rounded text-[10px]">F</span></td>
+<td class="p-table-cell-padding">
+<div class="w-full bg-outline-variant h-2 rounded-full overflow-hidden">
+<div class="bg-vcr-critical h-full" style="width: 100%"></div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors">
+<td class="p-table-cell-padding text-body-sm">LINK_R012_WB</td>
+<td class="p-table-cell-padding">0.45</td>
+<td class="p-table-cell-padding">12.1</td>
+<td class="p-table-cell-padding"><span class="bg-vcr-low text-white px-2 py-0.5 rounded text-[10px]">A</span></td>
+<td class="p-table-cell-padding">
+<div class="w-full bg-outline-variant h-2 rounded-full overflow-hidden">
+<div class="bg-vcr-low h-full" style="width: 45%"></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- Detour Configuration Panel (Right Side Panel) -->
+<aside class="w-sidebar-width h-full bg-white border-l border-border-subtle flex flex-col overflow-hidden shrink-0">
+<div class="p-6 border-b border-border-subtle bg-surface-container-lowest">
+<h2 class="font-title-sm text-title-sm">Detour Configuration</h2>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Basic Config -->
+<section class="space-y-4">
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-outline">ROUTE NAME</label>
+<input class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-body-base" type="text" value="Major Arterial Bypass A"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-outline">VEHICLE COMPOSITION (%)</label>
+<div class="grid grid-cols-2 gap-2">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-outline font-semibold">PAS</span>
+<input class="w-full bg-surface border border-outline-variant rounded pl-10 pr-3 py-2 text-body-base font-data-mono" type="number" value="82"/>
+</div>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-outline font-semibold">HGV</span>
+<input class="w-full bg-surface border border-outline-variant rounded pl-10 pr-3 py-2 text-body-base font-data-mono" type="number" value="18"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Proposed Detour Path Parameters -->
+<section class="p-4 bg-surface-container-low border border-border-subtle rounded-lg space-y-4">
+<h3 class="font-label-caps text-label-caps text-primary border-b border-border-subtle pb-2">Proposed Detour Path</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label class="text-[10px] text-outline font-bold">PATH LENGTH (KM)</label>
+<input class="w-full bg-white border border-outline-variant rounded px-2 py-1.5 text-body-sm font-data-mono" type="text" value="4.25"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[10px] text-outline font-bold">EST. SPEED (KM/H)</label>
+<input class="w-full bg-white border border-outline-variant rounded px-2 py-1.5 text-body-sm font-data-mono" type="text" value="35.0"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[10px] text-outline font-bold">SIGNALIZED INTERSECTIONS</label>
+<input class="w-full bg-white border border-outline-variant rounded px-2 py-1.5 text-body-sm font-data-mono" type="number" value="5"/>
+</div>
+</section>
+<!-- Simulation Controls -->
+<section class="space-y-4">
+<h3 class="font-label-caps text-label-caps text-outline">SIMULATION CONTROLS</h3>
+<div class="space-y-3">
+<label class="flex items-center justify-between p-3 bg-surface border border-border-subtle rounded cursor-pointer hover:bg-surface-container transition-colors">
+<span class="text-body-sm font-medium">Signal Optimization</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</div>
+</label>
+<label class="flex items-center justify-between p-3 bg-surface border border-border-subtle rounded cursor-pointer hover:bg-surface-container transition-colors">
+<span class="text-body-sm font-medium">Saturation Flow Decay</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</div>
+</label>
+</div>
+</section>
+<!-- Verification Status -->
+<div class="p-4 bg-beta-accent/5 border border-beta-accent/20 rounded-lg">
+<div class="flex items-center gap-2 mb-2 text-beta-accent">
+<span class="material-symbols-outlined text-[18px]" data-icon="verified">verified</span>
+<span class="font-label-caps text-label-caps">HCM 7TH ED. VERIFIED</span>
+</div>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">
+                    Calculating using the HCM Generalized Service Volume methodology for multi-lane arterials. Adjustments for heavy vehicle PCEs applied.
+                </p>
+</div>
+</div>
+<!-- Formula Verification Mini-Panel -->
+<div class="p-6 border-t border-border-subtle bg-primary-container text-on-primary-container">
+<div class="flex items-center gap-2 mb-2 opacity-60">
+<span class="material-symbols-outlined text-[16px]" data-icon="terminal">terminal</span>
+<span class="font-formula-ref text-formula-ref uppercase tracking-wider">Formula Hook</span>
+</div>
+<code class="font-formula-ref text-formula-ref block break-all">
+                VCR_adj = (V_p / f_hv) / (C * f_g * f_p)
+            </code>
+<div class="mt-2 text-[10px] opacity-40 font-formula-ref">
+                Reference: HCM 17-23 (Detour Vol)
+            </div>
+</div>
+</aside>
+</div>
+</body></html>

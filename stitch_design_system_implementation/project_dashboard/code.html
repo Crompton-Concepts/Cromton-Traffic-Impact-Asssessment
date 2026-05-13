@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cromton TIA - Mobile Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "secondary": "#0058be",
+                        "surface-container-high": "#eae7e9",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary": "#091426",
+                        "status-info": "#6366F1",
+                        "tertiary-fixed-dim": "#ddc39d",
+                        "inverse-primary": "#bcc7de",
+                        "secondary-container": "#2170e4",
+                        "surface-variant": "#e4e2e3",
+                        "tertiary-fixed": "#fadfb8",
+                        "on-primary-fixed": "#111c2d",
+                        "border-subtle": "#E2E8F0",
+                        "surface-container": "#f0edef",
+                        "on-secondary-fixed": "#001a42",
+                        "inverse-surface": "#303032",
+                        "on-surface-variant": "#45474c",
+                        "vcr-high": "#F97316",
+                        "status-warning": "#F59E0B",
+                        "on-secondary-container": "#fefcff",
+                        "vcr-critical": "#DC2626",
+                        "on-primary": "#ffffff",
+                        "beta-accent": "#8B5CF6",
+                        "on-surface": "#1b1b1d",
+                        "surface-container-highest": "#e4e2e3",
+                        "on-tertiary-container": "#a38c6a",
+                        "surface-card": "#FFFFFF",
+                        "surface-tint": "#545f73",
+                        "outline-variant": "#c5c6cd",
+                        "on-tertiary-fixed-variant": "#564427",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-background": "#1b1b1d",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "status-success": "#10B981",
+                        "on-tertiary-fixed": "#271902",
+                        "vcr-medium": "#EAB308",
+                        "surface-dim": "#dcd9db",
+                        "status-danger": "#EF4444",
+                        "surface-background": "#F8FAFC",
+                        "on-error": "#ffffff",
+                        "outline": "#75777d",
+                        "primary-fixed-dim": "#bcc7de",
+                        "inverse-on-surface": "#f3f0f2",
+                        "on-primary-container": "#8590a6",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "engineering-blue": "#0369A1",
+                        "surface-container-low": "#f5f3f4",
+                        "primary-fixed": "#d8e3fb",
+                        "on-tertiary": "#ffffff",
+                        "vcr-low": "#22C55E",
+                        "tertiary-container": "#35260c",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fbf8fa",
+                        "surface": "#fbf8fa",
+                        "primary-container": "#1e293b",
+                        "background": "#fbf8fa",
+                        "tertiary": "#1e1200"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "table-cell-padding": "8px 12px",
+                        "sidebar-width": "320px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "input-gap": "12px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "formula-ref": ["JetBrains Mono"],
+                        "data-mono": ["JetBrains Mono"],
+                        "body-base": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "formula-ref": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                        "body-base": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "title-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-sm": ["13px", {"lineHeight": "1.4", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-background text-on-surface">
+<!-- TopAppBar Component -->
+<header class="bg-primary text-on-primary docked full-width top-0 border-b border-on-primary-container flex justify-between items-center w-full px-gutter h-16 z-50 fixed">
+<div class="flex items-center gap-unit">
+<span class="material-symbols-outlined" data-icon="traffic">traffic</span>
+<h1 class="text-headline-md font-headline-md font-extrabold text-on-primary tracking-tight">Cromton TIA</h1>
+</div>
+<button class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-label-caps text-label-caps hover:bg-primary-container transition-colors active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+            Export Report
+        </button>
+</header>
+<main class="pt-20 pb-24 px-4 min-h-screen">
+<!-- Dashboard Welcome Section -->
+<section class="mb-6">
+<div class="flex justify-between items-end mb-4">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">SYSTEM STATUS: ACTIVE</p>
+<h2 class="font-display-lg text-display-lg text-primary">Analysis Dashboard</h2>
+</div>
+</div>
+<!-- Quick Start Action -->
+<button class="w-full bg-secondary text-on-secondary py-4 px-6 rounded-xl flex justify-between items-center shadow-lg hover:bg-secondary-container transition-all group">
+<div class="text-left">
+<span class="font-label-caps text-[10px] opacity-80">NEW PROJECT</span>
+<p class="font-title-sm text-title-sm font-bold">Start New Analysis</p>
+</div>
+<span class="material-symbols-outlined text-[32px] group-active:translate-x-1 transition-transform" data-icon="add_circle">add_circle</span>
+</button>
+</section>
+<!-- KPI Grid (Bento Style) -->
+<section class="grid grid-cols-2 gap-4 mb-6">
+<!-- Max Queue KPI -->
+<div class="col-span-1 bg-surface-card border border-border-subtle p-4 rounded-xl">
+<div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="queue">queue</span>
+<span class="font-label-caps text-label-caps">MAX QUEUE</span>
+</div>
+<p class="font-data-mono text-[28px] text-primary">142<span class="text-[14px] ml-1">ft</span></p>
+<div class="mt-2 flex items-center gap-1 text-status-success">
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_downward">arrow_downward</span>
+<span class="font-body-sm text-body-sm">4.2%</span>
+</div>
+</div>
+<!-- Avg VCR KPI -->
+<div class="col-span-1 bg-surface-card border border-border-subtle p-4 rounded-xl">
+<div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="speed">speed</span>
+<span class="font-label-caps text-label-caps">AVG VCR</span>
+</div>
+<p class="font-data-mono text-[28px] text-vcr-medium">0.84</p>
+<div class="mt-2 flex items-center gap-1 text-status-warning">
+<span class="font-body-sm text-body-sm">Near Capacity</span>
+</div>
+</div>
+<!-- LOS Summary (Full Width Bento) -->
+<div class="col-span-2 bg-surface-card border border-border-subtle p-4 rounded-xl flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-caps text-label-caps">OVERALL LOS</span>
+</div>
+<p class="font-display-lg text-display-lg text-primary">Level C</p>
+</div>
+<div class="flex gap-1">
+<div class="h-8 w-8 rounded bg-vcr-low flex items-center justify-center text-on-primary font-bold text-[12px]">A</div>
+<div class="h-8 w-8 rounded bg-vcr-low flex items-center justify-center text-on-primary font-bold text-[12px]">B</div>
+<div class="h-10 w-10 rounded bg-vcr-medium flex items-center justify-center text-on-primary font-bold text-[14px] ring-2 ring-primary ring-offset-2">C</div>
+<div class="h-8 w-8 rounded bg-vcr-high opacity-40 flex items-center justify-center text-on-primary font-bold text-[12px]">D</div>
+<div class="h-8 w-8 rounded bg-vcr-critical opacity-40 flex items-center justify-center text-on-primary font-bold text-[12px]">F</div>
+</div>
+</div>
+</section>
+<!-- Map Summary Visualization -->
+<section class="mb-6">
+<div class="bg-surface-card border border-border-subtle rounded-xl overflow-hidden shadow-sm">
+<div class="p-4 flex justify-between items-center border-b border-border-subtle">
+<h3 class="font-title-sm text-title-sm">Active Project Map</h3>
+<span class="bg-status-info/10 text-status-info px-2 py-0.5 rounded text-[10px] font-bold">LATEST SYNC: 2M AGO</span>
+</div>
+<div class="relative h-48 w-full bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A clean, top-down technical map visualization of an urban intersection with semi-transparent traffic flow overlays. The map features a professional grayscale base with highlighted engineering vectors in secondary blue and status markers in emerald green and amber. The visual style is systematic, precise, and high-fidelity, resembling a modern traffic analysis tool. Soft ambient lighting illuminates the digital terrain for a premium light-mode UI aesthetic." data-location="San Francisco" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeiab1rLDh5fj92-WQbCGdtx7p533ifKORRWXNPlx2hpwCT-xDmSaDTx0yomas1ifm5pECXKfJL1bbobSYiQVQEbJNQTbGEzfL37Sw6Zmp2iCEPxe--I3FYk_Y5t5YINRiSEh2JkQoK3U18yUEsqNOcKzJPVEJZcpyENe297pm9VW1ac0EvYbBd3vSu6CJeOaX-EoC5zJJaw-0NVgYkbPR6B3V4NFvOr6Yyi3RCL0lipve1ead9RWdS_Q5E5OKjttb8WvcDpnChYI"/>
+<div class="absolute inset-0 bg-primary/10 pointer-events-none"></div>
+<div class="absolute bottom-3 left-3 bg-surface-card/90 backdrop-blur px-3 py-2 rounded border border-border-subtle shadow-sm">
+<p class="font-label-caps text-[10px] text-on-surface-variant">INTERSECTION ID</p>
+<p class="font-data-mono text-[13px] font-bold">SF-24-MARKET-7TH</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Calculations -->
+<section class="mb-6">
+<h3 class="font-title-sm text-title-sm mb-3 px-1">Recent Calculations</h3>
+<div class="space-y-3">
+<!-- Calc Item 1 -->
+<div class="bg-surface-card border border-border-subtle p-4 rounded-xl flex items-center gap-4 active:bg-surface-container-low transition-colors">
+<div class="bg-vcr-low/10 text-vcr-low h-12 w-12 rounded-lg flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+</div>
+<div class="flex-grow min-w-0">
+<p class="font-body-base font-bold text-primary truncate">PM Peak - Detour Analysis</p>
+<p class="font-body-sm text-on-surface-variant">24m ago • Market St. Corridor</p>
+</div>
+<div class="text-right">
+<p class="font-data-mono font-bold text-vcr-low">LOS B</p>
+<p class="font-label-caps text-[9px] text-on-surface-variant">0.68 VCR</p>
+</div>
+</div>
+<!-- Calc Item 2 -->
+<div class="bg-surface-card border border-border-subtle p-4 rounded-xl flex items-center gap-4 active:bg-surface-container-low transition-colors">
+<div class="bg-vcr-high/10 text-vcr-high h-12 w-12 rounded-lg flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" data-icon="vertical_align_center">vertical_align_center</span>
+</div>
+<div class="flex-grow min-w-0">
+<p class="font-body-base font-bold text-primary truncate">AM Baseline Volume</p>
+<p class="font-body-sm text-on-surface-variant">2h ago • 7th &amp; Mission</p>
+</div>
+<div class="text-right">
+<p class="font-data-mono font-bold text-vcr-high">LOS D</p>
+<p class="font-label-caps text-[9px] text-on-surface-variant">0.91 VCR</p>
+</div>
+</div>
+<!-- Calc Item 3 -->
+<div class="bg-surface-card border border-border-subtle p-4 rounded-xl flex items-center gap-4 active:bg-surface-container-low transition-colors">
+<div class="bg-status-info/10 text-status-info h-12 w-12 rounded-lg flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<div class="flex-grow min-w-0">
+<p class="font-body-base font-bold text-primary truncate">Intersection Capacity Report</p>
+<p class="font-body-sm text-on-surface-variant">Yesterday • Full Study Area</p>
+</div>
+<div class="text-right">
+<p class="font-data-mono font-bold text-primary">GEN</p>
+<p class="font-label-caps text-[9px] text-on-surface-variant">COMPLETE</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 py-3 border border-dashed border-outline-variant rounded-xl text-on-surface-variant font-label-caps text-label-caps hover:bg-surface-container-low transition-colors">
+                VIEW ALL CALCULATIONS
+            </button>
+</section>
+<!-- Formula Verification Harness -->
+<section class="bg-surface-container p-4 rounded-2xl border border-border-subtle mb-8">
+<div class="flex items-center gap-2 mb-3">
+<div class="bg-beta-accent h-2 w-2 rounded-full animate-pulse"></div>
+<h4 class="font-label-caps text-label-caps text-beta-accent">LIVE FORMULA VERIFICATION</h4>
+</div>
+<div class="grid grid-cols-2 gap-2 font-data-mono text-[11px]">
+<div class="bg-surface-card p-2 rounded border border-border-subtle">
+<p class="text-on-surface-variant mb-1 font-label-caps opacity-60">REF IMPL</p>
+<code class="text-on-surface">VCR = Σ(v_i/c_i) * k</code>
+</div>
+<div class="bg-surface-card p-2 rounded border border-border-subtle border-status-success">
+<p class="text-status-success mb-1 font-label-caps opacity-60">LIVE APP</p>
+<code class="text-on-surface">VCR = 0.84221 [PASS]</code>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Component -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-surface-container-highest dark:bg-surface-container-lowest border-t border-outline-variant shadow-lg flex justify-around items-center h-16 px-4">
+<a class="flex flex-col items-center justify-center text-secondary font-bold active:bg-surface-variant transition-all scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-caps text-[10px]">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="vertical_align_center">vertical_align_center</span>
+<span class="font-label-caps text-[10px]">Queue</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+<span class="font-label-caps text-[10px]">VCR</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-label-caps text-[10px]">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-caps text-[10px]">Docs</span>
+</a>
+</nav>
+</body></html>

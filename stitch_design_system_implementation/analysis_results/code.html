@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error-container": "#93000a",
+                    "secondary": "#0058be",
+                    "surface-container-high": "#eae7e9",
+                    "secondary-fixed": "#d8e2ff",
+                    "primary": "#091426",
+                    "status-info": "#6366F1",
+                    "tertiary-fixed-dim": "#ddc39d",
+                    "inverse-primary": "#bcc7de",
+                    "secondary-container": "#2170e4",
+                    "surface-variant": "#e4e2e3",
+                    "tertiary-fixed": "#fadfb8",
+                    "on-primary-fixed": "#111c2d",
+                    "border-subtle": "#E2E8F0",
+                    "surface-container": "#f0edef",
+                    "on-secondary-fixed": "#001a42",
+                    "inverse-surface": "#303032",
+                    "on-surface-variant": "#45474c",
+                    "vcr-high": "#F97316",
+                    "status-warning": "#F59E0B",
+                    "on-secondary-container": "#fefcff",
+                    "vcr-critical": "#DC2626",
+                    "on-primary": "#ffffff",
+                    "beta-accent": "#8B5CF6",
+                    "on-surface": "#1b1b1d",
+                    "surface-container-highest": "#e4e2e3",
+                    "on-tertiary-container": "#a38c6a",
+                    "surface-card": "#FFFFFF",
+                    "surface-tint": "#545f73",
+                    "outline-variant": "#c5c6cd",
+                    "on-tertiary-fixed-variant": "#564427",
+                    "error-container": "#ffdad6",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "on-secondary-fixed-variant": "#004395",
+                    "on-background": "#1b1b1d",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "status-success": "#10B981",
+                    "on-tertiary-fixed": "#271902",
+                    "vcr-medium": "#EAB308",
+                    "surface-dim": "#dcd9db",
+                    "status-danger": "#EF4444",
+                    "surface-background": "#F8FAFC",
+                    "on-error": "#ffffff",
+                    "outline": "#75777d",
+                    "primary-fixed-dim": "#bcc7de",
+                    "inverse-on-surface": "#f3f0f2",
+                    "on-primary-container": "#8590a6",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "engineering-blue": "#0369A1",
+                    "surface-container-low": "#f5f3f4",
+                    "primary-fixed": "#d8e3fb",
+                    "on-tertiary": "#ffffff",
+                    "vcr-low": "#22C55E",
+                    "tertiary-container": "#35260c",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#fbf8fa",
+                    "surface": "#fbf8fa",
+                    "primary-container": "#1e293b",
+                    "background": "#fbf8fa",
+                    "tertiary": "#1e1200"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "table-cell-padding": "8px 12px",
+                    "sidebar-width": "320px",
+                    "gutter": "16px",
+                    "container-padding": "24px",
+                    "input-gap": "12px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "formula-ref": ["JetBrains Mono"],
+                    "data-mono": ["JetBrains Mono"],
+                    "body-base": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "title-sm": ["Inter"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "formula-ref": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "data-mono": ["13px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                    "body-base": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["11px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "display-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "title-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-sm": ["13px", {"lineHeight": "1.4", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-background text-on-background min-h-screen pb-20">
+<!-- TopAppBar -->
+<header class="bg-primary flex justify-between items-center w-full px-gutter h-16 docked full-width top-0 z-50 border-b border-on-primary-container">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-primary">traffic</span>
+<h1 class="text-headline-md font-headline-md font-extrabold text-on-primary tracking-tight">Cromton TIA</h1>
+</div>
+<button class="bg-primary-container text-on-primary font-label-caps text-label-caps px-4 py-2 rounded transition-colors hover:bg-opacity-80 active:scale-95">
+            Export Report
+        </button>
+</header>
+<main class="p-gutter flex flex-col gap-gutter">
+<!-- Site Context Header -->
+<section class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<h2 class="font-title-sm text-title-sm text-on-surface">Intersection Result: SR-92 at North St</h2>
+<span class="bg-status-success text-white px-2 py-0.5 rounded-full font-label-caps text-[10px]">VERIFIED</span>
+</div>
+<!-- Small Interactive Map Preview -->
+<div class="relative w-full h-32 rounded-xl overflow-hidden border border-border-subtle group">
+<img alt="Map view of SR-92 and North St intersection" class="w-full h-full object-cover grayscale-[0.5]" data-alt="A detailed, clean aerial map view of a metropolitan intersection featuring SR-92 and North St. The map is rendered in a minimalist light-mode aesthetic with muted greys and crisp whites, reflecting a professional engineering context. Vibrant blue semi-transparent lines overlay the traffic paths, indicating planned detour routes. Soft lighting suggests a clear daytime atmosphere, maintaining a high-performance technical utility feel." data-location="San Francisco" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxBUH3tG8T4t4eKhiOlnV0of5Z6c5oirLqw39TyIksws8H0QhNXrjN-_mjnfQWpO8thhaf4F2xmU2uNF7u051A__mtjk9Ga8qp5dvLWeyAmLwBwnGVtjmt39Nc4qX_XyRir7kk4xCm0wLRrhyalqkNHA2Kf3VEOm7xEyjwg6Xz05Jm6uwmI_cl__OT3N1V344gDb1fTeUnEGYUH1NIcyu9qgw__gflcCnWGTRv8BahYFoxofjKpySATXlsNaUrR-DB5WXrx0Lr9NA"/>
+<div class="absolute inset-0 bg-primary/10 pointer-events-none group-hover:bg-transparent transition-colors"></div>
+<div class="absolute bottom-2 right-2 flex gap-1">
+<button class="bg-surface-card p-1 shadow-md rounded border border-border-subtle">
+<span class="material-symbols-outlined text-[18px]">open_in_full</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Toggle Switch -->
+<div class="bg-surface-container-high p-1 rounded-lg flex gap-1">
+<button class="flex-1 py-2 bg-surface-card shadow-sm rounded-md font-label-caps text-label-caps text-secondary text-center">
+                MATRIX VIEW
+            </button>
+<button class="flex-1 py-2 rounded-md font-label-caps text-label-caps text-on-surface-variant text-center hover:bg-surface-container transition-colors">
+                CHART VIEW
+            </button>
+</div>
+<!-- Matrix Section (Hourly Queue & Capacity) -->
+<section class="bg-surface-card rounded-xl border border-border-subtle overflow-hidden">
+<div class="p-3 border-b border-border-subtle bg-surface-container-low flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">QUEUE &amp; CAPACITY MATRIX (HOURLY)</span>
+<span class="material-symbols-outlined text-secondary text-sm">info</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-surface-container-high">
+<th class="font-label-caps text-label-caps text-left p-3 border-b border-border-subtle min-w-[80px]">TIME</th>
+<th class="font-label-caps text-label-caps text-center p-3 border-b border-border-subtle">VOL</th>
+<th class="font-label-caps text-label-caps text-center p-3 border-b border-border-subtle">VCR</th>
+<th class="font-label-caps text-label-caps text-center p-3 border-b border-border-subtle">LOS</th>
+</tr>
+</thead>
+<tbody class="font-data-mono text-data-mono">
+<tr class="hover:bg-surface-container-low border-b border-border-subtle transition-colors">
+<td class="p-3 font-body-base text-on-surface">07:00 AM</td>
+<td class="p-3 text-center">1,240</td>
+<td class="p-3 text-center">0.65</td>
+<td class="p-3 text-center">
+<span class="bg-vcr-low text-white px-2 py-0.5 rounded font-label-caps text-[10px]">A</span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low border-b border-border-subtle transition-colors">
+<td class="p-3 font-body-base text-on-surface">08:00 AM</td>
+<td class="p-3 text-center">1,890</td>
+<td class="p-3 text-center text-vcr-medium">0.82</td>
+<td class="p-3 text-center">
+<span class="bg-vcr-medium text-white px-2 py-0.5 rounded font-label-caps text-[10px]">C</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low border-b border-border-subtle transition-colors">
+<td class="p-3 font-body-base text-on-surface">09:00 AM</td>
+<td class="p-3 text-center font-bold">2,450</td>
+<td class="p-3 text-center text-vcr-critical font-bold">0.98</td>
+<td class="p-3 text-center">
+<span class="bg-vcr-critical text-white px-2 py-0.5 rounded font-label-caps text-[10px]">E</span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low border-b border-border-subtle transition-colors">
+<td class="p-3 font-body-base text-on-surface">10:00 AM</td>
+<td class="p-3 text-center">1,620</td>
+<td class="p-3 text-center">0.74</td>
+<td class="p-3 text-center">
+<span class="bg-vcr-high text-white px-2 py-0.5 rounded font-label-caps text-[10px]">B</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Peak Flow Visualization (Mini Chart) -->
+<section class="bg-surface-card rounded-xl border border-border-subtle p-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4">VCR PERFORMANCE CURVE</h3>
+<div class="h-40 flex items-end justify-between gap-1 px-2">
+<div class="w-full bg-vcr-low/20 rounded-t-sm h-1/4 relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-primary text-on-primary text-[10px] px-1 rounded transition-opacity">0.25</div>
+</div>
+<div class="w-full bg-vcr-low/40 rounded-t-sm h-2/4 relative group"></div>
+<div class="w-full bg-vcr-medium/60 rounded-t-sm h-3/4 relative group"></div>
+<div class="w-full bg-vcr-critical rounded-t-sm h-full relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[10px] px-1 rounded">0.98</div>
+</div>
+<div class="w-full bg-vcr-high/80 rounded-t-sm h-4/5 relative group"></div>
+<div class="w-full bg-vcr-medium/40 rounded-t-sm h-2/5 relative group"></div>
+<div class="w-full bg-vcr-low/20 rounded-t-sm h-1/5 relative group"></div>
+</div>
+<div class="flex justify-between mt-2 px-1 font-label-caps text-[9px] text-on-surface-variant opacity-60">
+<span>06:00</span>
+<span>09:00</span>
+<span>12:00</span>
+<span>15:00</span>
+<span>18:00</span>
+</div>
+</section>
+<!-- Formula Verification Harness -->
+<div class="bg-surface-container rounded-lg border-l-4 border-status-info p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-status-info text-[18px]">verified_user</span>
+<span class="font-label-caps text-label-caps text-status-info">FORMULA VERIFICATION</span>
+</div>
+<div class="bg-primary/5 p-2 rounded font-formula-ref text-formula-ref text-on-surface-variant">
+<code>VCR = (Volume / Capacity) * PHF</code>
+<p class="mt-1 text-on-primary-container">Current Implementation: HCM 6th Edition Methodology</p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-surface-container-highest border-t border-outline-variant shadow-lg flex justify-around items-center h-16 px-4">
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps text-[10px]">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary font-bold active:bg-surface-variant transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined">vertical_align_center</span>
+<span class="font-label-caps text-[10px]">Queue</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined">speed</span>
+<span class="font-label-caps text-[10px]">VCR</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label-caps text-[10px]">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-caps text-[10px]">Docs</span>
+</a>
+</nav>
+</body></html>
