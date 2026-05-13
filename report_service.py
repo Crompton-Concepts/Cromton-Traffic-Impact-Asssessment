@@ -259,6 +259,7 @@ def _find_2min_queue_peak(payload: dict[str, Any]) -> float | None:
   """Return the highest 2-minute hold-cycle queue value across all Directional Queue Summary tables."""
   tables = payload.get("tables", []) if isinstance(payload.get("tables"), list) else []
   best: float | None = None
+  swt_best: float | None = None
   for tbl in tables:
     if not isinstance(tbl, dict):
       continue
@@ -272,6 +273,17 @@ def _find_2min_queue_peak(payload: dict[str, Any]) -> float | None:
       if not isinstance(row, list) or not row:
         continue
       label = _safe_text(row[0], "").lower()
+      # SWT queue tables often store the 2-minute hold-cycle peak as "Queue Peak"
+      # without explicitly including "2 min" in the row label.
+      if "swt" in title_lc and ("queue" in label or "peak" in label):
+        for cell in row[1:]:
+          val_str = re.sub(r"[^\d.]", "", _safe_text(cell, ""))
+          try:
+            val = float(val_str)
+            if swt_best is None or val > swt_best:
+              swt_best = val
+          except (ValueError, TypeError):
+            pass
       if "2 min" not in label and "2min" not in label and "per 2" not in label and "agttm" not in label:
         continue
       for idx, cell in enumerate(row[1:], start=1):
@@ -282,7 +294,7 @@ def _find_2min_queue_peak(payload: dict[str, Any]) -> float | None:
             best = val
         except (ValueError, TypeError):
           pass
-  return best
+  return best if best is not None else swt_best
 
 
 def _build_report_context(payload: dict[str, Any]) -> dict[str, Any]:
