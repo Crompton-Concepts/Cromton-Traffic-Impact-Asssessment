@@ -50,6 +50,9 @@ node_modules/
 .vscode/
 .idea/
 
+# Claude agent working directory
+.claude/
+
 # OS files
 .DS_Store
 desktop.ini
