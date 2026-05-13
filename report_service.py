@@ -2775,13 +2775,6 @@ def editor_page(draft_id: str) -> str:
           <div contenteditable=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--brand);\">Reviewer Name</div>
           <div contenteditable=\"true\" style=\"font-size: 0.95rem; color: var(--muted);\">Reviewer's Name</div>
         </div>
-        <div style=\"flex: 1;\">
-          <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Digital Authentication</div>
-          <div style=\"font-family: monospace; font-size: 0.75rem; color: var(--muted); border: 1px dashed var(--border); padding: 10px; border-radius: var(--radius-sm); background: var(--bg-light);\">
-            AUTH-ID: {cc_number}<br>
-            STATUS: ELECTRONICALLY SIGNED
-          </div>
-        </div>
       </div>
       
       <div style=\"margin-top: 3rem; padding: 20px; background: #fff1f2; border: 1px solid #fecaca; border-radius: var(--radius-md); font-size: 0.85rem; color: #991b1b;\">
