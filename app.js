@@ -9916,14 +9916,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const isInactiveOneWayDirection = isOneWayMode && directionCode !== activeDirection;
       laneEl.disabled = !!isInactiveOneWayDirection;
       if (isInactiveOneWayDirection) {
+        if (!laneEl.dataset.preOneWayValue) {
+          laneEl.dataset.preOneWayValue = laneEl.value;
+        }
+        laneEl.value = '0';
         laneEl.title = `Disabled because selected road operation is one-way (${activeDirection} active).`;
         laneEl.style.opacity = '0.65';
-      } else if (laneEl.title && /selected road operation is one-way/i.test(laneEl.title)) {
-        laneEl.title = '';
-        laneEl.style.opacity = '';
-      } else if (!isOneWayMode) {
-        laneEl.title = '';
-        laneEl.style.opacity = '';
+      } else {
+        if (laneEl.dataset.preOneWayValue !== undefined) {
+          laneEl.value = laneEl.dataset.preOneWayValue || '1';
+          delete laneEl.dataset.preOneWayValue;
+        }
+        if (laneEl.title && /selected road operation is one-way/i.test(laneEl.title)) {
+          laneEl.title = '';
+          laneEl.style.opacity = '';
+        } else if (!isOneWayMode) {
+          laneEl.title = '';
+          laneEl.style.opacity = '';
+        }
       }
     });
 

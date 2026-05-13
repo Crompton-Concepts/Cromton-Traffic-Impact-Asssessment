@@ -2779,7 +2779,6 @@ def editor_page(draft_id: str) -> str:
           <div style=\"font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;\">Digital Authentication</div>
           <div style=\"font-family: monospace; font-size: 0.75rem; color: var(--muted); border: 1px dashed var(--border); padding: 10px; border-radius: var(--radius-sm); background: var(--bg-light);\">
             AUTH-ID: {cc_number}<br>
-            TIMESTAMP: {report_date}<br>
             STATUS: ELECTRONICALLY SIGNED
           </div>
         </div>
