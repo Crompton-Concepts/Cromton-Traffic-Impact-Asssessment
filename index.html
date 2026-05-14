@@ -22052,6 +22052,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d2SwtQueueRaw = Number(d2SwtResult.queueLength) || 0;
         const d1SwtQueue = normalizeHourlyQueueToVehicleLength(d1SwtQueueRaw, d1Vol, true);
         const d2SwtQueue = normalizeHourlyQueueToVehicleLength(d2SwtQueueRaw, d2Vol, true);
+        // w12×R: queue length at end of red phase (simpler estimate, shown alongside full SWT reach)
+        const d1W12Red = (d1SwtResult.w12 || 0) * swtRedTimePerCycle;
+        const d2W12Red = (d2SwtResult.w12 || 0) * swtRedTimePerCycle;
         const periodKey = getTrafficBucket(hour).key;
         if (Object.prototype.hasOwnProperty.call(swtQueuePeriodD1, periodKey)) {
           swtQueuePeriodD1[periodKey] = Math.max(swtQueuePeriodD1[periodKey], Number(d1SwtQueue) || 0);
@@ -27666,6 +27669,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       return d2Lanes > 1 ? ((vol2 / getEffectiveOpenLanes(d2Lanes)) / dv2) : (vol2 / dv2);
     });
+
+    // Direction labels for work window scheduler headings
+    const wwRawD1 = (selectedMacroSite && macroSitesData[selectedMacroSite] && macroSitesData[selectedMacroSite].d1_direction_label)
+      || (customDirectionContext && customDirectionContext.d1Label) || 'Direction 1, Gazettal';
+    const wwRawD2 = (selectedMacroSite && macroSitesData[selectedMacroSite] && macroSitesData[selectedMacroSite].d2_direction_label)
+      || (customDirectionContext && customDirectionContext.d2Label) || 'Direction 2, Against Gazettal';
+    const wwD1Label = formatDirectionalCodeLabel('D1', wwRawD1);
+    const wwD2Label = formatDirectionalCodeLabel('D2', wwRawD2);
 
     const d1Schedule = buildSchedule(`${wwD1Label} Scheduler`, d1VcrByHour);
     const d2Schedule = buildSchedule(`${wwD2Label} Scheduler`, d2VcrByHour);
