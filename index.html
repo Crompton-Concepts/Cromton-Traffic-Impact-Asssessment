@@ -22027,34 +22027,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d1WorkCap = d1WorkVcr > 0 ? (d1Hour.total / d1WorkVcr) : 0;
         const d2WorkCap = d2WorkVcr > 0 ? (d2Hour.total / d2WorkVcr) : 0;
 
-        // Calculate per-lane flow and capacity for SWT
-        // d1Hour.total is the hourly volume for this specific hour (from diurnal profile)
+        // Calculate per-lane flow and capacity for VCR display (original lane basis)
         const d1FlowPerLane = d1Metrics.lanes > 0 ? (d1Hour.total / d1Metrics.lanes) : 0;
         const d2FlowPerLane = d2Metrics.lanes > 0 ? (d2Hour.total / d2Metrics.lanes) : 0;
         const d1CapPerLane = d1Metrics.lanes > 0 ? (d1WorkCap / d1Metrics.lanes) : d1WorkCap;
         const d2CapPerLane = d2Metrics.lanes > 0 ? (d2WorkCap / d2Metrics.lanes) : d2WorkCap;
 
-        // Calculate Shockwave Theory queue length with residual stacking
-        // CORRECT: Use red time PER CYCLE, not total hourly accumulation
-        // Pattern: hourlyVolume = totalDailyVolume * diurnalProfile[hour]
-        // Then: maxQueueForHour = calculateSWTQueueLength(hourlyVolume, uf, kj, s, us, redTimePerCycle)
-        // INCORRECT would be: const totalHourlyRedTime = redTimePerCycle * cyclesPerHour;
-        const d1SwtResult = calculateShockwaveQueue(d1FlowPerLane, d1CapPerLane, approachSpeed, lvPct1, d1HvPct, d1RtPct, swtRedTimePerCycle, isRtrActive);
-        const d2SwtResult = calculateShockwaveQueue(d2FlowPerLane, d2CapPerLane, approachSpeed, lvPct2, d2HvPct, d2RtPct, swtRedTimePerCycle, isRtrActive);
+        // SWT-specific flow and saturation capacity:
+        // All directional traffic concentrates in the single effective open lane.
+        // Saturation flow = full design capacity of that open lane (not a proportional share).
+        const isSingleLaneShared = (d1Metrics.lanes === 1 && d2Metrics.lanes === 1);
+        const d1EffOpen = getEffectiveOpenLanes(d1Metrics.lanes);
+        const d2EffOpen = getEffectiveOpenLanes(d2Metrics.lanes);
+        const d1SwtFlow = d1EffOpen > 0 ? (d1Hour.total / d1EffOpen) : d1Hour.total;
+        const d2SwtFlow = d2EffOpen > 0 ? (d2Hour.total / d2EffOpen) : d2Hour.total;
+        const d1SwtCap = isSingleLaneShared ? sharedDv : (d1EffOpen > 0 ? (d1WorkCap / d1EffOpen) : dv1);
+        const d2SwtCap = isSingleLaneShared ? sharedDv : (d2EffOpen > 0 ? (d2WorkCap / d2EffOpen) : dv2);
+
+        // Calculate Shockwave Theory queue length (maximum queue per cycle, not just red-phase growth)
+        const d1SwtResult = calculateShockwaveQueue(d1SwtFlow, d1SwtCap, approachSpeed, lvPct1, d1HvPct, d1RtPct, swtRedTimePerCycle, isRtrActive);
+        const d2SwtResult = calculateShockwaveQueue(d2SwtFlow, d2SwtCap, approachSpeed, lvPct2, d2HvPct, d2RtPct, swtRedTimePerCycle, isRtrActive);
         if (d1SwtResult && d1SwtResult.rawInputAnomaly) swtAnomalyHoursD1 += 1;
         if (d2SwtResult && d2SwtResult.rawInputAnomaly) swtAnomalyHoursD2 += 1;
-        
+
+        // Use the properly computed queueLength (= |wBf| × tQ, where tQ is when discharge
+        // wave catches backflow wave). This is always ≥ |wBf| × r and correctly accounts
+        // for both the queue-forming and queue-discharging phases of each cycle.
         const d1SwtQueueRaw = Number(d1SwtResult.queueLength) || 0;
         const d2SwtQueueRaw = Number(d2SwtResult.queueLength) || 0;
         const d1SwtQueue = normalizeHourlyQueueToVehicleLength(d1SwtQueueRaw, d1Vol, true);
         const d2SwtQueue = normalizeHourlyQueueToVehicleLength(d2SwtQueueRaw, d2Vol, true);
-        const d1W12Red = normalizeHourlyQueueToVehicleLength((Number(d1SwtResult.w12) || 0) * swtRedTimePerCycle, d1Vol, true);
-        const d2W12Red = normalizeHourlyQueueToVehicleLength((Number(d2SwtResult.w12) || 0) * swtRedTimePerCycle, d2Vol, true);
         const periodKey = getTrafficBucket(hour).key;
         if (Object.prototype.hasOwnProperty.call(swtQueuePeriodD1, periodKey)) {
-          // Keep SWT summary metric consistent for both directions (w12 * red-time queue reach).
-          swtQueuePeriodD1[periodKey] = Math.max(swtQueuePeriodD1[periodKey], Number(d1W12Red) || 0);
-          swtQueuePeriodD2[periodKey] = Math.max(swtQueuePeriodD2[periodKey], Number(d2W12Red) || 0);
+          swtQueuePeriodD1[periodKey] = Math.max(swtQueuePeriodD1[periodKey], Number(d1SwtQueue) || 0);
+          swtQueuePeriodD2[periodKey] = Math.max(swtQueuePeriodD2[periodKey], Number(d2SwtQueue) || 0);
         }
 
         if (networkMax > worstQueueValue) {
