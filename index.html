@@ -8213,10 +8213,33 @@
    * from the last calculateDetourOverlay() snapshot stored in window._lastDetourCalcSnapshot.
    */
   function buildSyntheticDetourTables() {
-    var snap = window._lastDetourCalcSnapshot;
-    if (!snap || !Array.isArray(snap.roads) || !snap.roads.length) return [];
-
     var tables = [];
+
+    // Route info table — always included so Python can populate section 1
+    (function() {
+      var rawName = (document.getElementById('detourRouteName') || {}).textContent || '';
+      var routeName = rawName.replace(/^Evaluating\s+Detour\s*:\s*/i, '').trim();
+      if (!routeName || routeName === '-') routeName = '-';
+      var roadNames = Array.isArray(window.selectedTrafficDetourRoadNames) && window.selectedTrafficDetourRoadNames.length
+        ? window.selectedTrafficDetourRoadNames.join(', ')
+        : ((document.getElementById('detourSelectedRoadsSummary') || {}).textContent || '')
+            .replace(/^Selected\s+path\s*:\s*/i, '').trim() || '-';
+      var lengthKm = ((document.getElementById('detourRouteLengthKm') || {}).value || '-');
+      tables.push({
+        table_id: 'syntheticRouteInfo',
+        title: 'Detour Route Information',
+        columns: ['Parameter', 'Details'],
+        rows: [
+          ['Detour Route Name', routeName],
+          ['Selected Path', roadNames],
+          ['Route Length (km)', String(lengthKm)],
+          ['Road Classification', '-']
+        ]
+      });
+    })();
+
+    var snap = window._lastDetourCalcSnapshot;
+    if (!snap || !Array.isArray(snap.roads) || !snap.roads.length) return tables;
     var gf = snap.growthFactor || 1;
     var gfStr = gf !== 1 ? gf.toFixed(3) : '1.000';
 

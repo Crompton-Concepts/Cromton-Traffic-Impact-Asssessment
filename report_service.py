@@ -1456,8 +1456,8 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     title_raw = _safe_text(table.get("title"), "")
     title_lc = title_raw.lower().strip()
     title_stripped = title_lc.strip()
-    # Table 27 -> route info
-    if re.match(r"table\s*27", title_stripped):
+    # Table 27 or synthetic route info -> route info
+    if re.match(r"table\s*27", title_stripped) or "route information" in title_lc:
       route_info_tables.append(table)
     # Table 28/29 -> detour road summary
     elif re.match(r"table\s*(28|29)", title_stripped):
@@ -1472,7 +1472,15 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
     elif "status" in title_lc or "diversion" in title_lc or "existing road" in title_lc:
       road_status_tables.append(table)
     elif "directional capacity" in title_lc:
-      dir_capacity_tables.append(table)
+      # Only include if period columns (index 3+) have at least one real computed value
+      _DASH_SET = {"-", "—", "–", "", "n/a"}
+      _has_period_data = any(
+        _safe_text(cell, "").strip().lower() not in _DASH_SET
+        for row in table.get("rows", []) if isinstance(row, list)
+        for cell in row[3:] if row
+      )
+      if _has_period_data:
+        dir_capacity_tables.append(table)
     elif "capacity" in title_lc:
       road_capacity_tables.append(table)
     elif "vpd" in title_lc or "segment detailed" in title_lc:
