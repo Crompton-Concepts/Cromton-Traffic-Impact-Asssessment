@@ -17064,9 +17064,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   // Single source of truth — Austroads AGTM Part 3 queue spacing (m, front-to-front, including reaction gap)
   const QUEUE_SPACING_M = Object.freeze({
-    LV: 7.0,   // passenger car incl. ~2 m gap
-    HV: 12.0,  // rigid HV; use 18 m for articulated if known
-    RT: 36.5   // AB-Triple road train per NHVR; use 53.5 for Type-2 RT
+    LV: 7.0,   // passenger car (~4.8 m body + 2.2 m gap) — Austroads PCE queue spacing
+    HV: 21.0,  // articulated semi-trailer (~19 m body + 2 m gap) — standard QLD HV fleet
+    RT: 38.5   // Type-A road train (36.5 m per NHVR + 2 m gap)
   });
 
   function applyYesNoColor(selectId){
@@ -18542,8 +18542,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const rt = total5 * rtPct;
     const lv = Math.max(0, total5 - hv - rt);
 
-    // Aligned to SWT spacings (LV: 8m, HV: 24m, RT: 69m)
-    const spaceLV = 8, spaceHV = 24, spaceRT = 69;
+    // Austroads vehicle spacings — single source of truth from QUEUE_SPACING_M
+    const spaceLV = QUEUE_SPACING_M.LV, spaceHV = QUEUE_SPACING_M.HV, spaceRT = QUEUE_SPACING_M.RT;
 
     // total5 is a 5-minute volume. To get 2-minute volume, multiply by (2/5) = 0.4
     let q2 = (lv * 0.4 * spaceLV) + (hv * 0.4 * spaceHV) + (rt * 0.4 * spaceRT);
@@ -18576,9 +18576,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const lv = Math.max(0, netTotal5 - hv - rt);
     const factor = isRtr ? 1.5 : 1;
 
-    // Aligned spacing (LV: 8 m, HV: 24 m, RT: 69 m)
+    // Austroads vehicle spacings — single source of truth from QUEUE_SPACING_M
     const minRatio = minutes / 5;
-    const q = ((lv * (8 * minRatio)) + (hv * (24 * minRatio)) + (rt * (69 * minRatio))) * factor;
+    const q = ((lv * (QUEUE_SPACING_M.LV * minRatio)) + (hv * (QUEUE_SPACING_M.HV * minRatio)) + (rt * (QUEUE_SPACING_M.RT * minRatio))) * factor;
     return numberRoundUp(q, 0);
   }
 
@@ -19150,12 +19150,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         hourlyPerLane: avgPerLane,
         peakHourlyPerLane: peakPerLane,
         per5: lv5 + hv5 + rt5,
-        queue: {
-          q2:  numberRoundUp((lv5 * 2.4  + hv5 * 8  + rt5 * 25.2) * factor, 0),
-          q5:  numberRoundUp((lv5 * 6    + hv5 * 20 + rt5 * 63)   * factor, 0),
-          q10: numberRoundUp((lv5 * 12   + hv5 * 40 + rt5 * 126)  * factor, 0),
-          q15: numberRoundUp((lv5 * 18   + hv5 * 60 + rt5 * 189)  * factor, 0)
-        }
+        queue: queueFromFiveMinute(per5, hvF, rtF, isRtr)
       };
     });
 
