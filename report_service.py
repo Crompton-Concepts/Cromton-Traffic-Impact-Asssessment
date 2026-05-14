@@ -2241,7 +2241,7 @@ def editor_page(draft_id: str) -> str:
       for table in tables:
         t_title = _safe_text(table.get("title"), "")
         t_key = _normalize_title_key(t_title)
-        if pattern not in t_key:
+        if _normalize_title_key(pattern) not in t_key:
           continue
         # Exclude SWT tables from the base "directional queue summary" pattern so they
         # are rendered under the dedicated "directional queue summary swt" pattern.
@@ -2273,7 +2273,7 @@ def editor_page(draft_id: str) -> str:
 
     for table in tables:
       tkey = _normalize_title_key(_safe_text(table.get("title"), ""))
-      if any(pat in tkey for pat in _DEDICATED_TABLE_PATTERNS): continue
+      if any(_normalize_title_key(pat) in tkey for pat in _DEDICATED_TABLE_PATTERNS): continue
 
       table_id = _safe_text(table.get("table_id", ""), "")
       if table_id:
@@ -2285,7 +2285,8 @@ def editor_page(draft_id: str) -> str:
 
       title_lc = tkey
       title_stripped = title_lc.strip()
-      if re.match(r"table\s*(1[1-8])", title_stripped): continue
+      _m = re.match(r"^table\s+(\d+)", title_stripped)
+      if _m and int(_m.group(1)) not in (28, 29, 30, 31, 32): continue
       if re.match(r"table\s*(2[89]|3[0-2])", title_stripped) or any(k in title_lc for k in ("detour", "diversion", "pedestrian detour")):
         detour_tables.append(table)
       else:

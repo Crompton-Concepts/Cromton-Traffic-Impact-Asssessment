@@ -9428,6 +9428,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // ===== SESSION SNAPSHOT EXPORT =====
   function downloadTiaSessionSnapshot() {
     try {
+      // Flush current detour route form fields into window.detourRouteScenarios before snapshotting.
+      try { if (typeof saveActiveDetourRouteScenario === 'function') saveActiveDetourRouteScenario(); } catch(_) {}
+
       // Collect all form inputs
       const formControls = {};
       document.querySelectorAll('input[id], select[id], textarea[id]').forEach(function(el) {
@@ -9460,12 +9463,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         'kpiWorstVcr','kpiD1PeakQueue','kpiD2PeakQueue',
         'queueRiskBadge','vcrRiskBadge',
         'quickTiaSearchAddress','quickTiaMatchType','quickTiaMatchRoad','quickTiaGeoSource',
-        'lastSearchedAddressText'
+        'lastSearchedAddressText',
+        'detourRouteScenarioSummary','detourSelectedRoadsSummary',
+        'detourResolvedBaseVpd','detourRoadVpdSummary',
+        'vcrResult','queueResult',
+        'laneClosureAssumptionNote'
       ].forEach(function(id) {
         var el = document.getElementById(id);
         if (!el) return;
         var val = (typeof el.value === 'string') ? el.value : (el.textContent || '');
         if (val && String(val).trim()) outputElements[id] = String(val).trim();
+      });
+
+      // Capture innerHTML of dynamic result sections so they restore instantly on load.
+      var renderedSections = {};
+      ['detourResults', 'detourManualVpdPanel', 'detourRoadVpdSummary', 'detourResolvedBaseVpd'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        renderedSections[id] = { innerHTML: el.innerHTML, display: el.style.display };
       });
 
       var selectedTiaDataSnapshot = cloneTiaSnapshotSerializable(window.selectedTiaData || null, null);
@@ -9476,13 +9491,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       var snapshot = {
         kind: 'tia-session-snapshot',
-        version: '1.1',
+        version: '1.2',
         exportedAt: new Date().toISOString(),
         selectedMacroSite: selectedMacroSite || '',
         selectedTiaData: selectedTiaDataSnapshot,
         manualTrafficGenData: cloneTiaSnapshotSerializable(window.manualTrafficGenData || null, null),
         formControls: formControls,
         outputElements: outputElements,
+        renderedSections: renderedSections,
+        detourState: {
+          routeScenarios: cloneTiaSnapshotSerializable(window.detourRouteScenarios || [], []),
+          activeRouteIndex: Number(window.activeDetourRouteIndex) || 0,
+          routeCount: Number(window.detourRouteCount) || 1,
+          lastCalcSnapshot: cloneTiaSnapshotSerializable(window._lastDetourCalcSnapshot || null, null),
+          selectedPedDetourRoadName: String(window.selectedPedDetourRoadName || ''),
+          selectedPedDetourRoadNames: cloneTiaSnapshotSerializable(window.selectedPedDetourRoadNames || [], []),
+          detourPrimaryOverride: cloneTiaSnapshotSerializable(window.detourPrimaryOverride || null, null),
+          customDirectionContext: cloneTiaSnapshotSerializable(window.customDirectionContext || null, null)
+        },
         quickSearch: {
           input: (function() { var el = document.getElementById('quickTiaInput') || document.getElementById('quickTiaSiteIdInput'); return el ? String(el.value || '') : ''; })(),
           lastSearchedAddress: String(window.lastSearchedAddress || ''),
@@ -9618,6 +9644,35 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (typeof selectMacroSite === 'function') selectMacroSite(snapshot.selectedMacroSite, { silent: true });
         }
         if (snapshot.manualTrafficGenData) window.manualTrafficGenData = snapshot.manualTrafficGenData;
+        // Restore detour state
+        var detourState = snapshot.detourState || {};
+        if (Array.isArray(detourState.routeScenarios) && detourState.routeScenarios.length) {
+          window.detourRouteScenarios = cloneTiaSnapshotSerializable(detourState.routeScenarios, []);
+        }
+        if (typeof detourState.activeRouteIndex === 'number') window.activeDetourRouteIndex = detourState.activeRouteIndex;
+        if (typeof detourState.routeCount === 'number') window.detourRouteCount = Math.max(1, detourState.routeCount);
+        if (detourState.lastCalcSnapshot) window._lastDetourCalcSnapshot = cloneTiaSnapshotSerializable(detourState.lastCalcSnapshot, null);
+        if (detourState.selectedPedDetourRoadName) window.selectedPedDetourRoadName = detourState.selectedPedDetourRoadName;
+        if (Array.isArray(detourState.selectedPedDetourRoadNames)) window.selectedPedDetourRoadNames = cloneTiaSnapshotSerializable(detourState.selectedPedDetourRoadNames, []);
+        if (detourState.detourPrimaryOverride) window.detourPrimaryOverride = cloneTiaSnapshotSerializable(detourState.detourPrimaryOverride, null);
+        if (detourState.customDirectionContext) window.customDirectionContext = cloneTiaSnapshotSerializable(detourState.customDirectionContext, null);
+        // Apply the active detour route's form fields from the saved scenario
+        var _detourScenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios : [];
+        var _activeScenario = _detourScenarios[window.activeDetourRouteIndex || 0];
+        if (_activeScenario && typeof applyDetourRouteState === 'function') {
+          try { applyDetourRouteState(_activeScenario, { skipScan: true }); } catch(_) {}
+        }
+        // Restore rendered section HTML for instant visual restore (before recalc fires)
+        var renderedSections = snapshot.renderedSections || {};
+        Object.keys(renderedSections).forEach(function(id) {
+          var el = document.getElementById(id);
+          var saved = renderedSections[id];
+          if (!el || !saved) return;
+          try {
+            if (saved.innerHTML != null) el.innerHTML = saved.innerHTML;
+            if (saved.display != null) el.style.display = saved.display;
+          } catch(_) {}
+        });
         // Restore localStorage state (python edits profile, etc.)
         var lsData = snapshot.localStorage || {};
         try { if (lsData.pythonEditsProfile) localStorage.setItem(PYTHON_EDITS_PROFILE_KEY, lsData.pythonEditsProfile); } catch(_) {}
@@ -9637,6 +9692,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           try { if (typeof calculateTripGeneration === 'function') calculateTripGeneration(); } catch(_) {}
           try { if (typeof calculateAll === 'function') calculateAll(); } catch(_) {}
           try { if (typeof updateTiaCalculations === 'function') updateTiaCalculations(); } catch(_) {}
+          try { if (typeof renderDetourRouteScenarioManager === 'function') renderDetourRouteScenarioManager(); } catch(_) {}
+          try { if (typeof calculateDetourOverlay === 'function') calculateDetourOverlay(); } catch(_) {}
         }, 150);
         // Update status
         var statusEl = document.getElementById('tiaSnapshotStatus');
