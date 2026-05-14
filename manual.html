@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TIA User Manual</title>
+  <title>Cromton Traffic Impact Assessment - User Manual</title>
   <style>
     :root {
       --bg: #f5f7fa;
@@ -17,6 +17,8 @@
       --ok-text: #166534;
       --warn-bg: #fff7ed;
       --warn-text: #9a3412;
+      --info-bg: #eff6ff;
+      --info-text: #1e40af;
     }
 
     body {
@@ -25,57 +27,67 @@
       background: radial-gradient(circle at 0% 0%, #eef6f7 0%, transparent 40%), var(--bg);
       color: var(--text);
       padding: 24px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     .wrap {
       max-width: 980px;
       margin: 0 auto;
       display: grid;
-      gap: 16px;
+      gap: 20px;
     }
 
     .card {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 20px;
+      padding: 24px;
       box-shadow: 0 8px 20px rgba(15, 47, 50, 0.08);
     }
 
-    h1, h2 {
+    h1, h2, h3 {
       margin: 0 0 12px;
       color: var(--brand-dark);
     }
 
     h1 {
-      font-size: 1.7rem;
+      font-size: 2rem;
+      margin-bottom: 16px;
     }
 
     h2 {
-      font-size: 1.2rem;
-      border-bottom: 1px solid var(--line);
+      font-size: 1.4rem;
+      border-bottom: 2px solid var(--line);
       padding-bottom: 8px;
+      margin-top: 24px;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      margin-top: 16px;
+      color: var(--brand);
     }
 
     p {
-      margin: 8px 0;
+      margin: 12px 0;
       color: var(--muted);
     }
 
     ul, ol {
-      margin: 8px 0 0 20px;
+      margin: 12px 0 12px 24px;
+      color: var(--muted);
     }
 
     li {
-      margin: 6px 0;
+      margin: 8px 0;
     }
 
     .nav-links {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
+      gap: 12px;
+      margin-top: 16px;
+      margin-bottom: 24px;
     }
 
     .btn {
@@ -83,67 +95,78 @@
       background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
       color: #fff;
       text-decoration: none;
-      padding: 9px 14px;
+      padding: 10px 16px;
       border-radius: 8px;
-      font-weight: 700;
+      font-weight: 600;
       font-size: 0.95rem;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .note, .warn, .info {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-weight: 500;
     }
 
     .note {
       border-left: 4px solid #22c55e;
       background: var(--ok-bg);
       color: var(--ok-text);
-      padding: 10px 12px;
-      border-radius: 6px;
-      margin-top: 10px;
     }
 
     .warn {
       border-left: 4px solid #f59e0b;
       background: var(--warn-bg);
       color: var(--warn-text);
-      padding: 10px 12px;
-      border-radius: 6px;
-      margin-top: 10px;
+    }
+
+    .info {
+      border-left: 4px solid #3b82f6;
+      background: var(--info-bg);
+      color: var(--info-text);
     }
 
     code {
       background: #eef2f7;
-      padding: 1px 6px;
+      padding: 2px 6px;
       border-radius: 4px;
-      color: #1e293b;
+      color: #0f172a;
       font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
     }
 
-    .shot-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 12px;
-      margin-top: 10px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
     }
 
-    .shot {
-      border: 1px dashed #94a3b8;
-      border-radius: 10px;
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
       background: #f8fafc;
-      padding: 12px;
-    }
-
-    .shot h3 {
-      margin: 0 0 6px;
-      font-size: 1rem;
-      color: #1f3340;
-    }
-
-    .shot p {
-      margin: 0;
-      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--brand-dark);
     }
 
     .faq-item {
       border-top: 1px solid var(--line);
-      padding-top: 10px;
-      margin-top: 10px;
+      padding-top: 16px;
+      margin-top: 16px;
     }
 
     .faq-item:first-of-type {
@@ -153,123 +176,161 @@
     }
 
     .faq-q {
-      font-weight: 700;
+      font-weight: 600;
       color: var(--brand-dark);
-      margin: 0 0 4px;
+      margin: 0 0 8px;
+      font-size: 1.05rem;
     }
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="card">
-      <h1>Traffic Impact Assessment User Manual</h1>
-      <p>Use this guide to run the calculator, load traffic datasets, build report outputs, and troubleshoot common issues.</p>
+      <h1>Cromton Traffic Impact Assessment (TIA)</h1>
+      <p>Welcome to the comprehensive user manual for the Cromton TIA application. This browser-based traffic engineering tool is designed to help you assess work-zone and detour impacts, calculate queue lengths and Volume-to-Capacity Ratios (VCR) / Level of Service (LOS), and generate professional reports.</p>
+      
       <div class="nav-links">
-        <a class="btn" href="./index.html">Open Main View</a>
-        <a class="btn" href="./index_formulas.html">Open Formula View</a>
+        <a class="btn" href="./index.html">Launch Standard Calculator</a>
+        <a class="btn btn-secondary" href="./index_formulas.html">Launch Formula View</a>
+        <a class="btn btn-secondary" href="./index_developer.html">Launch Developer View</a>
       </div>
-      <div class="note">Formula View keeps formulas and calculation steps visible throughout the report workflow.</div>
+      
+      <div class="info">
+        <strong>Which view should I use?</strong><br>
+        • <strong>Standard (index.html):</strong> The primary interface for daily traffic assessment and report generation.<br>
+        • <strong>Formula View (index_formulas.html):</strong> Best for auditing. It keeps all calculation steps and formulas visible throughout the workflow and in generated reports.<br>
+        • <strong>Developer View (index_developer.html):</strong> Includes experimental beta features and isolated test surfaces.
+      </div>
     </section>
 
     <section class="card">
-      <h2>1. Getting Started</h2>
+      <h2>1. Account & Data Synchronization</h2>
+      <p>The application supports a seamless multi-device experience using secure account synchronization.</p>
+      <ul>
+        <li><strong>Sign In:</strong> When you open the application, you will be prompted to log in. This links your session to your account.</li>
+        <li><strong>Cloud Sync:</strong> User data and preferences are synced via a secure backend (Firebase Realtime Database). This means you can start an analysis on one device and continue on another.</li>
+        <li><strong>Offline Resilience:</strong> If you lose internet connection or the sync service is unavailable, the application gracefully falls back to local browser storage. Your work is saved locally and will sync when the connection is restored.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>2. Loading Traffic Datasets</h2>
+      <p>The TIA application relies on comprehensive regional traffic data to power its calculations. It automatically manages fetching and updating these datasets.</p>
+      
+      <h3>Supported Regions</h3>
+      <p>Data is loaded dynamically for multiple regions across Queensland and New South Wales, including:</p>
+      <ul>
+        <li>TMR (Department of Transport and Main Roads)</li>
+        <li>Brisbane, Gold Coast, Ipswich, Logan, Toowoomba, Tewantin</li>
+        <li>NSW Regional Data</li>
+      </ul>
+
+      <h3>Data Loading Process</h3>
       <ol>
-        <li>Open <code>index.html</code> for the standard calculator or <code>index_formulas.html</code> for formula trace mode.</li>
-        <li>Sign in through the login prompt.</li>
-        <li>Wait for traffic datasets to load. The top badge shows <code>Sites Loaded</code>.</li>
-        <li>Search and select a site from the map or site search field.</li>
+        <li>Upon loading the app, check the <code>Sites Loaded</code> badge at the top of the interface.</li>
+        <li>The system fetches the latest data versions using a secure manifest (<code>dataset_manifest.json</code>). It ensures data integrity by verifying secure hashes (SHA-256).</li>
+        <li>If live GitHub source data is unavailable, the app automatically falls back to local cached files to ensure you can keep working.</li>
       </ol>
+      <div class="warn">If the <code>Sites Loaded</code> badge shows 0 or an unexpectedly low number, press <code>Ctrl+F5</code> to force a hard refresh and clear stale browser caches.</div>
     </section>
 
     <section class="card">
-      <h2>2. Core Workflow</h2>
+      <h2>3. Core Analysis Workflow</h2>
+      <p>Follow these steps to conduct a standard traffic impact assessment:</p>
+
+      <h3>Step 3.1: Site Selection</h3>
+      <ul>
+        <li>Use the interactive map or the site search field to locate your work zone.</li>
+        <li>Click on a map marker or select a search result to load the site's historical traffic data.</li>
+        <li>Review the site metadata (Road Name, Directions, Counter Details) to ensure you have the correct location.</li>
+      </ul>
+
+      <h3>Step 3.2: Setting Parameters</h3>
+      <p>Input your project-specific parameters into the analysis workspace:</p>
+      <ul>
+        <li><strong>Timeline:</strong> Set the Base Year (of the data) and the Target Year (for your analysis).</li>
+        <li><strong>Growth:</strong> Apply expected annual growth rates.</li>
+        <li><strong>Geometry:</strong> Configure lane settings, including total lanes and lanes closed during the work phase.</li>
+        <li><strong>Assumptions:</strong> Adjust heavy vehicle percentages and directional traffic splits (Direction 1 vs Direction 2) based on local knowledge.</li>
+      </ul>
+
+      <h3>Step 3.3: Running Calculations</h3>
+      <p>Once inputs are set, the browser-first calculation engine instantly processes the data.</p>
+      <ul>
+        <li><strong>Queue Estimates:</strong> View hourly queue lengths, incorporating standard methodologies (AGTTM and SWT variants).</li>
+        <li><strong>Capacity Analysis:</strong> Review directional and hourly Volume-to-Capacity Ratios (VCR) and corresponding Level of Service (LOS).</li>
+        <li><strong>Visualizations:</strong> Check the generated Chart.js graphs and data tables for clear trend analysis.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>4. Detour Route Analysis</h2>
+      <p>For projects requiring road closures, the application includes a Detour Route capacity modeling tool.</p>
+      <ul>
+        <li>Use the map interface to map out proposed detour routes.</li>
+        <li>The system calculates the additional stress and capacity impacts on the selected detour roads by overlaying the diverted traffic volumes.</li>
+        <li>Review the detour capacity charts to ensure the alternative route can handle the expected load without severe congestion.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>5. Report Generation & Export</h2>
+      <p>The application offers two distinct pathways for generating professional reports, depending on your deployment setup.</p>
+
+      <h3>Method A: Standard Frontend Export (Always Available)</h3>
       <ol>
-        <li>Confirm site metadata: road name, directions, and counter details.</li>
-        <li>Set analysis inputs: base year, target year, growth rate, lane settings, and assumptions.</li>
-        <li>Review traffic split inputs for each direction (D1 and D2).</li>
-        <li>Run calculations to generate hourly volumes, VCR, queue lengths, and peak period outputs.</li>
-        <li>Check map markers, chart trends, and table values for consistency.</li>
+        <li>Switch the UI to <strong>Report Mode</strong>.</li>
+        <li>The app will format your inputs, site details, tables, and charts into a printable layout.</li>
+        <li>Use the browser's <strong>Print Preview</strong> (<code>Ctrl+P</code>) to review the layout.</li>
+        <li>Select "Save as PDF" to export the final document.</li>
       </ol>
-    </section>
+      <div class="note">If you used <code>index_formulas.html</code>, all underlying math and step traces will be explicitly printed in this report.</div>
 
-    <section class="card">
-      <h2>3. Report and Export</h2>
+      <h3>Method B: Advanced Python Backend Service (If Configured)</h3>
+      <p>For more advanced narrative generation, the app connects to a local Python FastAPI service.</p>
       <ul>
-        <li>Switch to report mode to generate printable output.</li>
-        <li>Use print preview before exporting PDF.</li>
-        <li>Use share options where needed for report distribution.</li>
-        <li>In Formula View, formulas and step traces remain visible in report sections.</li>
+        <li>The frontend sends a structured payload containing all calculation results to the backend.</li>
+        <li>The backend generates an editable draft report, translating raw data into professional narrative text.</li>
+        <li>If configured with an API key, the service utilizes AI (Gemini) to enrich the executive summaries and narrative flow.</li>
+        <li>You can edit the text directly in the provided draft editor before final export.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>4. Data Sources</h2>
-      <p>The app loads datasets from raw GitHub sources and falls back to local files if a source is unavailable.</p>
+      <h2>6. Quality Assurance & Formula Verification</h2>
+      <p>Accuracy is critical. The application includes built-in tools to verify calculations:</p>
       <ul>
-        <li>TMR</li>
-        <li>Gold Coast</li>
-        <li>Ipswich</li>
-        <li>Logan</li>
-        <li>Toowoomba</li>
-        <li>Tewantin</li>
-      </ul>
-      <div class="warn">If <code>Sites Loaded</code> is low or zero, reload the page with <code>Ctrl+F5</code> to bypass stale cache.</div>
-    </section>
-
-    <section class="card">
-      <h2>5. Troubleshooting</h2>
-      <ul>
-        <li>No sites loaded: hard refresh the page and ensure internet access to raw GitHub files.</li>
-        <li>Map not visible: wait for library load and verify no browser extensions are blocking scripts.</li>
-        <li>Unexpected values: verify direction split, growth rate, heavy vehicle percentage, and year inputs.</li>
-        <li>Formula details missing: open <code>index_formulas.html</code> and regenerate the report.</li>
+        <li><strong>Formula Agent (formula-agent.js):</strong> A background test harness that validates live calculations against reference engineering formulas.</li>
+        <li><strong>Live Auditing:</strong> By using the Formula View, engineers can manually audit the exact formulas applied to their specific site data, ensuring transparency in every assessment.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>6. Screenshots (Placeholders)</h2>
-      <p>Replace these placeholders with actual screenshots for faster user onboarding.</p>
-      <div class="shot-grid">
-        <div class="shot">
-          <h3>SNIP 2: Login</h3>
-          <p>Show the login modal before entering the tool.</p>
-        </div>
-        <div class="shot">
-          <h3>SNIP 3: Site Selection</h3>
-          <p>Show address search and site selection workflow.</p>
-        </div>
-        <div class="shot">
-          <h3>SNIP 4: Inputs and Site Details</h3>
-          <p>Show selected site details and the map section.</p>
-        </div>
-        <div class="shot">
-          <h3>SNIP 5: Inputs</h3>
-          <p>Show auto-filled inputs and required editable fields before calculation.</p>
-        </div>
-        <div class="shot">
-          <h3>SNIP 6: Report Outputs</h3>
-          <p>Show grouped summary and queue/report output tables.</p>
-        </div>
+      <h2>7. Troubleshooting & FAQ</h2>
+      
+      <div class="faq-item">
+        <p class="faq-q">Q: The map isn't loading or is completely blank.</p>
+        <p>A: Ensure you have an active internet connection, as the map relies on external Leaflet libraries. Check if any strict ad-blockers or browser extensions are preventing scripts from running.</p>
       </div>
-    </section>
+      
+      <div class="faq-item">
+        <p class="faq-q">Q: Why does the top badge say "0 Sites Loaded"?</p>
+        <p>A: This usually means the dataset cache is stale or the download failed. Perform a hard refresh (<code>Ctrl+F5</code> or <code>Cmd+Shift+R</code>). If it persists, ensure you can access GitHub, as the app fetches raw data from there before trying local fallbacks.</p>
+      </div>
 
-    <section class="card">
-      <h2>7. FAQ</h2>
       <div class="faq-item">
-        <p class="faq-q">Q: Why does the app show 0 sites loaded?</p>
-        <p>A: Reload with <code>Ctrl+F5</code>. If still zero, check internet access and confirm raw GitHub dataset links are reachable.</p>
+        <p class="faq-q">Q: My calculation results look incorrect or highly skewed.</p>
+        <p>A: Double-check your inputs. Common errors include entering a Target Year earlier than the Base Year, inputting extreme growth rates, or incorrect Direction 1 / Direction 2 traffic percentage splits (they should sum to 100%).</p>
       </div>
+
       <div class="faq-item">
-        <p class="faq-q">Q: Which page should I use for calculations with visible formulas?</p>
-        <p>A: Use <code>index_formulas.html</code>. It enforces formula/step visibility in the output workflow.</p>
+        <p class="faq-q">Q: I need to show my calculation methodology to a reviewer. How do I do that?</p>
+        <p>A: Do not use the standard <code>index.html</code>. Instead, open <code>index_formulas.html</code>, re-run your analysis, and generate the report. This version explicitly renders the math steps in the final output.</p>
       </div>
+
       <div class="faq-item">
-        <p class="faq-q">Q: Can I still use the tool if one online dataset fails?</p>
-        <p>A: Yes. The loader attempts raw GitHub data first, then falls back to local dataset files in this folder.</p>
-      </div>
-      <div class="faq-item">
-        <p class="faq-q">Q: How do I create a final report PDF?</p>
-        <p>A: Enter report mode, review the sections, run print preview, then choose Print / Save PDF.</p>
+        <p class="faq-q">Q: The advanced text report editor isn't working.</p>
+        <p>A: The advanced editable report requires the Python backend service (<code>report_service.py</code>) to be running on your machine or network. If it is not running, you must use the standard Frontend Export method (Print to PDF).</p>
       </div>
     </section>
   </main>

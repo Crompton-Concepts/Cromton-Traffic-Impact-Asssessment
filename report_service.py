@@ -1482,10 +1482,12 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
 
   def _render_group(tables: list[dict], fallback_html: str) -> str:
     if tables:
-      return "".join(
+      rendered = "".join(
         _render_data_table(t, analysis_map.get(_normalize_title_key(t.get("title"))), _select_charts_for_table(t, chart_items))
         for t in tables
       )
+      if rendered.strip():
+        return rendered
     return fallback_html
 
   # Any unclassified table belongs to "Detour Route Information" (section 1).
@@ -2294,11 +2296,13 @@ def editor_page(draft_id: str) -> str:
     detour_section_html = _build_short_detour_section(detour_tables, detour_route_count, table_analysis_map, chart_items_to_render, is_short=is_short, section_num="4")
 
     # --- Other sections and numbering ---
+    # Short reports only include the structured sections; ad-hoc tables are suppressed.
     other_blocks: list[str] = []
-    for table in other_tables:
-      matched_charts = _select_charts_for_table(table, chart_items_to_render)
-      embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
-      other_blocks.append(_render_data_table(table, table_analysis_map.get(_normalize_title_key(table.get('title'))), matched_charts))
+    if not is_short:
+      for table in other_tables:
+        matched_charts = _select_charts_for_table(table, chart_items_to_render)
+        embedded_chart_keys.update(_normalize_title_key(item.get("canvas_id") or item.get("title")) for item in matched_charts)
+        other_blocks.append(_render_data_table(table, table_analysis_map.get(_normalize_title_key(table.get('title'))), matched_charts))
     other_sections_html = "".join(other_blocks)
 
     if is_short:
@@ -3264,6 +3268,7 @@ def editor_page(draft_id: str) -> str:
       _pushUndo({{ type: 'block', element: block, parent: block.parentNode, nextSibling: block.nextSibling }});
       block.remove();
       refreshToc();
+      refreshListOfTables();
     }}
 
     document.addEventListener('keydown', function(e) {{
@@ -3280,6 +3285,7 @@ def editor_page(draft_id: str) -> str:
             last.parent.appendChild(last.element);
           }}
           refreshToc();
+          refreshListOfTables();
         }} else if (last.type === 'column') {{
           last.cells.forEach(function(item) {{
             if (item.parent && item.parent.isConnected) {{
