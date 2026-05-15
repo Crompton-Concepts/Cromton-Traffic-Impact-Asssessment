@@ -3702,8 +3702,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       loginError.textContent = 'Authenticating...';
 
       // Pull latest users from Firebase before checking credentials.
+      // TIASync.pullAll already has its own internal timeout/fallback behavior.
       if (window.TIASync && TIASync.isEnabled()) {
-        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 2000))]); } catch (_) {}
+        try { await TIASync.pullAll(); } catch (_) {}
       }
 
       const db = getUserDb();
