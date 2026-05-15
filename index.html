@@ -4752,11 +4752,11 @@
               <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 14px;">
                 <div class="input-group" style="flex: 1; min-width: 130px;">
                   <label for="directD1Percent"><strong>D1 Split %:</strong> <span style="font-weight:400; font-size:0.85em;">(default 50)</span></label>
-                  <input type="number" id="directD1Percent" min="0" max="100" step="1" placeholder="50" oninput="previewDirectAadt()" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;" />
+                  <input type="number" id="directD1Percent" min="0" max="100" step="1" placeholder="50" oninput="onDirectSplitChange('d1')" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;" />
                 </div>
                 <div class="input-group" style="flex: 1; min-width: 130px;">
-                  <label for="directD2Percent"><strong>D2 Split %:</strong> <span style="font-weight:400; font-size:0.85em;">(auto)</span></label>
-                  <input type="number" id="directD2Percent" min="0" max="100" step="1" placeholder="50" readonly style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #e0e0e0; background: #f5f5f5; color: #666;" />
+                  <label for="directD2Percent"><strong>D2 Split %:</strong></label>
+                  <input type="number" id="directD2Percent" min="0" max="100" step="1" placeholder="50" oninput="onDirectSplitChange('d2')" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;" />
                 </div>
               </div>
 
@@ -10493,22 +10493,53 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 2));
     const bgColor = String(options.backgroundColor || '#ffffff');
 
+    const blobFromCanvas = (canvasEl) => new Promise((resolve, reject) => {
+      if (!canvasEl || typeof canvasEl.toBlob !== 'function') {
+        reject(new Error('Canvas export API unavailable'));
+        return;
+      }
+      canvasEl.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Canvas export produced empty blob'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/png');
+    });
+
+    const maxPixels = 24_000_000;
+    const area = Math.max(1, width * height);
+    const areaScaleCap = Math.max(0.45, Math.min(1, Math.sqrt(maxPixels / area)));
+    const baseScale = Math.max(0.5, Math.min(pixelRatio, pixelRatio * areaScaleCap));
+
     // Preferred path: html2canvas is bundled by html2pdf in this app.
     if (typeof window.html2canvas === 'function') {
-      const canvas = await window.html2canvas(previewNode, {
-        backgroundColor: bgColor,
-        scale: pixelRatio,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        width,
-        height,
-        scrollX: 0,
-        scrollY: 0
-      });
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('Canvas export failed');
-      return blob;
+      const scalesToTry = [baseScale, Math.max(0.75, baseScale * 0.8), 0.6, 0.5]
+        .map((v) => Math.max(0.5, Math.min(2, Number(v) || 1)))
+        .filter((v, i, arr) => arr.indexOf(v) === i);
+
+      let html2CanvasError = null;
+      for (const scale of scalesToTry) {
+        try {
+          const canvas = await window.html2canvas(previewNode, {
+            backgroundColor: bgColor,
+            scale,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            width,
+            height,
+            scrollX: 0,
+            scrollY: 0
+          });
+          return await blobFromCanvas(canvas);
+        } catch (error) {
+          html2CanvasError = error;
+        }
+      }
+      if (html2CanvasError) {
+        console.warn('[TGS Export] html2canvas path failed, trying fallback:', html2CanvasError);
+      }
     }
 
     // Fallback: SVG foreignObject render.
@@ -10522,7 +10553,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const cloneMarkup = serializer.serializeToString(clone);
     const svgMarkup = `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-        <foreignObject x="0" y="0" width="100%" height="100%">${cloneMarkup}</foreignObject>
+        <foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${cloneMarkup}</div></foreignObject>
       </svg>
     `;
     const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
@@ -10530,8 +10561,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     try {
       const imageEl = new Image();
-      const dataUrl = await new Promise((resolve, reject) => {
-        imageEl.onload = () => resolve(svgUrl);
+      await new Promise((resolve, reject) => {
+        imageEl.onload = () => resolve(true);
         imageEl.onerror = () => reject(new Error('SVG fallback render failed'));
         imageEl.src = svgUrl;
       });
@@ -10546,9 +10577,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       ctx.drawImage(imageEl, 0, 0, width, height);
 
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('Fallback canvas export failed');
-      return blob;
+      return await blobFromCanvas(canvas);
     } finally {
       URL.revokeObjectURL(svgUrl);
     }
@@ -10974,13 +11003,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     // Firebase Auth State Listener
     firebase.auth().onAuthStateChanged(async (user) => {
-      if (user && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-        unlockApplication().catch(function(err) {
-          console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
-          document.body.classList.remove('app-locked');
-          loginGate.style.display = 'none';
-        });
+      if (!user) return;
+
+      // Avoid first-attempt race: auth state can fire before submit handler sets sessionStorage.
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
       }
+
+      unlockApplication().catch(function(err) {
+        console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+        document.body.classList.remove('app-locked');
+        loginGate.style.display = 'none';
+      });
     });
 
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
@@ -11012,26 +11046,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return;
       }
 
+      let user = null;
       try {
         const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
-        const user = userCredential.user;
-        
-        // Sync record if found
-        const finalUname = found ? found.record.username : user.email.split('@')[0];
-        const finalRec = found ? found.record : { username: finalUname, email: user.email, tier: 'free' };
-
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-        sessionStorage.setItem(USER_SESSION_KEY, finalUname);
-        sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
-        sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
-        
-        loginError.textContent = '';
-        await unlockApplication({ useFunnyLoading: true });
+        user = userCredential && userCredential.user ? userCredential.user : null;
       } catch (error) {
         console.error('[Login] Firebase Auth error:', error);
         loginError.textContent = 'Login failed: ' + error.message;
         loginPassword.value = '';
         loginPassword.focus();
+        return;
+      }
+
+      const fallbackUname = user && user.email ? user.email.split('@')[0] : userIdentifier;
+      const finalUname = found ? found.record.username : fallbackUname;
+      const finalRec = found ? found.record : {
+        username: finalUname,
+        email: user && user.email ? user.email : email,
+        tier: 'free'
+      };
+
+      sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+      sessionStorage.setItem(USER_SESSION_KEY, finalUname);
+      sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
+      sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
+
+      loginError.textContent = '';
+
+      try {
+        await unlockApplication({ useFunnyLoading: true });
+      } catch (unlockError) {
+        console.error('[Login] unlockApplication failed after successful auth:', unlockError);
+        document.body.classList.remove('app-locked');
+        loginGate.style.display = 'none';
       }
     });
 
@@ -29520,13 +29567,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (directBtn) { directBtn.style.background = isTrip ? '#e8f0f1' : '#2a4045'; directBtn.style.color = isTrip ? '#2a4045' : '#fff'; }
   }
 
+  function onDirectSplitChange(which) {
+    const d1Input = document.getElementById('directD1Percent');
+    const d2Input = document.getElementById('directD2Percent');
+    if (!d1Input || !d2Input) return;
+    if (which === 'd1') {
+      const v = Math.min(100, Math.max(0, Number(d1Input.value) || 0));
+      d2Input.value = String(100 - v);
+    } else {
+      const v = Math.min(100, Math.max(0, Number(d2Input.value) || 0));
+      d1Input.value = String(100 - v);
+    }
+    previewDirectAadt();
+  }
+
   function previewDirectAadt() {
     const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
     const d1PctRaw = Number(document.getElementById('directD1Percent')?.value);
-    const d1Pct = isNaN(d1PctRaw) || d1PctRaw === 0 ? 50 : Math.min(100, Math.max(0, d1PctRaw));
-    const d2Pct = 100 - d1Pct;
-    const d2Input = document.getElementById('directD2Percent');
-    if (d2Input) d2Input.value = String(d2Pct);
+    const d1Pct = isNaN(d1PctRaw) ? 50 : Math.min(100, Math.max(0, d1PctRaw));
     const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
     const pmPct = Number(document.getElementById('directPMPercent')?.value) || 11;
     const preview = document.getElementById('directAadtPreview');
@@ -29550,9 +29608,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
     if (!aadt) { alert('⚠️ Please enter a valid AADT value before applying.'); return; }
     const d1PctRaw = Number(document.getElementById('directD1Percent')?.value);
-    const d1Pct = isNaN(d1PctRaw) || d1PctRaw === 0 ? 50 : Math.min(100, Math.max(0, d1PctRaw));
+    const d2PctRaw = Number(document.getElementById('directD2Percent')?.value);
+    const d1Pct = isNaN(d1PctRaw) ? 50 : Math.min(100, Math.max(0, d1PctRaw));
+    const d2Pct = isNaN(d2PctRaw) ? (100 - d1Pct) : Math.min(100, Math.max(0, d2PctRaw));
     const d1 = Math.round(aadt * d1Pct / 100);
-    const d2 = aadt - d1;
+    const d2 = Math.round(aadt * d2Pct / 100);
     const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
     const pmPct = Number(document.getElementById('directPMPercent')?.value) || 11;
     const peakAM = Math.round(aadt * amPct / 100);
