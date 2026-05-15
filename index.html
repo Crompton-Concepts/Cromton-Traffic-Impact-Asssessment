@@ -4531,7 +4531,7 @@
         <div class="snapshot-actions">
           <button id="tiaSnapshotImportBtn" type="button" class="snapshot-btn snapshot-btn-import" onclick="document.getElementById('tiaSnapshotImportInput').click();">Import Saved JSON</button>
           <span id="tiaSnapshotStatus" class="snapshot-status">No session file loaded</span>
-          <input id="tiaSnapshotImportInput" type="file" accept="application/json,.json" style="display:none;" onchange="handleTiaSnapshotImport(this);" />
+          <input id="tiaSnapshotImportInput" type="file" accept="application/json,.json" style="display:none;" />
         </div>
       </div>
 
@@ -10406,6 +10406,208 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function copyDetourTiaSheetPreview(button) {
     copyTgsTiaSheetPreview(button, 'detour');
+  }
+
+  function sanitizeExportFileNameSegment(value, fallback = 'sheet') {
+    const raw = String(value || '').trim();
+    const cleaned = raw
+      .replace(/[^a-zA-Z0-9\-_\s]+/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase();
+    return cleaned || fallback;
+  }
+
+  function triggerBlobDownload(blob, fileName) {
+    if (!blob) throw new Error('No image blob generated');
+    const safeName = String(fileName || 'tgs_tia_sheet.png').trim() || 'tgs_tia_sheet.png';
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = safeName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(url), 2500);
+  }
+
+  async function renderPreviewNodeToPngBlob(previewNode, options = {}) {
+    if (!previewNode) throw new Error('Preview node not found');
+
+    const rect = previewNode.getBoundingClientRect();
+    const width = Math.max(1, Math.ceil(rect.width || previewNode.scrollWidth || previewNode.offsetWidth || 0));
+    const height = Math.max(1, Math.ceil(rect.height || previewNode.scrollHeight || previewNode.offsetHeight || 0));
+    const pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 2));
+    const bgColor = String(options.backgroundColor || '#ffffff');
+
+    // Preferred path: html2canvas is bundled by html2pdf in this app.
+    if (typeof window.html2canvas === 'function') {
+      const canvas = await window.html2canvas(previewNode, {
+        backgroundColor: bgColor,
+        scale: pixelRatio,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width,
+        height,
+        scrollX: 0,
+        scrollY: 0
+      });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('Canvas export failed');
+      return blob;
+    }
+
+    // Fallback: SVG foreignObject render.
+    const clone = previewNode.cloneNode(true);
+    clone.style.margin = '0';
+    clone.style.width = `${width}px`;
+    clone.style.maxWidth = `${width}px`;
+    clone.style.background = bgColor;
+
+    const serializer = new XMLSerializer();
+    const cloneMarkup = serializer.serializeToString(clone);
+    const svgMarkup = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+        <foreignObject x="0" y="0" width="100%" height="100%">${cloneMarkup}</foreignObject>
+      </svg>
+    `;
+    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    try {
+      const imageEl = new Image();
+      const dataUrl = await new Promise((resolve, reject) => {
+        imageEl.onload = () => resolve(svgUrl);
+        imageEl.onerror = () => reject(new Error('SVG fallback render failed'));
+        imageEl.src = svgUrl;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(width * pixelRatio);
+      canvas.height = Math.ceil(height * pixelRatio);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context unavailable');
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      ctx.drawImage(imageEl, 0, 0, width, height);
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('Fallback canvas export failed');
+      return blob;
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+
+  async function downloadTgsTiaSheetImage(button) {
+    const previewHost = document.getElementById('tgsTiaPreviewHost');
+    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+    const previewNode = previewHost ? previewHost.firstElementChild : null;
+
+    if (!previewNode) {
+      if (previewStatus) {
+        previewStatus.textContent = 'Generate preview first, then download the image.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      return;
+    }
+
+    const original = button ? button.textContent : 'Download as Image';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Rendering...';
+    }
+
+    try {
+      const blob = await renderPreviewNodeToPngBlob(previewNode, { backgroundColor: '#ffffff' });
+      const scenario = document.getElementById('scenarioNameInput');
+      const scenarioSegment = sanitizeExportFileNameSegment(scenario && scenario.value, 'tia');
+      const fileName = `tgs_tia_sheet_${scenarioSegment}.png`;
+      triggerBlobDownload(blob, fileName);
+
+      if (previewStatus) {
+        previewStatus.textContent = `Image downloaded: ${fileName}`;
+        previewStatus.style.color = '#0f766e';
+      }
+      if (button) button.textContent = 'Downloaded';
+    } catch (error) {
+      console.error('[TGS Export] Image download failed:', error);
+      if (previewStatus) {
+        previewStatus.textContent = 'Image export failed. Try regenerating preview, then download again.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      if (button) button.textContent = 'Export Failed';
+    } finally {
+      if (button) {
+        setTimeout(() => {
+          button.disabled = false;
+          button.textContent = original;
+        }, 1400);
+      }
+    }
+  }
+
+  async function downloadDetourTiaSheetImage(button, routeIndex) {
+    const previewHost = document.getElementById('detourTiaPreviewHost');
+    const previewStatus = document.getElementById('detourTiaPreviewStatus');
+    const detourSheets = previewHost
+      ? Array.from(previewHost.querySelectorAll(':scope > .detour-tia-sheet'))
+      : [];
+
+    let targetSheet = null;
+    const normalizedIndex = Number.isFinite(Number(routeIndex)) ? Number(routeIndex) : -1;
+    if (normalizedIndex >= 0 && normalizedIndex < detourSheets.length) {
+      targetSheet = detourSheets[normalizedIndex];
+    } else if (detourSheets.length > 0) {
+      targetSheet = detourSheets[0];
+    } else if (previewHost) {
+      targetSheet = previewHost.firstElementChild;
+    }
+
+    if (!targetSheet) {
+      if (previewStatus) {
+        previewStatus.textContent = 'Generate detour preview first, then download image.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      return;
+    }
+
+    const original = button ? button.textContent : 'Download as Image';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Rendering...';
+    }
+
+    try {
+      const blob = await renderPreviewNodeToPngBlob(targetSheet, { backgroundColor: '#ffffff' });
+      const routeLabel = targetSheet.getAttribute('data-route-label') || `route_${normalizedIndex + 1}`;
+      const routeSegment = sanitizeExportFileNameSegment(routeLabel, 'route');
+      const fileName = `detour_tia_sheet_${routeSegment}.png`;
+      triggerBlobDownload(blob, fileName);
+
+      if (previewStatus) {
+        previewStatus.textContent = `Image downloaded: ${fileName}`;
+        previewStatus.style.color = '#0f766e';
+      }
+      if (button) button.textContent = 'Downloaded';
+    } catch (error) {
+      console.error('[Detour Export] Image download failed:', error);
+      if (previewStatus) {
+        previewStatus.textContent = 'Detour image export failed. Try regenerating preview, then download again.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      if (button) button.textContent = 'Export Failed';
+    } finally {
+      if (button) {
+        setTimeout(() => {
+          button.disabled = false;
+          button.textContent = original;
+        }, 1400);
+      }
+    }
   }
 
   function restoreReportRemovals() {
@@ -22639,8 +22841,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const exportBtn = document.getElementById('tiaSnapshotExportBtn');
     const importInput = document.getElementById('tiaSnapshotImportInput');
 
-    if (importBtn && importInput) {
-      importBtn.addEventListener('click', () => importInput.click());
+    if (importInput) {
       importInput.addEventListener('change', async (event) => {
         const file = event && event.target && event.target.files && event.target.files[0];
         try {
