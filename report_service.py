@@ -1558,12 +1558,13 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
 
   if is_short:
     # Short report:
-    # 1. Detour Route Information / 2. Estimated Detour Delay Calculation /
-    # 3. Pedestrian Detour Impact
+    # 1. Detour Route Information / 2. Detour Road Summary / 3. Estimated Detour Delay Calculation /
+    # 4. Pedestrian Detour Impact
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. ESTIMATED DETOUR DELAY CALCULATION</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. PEDESTRIAN DETOUR IMPACT</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. DETOUR ROAD SUMMARY</h4>" + _render_group(detour_summary_tables + dir_capacity_tables, fallback_detour_summary) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. ESTIMATED DETOUR DELAY CALCULATION</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. PEDESTRIAN DETOUR IMPACT</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
   else:

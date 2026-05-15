@@ -533,7 +533,7 @@ This Traffic Impact Assessment relates to SMITH STREET CONNECTION ROAD at -. The
 
 Traffic demand context indicates that the modeled daily traffic volume is approximately 77,675 vehicles per day at opening year (2026), directional demand is split between D1 (37,096 vpd, 47.8% of total) and D2 (40,579 vpd, 52.2% of total), an annual growth rate of 2.50% has been applied (2024 → 2026).
 
-Operational performance outcomes show that the worst modeled V/C ratio is 2.42 (LOS F); the peak queue demand is approximately 5,396 m.
+Operational performance outcomes show that the worst modeled V/C ratio is 2.42 (LOS F); the peak queue demand is approximately 1,440 m (e.g. 1,440 m queue for 2-minute hold).
 
 On the basis of the current queue and capacity outputs, detour planning should be treated as an active mitigation requirement. Key supporting observations include: High Risk Period: AM | Network Max Queue ~= 5,396 m; High Risk Period: AM | Worst VCR = 2.358 (LOS F).
 
@@ -663,8 +663,6 @@ These controlling outputs typically emerge when directional demand, lane closure
 
 
 
-
- 
 
 
 ➕ Row
@@ -1059,6 +1057,8 @@ High V/C conditions occur when effective work-zone capacity is constrained by la
 
 
  
+
+ 
 4. Detour Analysis
 
 
@@ -1139,7 +1139,79 @@ Detour pressure becomes material when diverted traffic is reassigned to roads wi
 
 
 
-2. ESTIMATED DETOUR DELAY CALCULATION
+2. DETOUR ROAD SUMMARY
+
+
+
+➕ Row
+ 
+➖ Row
+ 
+➕ Col
+ 
+➖ Col
+ 
+✕ Remove
+
+
+Table 28 - Detour Road Summary
+
+
+Table 28 - Detour Road Summary sets out the 2-row result dataset covering D1, D2. The highest recorded value is 3,540.00 for D1 (Volume (veh/h)).
+
+
+The table below provides supporting values for the detour or pedestrian impact assessment.
+
+
+
+
+Direction
+
+LOS
+
+VCR
+
+Capacity (veh/h)
+
+Volume (veh/h)
+
+
+
+
+
+D1
+
+F
+
+2.36
+
+1500
+
+3540
+
+
+
+D2
+
+—
+
+—
+
+—
+
+—
+
+
+
+
+
+Detour pressure becomes material when diverted traffic is reassigned to roads with limited spare capacity during the same peak period as the primary corridor impact. These conditions are most important where side-road intersections, local access, or school and freight activity are already operating close to their normal thresholds.
+
+
+
+
+
+3. ESTIMATED DETOUR DELAY CALCULATION
 
 
 
@@ -1217,7 +1289,7 @@ Detour pressure becomes material when diverted traffic is reassigned to roads wi
 
 
 
-3. PEDESTRIAN DETOUR IMPACT
+4. PEDESTRIAN DETOUR IMPACT
 
 
 
@@ -1287,7 +1359,7 @@ Detour pressure becomes material when diverted traffic is reassigned to roads wi
 
 The assessment for SMITH STREET CONNECTION ROAD at - indicates that the modeled road network should be interpreted as a constrained work-stage environment rather than a normal operating condition with approximately 77,675 vehicles per day and a growth allowance of 2.50% per annum. The reported outputs are therefore most useful as a screening tool for operational risk, queue storage exposure, and the timing of mitigation triggers.
 
-Operationally, the model points to a worst V/C ratio of 2.42 corresponding to LOS F and a peak queue on the order of 5,396 m. These values suggest that traffic performance is being controlled by a limited number of peak-period constraints, so site management should focus on those controlling periods rather than average daily conditions.
+Operationally, the model points to a worst V/C ratio of 2.42 corresponding to LOS F and a peak queue on the order of 1,440 m (2-minute hold cycle). These values suggest that traffic performance is being controlled by a limited number of peak-period constraints, so site management should focus on those controlling periods rather than average daily conditions.
 
 From an engineering perspective, mitigation should prioritise maintaining discharge opportunities, reducing unnecessary blockage time, and protecting upstream intersections and accesses from queue spillback. Where detour planning is triggered, the diversion strategy should be treated as an operational management measure with active monitoring rather than a one-off desktop assumption.
 
@@ -1301,7 +1373,7 @@ Queue and V/C results should be used to set monitoring triggers, traffic control
 
 Any material change in closure duration, lane availability, or directional demand should prompt the assessment to be refreshed before implementation.
 
-The detailed table set has been interpreted together with 12 supporting result table(s) so that mitigation can be tied to the specific controlling scenario.
+The detailed table set has been interpreted together with 13 supporting result table(s) so that mitigation can be tied to the specific controlling scenario.
 
 
 
@@ -1352,7 +1424,7 @@ ENGINEERING DISCLAIMER:
 
 
  
-{"report_variant": "short", "project": {"name": "SMITH STREET CONNECTION ROAD", "location": "-", "report_date": "2026-05-13", "prepared_by": "Planner's Name", "cc_number": "CC0000"}, "inputs": {"road_operation_mode": "TWO-WAY", "base_year": "2024", "opening_year": "2026", "base_year_aadt": 73931, "opening_year_aadt": 77675, "d1_vadt_opening_year": 37096, "d2_vadt_opening_year": 40579, "growth_rate_percent": 2.5}, "results": {"queue_peak_m": 5396, "worst_vcr": 2.42, "los": "F", "detour_recommended": true}, "raw_js_results": {"detour_route_count": 1, "base_year": "2024", "opening_year": "2026"}, "selected_site_details": {"site_id": "11545", "source": "TMR", "road_name": "SMITH STREET CONNECTION ROAD", "description": "East of Precision Dr", "coordinates": "-27.963128, 153.363311", "google_maps_url": "https://maps.google.com/?q=-27.963128,153.363311", "count_year": "2024", "d1_direction": "Eastbound", "d2_direction": "Westbound", "d1_vadt": "35,308", "d2_vadt": "38,623", "total_vadt": "73,931", "applied_d1_hv_percent": "7.6", "applied_d2_hv_percent": "7.6", "applied_d1_rt_percent": "0.15", "applied_d2_rt_percent": "0.15"}, "notes": ["High Risk Period: AM | Network Max Queue ~= 5,396 m", "High Risk Period: AM | Worst VCR = 2.358 (LOS F)"], "tables": [{"table_id": "analysis_parameters", "title": "Analysis Parameters", "columns": ["Parameter", "Value"], "rows": [["ROAD OPERATION MODE", "TWO-WAY"]]}, {"table_id": "summary_computed_results", "title": "Summary of Computed Results", "columns": ["Metric", "Value"], "rows": [["QUEUE PEAK M", "5396"], ["WORST VCR", "2.42"], ["LOS", "F"], ["DETOUR RECOMMENDED", "True"]]}, {"table_id": "groupedtabled1", "title": "GROUPED DIRECTIONAL SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["YEAR", "AM LV", "TOTAL"], "rows": [["2024", "1889", "35308"], ["2026", "1985", "37096"]]}, {"table_id": "groupedtabled2", "title": "GROUPED DIRECTIONAL SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["YEAR", "AM LV", "TOTAL"], "rows": [["2024", "3327", "38623"], ["2026", "3496", "40579"]]}, {"table_id": "queuegroupedtabled1", "title": "DIRECTIONAL QUEUE SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "4343", "3000", "3200", "1200"]]}, {"table_id": "queuegroupedtabled2", "title": "DIRECTIONAL QUEUE SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "5396", "4000", "3800", "1400"]]}, {"table_id": "queueswtsummarytable", "title": "DIRECTIONAL QUEUE SUMMARY - SWT - SWT QUEUE SUMMARY", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["Queue Peak", "1440", "800", "900", "300"]]}, {"table_id": "vcrgroupedtabled1", "title": "DIRECTIONAL VCR SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "2.25 LOS F", "1.50 LOS F", "1.40 LOS F", "0.50 LOS A"]]}, {"table_id": "vcrgroupedtabled2", "title": "DIRECTIONAL VCR SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "2.36 LOS F", "1.65 LOS F", "1.59 LOS F", "0.58 LOS A"]]}, {"table_id": "detour_route_1_info", "title": "1. DETOUR ROUTE INFORMATION", "columns": ["PARAMETER", "DETAILS"], "rows": [["Detour Route Name", "Precision Drive >> Smith Street Motorway"], ["Selected Path", "Precision Drive >> Smith Street Motorway"], ["Route Length (km)", "5km"], ["Road Classification", "Urban"]]}, {"table_id": "detour_route_1_delay", "title": "ESTIMATED DELAY - DETOUR ROUTE", "columns": ["PARAMETER", "VALUE"], "rows": [["Detour Route Length (km)", "0.4"], ["Average Travel Speed on Detour (km/h)", "70"], ["Travel Time (seconds)", "21"], ["Total Time incl. Intersections (seconds)", "61"], ["Estimated Additional Travel Time (min)", "2"], ["Delay Classification", "Moderate (1-5 min)"]]}, {"table_id": "detour_route_1_ped", "title": "PEDESTRIAN DETOUR IMPACT INCLUDE IN PRINT: YES - ESTIMATED DELAY - DETOUR ROUTE (PRECISION DRIVE >> SMITH STREET MOTORWAY)", "columns": ["EXISTING ROUTE TIME (S)", "DETOURED ROUTE TIME (S)", "CROSSING DELAY (S)", "ADDED DELAY (S)", "ADDED DELAY (MIN)"], "rows": [["83.34", "333.34", "120", "370", "6.17"]]}]}
+{"report_variant": "short", "project": {"name": "SMITH STREET CONNECTION ROAD", "location": "-", "report_date": "2026-05-13", "prepared_by": "Planner's Name", "cc_number": "CC0000"}, "inputs": {"road_operation_mode": "TWO-WAY", "base_year": "2024", "opening_year": "2026", "base_year_aadt": 73931, "opening_year_aadt": 77675, "d1_vadt_opening_year": 37096, "d2_vadt_opening_year": 40579, "growth_rate_percent": 2.5}, "results": {"queue_peak_m": 5396, "worst_vcr": 2.42, "los": "F", "detour_recommended": true}, "raw_js_results": {"detour_route_count": 1, "base_year": "2024", "opening_year": "2026"}, "selected_site_details": {"site_id": "11545", "source": "TMR", "road_name": "SMITH STREET CONNECTION ROAD", "description": "East of Precision Dr", "coordinates": "-27.963128, 153.363311", "google_maps_url": "https://maps.google.com/?q=-27.963128,153.363311", "count_year": "2024", "d1_direction": "Eastbound", "d2_direction": "Westbound", "d1_vadt": "35,308", "d2_vadt": "38,623", "total_vadt": "73,931", "applied_d1_hv_percent": "7.6", "applied_d2_hv_percent": "7.6", "applied_d1_rt_percent": "0.15", "applied_d2_rt_percent": "0.15"}, "notes": ["High Risk Period: AM | Network Max Queue ~= 5,396 m", "High Risk Period: AM | Worst VCR = 2.358 (LOS F)"], "tables": [{"table_id": "analysis_parameters", "title": "Analysis Parameters", "columns": ["Parameter", "Value"], "rows": [["ROAD OPERATION MODE", "TWO-WAY"]]}, {"table_id": "summary_computed_results", "title": "Summary of Computed Results", "columns": ["Metric", "Value"], "rows": [["QUEUE PEAK M", "5396"], ["WORST VCR", "2.42"], ["LOS", "F"], ["DETOUR RECOMMENDED", "True"]]}, {"table_id": "groupedtabled1", "title": "GROUPED DIRECTIONAL SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["YEAR", "AM LV", "TOTAL"], "rows": [["2024", "1889", "35308"], ["2026", "1985", "37096"]]}, {"table_id": "groupedtabled2", "title": "GROUPED DIRECTIONAL SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["YEAR", "AM LV", "TOTAL"], "rows": [["2024", "3327", "38623"], ["2026", "3496", "40579"]]}, {"table_id": "queuegroupedtabled1", "title": "DIRECTIONAL QUEUE SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "4343", "3000", "3200", "1200"]]}, {"table_id": "queuegroupedtabled2", "title": "DIRECTIONAL QUEUE SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "5396", "4000", "3800", "1400"]]}, {"table_id": "queueswtsummarytable", "title": "DIRECTIONAL QUEUE SUMMARY - SWT - SWT QUEUE SUMMARY", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["Queue Peak", "1440", "800", "900", "300"]]}, {"table_id": "vcrgroupedtabled1", "title": "DIRECTIONAL VCR SUMMARY - D1 - DIRECTION 1, GAZETTAL, EASTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "2.25 LOS F", "1.50 LOS F", "1.40 LOS F", "0.50 LOS A"]]}, {"table_id": "vcrgroupedtabled2", "title": "DIRECTIONAL VCR SUMMARY - D2 - DIRECTION 2, AGAINST GAZETTAL, WESTBOUND", "columns": ["Metric", "AM", "OP", "PM", "EV"], "rows": [["1 Lane Closed (1 open)", "2.36 LOS F", "1.65 LOS F", "1.59 LOS F", "0.58 LOS A"]]}, {"table_id": "detour_route_1_info", "title": "1. DETOUR ROUTE INFORMATION", "columns": ["PARAMETER", "DETAILS"], "rows": [["Detour Route Name", "Precision Drive >> Smith Street Motorway"], ["Selected Path", "Precision Drive >> Smith Street Motorway"], ["Route Length (km)", "5km"], ["Road Classification", "Urban"]]}, {"table_id": "detour_road_summary", "title": "Table 28 - Detour Road Summary", "columns": ["Direction", "LOS", "VCR", "Capacity (veh/h)", "Volume (veh/h)"], "rows": [["D1", "F", "2.36", "1500", "3540"], ["D2", "\u2014", "\u2014", "\u2014", "\u2014"]]}, {"table_id": "detour_route_1_delay", "title": "ESTIMATED DELAY - DETOUR ROUTE", "columns": ["PARAMETER", "VALUE"], "rows": [["Detour Route Length (km)", "0.4"], ["Average Travel Speed on Detour (km/h)", "70"], ["Travel Time (seconds)", "21"], ["Total Time incl. Intersections (seconds)", "61"], ["Estimated Additional Travel Time (min)", "2"], ["Delay Classification", "Moderate (1-5 min)"]]}, {"table_id": "detour_route_1_ped", "title": "PEDESTRIAN DETOUR IMPACT INCLUDE IN PRINT: YES - ESTIMATED DELAY - DETOUR ROUTE (PRECISION DRIVE >> SMITH STREET MOTORWAY)", "columns": ["EXISTING ROUTE TIME (S)", "DETOURED ROUTE TIME (S)", "CROSSING DELAY (S)", "ADDED DELAY (S)", "ADDED DELAY (MIN)"], "rows": [["83.34", "333.34", "120", "370", "6.17"]]}]}
 
  
 
@@ -1745,6 +1817,7 @@ No sections available.
  _pushUndo({ type: 'block', element: block, parent: block.parentNode, nextSibling: block.nextSibling });
  block.remove();
  refreshToc();
+ refreshListOfTables();
  }
 
  document.addEventListener('keydown', function(e) {
@@ -1761,6 +1834,7 @@ No sections available.
  last.parent.appendChild(last.element);
  }
  refreshToc();
+ refreshListOfTables();
  } else if (last.type === 'column') {
  last.cells.forEach(function(item) {
  if (item.parent && item.parent.isConnected) {

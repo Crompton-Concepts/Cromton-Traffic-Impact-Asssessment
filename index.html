@@ -8306,6 +8306,46 @@
       rows: capRows
     });
 
+    // 2.5. Table 28 - Detour Road Summary (Direction, LOS, VCR, Capacity, Volume)
+    var losLabel = function(vcr) {
+      vcr = Number(vcr) || 0;
+      if (vcr <= 0.6) return 'A';
+      if (vcr <= 0.7) return 'B';
+      if (vcr <= 0.8) return 'C';
+      if (vcr <= 0.9) return 'D';
+      if (vcr <= 1.0) return 'E';
+      return 'F';
+    };
+
+    var roadSummaryRows = [];
+    snap.roads.forEach(function(road) {
+      var maxVcr = Math.max(0, Number(road.maxNewVcr || 0));
+      var worstDir = String(road.worstDirection || 'D1');
+      var worstCap = Math.max(0, Number(road.worstDirectionalCapacity || road.totalCapacity || 0));
+      var los = losLabel(maxVcr);
+      
+      // For the worst direction, populate data; for the other, use dashes
+      var d1Row = worstDir === 'D1' 
+        ? ['D1', los, maxVcr.toFixed(2), String(Math.round(worstCap)), String(Math.round((worstCap * maxVcr) || 0))]
+        : ['D1', '—', '—', '—', '—'];
+      
+      var d2Row = worstDir === 'D2'
+        ? ['D2', los, maxVcr.toFixed(2), String(Math.round(worstCap)), String(Math.round((worstCap * maxVcr) || 0))]
+        : ['D2', '—', '—', '—', '—'];
+      
+      roadSummaryRows.push(d1Row);
+      roadSummaryRows.push(d2Row);
+    });
+
+    if (roadSummaryRows.length > 0) {
+      tables.push({
+        table_id: 'detour_road_summary',
+        title: 'Table 28 - Detour Road Summary',
+        columns: ['Direction', 'LOS', 'VCR', 'Capacity (veh/h)', 'Volume (veh/h)'],
+        rows: roadSummaryRows
+      });
+    }
+
     // 3. Estimated Delay — Detour route
     var d = snap.delay || {};
     var delayMin = d.estimatedDelayMin || 0;
