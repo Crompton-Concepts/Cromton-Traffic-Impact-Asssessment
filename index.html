@@ -4659,8 +4659,16 @@
 
           <!-- Manual Traffic Generation Calculator -->
           <div id="manualTrafficGenPanel" class="card trip-generation-card" style="display: none; margin-bottom: 20px; padding: 15px; border-radius: 8px; background: #f8f9fa; border: 1px solid #ddd;">
-            <h3 style="margin-top: 0;">Trip Generation Calculator</h3>
-            
+            <h3 style="margin-top: 0;">Manual Traffic Generation</h3>
+
+            <!-- Mode toggle -->
+            <div style="display: flex; gap: 0; margin-bottom: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #c9d8da;">
+              <button id="manualGenModeTrip" onclick="setManualGenMode('trip')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #2a4045; color: #fff; transition: background 0.2s;">📊 Trip Generation</button>
+              <button id="manualGenModeDirect" onclick="setManualGenMode('direct')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #e8f0f1; color: #2a4045; transition: background 0.2s;">🔢 Direct AADT Entry</button>
+            </div>
+
+            <!-- Trip Generation Calculator section -->
+            <div id="manualGenTripSection">
             <div class="input-group" style="margin-bottom: 15px;">
               <label for="landUseScenario"><strong>Land Use Scenario:</strong></label>
               <select id="landUseScenario" onchange="updateScenarioFields()" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;">
@@ -4728,6 +4736,50 @@
             <div id="tripGenResult" style="display: none; margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #ffffff 0%, #f0f7f8 100%); border: 2px solid #14746f; border-radius: 8px; box-shadow: 0 2px 8px rgba(20, 116, 111, 0.15);">
               <!-- Dynamic content inserted by calculateTripGeneration() -->
             </div>
+            </div><!-- end manualGenTripSection -->
+
+            <!-- Direct AADT Entry section -->
+            <div id="manualGenDirectSection" style="display: none;">
+              <div style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 0.84em; line-height: 1.5; color: #0d47a1;">
+                <strong>ℹ️ Direct AADT Entry</strong> — Use this when you already have an AADT figure (e.g., from a traffic count, council data, or another study). Enter the total daily volume and the directional/peak splits will be calculated automatically.
+              </div>
+
+              <div class="input-group" style="margin-bottom: 14px;">
+                <label for="directAadtValue"><strong>Total AADT (vehicles/day):</strong></label>
+                <input type="number" id="directAadtValue" min="0" placeholder="e.g., 5200" oninput="previewDirectAadt()" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em;" />
+              </div>
+
+              <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 14px;">
+                <div class="input-group" style="flex: 1; min-width: 130px;">
+                  <label for="directD1Percent"><strong>D1 Split %:</strong> <span style="font-weight:400; font-size:0.85em;">(default 50)</span></label>
+                  <input type="number" id="directD1Percent" min="0" max="100" step="1" placeholder="50" oninput="previewDirectAadt()" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;" />
+                </div>
+                <div class="input-group" style="flex: 1; min-width: 130px;">
+                  <label for="directD2Percent"><strong>D2 Split %:</strong> <span style="font-weight:400; font-size:0.85em;">(auto)</span></label>
+                  <input type="number" id="directD2Percent" min="0" max="100" step="1" placeholder="50" readonly style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #e0e0e0; background: #f5f5f5; color: #666;" />
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 14px;">
+                <div class="input-group" style="flex: 1; min-width: 120px;">
+                  <label for="directAMPercent"><strong>AM Peak %:</strong></label>
+                  <input type="number" id="directAMPercent" min="0" max="100" step="0.1" placeholder="10" oninput="previewDirectAadt()" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;" />
+                </div>
+                <div class="input-group" style="flex: 1; min-width: 120px;">
+                  <label for="directPMPercent"><strong>PM Peak %:</strong></label>
+                  <input type="number" id="directPMPercent" min="0" max="100" step="0.1" placeholder="11" oninput="previewDirectAadt()" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;" />
+                </div>
+              </div>
+
+              <div id="directAadtPreview" style="display: none; background: #f0f7f8; border: 1px solid #84cad8; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 0.88em; line-height: 1.7;">
+                <!-- populated by previewDirectAadt() -->
+              </div>
+
+              <button onclick="applyDirectAadtEntry()" style="padding: 10px 15px; background: linear-gradient(135deg, #14746f 0%, #0a3f3c 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(20,116,111,0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
+                ✓ Apply AADT to Assessment
+              </button>
+            </div><!-- end manualGenDirectSection -->
+
           </div>
 
           <div id="quickTiaCalcResult" style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
@@ -29453,6 +29505,123 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     } catch (error) {
       console.error('Error in updateScenarioFields:', error);
     }
+  }
+
+  function setManualGenMode(mode) {
+    const tripSection = document.getElementById('manualGenTripSection');
+    const directSection = document.getElementById('manualGenDirectSection');
+    const tripBtn = document.getElementById('manualGenModeTrip');
+    const directBtn = document.getElementById('manualGenModeDirect');
+    if (!tripSection || !directSection) return;
+    const isTrip = mode === 'trip';
+    tripSection.style.display = isTrip ? '' : 'none';
+    directSection.style.display = isTrip ? 'none' : '';
+    if (tripBtn) { tripBtn.style.background = isTrip ? '#2a4045' : '#e8f0f1'; tripBtn.style.color = isTrip ? '#fff' : '#2a4045'; }
+    if (directBtn) { directBtn.style.background = isTrip ? '#e8f0f1' : '#2a4045'; directBtn.style.color = isTrip ? '#2a4045' : '#fff'; }
+  }
+
+  function previewDirectAadt() {
+    const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
+    const d1PctRaw = Number(document.getElementById('directD1Percent')?.value);
+    const d1Pct = isNaN(d1PctRaw) || d1PctRaw === 0 ? 50 : Math.min(100, Math.max(0, d1PctRaw));
+    const d2Pct = 100 - d1Pct;
+    const d2Input = document.getElementById('directD2Percent');
+    if (d2Input) d2Input.value = String(d2Pct);
+    const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
+    const pmPct = Number(document.getElementById('directPMPercent')?.value) || 11;
+    const preview = document.getElementById('directAadtPreview');
+    if (!preview) return;
+    if (!aadt) { preview.style.display = 'none'; return; }
+    const d1 = Math.round(aadt * d1Pct / 100);
+    const d2 = aadt - d1;
+    const peakAM = Math.round(aadt * amPct / 100);
+    const peakPM = Math.round(aadt * pmPct / 100);
+    preview.innerHTML = `
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;">
+        <div><strong>Total AADT:</strong> ${aadt.toLocaleString()} veh/day</div>
+        <div><strong>D1 / D2:</strong> ${d1.toLocaleString()} / ${d2.toLocaleString()}</div>
+        <div><strong>AM Peak (${amPct}%):</strong> ${peakAM.toLocaleString()} veh/hr</div>
+        <div><strong>PM Peak (${pmPct}%):</strong> ${peakPM.toLocaleString()} veh/hr</div>
+      </div>`;
+    preview.style.display = 'block';
+  }
+
+  function applyDirectAadtEntry() {
+    const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
+    if (!aadt) { alert('⚠️ Please enter a valid AADT value before applying.'); return; }
+    const d1PctRaw = Number(document.getElementById('directD1Percent')?.value);
+    const d1Pct = isNaN(d1PctRaw) || d1PctRaw === 0 ? 50 : Math.min(100, Math.max(0, d1PctRaw));
+    const d1 = Math.round(aadt * d1Pct / 100);
+    const d2 = aadt - d1;
+    const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
+    const pmPct = Number(document.getElementById('directPMPercent')?.value) || 11;
+    const peakAM = Math.round(aadt * amPct / 100);
+    const peakPM = Math.round(aadt * pmPct / 100);
+    const peakAM_In = Math.round(peakAM * 0.5);
+    const peakAM_Out = peakAM - peakAM_In;
+    const peakPM_In = Math.round(peakPM * 0.5);
+    const peakPM_Out = peakPM - peakPM_In;
+
+    // Populate tripGenResult dataset so applyToMainVadt() reads the correct vadt
+    const resultDiv = document.getElementById('tripGenResult');
+    if (resultDiv) resultDiv.dataset.calculatedVadt = String(aadt);
+
+    window.manualTrafficGenData = {
+      totalTrips: aadt,
+      vadt: aadt,
+      d1,
+      d2,
+      peakAM,
+      peakPM,
+      peakAM_In,
+      peakAM_Out,
+      peakPM_In,
+      peakPM_Out,
+      scenario: 'direct_aadt',
+      quantity: aadt,
+      rate: 1,
+      referenceSourceKey: 'direct',
+      referenceSourceLabel: 'Direct AADT Entry',
+      referenceSourceShort: 'Direct'
+    };
+
+    // Override applyToMainVadt description for direct entry
+    const addressInput = document.getElementById('macroSiteSearch');
+    const currentAddress = addressInput?.value || 'CUSTOM ADDRESS';
+    const currentYear = new Date().getFullYear();
+    const baseYearField = document.getElementById('baseYear');
+    const openingYearField = document.getElementById('openingYear') || document.getElementById('macroOpeningYear');
+    if (baseYearField) baseYearField.value = String(currentYear);
+    if (openingYearField) openingYearField.value = String(currentYear);
+    const d1Field = document.getElementById('D1_VADT');
+    const d2Field = document.getElementById('D2_VADT');
+    const mainVadtField = document.getElementById('VADT') || document.getElementById('mainVadtInput');
+    if (mainVadtField) mainVadtField.value = String(aadt);
+    if (d1Field) d1Field.value = String(d1);
+    if (d2Field) d2Field.value = String(d2);
+
+    showCustomAddressDetails({
+      siteId: 'CUSTOM ADDRESS',
+      roadName: currentAddress,
+      description: `Direct AADT Entry — ${aadt.toLocaleString()} veh/day`,
+      countYear: 'Direct entry',
+      d1Label: getCurrentDirectionalLabelContext().d1Raw,
+      d2Label: getCurrentDirectionalLabelContext().d2Raw,
+      d1,
+      d2,
+      total: aadt,
+      lat: null,
+      lon: null,
+      peakAM,
+      peakPM,
+      peakAM_In,
+      peakAM_Out,
+      peakPM_In,
+      peakPM_Out,
+      scenario: 'Direct AADT Entry'
+    });
+
+    alert(`✅ Applied to Assessment!\n\n📈 AADT: ${aadt.toLocaleString()} vehicles/day\n🔀 D1: ${d1.toLocaleString()} / D2: ${d2.toLocaleString()}\n📊 AM Peak: ${peakAM} veh/hr  |  PM Peak: ${peakPM} veh/hr\n🗓️ Year: ${currentYear}`);
   }
 
   function calculateTripGeneration() {
