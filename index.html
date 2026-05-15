@@ -9687,6 +9687,112 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
+  function setSheetStatus(statusEl, message, isError = false) {
+    if (!statusEl) return;
+    statusEl.textContent = String(message || '');
+    statusEl.style.color = isError ? '#b91c1c' : '';
+  }
+
+  function buildTiaSheetPreviewHtml(detourOnly = false) {
+    const container = document.querySelector('.container');
+    if (!container) return '';
+    const clone = container.cloneNode(true);
+    clone.querySelectorAll('#reportModeBar, #reportModeBottomBar, #reportShareMenu, .table-actions, .report-remove-x, .report-section-tools, .hide-print').forEach((el) => el.remove());
+    clone.querySelectorAll('details').forEach((detailsEl) => { detailsEl.open = true; });
+    if (detourOnly) {
+      const keepIds = new Set(['detourCard']);
+      clone.querySelectorAll('.card').forEach((card) => {
+        if (!keepIds.has(String(card.id || ''))) card.remove();
+      });
+    }
+    return clone.innerHTML;
+  }
+
+  async function copyTgsTiaSheet(triggerBtn, options = {}) {
+    const detourOnly = !!options.detourOnly;
+    const previewMode = detourOnly ? 'detour' : 'main';
+    const wrapEl = document.getElementById(detourOnly ? 'detourTiaPreviewWrap' : 'tgsTiaPreviewWrap');
+    const hostEl = document.getElementById(detourOnly ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+    const statusEl = document.getElementById(detourOnly ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
+    if (!hostEl || !wrapEl) return;
+    try {
+      toggleReportMode(true, detourOnly ? 'short' : 'detailed');
+      const html = buildTiaSheetPreviewHtml(detourOnly);
+      if (!html.trim()) { setSheetStatus(statusEl, 'Could not generate preview content.', true); return; }
+      hostEl.innerHTML = html;
+      hostEl.dataset.previewMode = previewMode;
+      wrapEl.style.display = 'block';
+      setSheetStatus(statusEl, detourOnly ? 'Detour preview generated.' : 'TGS TIA preview generated.');
+      const textToCopy = (hostEl.innerText || '').trim();
+      if (textToCopy && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+        setSheetStatus(statusEl, detourOnly ? 'Detour preview generated and copied to clipboard.' : 'TGS TIA preview generated and copied to clipboard.');
+      }
+      if (triggerBtn) triggerBtn.dataset.generated = 'true';
+    } catch (err) {
+      console.error('[TGS Sheet] Generation failed:', err);
+      setSheetStatus(statusEl, `Generation failed: ${err && err.message ? err.message : 'Unknown error'}`, true);
+    }
+  }
+
+  async function copyTgsTiaSheetPreview(triggerBtn) {
+    const hostEl = document.getElementById('tgsTiaPreviewHost');
+    const statusEl = document.getElementById('tgsTiaPreviewStatus');
+    if (!hostEl) return;
+    const textToCopy = (hostEl.innerText || '').trim();
+    if (!textToCopy) { setSheetStatus(statusEl, 'Preview is empty. Generate the sheet first.', true); return; }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+        setSheetStatus(statusEl, 'Preview copied to clipboard.');
+      } else {
+        setSheetStatus(statusEl, 'Clipboard API unavailable in this browser.', true);
+      }
+    } catch (err) {
+      setSheetStatus(statusEl, `Copy failed: ${err && err.message ? err.message : 'Unknown error'}`, true);
+    }
+  }
+
+  async function copyDetourTiaSheetPreview(triggerBtn) {
+    const hostEl = document.getElementById('detourTiaPreviewHost');
+    const statusEl = document.getElementById('detourTiaPreviewStatus');
+    if (!hostEl) return;
+    const textToCopy = (hostEl.innerText || '').trim();
+    if (!textToCopy) { setSheetStatus(statusEl, 'Detour preview is empty. Generate the sheet first.', true); return; }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+        setSheetStatus(statusEl, 'Detour preview copied to clipboard.');
+      } else {
+        setSheetStatus(statusEl, 'Clipboard API unavailable in this browser.', true);
+      }
+    } catch (err) {
+      setSheetStatus(statusEl, `Copy failed: ${err && err.message ? err.message : 'Unknown error'}`, true);
+    }
+  }
+
+  function toggleTgsTiaEditMode(triggerBtn) {
+    const hostEl = document.getElementById('tgsTiaPreviewHost');
+    const statusEl = document.getElementById('tgsTiaPreviewStatus');
+    if (!hostEl) return;
+    const willEnable = hostEl.contentEditable !== 'true';
+    hostEl.contentEditable = willEnable ? 'true' : 'false';
+    hostEl.style.outline = willEnable ? '2px dashed #f59e0b' : 'none';
+    if (triggerBtn) triggerBtn.textContent = willEnable ? 'Disable Edit Mode' : 'Enable Edit Mode';
+    setSheetStatus(statusEl, willEnable ? 'Edit mode enabled for preview.' : 'Edit mode disabled.');
+  }
+
+  function toggleDetourTiaEditMode(triggerBtn) {
+    const hostEl = document.getElementById('detourTiaPreviewHost');
+    const statusEl = document.getElementById('detourTiaPreviewStatus');
+    if (!hostEl) return;
+    const willEnable = hostEl.contentEditable !== 'true';
+    hostEl.contentEditable = willEnable ? 'true' : 'false';
+    hostEl.style.outline = willEnable ? '2px dashed #f59e0b' : 'none';
+    if (triggerBtn) triggerBtn.textContent = willEnable ? 'Disable Edit Mode' : 'Enable Edit Mode';
+    setSheetStatus(statusEl, willEnable ? 'Edit mode enabled for detour preview.' : 'Edit mode disabled.');
+  }
+
   function restoreReportRemovals() {
     document.querySelectorAll('.report-part-excluded').forEach((el) => {
       el.classList.remove('report-part-excluded');
