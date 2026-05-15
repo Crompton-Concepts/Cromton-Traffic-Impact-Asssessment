@@ -10058,7 +10058,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           .slice(0, 64) || `detour_route_${routeIndex + 1}`;
 
         return `
-      <div class="detour-tia-sheet" data-route-index="${routeIndex}" data-route-slug="${escapeHtml(routeSlug)}" data-route-label="${escapeHtml(routeLabel)}" style="${pageBreak} font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #7e22ce; padding:14px; background:#f8f2fb; max-width:1280px; width:100%; box-sizing:border-box;">
+      <div class="detour-tia-sheet" data-route-index="${routeIndex}" data-route-slug="${escapeHtml(routeSlug)}" data-route-label="${escapeHtml(routeLabel)}" style="${pageBreak} font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #7e22ce; padding:14px; background:#f8f2fb; width:1480px; min-width:1480px; max-width:none; box-sizing:border-box;">
   <div style="font-weight:900; font-size:16px; color:#4a148c; margin-bottom:10px; border-bottom:2px solid #8e24aa; padding-bottom:6px;">Detour Analysis Sheet — ${escapeHtml(routeLabel)}</div>
   <div style="font-weight:900; font-size:12px; margin: 0 0 6px 0; color:#4a148c;">Detour Route</div>
   ${routeSummaryHtml}
@@ -10145,7 +10145,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const queueRiskText = getValue('queueRiskBadge') || '-';
 
     const baseHtml = `
-<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #334155; padding:14px; background:#eef1f6; max-width:1280px; width:100%; box-sizing:border-box;">
+<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #334155; padding:14px; background:#eef1f6; width:1480px; min-width:1480px; max-width:none; box-sizing:border-box;">
   <div style="font-size:11px; color:#1e293b; font-weight:700; text-align:right; margin-bottom:8px;">Generated ${escapeHtml(generatedAt)}</div>
 
   <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:10px; margin-bottom:10px;">
@@ -20196,6 +20196,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     let d1DailyBase = dtca === 'YES' ? num('D1_VADT') : num('VADT') / 2;
     let d2DailyBase = dtca === 'YES' ? num('D2_VADT') : num('VADT') / 2;
+    // Fallback: if DOM fields are empty, read from in-memory data sources
+    if (!d1DailyBase && !d2DailyBase) {
+      if (manualData && manualData.vadt) {
+        d1DailyBase = Math.max(0, Number(manualData.d1) || Math.round(manualData.vadt * 0.5));
+        d2DailyBase = Math.max(0, Number(manualData.d2) || (manualData.vadt - Math.round(manualData.vadt * 0.5)));
+      } else if (window.selectedTiaData && window.selectedTiaData.type === 'references' && window.selectedTiaData.avgVADT) {
+        const refVADT = Math.round(window.selectedTiaData.avgVADT || 0);
+        d1DailyBase = Math.round(window.selectedTiaData.avgD1 || refVADT / 2);
+        d2DailyBase = Math.round(window.selectedTiaData.avgD2 || (refVADT - Math.round(refVADT / 2)));
+      }
+    }
     let totalDailyBase = dtca === 'YES' ? (d1DailyBase + d2DailyBase) : num('VADT');
     if (oneWayMode) {
       if (oneWayActiveDirection === 1) d2DailyBase = 0;
@@ -29683,6 +29694,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     alert(`✅ Applied to Assessment!\n\n📈 AADT: ${aadt.toLocaleString()} vehicles/day\n🔀 D1: ${d1.toLocaleString()} / D2: ${d2.toLocaleString()}\n📊 AM Peak: ${peakAM} veh/hr  |  PM Peak: ${peakPM} veh/hr\n🗓️ Year: ${currentYear}`);
+    if (typeof calculateAll === 'function') calculateAll();
   }
 
   function calculateTripGeneration() {
@@ -29907,6 +29919,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       : '';
     
     alert(`✅ Applied to Assessment!\\n\\n📈 Base VADT: ${generatedVadt.toLocaleString()} vehicles/day\\n🗓️ Base & Target Year: ${currentYear}${peakInfo}\\n\\nNote: Daily VADT uses 50/50 directional split. Peak hour directional splits are preserved for detailed analysis.`);
+    if (typeof calculateAll === 'function') calculateAll();
   }
 
   function applyManualVadtToAssessment(totalVadt) {
