@@ -29595,8 +29595,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function previewDirectAadt() {
     const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
-    const d1PctRaw = Number(document.getElementById('directD1Percent')?.value);
-    const d1Pct = isNaN(d1PctRaw) ? 50 : Math.min(100, Math.max(0, d1PctRaw));
+    const d1Raw = String(document.getElementById('directD1Percent')?.value ?? '').trim();
+    const d1Pct = d1Raw === '' ? 50 : Math.min(100, Math.max(0, Number(d1Raw) || 0));
     const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
     const pmPct = Number(document.getElementById('directPMPercent')?.value) || 11;
     const preview = document.getElementById('directAadtPreview');
@@ -29619,10 +29619,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function applyDirectAadtEntry() {
     const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
     if (!aadt) { alert('⚠️ Please enter a valid AADT value before applying.'); return; }
-    const d1PctRaw = Number(document.getElementById('directD1Percent')?.value);
-    const d2PctRaw = Number(document.getElementById('directD2Percent')?.value);
-    const d1Pct = isNaN(d1PctRaw) ? 50 : Math.min(100, Math.max(0, d1PctRaw));
-    const d2Pct = isNaN(d2PctRaw) ? (100 - d1Pct) : Math.min(100, Math.max(0, d2PctRaw));
+    const d1Raw = String(document.getElementById('directD1Percent')?.value ?? '').trim();
+    const d2Raw = String(document.getElementById('directD2Percent')?.value ?? '').trim();
+    const d1Pct = d1Raw === '' ? 50 : Math.min(100, Math.max(0, Number(d1Raw) || 0));
+    const d2Pct = d2Raw === '' ? (100 - d1Pct) : Math.min(100, Math.max(0, Number(d2Raw) || 0));
     const d1 = Math.round(aadt * d1Pct / 100);
     const d2 = Math.round(aadt * d2Pct / 100);
     const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
