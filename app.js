@@ -11240,8 +11240,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const rt = total5 * rtPct;
     const lv = Math.max(0, total5 - hv - rt);
 
-    // Aligned to SWT spacings (LV: 8m, HV: 24m, RT: 69m)
-    const spaceLV = 8, spaceHV = 24, spaceRT = 69;
+    // Australian standard spacings (LV: 6m, HV: 20m semi-trailer, RT: 38m A-Double)
+    const spaceLV = 6, spaceHV = 20, spaceRT = 38;
 
     // total5 is a 5-minute volume. To get 2-minute volume, multiply by (2/5) = 0.4
     let q2 = (lv * 0.4 * spaceLV) + (hv * 0.4 * spaceHV) + (rt * 0.4 * spaceRT);
@@ -11274,9 +11274,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const lv = Math.max(0, netTotal5 - hv - rt);
     const factor = isRtr ? 1.5 : 1;
 
-    // Aligned spacing (LV: 8 m, HV: 24 m, RT: 69 m)
+    // Australian standard spacings (LV: 6m, HV: 20m semi-trailer, RT: 38m A-Double)
     const minRatio = minutes / 5;
-    const q = ((lv * (8 * minRatio)) + (hv * (24 * minRatio)) + (rt * (69 * minRatio))) * factor;
+    const q = ((lv * (6 * minRatio)) + (hv * (20 * minRatio)) + (rt * (38 * minRatio))) * factor;
     return numberRoundUp(q, 0);
   }
 
@@ -11849,10 +11849,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         peakHourlyPerLane: peakPerLane,
         per5: lv5 + hv5 + rt5,
         queue: {
-          q2:  numberRoundUp((lv5 * 2.4  + hv5 * 8  + rt5 * 25.2) * factor, 0),
-          q5:  numberRoundUp((lv5 * 6    + hv5 * 20 + rt5 * 63)   * factor, 0),
-          q10: numberRoundUp((lv5 * 12   + hv5 * 40 + rt5 * 126)  * factor, 0),
-          q15: numberRoundUp((lv5 * 18   + hv5 * 60 + rt5 * 189)  * factor, 0)
+          q2:  numberRoundUp((lv5 * 2.4  + hv5 * 8  + rt5 * 15.2) * factor, 0),
+          q5:  numberRoundUp((lv5 * 6    + hv5 * 20 + rt5 * 38)   * factor, 0),
+          q10: numberRoundUp((lv5 * 12   + hv5 * 40 + rt5 * 76)   * factor, 0),
+          q15: numberRoundUp((lv5 * 18   + hv5 * 60 + rt5 * 114)  * factor, 0)
         }
       };
     });
@@ -13268,8 +13268,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const queuePeriodD2 = derivePeriodQueueFromHourly(d2HourlyProfile, d2AdjProfile);
 
     // Queue formula for all council profiles (including TMR/council-derived paths).
-    const qFormulaStr = 'Q = (Lv_5min * 2.4) + (Hv_5min * 8) + (Rt_5min * 25.2)';
-    const hourlyQueueFormulaInline = 'Q=(Lv_5min*2.4)+(Hv_5min*8)+(Rt_5min*25.2)';
+    const qFormulaStr = 'Q = (Lv_5min * 2.4) + (Hv_5min * 8) + (Rt_5min * 15.2)';
+    const hourlyQueueFormulaInline = 'Q=(Lv_5min*2.4)+(Hv_5min*8)+(Rt_5min*15.2)';
 
     const queueGroupedBodyD2 = document.getElementById('queueGroupedBodyD2');
     if (queueGroupedBodyD2) {
@@ -13302,10 +13302,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         queueGroupedBodyD2.innerHTML = queueRowsD2.map(row => {
           const maxQueue = Math.max(...row.values);
           const formatQueueValue = (val) => {
-            const rounded = Math.round(val);
+            const rounded = val > 0 ? Math.max(6, Math.ceil(val)) : 0;
             return rounded < 30 ? `${rounded.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : rounded.toLocaleString();
           };
-          const formattedMax = Math.round(maxQueue);
+          const formattedMax = maxQueue > 0 ? Math.max(6, Math.ceil(maxQueue)) : 0;
           const maxDisplay = formattedMax < 30 ? `${formattedMax.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : formattedMax.toLocaleString();
           const trStyle = row.highlighted ? ' style="outline: 2px solid #1565c0; outline-offset: -2px;"' : '';
           return `
@@ -13353,10 +13353,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         queueGroupedBodyD1.innerHTML = queueRowsD1.map(row => {
           const maxQueue = Math.max(...row.values);
           const formatQueueValue = (val) => {
-            const rounded = Math.round(val);
+            const rounded = val > 0 ? Math.max(6, Math.ceil(val)) : 0;
             return rounded < 30 ? `${rounded.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : rounded.toLocaleString();
           };
-          const formattedMax = Math.round(maxQueue);
+          const formattedMax = maxQueue > 0 ? Math.max(6, Math.ceil(maxQueue)) : 0;
           const maxDisplay = formattedMax < 30 ? `${formattedMax.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : formattedMax.toLocaleString();
           const trStyle = row.highlighted ? ' style="outline: 2px solid #1565c0; outline-offset: -2px;"' : '';
           return `
