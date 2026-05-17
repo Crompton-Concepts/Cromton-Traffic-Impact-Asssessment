@@ -1,0 +1,1 @@
+## 2025-05-15 - [Spatial Bounding Box Filter] **Learning:** When calculating Haversine distance in large geospatial loops, bounding box filtering (dLat and dLon threshold subtraction) provides an extreme performance boost while avoiding false negatives. **Action:** Apply bounding box checks before any expensive trigonometric functions in large iteration paths.
