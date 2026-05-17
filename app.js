@@ -17264,7 +17264,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lon: Number(s.longitude),
       roadName: String(s.road_name || s.description || '').trim(),
       roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && isWithinBoundingBox(pLat, pLon, s.lat, s.lon, localCounterMatchRadiusMeters) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -17893,7 +17893,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
       lat: Number(site && site.latitude),
       lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && isWithinBoundingBox(pLat, pLon, item.lat, item.lon, localCounterMatchRadiusMeters) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
@@ -19718,6 +19718,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   
   // Haversine distance calculation (meters)
+  function isWithinBoundingBox(lat1, lon1, lat2, lon2, thresholdMeters) {
+    // Fast spatial pre-filter using dLat and dLon thresholds
+    const latThreshold = thresholdMeters / 111320;
+    if (Math.abs(lat1 - lat2) > latThreshold) return false;
+    const lonThreshold = thresholdMeters / (111320 * Math.cos(lat1 * Math.PI / 180));
+    if (Math.abs(lon1 - lon2) > lonThreshold) return false;
+    return true;
+  }
+
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
     const phi1 = lat1 * Math.PI / 180;
