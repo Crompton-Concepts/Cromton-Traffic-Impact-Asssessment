@@ -11538,6 +11538,110 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     container.appendChild(badge);
   }
 
+  /**
+   * OPTION C: ROBUST HV% CALCULATION
+   * Strategy: Extract from data when available, fall back to road-class smart defaults,
+   * show calculation source transparently
+   */
+  function calculateRobustHvPercent(site, data) {
+    let hvPercent = null;
+    let source = null;
+
+    // Priority 1: Use extracted HV% from data (e.g. Logan HV calculation, property HV_PERCENT)
+    if (data && data.hv_percent !== null && data.hv_percent !== undefined && Number.isFinite(Number(data.hv_percent))) {
+      hvPercent = Number(data.hv_percent);
+      source = 'from database';
+    } 
+    // Priority 2: Smart defaults from road class
+    else if (site) {
+      const smartDef = getSmartDefaultsForSite(site);
+      if (smartDef) {
+        hvPercent = smartDef.hvPct;
+        source = `${smartDef.label} (road type)`;
+      }
+    }
+    // Priority 3: Universal fallback
+    if (!hvPercent || hvPercent <= 0) {
+      hvPercent = 5;
+      source = 'default (5%)';
+    }
+
+    return { hvPercent: Math.round(hvPercent * 100) / 100, source };
+  }
+
+  /**
+   * OPTION C: ROBUST GROWTH RATE CALCULATION
+   * Strategy: Age-based growth formula + regional economy adjustment + transparent source
+   * Older counts need higher growth assumption (compound effect over years)
+   * Regional economy affects baseline growth (Brisbane/coastal > inland)
+   */
+  function calculateRobustGrowthRate(site, data, countDate) {
+    let growthRate = null;
+    let source = null;
+    const currentYear = new Date().getFullYear();
+
+    // Priority 1: Use database value if available
+    if (data && data.growth_rate !== null && data.growth_rate !== undefined && Number.isFinite(Number(data.growth_rate))) {
+      growthRate = Number(data.growth_rate);
+      source = 'from database';
+    } 
+    // Priority 2: Calculate from count age + regional economy
+    else if (countDate) {
+      const countDateObj = new Date(countDate);
+      const countYear = isNaN(countDateObj.getTime()) ? currentYear : countDateObj.getFullYear();
+      const ageYears = Math.max(0, currentYear - countYear);
+      
+      // Determine region from data source or site
+      const dataSource = data && data.source ? String(data.source).toUpperCase() : '';
+      const siteName = site && site.description ? String(site.description).toLowerCase() : '';
+      
+      // Regional baseline growth (updated economy model)
+      let regionGrowth = 2.5; // Default QLD/Australia growth
+      let regionLabel = 'Australia baseline';
+      
+      if (dataSource.includes('GOLD COAST') || siteName.includes('gold coast') || siteName.includes('surfers paradise')) {
+        regionGrowth = 3.2; // Coastal tourism economy, higher growth
+        regionLabel = 'Gold Coast (coastal economy)';
+      } else if (dataSource.includes('BRISBANE') || siteName.includes('brisbane')) {
+        regionGrowth = 2.8; // Brisbane metro, strong growth
+        regionLabel = 'Brisbane (metro)';
+      } else if (dataSource.includes('TMR')) {
+        regionGrowth = 2.6; // TMR statewide average
+        regionLabel = 'Queensland (TMR)';
+      }
+
+      // Age-based adjustment: older counts get higher growth to account for accumulated change
+      // Formula: if count is 0-2 years old: use region baseline
+      //          if count is 3-5 years old: +0.3%
+      //          if count is 6+ years old: +0.6%
+      let ageAdjustment = 0;
+      if (ageYears >= 6) {
+        ageAdjustment = 0.6;
+      } else if (ageYears >= 3) {
+        ageAdjustment = 0.3;
+      }
+
+      growthRate = regionGrowth + ageAdjustment;
+      growthRate = Math.round(growthRate * 10) / 10; // Round to 1 decimal
+      source = `${regionLabel} + ${ageAdjustment > 0 ? `${ageAdjustment}% age adjustment` : 'baseline'} (count: ${countYear}, ${ageYears}yr${ageYears !== 1 ? 's' : ''} old)`;
+    }
+    // Priority 3: Smart defaults from road class
+    else if (site) {
+      const smartDef = getSmartDefaultsForSite(site);
+      if (smartDef) {
+        growthRate = smartDef.growthRate;
+        source = `${smartDef.label} (road type)`;
+      }
+    }
+    // Priority 4: Universal fallback
+    if (!growthRate || growthRate <= 0) {
+      growthRate = 2.5;
+      source = 'default (2.5%)';
+    }
+
+    return { growthRate: Math.round(growthRate * 10) / 10, source };
+  }
+
   function normalizeDayOfWeek(value) {
     const raw = String(value || '').trim().toLowerCase();
     if (!raw) return null;
@@ -14603,85 +14707,67 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const growthEl = document.getElementById('macroGrowthRate');
     const growthWrapper = growthEl ? growthEl.closest('div') : null;
     const growthLabel = growthWrapper ? growthWrapper.querySelector('label') : null;
-    if (data.growth_rate !== null && data.growth_rate !== undefined && Number.isFinite(Number(data.growth_rate))) {
-      growthEl.value = data.growth_rate;
-      growthEl.readOnly = false;
-      growthEl.style.border = '1px solid #81c784';
-      growthEl.style.backgroundColor = '#f1f8f6';
-      growthEl.style.color = '#1b5e20';
-      if (growthWrapper) {
-        growthWrapper.style.background = '#e8f5e9';
-        growthWrapper.style.border = '1px solid #81c784';
-      }
-      if (growthLabel) {
-        growthLabel.style.color = '#2e7d32';
-        growthLabel.innerHTML = 'Growth Rate (% p.a.) (from DB, editable)';
-      }
-    } else {
-      growthEl.value = '2.5';
-      growthEl.readOnly = false;
-      growthEl.style.border = '1px solid #e57373';
-      growthEl.style.backgroundColor = '#fff5f5';
-      growthEl.style.color = '#b71c1c';
-      if (growthWrapper) {
-        growthWrapper.style.background = '#ffebee';
-        growthWrapper.style.border = '1px solid #ef9a9a';
-      }
-      if (growthLabel) {
-        growthLabel.style.color = '#c30000';
-        growthLabel.innerHTML = 'Growth Rate (% p.a.) (default 2.5%, editable)';
-      }
-      // Smart suggest: if road class gives a better default, show a badge
-      const _smartDef = getSmartDefaultsForSite(data);
-      if (_smartDef && growthEl && Math.abs(_smartDef.growthRate - 2.5) >= 0.1) {
-        showSmartSuggestBadge(growthEl, `${_smartDef.growthRate}% (${_smartDef.label})`, 'Growth Rate', () => {
-          growthEl.value = _smartDef.growthRate;
-          growthEl.dispatchEvent(new Event('change'));
-        });
-      }
+    
+    // OPTION C: Use robust calculation
+    const countDateStr = data.count_date_raw || data.count_date || txt('entryDate') || '';
+    const growthCalc = calculateRobustGrowthRate(data, data, countDateStr);
+    
+    growthEl.value = growthCalc.growthRate;
+    growthEl.readOnly = false;
+    growthEl.style.border = '1px solid #81c784';
+    growthEl.style.backgroundColor = '#f1f8f6';
+    growthEl.style.color = '#1b5e20';
+    if (growthWrapper) {
+      growthWrapper.style.background = '#e8f5e9';
+      growthWrapper.style.border = '1px solid #81c784';
+    }
+    if (growthLabel) {
+      growthLabel.style.color = '#2e7d32';
+      growthLabel.innerHTML = `Growth Rate (% p.a.) <small style="font-weight:normal; color:#558b2f;">(${growthCalc.source}, editable)</small>`;
     }
     
-    // Auto-fill HVP if available in DB and visually mark it as database-driven
+    // Show calculation details in a tooltip-style info badge
+    if (growthCalc.source && !growthCalc.source.includes('from database')) {
+      const calcBadge = document.createElement('div');
+      calcBadge.className = 'growth-calc-badge';
+      calcBadge.style.cssText = 'display:flex; align-items:center; gap:6px; margin-top:5px; padding:6px 10px; background:#e8f5e9; border:1px solid #81c784; border-radius:6px; font-size:0.85em; color:#558b2f;';
+      calcBadge.innerHTML = `<span>📊 Calculated: ${growthCalc.source}. <strong>Edit above if needed.</strong></span>`;
+      const existingBadge = growthWrapper && growthWrapper.querySelector('.growth-calc-badge');
+      if (existingBadge) existingBadge.remove();
+      if (growthWrapper) growthWrapper.appendChild(calcBadge);
+    }
+    
+    // Auto-fill HVP using robust calculation with source transparency
     const hvpEl = document.getElementById('HVP');
     const hvpWrapper = hvpEl ? hvpEl.closest('div') : null;
     const hvpLabel = hvpWrapper ? hvpWrapper.querySelector('label') : null;
-    if (hasDbHv) {
-      hvpEl.value = data.hv_percent;
-      hvpEl.readOnly = true;
-      hvpEl.style.border = '1px solid #81c784';
-      hvpEl.style.backgroundColor = '#f1f8f6';
-      hvpEl.style.color = '#1b5e20';
-      if (hvpWrapper) {
-        hvpWrapper.style.background = '#e8f5e9';
-        hvpWrapper.style.border = '1px solid #81c784';
-      }
-      if (hvpLabel) {
-        hvpLabel.style.color = '#2e7d32';
-        hvpLabel.innerHTML = 'HV (%) (from DB)';
-      }
-    } else {
-      hvpEl.value = 5;
-      hvpEl.readOnly = false;
-      hvpEl.style.border = '1px solid #e57373';
-      hvpEl.style.backgroundColor = '#fff5f5';
-      hvpEl.style.color = '#b71c1c';
-      if (hvpWrapper) {
-        hvpWrapper.style.background = '#ffebee';
-        hvpWrapper.style.border = '1px solid #ef9a9a';
-      }
-      if (hvpLabel) {
-        hvpLabel.style.color = '#c30000';
-        hvpLabel.innerHTML = 'HV (%) *';
-      }
-      // Smart suggest HV% from road class when no DB value
-      const _hvSmartDef = getSmartDefaultsForSite(data);
-      if (_hvSmartDef && hvpEl) {
-        showSmartSuggestBadge(hvpEl, `${_hvSmartDef.hvPct}% (${_hvSmartDef.label})`, 'HV%', () => {
-          hvpEl.value = _hvSmartDef.hvPct;
-          hvpEl.readOnly = false;
-          hvpEl.dispatchEvent(new Event('change'));
-        });
-      }
+    
+    // OPTION C: Use robust calculation
+    const hvCalc = calculateRobustHvPercent(data, data);
+    
+    hvpEl.value = hvCalc.hvPercent;
+    hvpEl.readOnly = false;
+    hvpEl.style.border = '1px solid #81c784';
+    hvpEl.style.backgroundColor = '#f1f8f6';
+    hvpEl.style.color = '#1b5e20';
+    if (hvpWrapper) {
+      hvpWrapper.style.background = '#e8f5e9';
+      hvpWrapper.style.border = '1px solid #81c784';
+    }
+    if (hvpLabel) {
+      hvpLabel.style.color = '#2e7d32';
+      hvpLabel.innerHTML = `HV (%) <small style="font-weight:normal; color:#558b2f;">(${hvCalc.source}, editable)</small>`;
+    }
+    
+    // Show calculation details in a tooltip-style info badge
+    if (hvCalc.source && !hvCalc.source.includes('from database')) {
+      const hvBadge = document.createElement('div');
+      hvBadge.className = 'hv-calc-badge';
+      hvBadge.style.cssText = 'display:flex; align-items:center; gap:6px; margin-top:5px; padding:6px 10px; background:#e8f5e9; border:1px solid #81c784; border-radius:6px; font-size:0.85em; color:#558b2f;';
+      hvBadge.innerHTML = `<span>📊 Calculated: ${hvCalc.source}. <strong>Edit above if needed.</strong></span>`;
+      const existingHvBadge = hvpWrapper && hvpWrapper.querySelector('.hv-calc-badge');
+      if (existingHvBadge) existingHvBadge.remove();
+      if (hvpWrapper) hvpWrapper.appendChild(hvBadge);
     }
     
     // Auto-fill lane counts if available in DB

@@ -10499,10 +10499,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       height = Math.max(1, Math.ceil(rect.height || 0));
     }
     
-    // Ensure landscape orientation (width > height)
-    if (height > width) {
-      [width, height] = [height, width];
-    }
+    // Track if we need to rotate for landscape
+    const needsRotation = height > width;
     
     const pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 2));
     const bgColor = String(options.backgroundColor || '#ffffff');
@@ -10548,6 +10546,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             scrollX: 0,
             scrollY: 0
           });
+          
+          // Apply landscape rotation if needed
+          if (needsRotation) {
+            const rotatedCanvas = document.createElement('canvas');
+            rotatedCanvas.width = canvas.height;
+            rotatedCanvas.height = canvas.width;
+            const ctx = rotatedCanvas.getContext('2d');
+            if (ctx) {
+              ctx.translate(rotatedCanvas.width, 0);
+              ctx.rotate(Math.PI / 2);
+              ctx.drawImage(canvas, 0, 0);
+            }
+            return await blobFromCanvas(rotatedCanvas);
+          }
+          
           return await blobFromCanvas(canvas);
         } catch (error) {
           html2CanvasError = error;
@@ -10593,6 +10606,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       ctx.drawImage(imageEl, 0, 0, width, height);
+
+      // Apply landscape rotation if needed (SVG fallback)
+      if (needsRotation) {
+        const rotatedCanvas = document.createElement('canvas');
+        rotatedCanvas.width = canvas.height;
+        rotatedCanvas.height = canvas.width;
+        const rotCtx = rotatedCanvas.getContext('2d');
+        if (rotCtx) {
+          rotCtx.translate(rotatedCanvas.width, 0);
+          rotCtx.rotate(Math.PI / 2);
+          rotCtx.drawImage(canvas, 0, 0);
+        }
+        return await blobFromCanvas(rotatedCanvas);
+      }
 
       return await blobFromCanvas(canvas);
     } finally {
