@@ -10937,7 +10937,31 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!loginGate || !loginForm || !loginUser || !loginPassword || !loginError) return;
 
 
-    // No local user DB, only Firebase Auth
+    const USERS_STORE_KEY = 'crompton_tia_users';
+
+    function getUserDb() {
+      try {
+        return JSON.parse(localStorage.getItem(USERS_STORE_KEY) || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function findUserRecord(db, identifier) {
+      if (!identifier) return null;
+      const key = String(identifier).trim().toLowerCase();
+      const byUsername = db[key];
+      if (byUsername) {
+        return { key, record: byUsername };
+      }
+      for (const uname of Object.keys(db)) {
+        const rec = db[uname];
+        if (String(rec && rec.email || '').trim().toLowerCase() === key) {
+          return { key: uname, record: rec };
+        }
+      }
+      return null;
+    }
 
     async function unlockApplication(options = {}) {
       const useFunnyLoading = !!(options && options.useFunnyLoading);
@@ -11024,18 +11048,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     // Firebase Auth State Listener
     firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) return;
-
-      // Avoid first-attempt race: auth state can fire before submit handler sets sessionStorage.
-      if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+      if (user && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        unlockApplication().catch(function(err) {
+          console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+          document.body.classList.remove('app-locked');
+          loginGate.style.display = 'none';
+        });
       }
-
-      unlockApplication().catch(function(err) {
-        console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
-        document.body.classList.remove('app-locked');
-        loginGate.style.display = 'none';
-      });
     });
 
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
@@ -11045,6 +11064,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     loginUser.focus();
 
+    const hashPasswordLocal = async (pw) => {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
@@ -11052,40 +11076,63 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       loginError.textContent = 'Authenticating...';
 
+      // Pull latest users from Firebase before checking credentials (4 s budget).
+      if (window.TIASync && TIASync.isEnabled()) {
+        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 4000))]); } catch (_) {}
+      }
 
-      // Accept only email for login
-      let email = userIdentifier;
-      if (!email.includes('@')) {
-        loginError.textContent = 'Please use your email address to sign in.';
+      const db = getUserDb();
+      const found = findUserRecord(db, userIdentifier);
+      const email = found ? found.record.email : (userIdentifier.includes('@') ? userIdentifier : null);
+
+      if (!email) {
+        loginError.textContent = 'Username not recognised. Please sign in using your email address instead.';
         return;
       }
 
-      let user = null;
       try {
         const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
-        user = userCredential && userCredential.user ? userCredential.user : null;
-      } catch (error) {
-        console.error('[Login] Firebase Auth error:', error);
-        loginError.textContent = 'Login failed: ' + error.message;
+        const user = userCredential.user;
+
+        // Post-auth pull: now authenticated, Firebase DB reads succeed — gets correct tier/admin.
+        if (window.TIASync && TIASync.isEnabled()) {
+          try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 5000))]); } catch (_) {}
+        }
+
+        const freshDb = getUserDb();
+        const freshFound = findUserRecord(freshDb, userIdentifier) || findUserRecord(freshDb, user.email);
+        const finalUname = freshFound ? freshFound.record.username : user.email.split('@')[0];
+        const finalRec   = freshFound ? freshFound.record : { username: finalUname, email: user.email, tier: 'free' };
+
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        sessionStorage.setItem(USER_SESSION_KEY, finalUname);
+        sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
+        sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
+
+        loginError.textContent = '';
+        await unlockApplication({ useFunnyLoading: true });
+      } catch (firebaseError) {
+        const code = String(firebaseError.code || '');
+        // Fallback for users created via the admin portal: they have a passwordHash but no
+        // Firebase Auth account yet (auth/user-not-found or auth/invalid-credential).
+        if ((code === 'auth/user-not-found' || code === 'auth/invalid-credential') && found && found.record.passwordHash) {
+          try {
+            const hash = await hashPasswordLocal(enteredPassword);
+            if (hash === found.record.passwordHash) {
+              sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+              sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
+              sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
+              sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
+              loginError.textContent = '';
+              await unlockApplication({ useFunnyLoading: true });
+              return;
+            }
+          } catch (_) {}
+        }
+        console.error('[Login] Firebase Auth error:', firebaseError);
+        loginError.textContent = 'Login failed: ' + firebaseError.message;
         loginPassword.value = '';
         loginPassword.focus();
-        return;
-      }
-
-      const finalUname = user && user.email ? user.email.split('@')[0] : userIdentifier;
-      sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      sessionStorage.setItem(USER_SESSION_KEY, finalUname);
-      sessionStorage.setItem(TIER_SESSION_KEY, 'free');
-      sessionStorage.setItem('IS_ADMIN', 'false');
-
-      loginError.textContent = '';
-
-      try {
-        await unlockApplication({ useFunnyLoading: true });
-      } catch (unlockError) {
-        console.error('[Login] unlockApplication failed after successful auth:', unlockError);
-        document.body.classList.remove('app-locked');
-        loginGate.style.display = 'none';
       }
     });
 
