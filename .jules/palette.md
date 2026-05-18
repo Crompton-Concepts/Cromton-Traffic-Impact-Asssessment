@@ -1,0 +1,3 @@
+## 2024-05-18 - Missing Confirmation Dialogs
+**Learning:** Found multiple destructive actions (removing scenarios, clearing scenarios, and removing reference points) that were executed instantly without user confirmation, risking accidental data loss. This was pervasive across `app.js` and all three HTML variants (`index.html`, `index_developer.html`, `index_formulas.html`).
+**Action:** When auditing vanilla HTML/JS applications, systematically trace all delete/remove operations and ensure `window.confirm` or a modal is placed before the deletion logic is executed to prevent immediate state destruction.

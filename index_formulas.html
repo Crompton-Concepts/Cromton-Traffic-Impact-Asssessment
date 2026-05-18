@@ -9184,7 +9184,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     summarySection.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h3 style="margin: 0; color: #1f5e63;">ðŸ“‹ Summary</h3>
-        <button onclick="this.parentElement.parentElement.remove()" class="report-remove-x" style="background: #e53935; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Remove</button>
+        <button onclick="if(window.confirm('Are you sure you want to remove this summary?')) this.parentElement.parentElement.remove()" class="report-remove-x" style="background: #e53935; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Remove</button>
       </div>
       <div class="report-editable" contenteditable="true" style="white-space: pre-wrap; line-height: 1.6;">${text}</div>
     `;
@@ -20878,6 +20878,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function removeScenario(id) {
+    if (!window.confirm("Are you sure you want to remove this scenario?")) return;
     savedScenarios = savedScenarios.filter(s => s.id !== id);
     renderScenarioTable();
   }
@@ -20899,6 +20900,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function clearScenarios() {
+    if (!window.confirm("Are you sure you want to clear all scenarios?")) return;
     savedScenarios = [];
     renderScenarioTable();
   }
@@ -28600,6 +28602,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       if (removeBtn) {
         removeBtn.addEventListener('click', () => {
+          if (!window.confirm('Are you sure you want to remove this reference point?')) return;
           window.selectedTiaData.references = (window.selectedTiaData.references || []).filter(ref => String(ref.siteId) !== String(site.siteId));
           const remaining = (window.selectedTiaData.references || []);
           if (!remaining.length) {

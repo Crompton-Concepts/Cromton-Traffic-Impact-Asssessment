@@ -14198,6 +14198,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function removeScenario(id) {
+    if (!window.confirm("Are you sure you want to remove this scenario?")) return;
     savedScenarios = savedScenarios.filter(s => s.id !== id);
     renderScenarioTable();
   }
@@ -14219,6 +14220,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function clearScenarios() {
+    if (!window.confirm("Are you sure you want to clear all scenarios?")) return;
     savedScenarios = [];
     renderScenarioTable();
   }
