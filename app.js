@@ -3706,18 +3706,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       loginError.textContent = 'Authenticating...';
 
-      // Pull latest users from Firebase before checking credentials.
-      // TIASync.pullAll already has its own internal timeout/fallback behavior.
-      if (window.TIASync && TIASync.isEnabled()) {
-        try { await TIASync.pullAll(); } catch (_) {}
-      }
 
-      const db = getUserDb();
-      const found = findUserRecord(db, userIdentifier);
-      const email = found ? found.record.email : (userIdentifier.includes('@') ? userIdentifier : null);
-
-      if (!email) {
-        loginError.textContent = 'Invalid username or email format.';
+      // Accept either email or username (as email) for login
+      let email = userIdentifier;
+      if (!email.includes('@')) {
+        loginError.textContent = 'Please use your email address to sign in.';
         return;
       }
 
@@ -3733,18 +3726,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return;
       }
 
-      const fallbackUname = user && user.email ? user.email.split('@')[0] : userIdentifier;
-      const finalUname = found ? found.record.username : fallbackUname;
-      const finalRec = found ? found.record : {
-        username: finalUname,
-        email: user && user.email ? user.email : email,
-        tier: 'free'
-      };
-
+      const finalUname = user && user.email ? user.email.split('@')[0] : userIdentifier;
       sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
       sessionStorage.setItem(USER_SESSION_KEY, finalUname);
-      sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
-      sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
+      sessionStorage.setItem(TIER_SESSION_KEY, 'free');
+      sessionStorage.setItem('IS_ADMIN', 'false');
 
       loginError.textContent = '';
 
@@ -3868,12 +3854,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, pw1);
           const user = userCredential.user;
           
-          const db = getUserDb();
-          const record = { username: uname, fullName, email, tier, createdAt: new Date().toISOString() };
-          db[uname] = record;
-          localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
 
-          if (window.TIASync) await TIASync.saveUser(uname, record);
+          // No local DB, only Firebase Auth
 
           okEl.textContent = 'Account created! Signing you in...';
           sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
