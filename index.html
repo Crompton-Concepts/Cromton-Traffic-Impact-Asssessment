@@ -10488,9 +10488,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   async function renderPreviewNodeToPngBlob(previewNode, options = {}) {
     if (!previewNode) throw new Error('Preview node not found');
 
-    const rect = previewNode.getBoundingClientRect();
-    const width = Math.max(1, Math.ceil(rect.width || previewNode.scrollWidth || previewNode.offsetWidth || 0));
-    const height = Math.max(1, Math.ceil(rect.height || previewNode.scrollHeight || previewNode.offsetHeight || 0));
+    // Use scrollWidth/scrollHeight as primary to capture full content (including off-screen)
+    let width = Math.max(1, Math.ceil(previewNode.scrollWidth || previewNode.offsetWidth || 0));
+    let height = Math.max(1, Math.ceil(previewNode.scrollHeight || previewNode.offsetHeight || 0));
+    
+    // Fallback to bounding rect if scroll dimensions are not available
+    if (width <= 1 || height <= 1) {
+      const rect = previewNode.getBoundingClientRect();
+      width = Math.max(1, Math.ceil(rect.width || 0));
+      height = Math.max(1, Math.ceil(rect.height || 0));
+    }
+    
+    // Ensure landscape orientation (width > height)
+    if (height > width) {
+      [width, height] = [height, width];
+    }
+    
     const pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 2));
     const bgColor = String(options.backgroundColor || '#ffffff');
 
@@ -10530,6 +10543,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             logging: false,
             width,
             height,
+            windowWidth: width,
+            windowHeight: height,
             scrollX: 0,
             scrollY: 0
           });
@@ -10547,6 +10562,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const clone = previewNode.cloneNode(true);
     clone.style.margin = '0';
     clone.style.width = `${width}px`;
+    clone.style.height = `${height}px`;
     clone.style.maxWidth = `${width}px`;
     clone.style.background = bgColor;
 
