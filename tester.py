@@ -23,7 +23,9 @@ def run_tia_tester(html_file_path="index.html", target_address=""):
     app_url = pathlib.Path(os.path.abspath(html_file_path)).as_uri()
     
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--allow-file-access-from-files") # Helps with local HTML testing
@@ -34,7 +36,7 @@ def run_tia_tester(html_file_path="index.html", target_address=""):
     try:
         # 1. Open the App
         print(f"Opening app: {app_url}")
-        driver.get(app_url)
+        driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": "Object.defineProperty(navigator, \"webdriver\", {get: () => undefined})"}); driver.get(app_url)
         
         # Increased wait time to 15 seconds to account for local asset loading
         wait = WebDriverWait(driver, 15) 
