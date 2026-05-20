@@ -46,7 +46,10 @@ def _parse_allowed_origins_from_env() -> list[str]:
 ALLOWED_ORIGINS = _parse_allowed_origins_from_env()
 ALLOWED_ORIGIN_REGEX = os.environ.get(
   "REPORT_ALLOWED_ORIGIN_REGEX",
-  r"^https://[a-z0-9-]+\.github\.io$|^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+  r"^https://[a-z0-9-]+\.github\.io$"
+  r"|^https://[a-z0-9-]+\.web\.app$"
+  r"|^https://[a-z0-9-]+\.firebaseapp\.com$"
+  r"|^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
 )
 MAX_REQUEST_BODY_BYTES = max(100_000, int(os.environ.get("REPORT_MAX_REQUEST_BYTES", "12000000")))
 MAX_DRAFTS = max(10, int(os.environ.get("REPORT_MAX_DRAFTS", "200")))

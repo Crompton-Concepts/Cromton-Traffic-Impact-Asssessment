@@ -8403,15 +8403,15 @@ const TIER_SESSION_KEY = 'crompton_tia_tier';
   function showPythonReportSetupInstructions(reasonText = '') {
     const reason = reasonText || 'Python report service is not reachable.';
     const serviceFolderHint = 'C:\\TIA-Python-Report-Service';
-    const reportServiceDownloadUrl = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/report_service.py';
-    const logoDownloadUrl = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/logo.jpeg';
+    const reportServiceDownloadUrl = 'https://traffic-impact-assessment.web.app/report_service.py';
+    const logoDownloadUrl = 'https://traffic-impact-assessment.web.app/logo.jpeg';
     const guideSteps = [
       'Keep this app page open.',
       'Click <strong>Copy Commands</strong> below.',
       'If Python is not installed, click <strong>Get Python from Microsoft Store</strong> and install it first.',
       'Open Command Prompt (Windows: press Win key, type "cmd", press Enter).',
-      `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and check/download <code>report_service.py</code>.`,
-      `If <code>report_service.py</code> is still missing, click <strong>Download Report-Service</strong> or use the raw link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a>.`,
+      `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and download the latest <code>report_service.py</code> automatically.`,
+      `If the download fails, click <strong>Download Report-Service</strong> or use the direct link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">Download link</a>.`,
       `Optional: Download <code>logo.jpeg</code> from <a href="${logoDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a> and save it in the same folder for branding.`,
       'Set <code>GEMINI_API_KEY</code> in the same Command Prompt before starting the report service if you want Gemini-generated executive summary notes.',
       'Confirm the import-check command prints <code>import ok</code>.',
@@ -8431,8 +8431,7 @@ const TIER_SESSION_KEY = 'crompton_tia_tier';
       '# If Python is not installed, install from Microsoft Store: https://apps.microsoft.com/detail/9NCVDN91XZQP',
       `mkdir "${serviceFolderHint}"`,
       `cd /d "${serviceFolderHint}"`,
-      'dir report_service*',
-      '# If report_service.py is missing, run this command to download it automatically:',
+      '# Always download the latest report_service.py:',
       `powershell -Command "Invoke-WebRequest -Uri '${reportServiceDownloadUrl}' -OutFile 'report_service.py'"`,
       'dir report_service.py',
       'python -m venv .venv',
@@ -9795,7 +9794,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         throw new Error('html2canvas library is unavailable');
       }
 
-      const canvas = await window.html2canvas(hostEl, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+      // Capture the sheet element (first child) directly — the hostEl has max-height/overflow:auto
+      // constraints that clip the capture. The actual sheet div has width:1480px (landscape).
+      const sheetEl = hostEl.firstElementChild || hostEl;
+      const sheetWidth = Math.max(1, sheetEl.scrollWidth || sheetEl.offsetWidth || 1480);
+      const sheetHeight = Math.max(1, sheetEl.scrollHeight || sheetEl.offsetHeight || 794);
+      const canvas = await window.html2canvas(sheetEl, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        width: sheetWidth,
+        height: sheetHeight,
+        windowWidth: sheetWidth,
+        windowHeight: sheetHeight,
+        scrollX: 0,
+        scrollY: 0
+      });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -10152,6 +10166,27 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Logic handled by onAuthStateChanged or fallback
       return;
     }
+
+    // Auto-login from URL params (e.g. shared link) — strip credentials from
+    // the address bar immediately so they never stay visible in history.
+    (function consumeUrlCredentials() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const urlUser = params.get('loginUser');
+        const urlPass = params.get('loginPassword');
+        if (!urlUser && !urlPass) return;
+        params.delete('loginUser');
+        params.delete('loginPassword');
+        const cleanSearch = params.toString();
+        const cleanUrl = window.location.pathname + (cleanSearch ? '?' + cleanSearch : '') + window.location.hash;
+        history.replaceState(null, '', cleanUrl);
+        if (urlUser) loginUser.value = urlUser;
+        if (urlPass) loginPassword.value = urlPass;
+        if (urlUser && urlPass) {
+          setTimeout(() => loginForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })), 50);
+        }
+      } catch (_) {}
+    })();
 
     loginUser.focus();
 

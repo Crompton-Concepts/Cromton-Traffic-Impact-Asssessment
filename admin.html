@@ -125,6 +125,11 @@
     /* Toast */
     #toast { position: fixed; bottom: 24px; right: 24px; background: #1f5e63; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(80px); opacity: 0; transition: transform 0.25s, opacity 0.25s; z-index: 9999; }
     #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* Orphan-auth warning banner */
+    #orphanBanner { display:none; background:#fff7ed; border:1px solid #fb923c; border-radius:10px; padding:12px 16px; margin-bottom:20px; font-size:0.88rem; color:#9a3412; }
+    #orphanBanner strong { display:block; margin-bottom:3px; font-size:0.92rem; }
+    .no-pw-badge { display:inline-block; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:20px; font-size:0.72rem; font-weight:700; padding:1px 8px; margin-left:6px; vertical-align:middle; }
   </style>
 </head>
 <body>
@@ -166,6 +171,11 @@
     <p class="page-sub">View and manage all registered TIA accounts. Changes sync across all devices via Firebase.</p>
 
     <div class="stats-row" id="statsRow"></div>
+
+    <div id="orphanBanner">
+      <strong>&#9888; Password not set for some accounts</strong>
+      These users were added via the Firebase console instead of the admin portal and have no password yet. Use <em>Edit</em> to set a password, or use <em>Forgot Password</em> on the login screen to send them a reset link.
+    </div>
 
     <div class="tab-bar">
       <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Active Users</button>
@@ -244,7 +254,7 @@
       <input id="muEmail" type="email" placeholder="user@example.com" />
     </div>
     <div class="modal-field">
-      <label for="muPassword">Password <span style="font-weight:400;color:#9ca3af;font-size:0.78rem;">(leave blank to keep existing)</span></label>
+      <label for="muPassword">Password <span id="muPasswordHint" style="font-weight:400;color:#9ca3af;font-size:0.78rem;"></span></label>
       <input id="muPassword" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
     </div>
     <div class="modal-field">
@@ -356,19 +366,11 @@
     }
   }
 
-  function initAdminAuthWatch(retriesLeft = 40) {
-    const auth = getFirebaseAuth();
-    if (!auth) {
-      if (retriesLeft > 0) {
-        setTimeout(() => initAdminAuthWatch(retriesLeft - 1), 250);
-      }
-      return;
+  function initAdminAuthWatch() {
+    // Session is managed via sessionStorage — no Firebase Auth required.
+    if (sessionStorage.getItem(ADMIN_SESSION) === 'true') {
+      showApp();
     }
-    auth.onAuthStateChanged((user) => {
-      if (user && sessionStorage.getItem(ADMIN_SESSION) === 'true') {
-        showApp();
-      }
-    });
   }
 
   initAdminAuthWatch();
@@ -571,33 +573,58 @@
     msgEl.textContent = '';
     errEl.textContent = 'Authenticating...';
 
+    // Pull latest users from Firebase RTDB before checking credentials
+    if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+      try { await TIASync.pullAll(); } catch (_) {}
+    }
+
     const db = getDB();
-    const found = Object.values(db).find(u => 
-      u.username.toLowerCase() === identifier || (u.email && u.email.toLowerCase() === identifier)
+    const found = Object.values(db).find(u =>
+      (u.username && u.username.toLowerCase() === identifier) ||
+      (u.email && u.email.toLowerCase() === identifier)
     );
 
-    const email = found ? found.email : (identifier.includes('@') ? identifier : null);
-    if (!email) { errEl.textContent = 'Invalid user or email format.'; return; }
-
-    const auth = getFirebaseAuth();
-    if (!auth) { errEl.textContent = 'Authentication is temporarily unavailable. Please refresh and try again.'; return; }
+    if (!found) { errEl.textContent = 'User not found.'; return; }
+    if (!found.isAdmin) { errEl.textContent = 'Access denied. Admin privileges required.'; return; }
 
     try {
-      const userCredential = await auth.signInWithEmailAndPassword(email, pw);
-      const user = userCredential.user;
+      let authenticated = false;
 
-      // Double check admin status from local/cached DB
-      // In a real app, this should be a custom claim or a DB check
-      const rec = Object.values(db).find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
-      if (!rec || !rec.isAdmin) {
-        await auth.signOut();
-        errEl.textContent = 'Access denied. Admin privileges required.';
-        return;
+      // 1. Try legacy local hash (existing admins who still have passwordHash in RTDB).
+      if (found.passwordHash || found.legacyPassword) {
+        authenticated = await verifyPassword(found, pw);
+        // Persist any legacy→hash migration
+        if (authenticated && window.TIASync && TIASync.isEnabled && TIASync.isEnabled() && found.username) {
+          try { await TIASync.saveUser(found.username, found); } catch (_) {}
+        }
       }
 
+      // 2. Fallback: Firebase Auth (new-style accounts without a local hash).
+      if (!authenticated) {
+        const authEmail = found.email;
+        if (!authEmail) { errEl.textContent = 'No email on record — cannot authenticate.'; return; }
+        const auth = getFirebaseAuth();
+        if (auth) {
+          try {
+            await auth.signInWithEmailAndPassword(authEmail, pw);
+            await auth.signOut();
+            authenticated = true;
+          } catch (fbErr) {
+            const code = String((fbErr && fbErr.code) || '');
+            if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+              errEl.textContent = 'Incorrect password.';
+              return;
+            }
+            // Other Firebase errors fall through to final guard below.
+          }
+        }
+      }
+
+      if (!authenticated) { errEl.textContent = 'Incorrect password.'; return; }
+
       sessionStorage.setItem(ADMIN_SESSION, 'true');
-      sessionStorage.setItem('crompton_tia_admin_user', rec.username);
-      recordLoginSession(rec.username);
+      sessionStorage.setItem('crompton_tia_admin_user', found.username);
+      recordLoginSession(found.username);
       showApp();
     } catch (error) {
       console.error('[Admin Login] error:', error);
@@ -605,11 +632,9 @@
     }
   });
 
-  async function adminLogout() {
+  function adminLogout() {
     const username = sessionStorage.getItem('crompton_tia_admin_user') || 'unknown';
     recordLogoutSession(username);
-    const auth = getFirebaseAuth();
-    try { if (auth) await auth.signOut(); } catch(e) {}
     sessionStorage.removeItem(ADMIN_SESSION);
     sessionStorage.removeItem('crompton_tia_admin_user');
     sessionStorage.removeItem(SESSION_START_KEY);
@@ -829,6 +854,11 @@
       { n: counts.pro,     l: 'Pro' },
       { n: counts['pro+'], l: 'Pro+' }
     ].map(s => `<div class="stat-card"><div class="stat-num">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
+
+    // Show warning banner if any active user was provisioned from Firebase Auth (no password)
+    const orphans = users.filter(u => u.provisionedFromAuth && !u.passwordHash && !u.legacyPassword);
+    const banner = document.getElementById('orphanBanner');
+    if (banner) banner.style.display = orphans.length ? 'block' : 'none';
   }
 
   // ── Table ─────────────────────────────────────────────────────────────────
@@ -856,8 +886,9 @@
     noMsg.style.display = 'none';
     tbody.innerHTML = rows.map(u => {
       const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-AU', { year:'numeric', month:'short', day:'numeric' }) : '—';
-      return `<tr>
-        <td><strong>${esc(u.username)}</strong></td>
+      const noPw = u.provisionedFromAuth && !u.passwordHash && !u.legacyPassword;
+      return `<tr${noPw ? ' style="background:#fffbeb;"' : ''}>
+        <td><strong>${esc(u.username)}</strong>${noPw ? '<span class="no-pw-badge" title="Added via Firebase console — no portal password set yet">No password</span>' : ''}</td>
         <td>${esc(u.email || '—')}</td>
         <td>
           <select class="tier-select-inline" data-user="${esc(u.username)}" onchange="changeTier(this)">
@@ -987,6 +1018,7 @@
     document.getElementById('muUsername').disabled = false;
     document.getElementById('muEmail').value = '';
     document.getElementById('muPassword').value = '';
+    document.getElementById('muPasswordHint').textContent = '(required)';
     document.getElementById('muTier').value = 'free';
     document.getElementById('muRole').value = '';
     document.getElementById('muErr').textContent = '';
@@ -1004,6 +1036,7 @@
     document.getElementById('muUsername').disabled = true;
     document.getElementById('muEmail').value = u.email || '';
     document.getElementById('muPassword').value = '';
+    document.getElementById('muPasswordHint').textContent = '(leave blank to keep existing)';
     document.getElementById('muTier').value = u.tier || 'free';
     document.getElementById('muRole').value = u.isAdmin ? 'admin' : '';
     document.getElementById('muErr').textContent = '';
@@ -1040,26 +1073,57 @@
     const db = getDB();
 
     if (!editingUser) {
-      // New user
+      // ── New user ──────────────────────────────────────────────────────────
       if (!uname || uname.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
       if (!/^[a-z0-9_.-]+$/.test(uname)) { errEl.textContent = 'Username: letters, numbers, _ . - only.'; return; }
       if (!email || !email.includes('@')) { errEl.textContent = 'Valid email required.'; return; }
       if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
       if (db[uname]) { errEl.textContent = 'Username already exists.'; return; }
-      const hash = await hashPassword(pw);
-      db[uname] = { username: uname, email, passwordHash: hash, tier, createdAt: new Date().toISOString() };
+
+      // Create Firebase Auth account using a separate app instance so the
+      // currently-signed-in admin session is not disturbed.
+      let provAuth = null;
+      let provApp  = null;
+      try {
+        provApp  = firebase.initializeApp(FIREBASE_CONFIG, 'adminProvision_' + Date.now());
+        provAuth = provApp.auth();
+        await provAuth.createUserWithEmailAndPassword(email, pw);
+        await provAuth.signOut();
+      } catch (authErr) {
+        const code = String((authErr && authErr.code) || '');
+        if (code !== 'auth/email-already-in-use') {
+          errEl.textContent = 'Firebase Auth error: ' + (authErr.message || code);
+          return;
+        }
+        // email-already-in-use: Auth account exists, still safe to create/update RTDB record.
+      } finally {
+        if (provApp) try { await provApp.delete(); } catch (_) {}
+      }
+
+      // Write RTDB record without passwordHash — Firebase Auth owns the credential.
+      db[uname] = { username: uname, email, tier, createdAt: new Date().toISOString() };
       if (isAdmin) db[uname].isAdmin = true;
+
     } else {
-      // Edit existing
+      // ── Edit existing ─────────────────────────────────────────────────────
       const rec = db[editingUser];
       if (!rec) { errEl.textContent = 'User not found.'; return; }
       if (!email || !email.includes('@')) { errEl.textContent = 'Valid email required.'; return; }
       rec.email = email;
       rec.tier  = tier;
       if (isAdmin) rec.isAdmin = true; else delete rec.isAdmin;
+
       if (pw) {
         if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
-        rec.passwordHash = await hashPassword(pw);
+        // Can't update another user's Firebase Auth password from the client.
+        // Send a password reset email so the user sets their own password via Firebase.
+        const auth = getFirebaseAuth();
+        if (auth) {
+          try { await auth.sendPasswordResetEmail(rec.email); } catch (_) {}
+          showToast(`Reset email sent to ${rec.email}. Password field ignored — Firebase Auth owns credentials.`);
+        }
+        // Strip legacy hash from record now that Firebase Auth is authoritative.
+        delete rec.passwordHash;
         delete rec.legacyPassword;
       }
     }

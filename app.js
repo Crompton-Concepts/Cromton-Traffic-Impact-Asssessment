@@ -1,11 +1,6 @@
-// ============================================================
-// app.js — Extracted from index.html (read-only reference copy)
-// Main script block 1: lines 5478–26870
-// Main script block 2: lines 26873–27152
-// External script: tia-shared-sync.js (not included here)
-// Do NOT use this file as a module — it relies on DOM globals
-// defined in index.html and must run in that page context.
-// ============================================================
+﻿// app.js — extracted from index.html
+// Do not edit inline in index.html; edit this file instead.
+
   const AUTH_SESSION_KEY = 'crompton_tia_auth';
   const USER_SESSION_KEY = 'crompton_tia_user';
   const TIER_SESSION_KEY = 'crompton_tia_tier';
@@ -2126,21 +2121,21 @@
   function showPythonReportSetupInstructions(reasonText = '') {
     const reason = reasonText || 'Python report service is not reachable.';
     const serviceFolderHint = 'C:\\TIA-Python-Report-Service';
-    const reportServiceDownloadUrl = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/report_service.py';
-    const logoDownloadUrl = 'https://raw.githubusercontent.com/crsanju/Cromton-Traffic-Impact-Asssessment/main/logo.jpeg';
+    const reportServiceDownloadUrl = 'https://traffic-impact-assessment.web.app/report_service.py';
+    const logoDownloadUrl = 'https://traffic-impact-assessment.web.app/logo.jpeg';
     const guideSteps = [
       'Keep this app page open.',
       'Click <strong>Copy Commands</strong> below.',
       'If Python is not installed, click <strong>Get Python from Microsoft Store</strong> and install it first.',
       'Open Command Prompt (Windows: press Win key, type "cmd", press Enter).',
-      `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and check/download <code>report_service.py</code>.`,
-      `If <code>report_service.py</code> is still missing, click <strong>Download Report-Service</strong> or use the raw link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a>.`,
-      `Optional: Download <code>logo.jpeg</code> from <a href="${logoDownloadUrl}" target="_blank" rel="noopener noreferrer">GitHub raw link</a> and save it in the same folder for branding.`,
+      `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and download the latest <code>report_service.py</code> automatically.`,
+      `If the download fails, click <strong>Download Report-Service</strong> or use the direct link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">Download link</a>.`,
+      `Optional: Download <code>logo.jpeg</code> from <a href="${logoDownloadUrl}" target="_blank" rel="noopener noreferrer">Firebase link</a> and save it in the same folder for branding.`,
       'Set <code>GEMINI_API_KEY</code> in the same Command Prompt before starting the report service if you want Gemini-generated executive summary notes.',
       'Confirm the import-check command prints <code>import ok</code>.',
       'If you see "Could not import module report_service", re-run the download/check commands and confirm the file name is exactly <code>report_service.py</code>.',
       'Keep that Command Prompt window running (do not close it).',
-      'Return to this app (GitHub link) and click "Detailed Python Report" or "Python Short Report" again.'
+      'Return to this app (Firebase app link) and click "Detailed Python Report" or "Python Short Report" again.'
     ];
 
     const guide = [
@@ -2154,8 +2149,7 @@
       '# If Python is not installed, install from Microsoft Store: https://apps.microsoft.com/detail/9NCVDN91XZQP',
       `mkdir "${serviceFolderHint}"`,
       `cd /d "${serviceFolderHint}"`,
-      'dir report_service*',
-      '# If report_service.py is missing, run this command to download it automatically:',
+      '# Always download the latest report_service.py:',
       `powershell -Command "Invoke-WebRequest -Uri '${reportServiceDownloadUrl}' -OutFile 'report_service.py'"`,
       'dir report_service.py',
       'python -m venv .venv',
@@ -3366,6 +3360,984 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
+  function copyTgsTiaSheet(button, options = {}) {
+        const getTiaPreviewContext = (mode) => {
+          const resolvedMode = String(mode || '').toLowerCase() === 'detour' ? 'detour' : 'tgs';
+          if (resolvedMode === 'detour') {
+            return {
+              mode: 'detour',
+              wrapId: 'detourTiaPreviewWrap',
+              hostId: 'detourTiaPreviewHost',
+              statusId: 'detourTiaPreviewStatus',
+              htmlKey: 'lastDetourTiaSheetHtml',
+              textKey: 'lastDetourTiaSheetText',
+              editModeKey: 'detourTiaEditMode'
+            };
+          }
+          return {
+            mode: 'tgs',
+            wrapId: 'tgsTiaPreviewWrap',
+            hostId: 'tgsTiaPreviewHost',
+            statusId: 'tgsTiaPreviewStatus',
+            htmlKey: 'lastTgsTiaSheetHtml',
+            textKey: 'lastTgsTiaSheetText',
+            editModeKey: 'tgsTiaEditMode'
+          };
+        };
+    const escapeHtml = (value) => String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const cleanText = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+    const getValue = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return '';
+      if (typeof el.value === 'string' && el.value.trim()) return cleanText(el.value);
+      return cleanText(el.textContent || '');
+    };
+
+    const getNumber = (id) => {
+      const raw = getValue(id);
+      const match = raw.match(/-?\d+(?:,\d{3})*(?:\.\d+)?/);
+      if (!match) return null;
+      const parsed = Number(match[0].replace(/,/g, ''));
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const cloneTableForTgs = (tableId) => {
+      const table = document.getElementById(tableId);
+      if (!table) return '';
+
+      // If the tbody only has a placeholder row (single colspan td, no vcr-badge), treat as empty
+      const tbody = table.querySelector('tbody');
+      if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const hasRealData = rows.some(row => {
+          const cells = row.querySelectorAll('td');
+          return cells.length > 1 || (cells.length === 1 && !cells[0].hasAttribute('colspan') && row.querySelector('.vcr-badge'));
+        });
+        if (!hasRealData) return '';
+      }
+      const losPalette = {
+        'vcr-los-a': { background: '#2e7d32', color: '#ffffff', border: '#1b5e20' },
+        'vcr-los-b': { background: '#8bc34a', color: '#111827', border: '#689f38' },
+        'vcr-los-c': { background: '#ffeb3b', color: '#111827', border: '#f9a825' },
+        'vcr-los-d': { background: '#ffb300', color: '#111827', border: '#ef6c00' },
+        'vcr-los-e': { background: '#f57c00', color: '#ffffff', border: '#d84315' },
+        'vcr-los-f': { background: '#c62828', color: '#ffffff', border: '#8e0000' }
+      };
+      const clone = table.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+      clone.querySelectorAll('.formula-inline, .report-remove-x, .report-remove-part-btn').forEach((el) => el.remove());
+      clone.querySelectorAll('th, td').forEach((cell) => {
+        cell.style.padding = '8px 10px';
+        cell.style.border = '1.5px solid #64748b';
+        cell.style.fontSize = '12px';
+        cell.style.fontWeight = '600';
+        cell.style.verticalAlign = 'middle';
+        cell.style.backgroundColor = '#ffffff';
+        cell.style.color = '#000000';
+      });
+      clone.querySelectorAll('thead').forEach((head) => {
+        head.style.display = 'table-header-group';
+        head.style.visibility = 'visible';
+        head.style.pageBreakInside = 'avoid';
+      });
+      clone.querySelectorAll('thead th').forEach((cell) => {
+        cell.style.background = '#ffffff';
+        cell.style.backgroundColor = '#ffffff';
+        cell.style.color = '#000000';
+        cell.style.fontWeight = '900';
+        cell.style.display = 'table-cell';
+        cell.style.visibility = 'visible';
+        cell.style.textAlign = 'center';
+        cell.style.borderBottom = '2px solid #000000';
+        cell.style.borderTop = '1.5px solid #64748b';
+        cell.style.opacity = '1';
+        cell.style.fontSize = '13px';
+      });
+      clone.querySelectorAll('tbody th, .rowhead').forEach((cell) => {
+        cell.style.fontWeight = '900';
+        cell.style.color = '#000000';
+        cell.style.backgroundColor = '#ffffff';
+        cell.style.fontSize = '12px';
+        cell.style.textAlign = 'center';
+      });
+      clone.querySelectorAll('tbody td').forEach((cell) => {
+        cell.style.backgroundColor = '#ffffff';
+        cell.style.fontWeight = '700';
+        cell.style.color = '#000000';
+      });
+      clone.querySelectorAll('.vcr-badge').forEach((badge) => {
+        badge.style.display = 'inline-flex';
+        badge.style.alignItems = 'center';
+        badge.style.justifyContent = 'center';
+        badge.style.gap = '4px';
+        badge.style.padding = '5px 8px';
+        badge.style.borderRadius = '999px';
+        badge.style.fontWeight = '800';
+        badge.style.fontSize = '10px';
+        badge.style.letterSpacing = '0.01em';
+        badge.style.lineHeight = '1.15';
+
+        const losClass = Array.from(badge.classList).find((className) => losPalette[className]);
+        const palette = losClass ? losPalette[losClass] : null;
+        if (palette) {
+          badge.style.backgroundColor = palette.background;
+          badge.style.color = palette.color;
+          badge.style.border = `1px solid ${palette.border}`;
+        }
+
+        badge.querySelectorAll('span').forEach((child) => {
+          child.style.color = 'inherit';
+          child.style.opacity = '1';
+        });
+      });
+      clone.style.width = '100%';
+      clone.style.borderCollapse = 'collapse';
+      clone.style.tableLayout = 'auto';
+      clone.style.marginBottom = '10px';
+      clone.style.pageBreakInside = 'avoid';
+      clone.style.backgroundColor = '#ffffff';
+      return clone.outerHTML;
+    };
+
+    const cloneBlockForTgs = (elementId) => {
+      const source = document.getElementById(elementId);
+      if (!source) return '';
+
+      const computedDisplay = (typeof window !== 'undefined' && window.getComputedStyle)
+        ? String(window.getComputedStyle(source).display || '').toLowerCase()
+        : '';
+      const inlineDisplay = String(source.style && source.style.display ? source.style.display : '').toLowerCase();
+      if (inlineDisplay === 'none' || computedDisplay === 'none') return '';
+
+      const text = String(source.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text) return '';
+
+      const clone = source.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+      clone.querySelectorAll('.formula-inline, .report-remove-x, .report-remove-part-btn').forEach((el) => el.remove());
+      clone.style.display = 'block';
+      clone.style.background = '#ffffff';
+      clone.style.border = '1.5px solid #64748b';
+      clone.style.borderRadius = '0';
+      clone.style.padding = '10px';
+      clone.style.marginBottom = '10px';
+      clone.style.pageBreakInside = 'avoid';
+
+      if (elementId === 'detourRoadVpdSummary') {
+        const summaryTitle = clone.querySelector('div');
+        if (summaryTitle) {
+          summaryTitle.style.fontSize = '13px';
+          summaryTitle.style.fontWeight = '900';
+          summaryTitle.style.color = '#111827';
+          summaryTitle.style.marginBottom = '8px';
+          summaryTitle.style.borderBottom = '1.5px solid #64748b';
+          summaryTitle.style.paddingBottom = '6px';
+        }
+
+        const summaryNote = clone.querySelector('div[style*="font-size: 0.78em"]');
+        if (summaryNote) {
+          summaryNote.style.fontSize = '11px';
+          summaryNote.style.color = '#334155';
+          summaryNote.style.marginTop = '0';
+          summaryNote.style.marginBottom = '8px';
+        }
+
+        clone.querySelectorAll('.detour-card-container').forEach((container) => {
+          container.style.display = 'grid';
+          container.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+          container.style.gap = '8px';
+          container.style.marginTop = '8px';
+        });
+
+        clone.querySelectorAll('.detour-card').forEach((card) => {
+          card.style.background = '#ffffff';
+          card.style.border = '1.5px solid #64748b';
+          card.style.borderRadius = '0';
+          card.style.padding = '9px';
+          card.style.boxShadow = 'none';
+          card.style.transform = 'none';
+          card.style.breakInside = 'avoid';
+          card.style.pageBreakInside = 'avoid';
+        });
+
+        clone.querySelectorAll('.detour-card h4').forEach((heading) => {
+          heading.style.margin = '0 0 6px 0';
+          heading.style.fontSize = '12px';
+          heading.style.fontWeight = '900';
+          heading.style.color = '#000000';
+          heading.style.borderBottom = '1px solid #64748b';
+          heading.style.paddingBottom = '5px';
+        });
+
+        clone.querySelectorAll('.detour-card p').forEach((para) => {
+          para.style.margin = '3px 0';
+          para.style.fontSize = '11px';
+          para.style.lineHeight = '1.3';
+          para.style.color = '#111827';
+        });
+
+        clone.querySelectorAll('.detour-card p strong').forEach((strong) => {
+          strong.style.color = '#000000';
+          strong.style.fontWeight = '800';
+        });
+      }
+
+      return clone.outerHTML;
+    };
+
+    const buildInlineSummaryTable = (rows) => {
+      const safeRows = Array.isArray(rows) ? rows : [];
+      const body = safeRows.map(([label, value]) => {
+        return `<tr><th style="text-align:left; border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900;">${escapeHtml(label)}</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:700;">${escapeHtml(value)}</td></tr>`;
+      }).join('');
+      return `<table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff; margin-bottom:10px;">${body}</table>`;
+    };
+
+    const buildDetourDelayTableForTgs = () => {
+      // Use snapshot data for clean values instead of DOM text with formulas
+      const snap = (typeof window._lastDetourCalcSnapshot === 'object' && window._lastDetourCalcSnapshot) ? window._lastDetourCalcSnapshot : {};
+      const d = snap.delay || {};
+      const delayMin = d.estimatedDelayMin || 0;
+      return buildInlineSummaryTable([
+        ['Detour Route Length (km)', String(d.detourLengthKm || getValue('detourRouteLengthKm') || '0')],
+        ['Average Travel Speed on Detour (km/h)', String(d.avgSpeedKmh || getValue('detourAvgSpeedKmh') || '0')],
+        ['Travel Time (seconds)', String(Math.round(d.travelTimeSec || 0))],
+        ['Total Time incl. Intersections (seconds)', String(Math.round(d.totalTimeSec || 0))],
+        ['Controlled Intersections (#)', getValue('detourControlledIntCount') || '0'],
+        ['Uncontrolled Intersections (#)', getValue('detourUncontrolledIntCount') || '0'],
+        ['Delay @ Controlled (s)', getValue('detourControlledDelaySec') || '60'],
+        ['Delay @ Uncontrolled (s)', getValue('detourUncontrolledDelaySec') || '10'],
+        ['Estimated Delay (minutes)', String(delayMin)]
+      ]);
+    };
+
+    const buildDetourSheetsForTgs = () => {
+      if (!document.getElementById('detourCard')) return '';
+
+      const hasRouteScenarioApi =
+        typeof ensureDetourRouteScenarios === 'function'
+        && typeof saveActiveDetourRouteScenario === 'function'
+        && typeof captureCurrentDetourRouteState === 'function'
+        && typeof applyDetourRouteState === 'function';
+
+      // Save the current active state so we can restore after looping
+      const originalIndex = Math.max(0, Number(window.activeDetourRouteIndex) || 0);
+      let originalState = null;
+      let scenarios = [];
+
+      if (hasRouteScenarioApi) {
+        ensureDetourRouteScenarios();
+        saveActiveDetourRouteScenario();
+        scenarios = Array.isArray(window.detourRouteScenarios) ? window.detourRouteScenarios.slice() : [];
+        originalState = captureCurrentDetourRouteState();
+      }
+
+      const routeIndexes = scenarios.length > 0
+        ? scenarios.map((_, idx) => idx)
+        : [originalIndex];
+
+      const buildRouteBlock = (routeIndex, blockIndex) => {
+        const routeLabelRaw = getValue('detourRouteName') || `Detour Route ${routeIndex + 1}`;
+        const routeLabel = (routeLabelRaw === '-' ? `Detour Route ${routeIndex + 1}` : routeLabelRaw)
+          .replace(/^Evaluating\s+Detour\s*:\s*/i, '').trim() || `Detour Route ${routeIndex + 1}`;
+        const selectedPath = (getValue('detourSelectedPathDisplay') || '-').replace(/^Selected\s+path\s*:\s*/i, '').trim();
+        const selectedStreet = (getValue('detourActiveStreetIndicator') || '-').replace(/^📍\s*Selected\s+street\s*:\s*/i, '').trim();
+
+        const routeSummaryHtml = buildInlineSummaryTable([
+          ['Detour Route', routeLabel],
+          ['Selected Path', selectedPath],
+          ['Active Street', selectedStreet]
+        ]);
+
+        const routeCapacitySummaryHtml = cloneBlockForTgs('detourRoadVpdSummary')
+          || '<div style="font-size:12px; color:#92400e; border:1px dashed #f59e0b; padding:8px; background:#fffbeb;">Detour Road Capacity Summary is currently unavailable for this route. Run Detour analysis for this route and regenerate the sheet.</div>';
+
+        const capacitySummaryHtml = cloneTableForTgs('detourSegmentDetailedTable')
+          || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">Detour road summary table not available. Run Detour analysis first, then click Generate Detour TIA Sheet.</div>';
+        const roadStatusHtml = cloneTableForTgs('postDiversionTable')
+          || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">Road Status After Diversion table not available. Run Detour analysis first.</div>';
+        const pedDelayHtml = cloneTableForTgs('pedDetailTable')
+          || '<div style="font-size:12px; color:#b91c1c; border:1px dashed #dc2626; padding:8px; background:#fff5f5;">No pedestrian delay table available.</div>';
+
+        const pageBreak = blockIndex > 0
+          ? 'page-break-before: always; break-before: page; margin-top: 24px;'
+          : 'margin-top: 18px;';
+
+        const routeSlug = routeLabel
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .slice(0, 64) || `detour_route_${routeIndex + 1}`;
+
+        return `
+      <div class="detour-tia-sheet" data-route-index="${routeIndex}" data-route-slug="${escapeHtml(routeSlug)}" data-route-label="${escapeHtml(routeLabel)}" style="${pageBreak} font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #7e22ce; padding:14px; background:#f8f2fb; width:1480px; min-width:1480px; max-width:none; box-sizing:border-box;">
+  <div style="font-weight:900; font-size:16px; color:#4a148c; margin-bottom:10px; border-bottom:2px solid #8e24aa; padding-bottom:6px;">Detour Analysis Sheet — ${escapeHtml(routeLabel)}</div>
+  <div style="font-weight:900; font-size:12px; margin: 0 0 6px 0; color:#4a148c;">Detour Route</div>
+  ${routeSummaryHtml}
+
+  <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Detour Road Capacity Summary</div>
+  ${routeCapacitySummaryHtml}
+
+  <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Detour road summary: each selected road is assessed separately, with D1 and D2 LOS shown for every period.</div>
+  ${capacitySummaryHtml}
+
+  <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Estimated Delay Table</div>
+  ${buildDetourDelayTableForTgs()}
+
+  <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Road Status After Diversion (Existing Road)</div>
+  ${roadStatusHtml}
+
+  <div style="font-weight:900; font-size:12px; margin: 6px 0; color:#4a148c;">Pedestrian Delay Table</div>
+  ${pedDelayHtml}
+</div>`;
+      };
+
+      const blocks = [];
+
+      routeIndexes.forEach((routeIndex, blockIndex) => {
+        if (hasRouteScenarioApi && scenarios.length > 0) {
+          window.activeDetourRouteIndex = routeIndex;
+          applyDetourRouteState(scenarios[routeIndex] || {}, { skipScan: false });
+        }
+        if (typeof calculateDetourOverlay === 'function') calculateDetourOverlay();
+        if (typeof calculatePedestrianDelay === 'function') calculatePedestrianDelay();
+
+        blocks.push(buildRouteBlock(routeIndex, blockIndex));
+      });
+
+      // Restore original state
+      if (hasRouteScenarioApi && originalState) {
+        window.activeDetourRouteIndex = originalIndex;
+        applyDetourRouteState(originalState, { skipScan: false });
+        if (typeof calculateDetourOverlay === 'function') calculateDetourOverlay();
+        if (typeof calculatePedestrianDelay === 'function') calculatePedestrianDelay();
+        if (typeof renderDetourRouteScenarioManager === 'function') renderDetourRouteScenarioManager();
+      }
+
+      return blocks.join('');
+    };
+
+    const title = (typeof getReportAddressForPrint === 'function'
+      ? getReportAddressForPrint()
+      : getValue('printSiteName')) || 'Traffic Impact Assessment';
+    const siteId = getValue('macroSiteId') || getValue('printCounterId') || '-';
+    const baseYear = getValue('baseYear') || String(new Date().getFullYear());
+    const targetYear = getValue('macroOpeningYear') || baseYear;
+    const baseYearNum = Number(baseYear);
+    const targetYearNum = Number(targetYear);
+    const yearDelta = Number.isFinite(baseYearNum) && Number.isFinite(targetYearNum)
+      ? Math.max(0, targetYearNum - baseYearNum)
+      : '-';
+    const growthRate = getValue('macroGrowthRate') || '0';
+    const hvPercent = getValue('HVP') || '-';
+    const d1Lanes = getValue('D1_Lanes') || '1';
+    const d2Lanes = getValue('D2_Lanes') || '1';
+    const laneClosureMode = (typeof getLaneClosureLabel === 'function' ? getLaneClosureLabel() : getValue('laneClosureCount')) || '-';
+
+    const worstVcr = getNumber('kpiWorstVcr') ?? getNumber('vcrResult');
+    const worstVcrText = Number.isFinite(worstVcr) ? worstVcr.toFixed(2) : '-';
+    const worstLosText = Number.isFinite(worstVcr) && typeof losLabel === 'function' ? losLabel(worstVcr) : '-';
+    const queuePeak = getNumber('queue-result') ?? getNumber('kpiPeakQueue');
+    const queuePeakText = Number.isFinite(queuePeak) ? `${Math.round(queuePeak).toLocaleString()} m` : '-';
+    const generatedAt = new Date().toLocaleString('en-AU', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const groupedD2Html = cloneTableForTgs('groupedTableD2');
+    const groupedD1Html = cloneTableForTgs('groupedTableD1');
+    const queueD2Html = cloneTableForTgs('queueGroupedTableD2');
+    const queueD1Html = cloneTableForTgs('queueGroupedTableD1');
+    const vcrD2Html = cloneTableForTgs('vcrGroupedTableD2');
+    const vcrD1Html = cloneTableForTgs('vcrGroupedTableD1');
+    const vcrRiskText = getValue('vcrRiskBadge') || '-';
+    const queueRiskText = getValue('queueRiskBadge') || '-';
+
+    const baseHtml = `
+<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #334155; padding:14px; background:#eef1f6; width:1480px; min-width:1480px; max-width:none; box-sizing:border-box;">
+  <div style="font-size:11px; color:#1e293b; font-weight:700; text-align:right; margin-bottom:8px;">Generated ${escapeHtml(generatedAt)}</div>
+
+  <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:10px; margin-bottom:10px;">
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;">
+      <tr>
+        <th colspan="5" style="text-align:left; background:#ffffff; color:#000000; border:1.5px solid #64748b; border-bottom:2px solid #000000; padding:10px 12px; font-size:13px; font-weight:900; letter-spacing:0.01em;">Count Location: ${escapeHtml(title)} - Site ${escapeHtml(siteId)}</th>
+      </tr>
+      <tr>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Period</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">From</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">To</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Hrs</th>
+        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Notes</th>
+      </tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">AM</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Morning peak</td></tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">OP</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">7</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Off-peak day</td></tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">PM</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Evening peak</td></tr>
+      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">EV</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">13</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Night/off-peak</td></tr>
+    </table>
+
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;"><colgroup><col style="width:65%"><col style="width:35%"></colgroup>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; border-bottom:2px solid #000000; padding:8px 10px; font-weight:900;">Year of Traffic Count</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(baseYear)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Current Year</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(targetYear)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Number of Years</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(yearDelta)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Growth Rate (% p.a.)</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(growthRate)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">HV %</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(hvPercent)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Lanes Direction 1</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(d1Lanes)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Lanes Direction 2</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(d2Lanes)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Worst VCR / LOS</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Peak Queue</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(queuePeakText)}</td></tr>
+      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Work VCR Assumption</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(laneClosureMode)}</td></tr>
+    </table>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
+    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+      <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; letter-spacing:0.01em;">Direction 2, Against Gazettal</div>
+      <div style="font-size:11.5px; font-weight:900; margin-bottom:5px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Grouped Directional Summary</div>
+      ${groupedD2Html}
+      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Queue Length Estimation</div>
+      ${queueD2Html}
+      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">VCR / LOS</div>
+      ${vcrD2Html}
+    </div>
+
+    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+      <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; letter-spacing:0.01em;">Direction 1, Gazettal</div>
+      <div style="font-size:11.5px; font-weight:900; margin-bottom:5px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Grouped Directional Summary</div>
+      ${groupedD1Html}
+      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Queue Length Estimation</div>
+      ${queueD1Html}
+      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">VCR / LOS</div>
+      ${vcrD1Html}
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); gap:12px; margin-bottom:8px; align-items:stretch;">
+    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+      <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; padding-bottom:4px; border-bottom:2px solid #334155;">Notes &amp; Application Guidance</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px 10px;">
+        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Use Of Output</div><div style="color:#111827; font-size:11px; line-height:1.45;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
+        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Worst Capacity Condition</div><div style="color:#111827; font-size:11px; line-height:1.45;">Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
+        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Queue Interpretation</div><div style="color:#111827; font-size:11px; line-height:1.45;">Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
+        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.</div></div>
+        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Assessment Periods</div><div style="color:#111827; font-size:11px; line-height:1.45;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
+        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Design Check</div><div style="color:#111827; font-size:11px; line-height:1.45;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
+      </div>
+    </div>
+
+    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff; align-self:start;">
+        <div style="font-weight:900; font-size:12px; margin-bottom:6px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #334155;">LOS Legend</div>
+        <div style="font-size:11px; border:1px solid #1b5e20; margin-bottom:4px; background:#2e7d32; color:#ffffff; padding:4px 8px; font-weight:800;">LOS A (VCR &lt;= 0.60)</div>
+        <div style="font-size:11px; border:1px solid #689f38; margin-bottom:4px; background:#8bc34a; color:#111827; padding:4px 8px; font-weight:800;">LOS B (0.60 &lt; VCR &lt;= 0.70)</div>
+        <div style="font-size:11px; border:1px solid #f9a825; margin-bottom:4px; background:#ffeb3b; color:#111827; padding:4px 8px; font-weight:800;">LOS C (0.70 &lt; VCR &lt;= 0.80)</div>
+        <div style="font-size:11px; border:1px solid #ef6c00; margin-bottom:4px; background:#ffb300; color:#111827; padding:4px 8px; font-weight:800;">LOS D (0.80 &lt; VCR &lt;= 0.90)</div>
+        <div style="font-size:11px; border:1px solid #d84315; margin-bottom:4px; background:#f57c00; color:#ffffff; padding:4px 8px; font-weight:800;">LOS E (0.90 &lt; VCR &lt;= 1.00)</div>
+        <div style="font-size:11px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:4px 8px; font-weight:800;">LOS F (VCR &gt; 1.00)</div>
+    </div>
+  </div>
+</div>`;
+    const detourOnlyMode = !!(options && options.detourOnly);
+    const previewMode = String((options && options.previewMode) || (detourOnlyMode ? 'detour' : 'tgs')).toLowerCase() === 'detour' ? 'detour' : 'tgs';
+    const detourHtml = detourOnlyMode ? buildDetourSheetsForTgs() : '';
+    const previewContext = getTiaPreviewContext(previewMode);
+    const html = detourOnlyMode ? detourHtml : baseHtml;
+    window[previewContext.htmlKey] = html;
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    window[previewContext.textKey] = cleanText(temp.textContent || '');
+
+    const previewWrap = document.getElementById(previewContext.wrapId);
+    const previewHost = document.getElementById(previewContext.hostId);
+    const previewStatus = document.getElementById(previewContext.statusId);
+    const autoRefresh = !!(options && options.autoRefresh);
+
+    if (previewHost) {
+      previewHost.innerHTML = html;
+      if (previewContext.mode === 'detour') {
+        const detourSheets = Array.from(previewHost.querySelectorAll(':scope > .detour-tia-sheet'));
+        detourSheets.forEach((sheetEl, sheetIndex) => {
+          const routeLabel = String(sheetEl.getAttribute('data-route-label') || `Detour Route ${sheetIndex + 1}`);
+          const controls = document.createElement('div');
+          controls.className = 'detour-sheet-download-row';
+          controls.style.cssText = 'display:flex; justify-content:flex-end; gap:8px; margin:10px 0 6px 0;';
+
+          const buttonEl = document.createElement('button');
+          buttonEl.type = 'button';
+          buttonEl.className = 'copy-table-btn';
+          buttonEl.style.background = '#6d28d9';
+          buttonEl.style.borderColor = '#5b21b6';
+          buttonEl.textContent = `Download ${routeLabel} Image`;
+          buttonEl.addEventListener('click', () => downloadDetourTiaSheetImage(buttonEl, sheetIndex));
+
+          controls.appendChild(buttonEl);
+          previewHost.insertBefore(controls, sheetEl);
+        });
+      }
+    }
+
+    setTgsPreviewEditable(Boolean(window[previewContext.editModeKey]), previewContext.mode);
+
+    if (previewWrap) {
+      previewWrap.style.display = 'block';
+    }
+    if (previewStatus) {
+      if (autoRefresh) {
+        previewStatus.textContent = `Preview auto-updated at ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}.`;
+        previewStatus.style.color = '#0d47a1';
+      } else {
+        previewStatus.textContent = 'Preview generated. Review below, then click Copy Preview to Clipboard.';
+        previewStatus.style.color = '#0f766e';
+      }
+    }
+
+    const original = button
+      ? button.textContent
+      : (previewContext.mode === 'detour' ? 'Generate Detour TIA Sheet' : 'Generate TGS TIA Sheet');
+    if (button && !(options && options.silentButton)) {
+      button.textContent = previewContext.mode === 'detour' ? 'Detour Sheet Updated' : 'Preview Updated';
+      setTimeout(() => {
+        button.textContent = original;
+      }, 1300);
+    }
+
+    if (!options || !options.noScroll) {
+      if (previewWrap && typeof previewWrap.scrollIntoView === 'function') {
+      previewWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }
+
+  function getCurrentTgsPreviewPayload(mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+    const htmlKey = isDetour ? 'lastDetourTiaSheetHtml' : 'lastTgsTiaSheetHtml';
+    const textKey = isDetour ? 'lastDetourTiaSheetText' : 'lastTgsTiaSheetText';
+    const node = previewHost ? previewHost.firstElementChild : null;
+    if (previewHost && previewHost.children && previewHost.children.length > 0) {
+      const html = String(previewHost.innerHTML || '');
+      const plainText = String(previewHost.textContent || '').replace(/\s+/g, ' ').trim();
+      return { html, plainText };
+    }
+    return {
+      html: String(window[htmlKey] || ''),
+      plainText: String(window[textKey] || '')
+    };
+  }
+
+  function setTgsPreviewEditable(enabled, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const previewHost = document.getElementById(isDetour ? 'detourTiaPreviewHost' : 'tgsTiaPreviewHost');
+    if (!previewHost) return;
+
+    // Table cells, list items, note card body spans, direction/section labels
+    const editableNodes = previewHost.querySelectorAll(
+      'td, th, li, ' +
+      'div[style] > span[style], ' +   // note card headings and body spans
+      'div[style] > span:not([style])' // plain body text spans inside note cards
+    );
+    editableNodes.forEach((node) => {
+      node.setAttribute('contenteditable', enabled ? 'true' : 'false');
+      node.style.outline = enabled ? '1px dashed #f59e0b' : '';
+      node.style.cursor = enabled ? 'text' : '';
+    });
+
+    // Also make the direction/section label divs editable (direct text divs)
+    previewHost.querySelectorAll('div[style]').forEach((div) => {
+      // Only target leaf-like divs that contain text and no block children
+      const hasBlockChild = Array.from(div.children).some((c) =>
+        ['DIV', 'TABLE', 'THEAD', 'TBODY', 'TR', 'UL', 'OL'].includes(c.tagName)
+      );
+      if (!hasBlockChild && div.textContent.trim()) {
+        div.setAttribute('contenteditable', enabled ? 'true' : 'false');
+        div.style.outline = enabled ? '1px dashed #f59e0b' : '';
+        div.style.cursor = enabled ? 'text' : '';
+      }
+    });
+  }
+
+  function toggleTgsTiaEditMode(button, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const editModeKey = isDetour ? 'detourTiaEditMode' : 'tgsTiaEditMode';
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
+    window[editModeKey] = !window[editModeKey];
+    const enabled = Boolean(window[editModeKey]);
+
+    setTgsPreviewEditable(enabled, isDetour ? 'detour' : 'tgs');
+
+    if (button) {
+      button.textContent = enabled ? 'Disable Edit Mode' : 'Enable Edit Mode';
+      button.style.background = enabled ? '#15803d' : '#b45309';
+      button.style.borderColor = enabled ? '#166534' : '#92400e';
+    }
+
+    if (previewStatus) {
+      if (enabled) {
+        previewStatus.textContent = 'Edit mode enabled: values and notes are now editable. Auto-refresh paused.';
+        previewStatus.style.color = '#166534';
+      } else {
+        previewStatus.textContent = 'Edit mode disabled: auto-refresh resumed.';
+        previewStatus.style.color = '#0d47a1';
+      }
+    }
+  }
+
+  function toggleDetourTiaEditMode(button) {
+    toggleTgsTiaEditMode(button, 'detour');
+  }
+
+  function copyTgsTiaSheetPreview(button, mode = 'tgs') {
+    const isDetour = String(mode || '').toLowerCase() === 'detour';
+    const payload = getCurrentTgsPreviewPayload(isDetour ? 'detour' : 'tgs');
+    const html = String(payload.html || '');
+    const plainText = String(payload.plainText || '');
+    const previewStatus = document.getElementById(isDetour ? 'detourTiaPreviewStatus' : 'tgsTiaPreviewStatus');
+
+    if (!html && !plainText) {
+      if (previewStatus) {
+        previewStatus.textContent = 'Generate preview first, then copy.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      return;
+    }
+
+    const original = button ? button.textContent : 'Copy Preview to Clipboard';
+    const setButtonState = (text) => {
+      if (!button) return;
+      button.textContent = text;
+      setTimeout(() => {
+        button.textContent = original;
+      }, 1300);
+    };
+
+    const fallbackCopyText = () => {
+      const ta = document.createElement('textarea');
+      ta.value = plainText;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    };
+
+    (async () => {
+      try {
+        if (navigator.clipboard && window.ClipboardItem && html) {
+          const payload = {
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([plainText], { type: 'text/plain' })
+          };
+          await navigator.clipboard.write([new ClipboardItem(payload)]);
+          setButtonState('Copied');
+          if (previewStatus) {
+            previewStatus.textContent = 'Copied preview to clipboard (HTML + text).';
+            previewStatus.style.color = '#0f766e';
+          }
+          return;
+        }
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(plainText);
+          setButtonState('Copied (Text)');
+          if (previewStatus) {
+            previewStatus.textContent = 'Copied preview to clipboard (text only).';
+            previewStatus.style.color = '#0f766e';
+          }
+          return;
+        }
+        fallbackCopyText();
+        setButtonState('Copied (Text)');
+        if (previewStatus) {
+          previewStatus.textContent = 'Copied preview to clipboard (text only).';
+          previewStatus.style.color = '#0f766e';
+        }
+      } catch (_err) {
+        try {
+          fallbackCopyText();
+          setButtonState('Copied (Text)');
+          if (previewStatus) {
+            previewStatus.textContent = 'Copied preview to clipboard (text only).';
+            previewStatus.style.color = '#0f766e';
+          }
+        } catch (_innerErr) {
+          setButtonState('Copy Failed');
+          if (previewStatus) {
+            previewStatus.textContent = 'Copy failed. Try again.';
+            previewStatus.style.color = '#b91c1c';
+          }
+        }
+      }
+    })();
+  }
+
+  function copyDetourTiaSheetPreview(button) {
+    copyTgsTiaSheetPreview(button, 'detour');
+  }
+
+  function sanitizeExportFileNameSegment(value, fallback = 'sheet') {
+    const raw = String(value || '').trim();
+    const cleaned = raw
+      .replace(/[^a-zA-Z0-9\-_\s]+/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase();
+    return cleaned || fallback;
+  }
+
+  function triggerBlobDownload(blob, fileName) {
+    if (!blob) throw new Error('No image blob generated');
+    const safeName = String(fileName || 'tgs_tia_sheet.png').trim() || 'tgs_tia_sheet.png';
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = safeName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(url), 2500);
+  }
+
+  async function renderPreviewNodeToPngBlob(previewNode, options = {}) {
+    if (!previewNode) throw new Error('Preview node not found');
+
+    // Use scrollWidth/scrollHeight as primary to capture full content (including off-screen)
+    let width = Math.max(1, Math.ceil(previewNode.scrollWidth || previewNode.offsetWidth || 0));
+    let height = Math.max(1, Math.ceil(previewNode.scrollHeight || previewNode.offsetHeight || 0));
+    
+    // Fallback to bounding rect if scroll dimensions are not available
+    if (width <= 1 || height <= 1) {
+      const rect = previewNode.getBoundingClientRect();
+      width = Math.max(1, Math.ceil(rect.width || 0));
+      height = Math.max(1, Math.ceil(rect.height || 0));
+    }
+    
+    const pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 2));
+    const bgColor = String(options.backgroundColor || '#ffffff');
+
+    const blobFromCanvas = (canvasEl) => new Promise((resolve, reject) => {
+      if (!canvasEl || typeof canvasEl.toBlob !== 'function') {
+        reject(new Error('Canvas export API unavailable'));
+        return;
+      }
+      canvasEl.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Canvas export produced empty blob'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/png');
+    });
+
+    const maxPixels = 24_000_000;
+    const area = Math.max(1, width * height);
+    const areaScaleCap = Math.max(0.45, Math.min(1, Math.sqrt(maxPixels / area)));
+    const baseScale = Math.max(0.5, Math.min(pixelRatio, pixelRatio * areaScaleCap));
+
+    // Preferred path: html2canvas is bundled by html2pdf in this app.
+    if (typeof window.html2canvas === 'function') {
+      const scalesToTry = [baseScale, Math.max(0.75, baseScale * 0.8), 0.6, 0.5]
+        .map((v) => Math.max(0.5, Math.min(2, Number(v) || 1)))
+        .filter((v, i, arr) => arr.indexOf(v) === i);
+
+      let html2CanvasError = null;
+      for (const scale of scalesToTry) {
+        try {
+          const canvas = await window.html2canvas(previewNode, {
+            backgroundColor: bgColor,
+            scale,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            width,
+            height,
+            windowWidth: width,
+            windowHeight: height,
+            scrollX: 0,
+            scrollY: 0
+          });
+          
+          return await blobFromCanvas(canvas);
+        } catch (error) {
+          html2CanvasError = error;
+        }
+      }
+      if (html2CanvasError) {
+        console.warn('[TGS Export] html2canvas path failed, trying fallback:', html2CanvasError);
+      }
+    }
+
+    // Fallback: SVG foreignObject render.
+    const clone = previewNode.cloneNode(true);
+    clone.style.margin = '0';
+    clone.style.width = `${width}px`;
+    clone.style.height = `${height}px`;
+    clone.style.maxWidth = `${width}px`;
+    clone.style.background = bgColor;
+
+    const serializer = new XMLSerializer();
+    const cloneMarkup = serializer.serializeToString(clone);
+    const svgMarkup = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+        <foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${cloneMarkup}</div></foreignObject>
+      </svg>
+    `;
+    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    try {
+      const imageEl = new Image();
+      await new Promise((resolve, reject) => {
+        imageEl.onload = () => resolve(true);
+        imageEl.onerror = () => reject(new Error('SVG fallback render failed'));
+        imageEl.src = svgUrl;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(width * pixelRatio);
+      canvas.height = Math.ceil(height * pixelRatio);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context unavailable');
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      ctx.drawImage(imageEl, 0, 0, width, height);
+
+      // Apply landscape rotation if needed (SVG fallback)
+      if (needsRotation) {
+        const rotatedCanvas = document.createElement('canvas');
+        rotatedCanvas.width = canvas.height;
+        rotatedCanvas.height = canvas.width;
+        const rotCtx = rotatedCanvas.getContext('2d');
+        if (rotCtx) {
+          rotCtx.translate(rotatedCanvas.width, 0);
+          rotCtx.rotate(Math.PI / 2);
+          rotCtx.drawImage(canvas, 0, 0);
+        }
+        return await blobFromCanvas(rotatedCanvas);
+      }
+
+      return await blobFromCanvas(canvas);
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+
+  async function downloadTgsTiaSheetImage(button) {
+    const previewHost = document.getElementById('tgsTiaPreviewHost');
+    const previewStatus = document.getElementById('tgsTiaPreviewStatus');
+    const previewNode = previewHost ? previewHost.firstElementChild : null;
+
+    if (!previewNode) {
+      if (previewStatus) {
+        previewStatus.textContent = 'Generate preview first, then download the image.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      return;
+    }
+
+    const original = button ? button.textContent : 'Download as Image';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Rendering...';
+    }
+
+    try {
+      const blob = await renderPreviewNodeToPngBlob(previewNode, { backgroundColor: '#ffffff' });
+      const scenario = document.getElementById('scenarioNameInput');
+      const scenarioSegment = sanitizeExportFileNameSegment(scenario && scenario.value, 'tia');
+      const fileName = `tgs_tia_sheet_${scenarioSegment}.png`;
+      triggerBlobDownload(blob, fileName);
+
+      if (previewStatus) {
+        previewStatus.textContent = `Image downloaded: ${fileName}`;
+        previewStatus.style.color = '#0f766e';
+      }
+      if (button) button.textContent = 'Downloaded';
+    } catch (error) {
+      console.error('[TGS Export] Image download failed:', error);
+      if (previewStatus) {
+        previewStatus.textContent = 'Image export failed. Try regenerating preview, then download again.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      if (button) button.textContent = 'Export Failed';
+    } finally {
+      if (button) {
+        setTimeout(() => {
+          button.disabled = false;
+          button.textContent = original;
+        }, 1400);
+      }
+    }
+  }
+
+  async function downloadDetourTiaSheetImage(button, routeIndex) {
+    const previewHost = document.getElementById('detourTiaPreviewHost');
+    const previewStatus = document.getElementById('detourTiaPreviewStatus');
+    const detourSheets = previewHost
+      ? Array.from(previewHost.querySelectorAll(':scope > .detour-tia-sheet'))
+      : [];
+
+    let targetSheet = null;
+    const normalizedIndex = Number.isFinite(Number(routeIndex)) ? Number(routeIndex) : -1;
+    if (normalizedIndex >= 0 && normalizedIndex < detourSheets.length) {
+      targetSheet = detourSheets[normalizedIndex];
+    } else if (detourSheets.length > 0) {
+      targetSheet = detourSheets[0];
+    } else if (previewHost) {
+      targetSheet = previewHost.firstElementChild;
+    }
+
+    if (!targetSheet) {
+      if (previewStatus) {
+        previewStatus.textContent = 'Generate detour preview first, then download image.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      return;
+    }
+
+    const original = button ? button.textContent : 'Download as Image';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Rendering...';
+    }
+
+    try {
+      const blob = await renderPreviewNodeToPngBlob(targetSheet, { backgroundColor: '#ffffff' });
+      const routeLabel = targetSheet.getAttribute('data-route-label') || `route_${normalizedIndex + 1}`;
+      const routeSegment = sanitizeExportFileNameSegment(routeLabel, 'route');
+      const fileName = `detour_tia_sheet_${routeSegment}.png`;
+      triggerBlobDownload(blob, fileName);
+
+      if (previewStatus) {
+        previewStatus.textContent = `Image downloaded: ${fileName}`;
+        previewStatus.style.color = '#0f766e';
+      }
+      if (button) button.textContent = 'Downloaded';
+    } catch (error) {
+      console.error('[Detour Export] Image download failed:', error);
+      if (previewStatus) {
+        previewStatus.textContent = 'Detour image export failed. Try regenerating preview, then download again.';
+        previewStatus.style.color = '#b91c1c';
+      }
+      if (button) button.textContent = 'Export Failed';
+    } finally {
+      if (button) {
+        setTimeout(() => {
+          button.disabled = false;
+          button.textContent = original;
+        }, 1400);
+      }
+    }
+  }
+
   function restoreReportRemovals() {
     document.querySelectorAll('.report-part-excluded').forEach((el) => {
       el.classList.remove('report-part-excluded');
@@ -3593,7 +4565,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return null;
     }
 
+    // Seed default admin user so username lookup works even on a fresh browser
+    (function ensureDefaultAdmin() {
+      try {
+        const db = getUserDb();
+        if (!db['admin']) {
+          db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
+          localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+        }
+      } catch (_) {}
+    })();
+
+    let isUnlockStarted = false;
     async function unlockApplication(options = {}) {
+      if (isUnlockStarted) return;
+      isUnlockStarted = true;
       const useFunnyLoading = !!(options && options.useFunnyLoading);
       // Initialize UI components (idempotent)
       await initializeUIComponents();
@@ -3676,70 +4662,171 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
-    // Firebase Auth State Listener
+    // Hide login gate while Firebase checks persisted auth (prevents flash on page load)
+    loginGate.style.visibility = 'hidden';
+    loginGate.style.opacity = '0';
+    loginGate.style.transition = 'opacity 0.15s ease';
+
+    let _authCheckFired = false;
+    let _formLoginInProgress = false;
+    function _revealLoginGate() {
+      if (loginGate.style.display === 'none') return;
+      loginGate.style.visibility = 'visible';
+      loginGate.style.opacity = '1';
+    }
+
+    // Safety fallback: show login gate after 3s if Firebase auth check hasn't fired
+    const _authFallback = setTimeout(() => { if (!_authCheckFired) _revealLoginGate(); }, 3000);
+
+    // Firebase Auth State Listener — auto-login when Firebase auth is persisted
     firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) return;
-
-      // Avoid first-attempt race: auth state can fire before submit handler sets sessionStorage.
-      if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+      _authCheckFired = true;
+      clearTimeout(_authFallback);
+      if (user && !_formLoginInProgress) {
+        // Persisted Firebase auth — auto-login without requiring form entry
+        if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
+          sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+          const localDb = getUserDb();
+          const localFound = findUserRecord(localDb, user.email) || findUserRecord(localDb, (user.email || '').split('@')[0]);
+          const localUname = localFound ? localFound.record.username : (user.email || 'user').split('@')[0];
+          const localRec = localFound ? localFound.record : { username: localUname, email: user.email, tier: 'free' };
+          sessionStorage.setItem(USER_SESSION_KEY, localUname);
+          sessionStorage.setItem(TIER_SESSION_KEY, localRec.tier || 'free');
+          sessionStorage.setItem('IS_ADMIN', localRec.isAdmin ? 'true' : 'false');
+        }
+        unlockApplication().catch(function(err) {
+          console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+          document.body.classList.remove('app-locked');
+          loginGate.style.display = 'none';
+        });
+      } else if (!user) {
+        // No authenticated user — reveal login gate
+        _revealLoginGate();
       }
-
-      unlockApplication().catch(function(err) {
-        console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
-        document.body.classList.remove('app-locked');
-        loginGate.style.display = 'none';
-      });
     });
 
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-      // Logic handled by onAuthStateChanged or fallback
+      // Logic handled by onAuthStateChanged
       return;
     }
 
+    // Auto-login from URL hash (e.g. shared link) — credentials passed via
+    // the fragment so they are never sent to the server or captured in CDN
+    // access logs. Strip from the address bar immediately after reading.
+    // URL format: https://app/#loginUser=Admin&loginPassword=secret
+    (function consumeUrlCredentials() {
+      try {
+        // Support hash-based credentials only (#loginUser=...&loginPassword=...)
+        // Query-param credentials (?loginUser=...) are no longer accepted since
+        // they appear in server logs. If old-style params are detected, warn and ignore.
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get('loginUser') || searchParams.get('loginPassword')) {
+          console.warn('[Auth] Credential URL params detected in query string — ignored for security. Use the # fragment format instead.');
+          searchParams.delete('loginUser');
+          searchParams.delete('loginPassword');
+          const cleanSearch = searchParams.toString();
+          history.replaceState(null, '', window.location.pathname + (cleanSearch ? '?' + cleanSearch : '') + window.location.hash);
+          return;
+        }
+
+        const hash = window.location.hash;
+        if (!hash || hash === '#') return;
+        const hashParams = new URLSearchParams(hash.substring(1));
+        const urlUser = hashParams.get('loginUser');
+        const urlPass = hashParams.get('loginPassword');
+        if (!urlUser && !urlPass) return;
+
+        // Strip credentials from address bar before doing anything else.
+        hashParams.delete('loginUser');
+        hashParams.delete('loginPassword');
+        const remainingHash = hashParams.toString();
+        history.replaceState(null, '', window.location.pathname + window.location.search + (remainingHash ? '#' + remainingHash : ''));
+
+        if (urlUser) loginUser.value = urlUser;
+        if (urlPass) loginPassword.value = urlPass;
+        if (urlUser && urlPass) {
+          setTimeout(() => loginForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })), 50);
+        }
+      } catch (_) {}
+    })();
+
     loginUser.focus();
+
+    const hashPasswordLocal = async (pw) => {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    };
 
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
+      _formLoginInProgress = true;
+      isUnlockStarted = false; // Reset so form-initiated unlock can run
       const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
       const enteredPassword = String(loginPassword.value || '').trim();
 
       loginError.textContent = 'Authenticating...';
 
+      // Pull latest users from Firebase before checking credentials (4 s budget).
+      if (window.TIASync && TIASync.isEnabled()) {
+        try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 4000))]); } catch (_) {}
+      }
 
-      // Accept either email or username (as email) for login
-      let email = userIdentifier;
-      if (!email.includes('@')) {
-        loginError.textContent = 'Please use your email address to sign in.';
+      const db = getUserDb();
+      const found = findUserRecord(db, userIdentifier);
+      const email = found ? found.record.email : (userIdentifier.includes('@') ? userIdentifier : null);
+
+      if (!email) {
+        _formLoginInProgress = false;
+        loginError.textContent = 'Username not recognised. Please sign in using your email address instead.';
         return;
       }
 
-      let user = null;
       try {
         const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
-        user = userCredential && userCredential.user ? userCredential.user : null;
-      } catch (error) {
-        console.error('[Login] Firebase Auth error:', error);
-        loginError.textContent = 'Login failed: ' + error.message;
+        const user = userCredential.user;
+
+        // Post-auth pull: now authenticated, Firebase DB reads succeed — gets correct tier/admin.
+        if (window.TIASync && TIASync.isEnabled()) {
+          try { await Promise.race([TIASync.pullAll(), new Promise(r => setTimeout(r, 5000))]); } catch (_) {}
+        }
+
+        const freshDb = getUserDb();
+        const freshFound = findUserRecord(freshDb, userIdentifier) || findUserRecord(freshDb, user.email);
+        const finalUname = freshFound ? freshFound.record.username : user.email.split('@')[0];
+        const finalRec   = freshFound ? freshFound.record : { username: finalUname, email: user.email, tier: 'free' };
+
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        sessionStorage.setItem(USER_SESSION_KEY, finalUname);
+        sessionStorage.setItem(TIER_SESSION_KEY, finalRec.tier || 'free');
+        sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
+
+        loginError.textContent = '';
+        _formLoginInProgress = false;
+        await unlockApplication({ useFunnyLoading: true });
+      } catch (firebaseError) {
+        const code = String(firebaseError.code || '');
+        // Fallback for users created via the admin portal: they have a passwordHash but no
+        // Firebase Auth account yet (auth/user-not-found or auth/invalid-credential).
+        if ((code === 'auth/user-not-found' || code === 'auth/invalid-credential') && found && found.record.passwordHash) {
+          try {
+            const hash = await hashPasswordLocal(enteredPassword);
+            if (hash === found.record.passwordHash) {
+              sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+              sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
+              sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
+              sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
+              loginError.textContent = '';
+              _formLoginInProgress = false;
+              await unlockApplication({ useFunnyLoading: true });
+              return;
+            }
+          } catch (_) {}
+        }
+        _formLoginInProgress = false;
+        console.error('[Login] Firebase Auth error:', firebaseError);
+        loginError.textContent = 'Login failed: ' + firebaseError.message;
         loginPassword.value = '';
         loginPassword.focus();
-        return;
-      }
-
-      const finalUname = user && user.email ? user.email.split('@')[0] : userIdentifier;
-      sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      sessionStorage.setItem(USER_SESSION_KEY, finalUname);
-      sessionStorage.setItem(TIER_SESSION_KEY, 'free');
-      sessionStorage.setItem('IS_ADMIN', 'false');
-
-      loginError.textContent = '';
-
-      try {
-        await unlockApplication({ useFunnyLoading: true });
-      } catch (unlockError) {
-        console.error('[Login] unlockApplication failed after successful auth:', unlockError);
-        document.body.classList.remove('app-locked');
-        loginGate.style.display = 'none';
       }
     });
 
@@ -4224,17 +5311,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const FIREBASE_NSW_TNSW_URL  = `${FIREBASE_STORAGE_BASE}tnsw.geojson${FIREBASE_STORAGE_SUFFIX}`;
   const FIREBASE_DATASET_MANIFEST_URL = `${FIREBASE_STORAGE_BASE}dataset_manifest.json${FIREBASE_STORAGE_SUFFIX}`;
 
-  // GitHub — fallback source
-  const GITHUB_TMR_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tmr.geojson';
-  const GITHUB_GOLDCOAST_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/goldcoast.geojson';
-  const GITHUB_BRISBANE_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/Brisbane.geojson';
-  const GITHUB_IPSWICH_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/Ipswich.geojson';
-  const GITHUB_LOGAN_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/logan.geojson';
-  const GITHUB_TOOWOOMBA_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/toowoomba.geojson';
-  const GITHUB_TEWANTIN_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tewantin.geojson';
-  const GITHUB_NSW_2026_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/nsw_2026.geojson';
-  const GITHUB_NSW_TNSW_URL = 'https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/TNSW.geojson';
-  const GITHUB_DATASET_MANIFEST_URL = 'https://raw.githubusercontent.com/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/dataset_manifest.json';
+  // GitHub fallback sources removed — all data loads from Firebase Storage or Firebase Hosting.
+  const GITHUB_TMR_URL = '';
+  const GITHUB_GOLDCOAST_URL = '';
+  const GITHUB_BRISBANE_URL = '';
+  const GITHUB_IPSWICH_URL = '';
+  const GITHUB_LOGAN_URL = '';
+  const GITHUB_TOOWOOMBA_URL = '';
+  const GITHUB_TEWANTIN_URL = '';
+  const GITHUB_NSW_2026_URL = '';
+  const GITHUB_NSW_TNSW_URL = '';
+  const GITHUB_DATASET_MANIFEST_URL = '';
   const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v4:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const GITHUB_FETCH_TIMEOUT_MS = 60000;
@@ -6392,18 +7479,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   async function syncDatasetCacheWithManifest() {
     let manifest = null;
-    // Try Firebase Storage first, then GitHub, then local.
+    // Try Firebase Storage first, then local Firebase Hosting copy.
     try {
       manifest = await fetchJsonNoCache(FIREBASE_DATASET_MANIFEST_URL);
     } catch (_) {
       try {
-        manifest = await fetchJsonNoCache(GITHUB_DATASET_MANIFEST_URL);
+        manifest = await fetchJsonNoCache(DATASET_MANIFEST_LOCAL_URL);
       } catch (_) {
-        try {
-          manifest = await fetchJsonNoCache(DATASET_MANIFEST_LOCAL_URL);
-        } catch (_) {
-          manifest = null;
-        }
+        manifest = null;
       }
     }
 
@@ -10544,7 +11627,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     losEl.className = `los-badge ${losClass}`;
     losEl.textContent = losText;
 
-    const dynamicSpacing = (7.0 * (1 - hv)) + (12.0 * hv);
+    const dynamicSpacing = (7.0 * (1 - hv)) + (20.0 * hv);
     spacingEl.textContent = dynamicSpacing.toFixed(2) + 'm';
 
     const vehPerSec = vol / 3600;
@@ -10578,6 +11661,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   let hourlyVcrChartInstance = null;
   let lastHourlyQueueChartData = null;
   let lastHourlyVcrChartData = null;
+  let dashTrafficChartInstance = null;
+  let dashVcrChartInstance = null;
+  let dashQueueChartInstance = null;
 
   const CHART_PALETTE = {
     viridis: ['#440154', '#3b528b', '#21918c', '#5ec962', '#fde725'],
@@ -11130,6 +12216,148 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
       })
     });
+  }
+
+  function renderAnalyticsDashboard() {
+    const card = document.getElementById('analyticsDashboardCard');
+    if (!card) return;
+
+    const hasVcr = lastHourlyVcrChartData && Array.isArray(lastHourlyVcrChartData.d1Work);
+    const hasQueue = lastHourlyQueueChartData && Array.isArray(lastHourlyQueueChartData.d1Max);
+    const hasProfiles = lastWorkWindowHourlyProfiles && lastWorkWindowHourlyProfiles.d1 && lastWorkWindowHourlyProfiles.d2;
+
+    if (!hasVcr && !hasQueue && !hasProfiles) return;
+    card.style.display = 'block';
+
+    // KPIs
+    if (hasVcr) {
+      const worstVcr = Math.max(...lastHourlyVcrChartData.worst.filter(v => Number.isFinite(v)));
+      const dashWorstEl = document.getElementById('dashWorstVcr');
+      const dashLosEl = document.getElementById('dashVcrLos');
+      if (dashWorstEl) {
+        dashWorstEl.textContent = Number.isFinite(worstVcr) ? worstVcr.toFixed(3) : '—';
+        let vcrColor = '#1f5e63';
+        if (Number.isFinite(worstVcr)) {
+          if (worstVcr <= 0.60) vcrColor = '#15803d';
+          else if (worstVcr <= 0.70) vcrColor = '#65a30d';
+          else if (worstVcr <= 0.80) vcrColor = '#d97706';
+          else if (worstVcr <= 0.90) vcrColor = '#ea580c';
+          else if (worstVcr <= 1.00) vcrColor = '#dc2626';
+          else vcrColor = '#991b1b';
+        }
+        dashWorstEl.style.color = vcrColor;
+      }
+      if (dashLosEl) dashLosEl.textContent = Number.isFinite(worstVcr) ? losLabel(worstVcr) : 'LOS —';
+    }
+
+    if (hasQueue) {
+      const d1Peak = Math.max(...lastHourlyQueueChartData.d1Max.filter(v => Number.isFinite(v)));
+      const d2Peak = Math.max(...lastHourlyQueueChartData.d2Max.filter(v => Number.isFinite(v)));
+      const d1El = document.getElementById('dashD1PeakQueue');
+      const d2El = document.getElementById('dashD2PeakQueue');
+      if (d1El) d1El.textContent = Number.isFinite(d1Peak) ? Math.round(d1Peak).toLocaleString('en-AU') : '—';
+      if (d2El) d2El.textContent = Number.isFinite(d2Peak) ? Math.round(d2Peak).toLocaleString('en-AU') : '—';
+    }
+
+    const hourLabels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+
+    // 24-Hour Traffic Profile
+    if (hasProfiles) {
+      const d1Data = Array.from({ length: 24 }, (_, h) => {
+        const v = Number(lastWorkWindowHourlyProfiles.d1[h] && lastWorkWindowHourlyProfiles.d1[h].total);
+        return Number.isFinite(v) && v > 0 ? v : null;
+      });
+      const d2Data = Array.from({ length: 24 }, (_, h) => {
+        const v = Number(lastWorkWindowHourlyProfiles.d2[h] && lastWorkWindowHourlyProfiles.d2[h].total);
+        return Number.isFinite(v) && v > 0 ? v : null;
+      });
+      const maxVol = Math.max(...[...d1Data, ...d2Data].filter(v => Number.isFinite(v)), 0);
+      const maxY = Math.max(200, Math.ceil((maxVol + 50) / 100) * 100);
+      const ctxT = document.getElementById('dashTrafficChart');
+      if (ctxT) {
+        if (dashTrafficChartInstance) dashTrafficChartInstance.destroy();
+        dashTrafficChartInstance = new Chart(ctxT, {
+          type: 'line',
+          data: {
+            labels: hourLabels,
+            datasets: [
+              { label: 'D1 Volume', data: d1Data, borderColor: CHART_PALETTE.d1, backgroundColor: CHART_PALETTE.d1Soft, borderWidth: 2.2, pointRadius: 2, pointHoverRadius: 3.5, pointBackgroundColor: CHART_PALETTE.d1, pointBorderColor: '#ffffff', pointBorderWidth: 1, tension: 0.18, spanGaps: true, fill: true },
+              { label: 'D2 Volume', data: d2Data, borderColor: CHART_PALETTE.d2, backgroundColor: CHART_PALETTE.d2Soft, borderWidth: 2.2, pointRadius: 2, pointHoverRadius: 3.5, pointBackgroundColor: CHART_PALETTE.d2, pointBorderColor: '#ffffff', pointBorderWidth: 1, tension: 0.18, spanGaps: true, fill: true }
+            ]
+          },
+          options: buildEngineeringChartOptions({
+            scales: {
+              y: { suggestedMax: maxY, title: { display: true, text: 'Volume (veh/h)' }, ticks: { callback: (v) => Number(v).toLocaleString('en-AU') } },
+              x: { title: { display: true, text: 'Hour of Day' }, grid: { display: true, color: '#f1f5f9' } }
+            },
+            plugins: { tooltip: { callbacks: { label: (ctx) => { const v = ctx.parsed.y; return `${ctx.dataset.label}: ${Number.isFinite(v) ? Math.round(v).toLocaleString('en-AU') + ' veh/h' : 'N/A'}`; } } } }
+          })
+        });
+      }
+    }
+
+    // VCR by Hour
+    if (hasVcr) {
+      const { labels, d1Work, d2Work, worst } = lastHourlyVcrChartData;
+      const maxVcr = Math.max(...[...d1Work, ...d2Work, ...worst].filter(v => Number.isFinite(v)), 0);
+      const maxY = Math.max(1.2, Math.ceil((maxVcr + 0.12) * 10) / 10);
+      const ctxV = document.getElementById('dashVcrChart');
+      if (ctxV) {
+        if (dashVcrChartInstance) dashVcrChartInstance.destroy();
+        dashVcrChartInstance = new Chart(ctxV, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'D1 Work VCR', data: d1Work, borderColor: CHART_PALETTE.d1, backgroundColor: CHART_PALETTE.d1Soft, borderWidth: 2.2, pointRadius: 2, pointHoverRadius: 3, pointBackgroundColor: CHART_PALETTE.d1, pointBorderColor: '#ffffff', pointBorderWidth: 1, tension: 0.14, spanGaps: true, fill: false },
+              { label: 'D2 Work VCR', data: d2Work, borderColor: CHART_PALETTE.d2, backgroundColor: CHART_PALETTE.d2Soft, borderWidth: 2.2, pointRadius: 2, pointHoverRadius: 3, pointBackgroundColor: CHART_PALETTE.d2, pointBorderColor: '#ffffff', pointBorderWidth: 1, tension: 0.14, spanGaps: true, fill: false },
+              { label: 'Worst Work VCR', data: worst, borderColor: CHART_PALETTE.network, pointRadius: 0, borderWidth: 2.3, tension: 0.12, spanGaps: true, fill: false },
+              { label: 'Target 0.85', data: labels.map(() => 0.85), borderColor: CHART_PALETTE.target, borderDash: [6, 4], pointRadius: 0, borderWidth: 2 },
+              { label: 'Capacity 1.00', data: labels.map(() => 1.0), borderColor: CHART_PALETTE.capacity, borderDash: [2, 3], pointRadius: 0, borderWidth: 2 }
+            ]
+          },
+          options: buildEngineeringChartOptions({
+            scales: {
+              y: { suggestedMax: maxY, title: { display: true, text: 'V/C Ratio' }, ticks: { stepSize: 0.1, callback: (v) => Number(v).toFixed(2) } },
+              x: { title: { display: true, text: 'Hour of Day' }, grid: { display: true, color: '#f1f5f9' } }
+            },
+            plugins: { tooltip: { callbacks: { label: (ctx) => { const v = ctx.parsed.y; if (!Number.isFinite(v)) return `${ctx.dataset.label}: N/A`; if (ctx.dataset.label === 'Target 0.85' || ctx.dataset.label === 'Capacity 1.00') return `${ctx.dataset.label}: ${v.toFixed(2)}`; return `${ctx.dataset.label}: ${v.toFixed(3)} (${losLabel(v)})`; } } } }
+          })
+        });
+      }
+    }
+
+    // Queue by Hour
+    if (hasQueue) {
+      const { labels, d1Max, d2Max } = lastHourlyQueueChartData;
+      const networkMax = labels.map((_, i) => Math.max(Number(d1Max[i]) || 0, Number(d2Max[i]) || 0));
+      const maxQ = Math.max(...[...d1Max, ...d2Max, ...networkMax].filter(v => Number.isFinite(v)), 0);
+      const maxY = Math.max(200, Math.ceil((maxQ + 40) / 20) * 20);
+      const ctxQ = document.getElementById('dashQueueChart');
+      if (ctxQ) {
+        if (dashQueueChartInstance) dashQueueChartInstance.destroy();
+        dashQueueChartInstance = new Chart(ctxQ, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'D1 Queue', data: d1Max, borderColor: CHART_PALETTE.d1, backgroundColor: CHART_PALETTE.d1Soft, borderWidth: 2.2, pointRadius: 2, pointHoverRadius: 3, pointBackgroundColor: CHART_PALETTE.d1, pointBorderColor: '#ffffff', pointBorderWidth: 1, tension: 0.14, spanGaps: true, fill: false },
+              { label: 'D2 Queue', data: d2Max, borderColor: CHART_PALETTE.d2, backgroundColor: CHART_PALETTE.d2Soft, borderWidth: 2.2, pointRadius: 2, pointHoverRadius: 3, pointBackgroundColor: CHART_PALETTE.d2, pointBorderColor: '#ffffff', pointBorderWidth: 1, tension: 0.14, spanGaps: true, fill: false },
+              { label: 'Network Max', data: networkMax, borderColor: CHART_PALETTE.network, pointRadius: 0, borderWidth: 2.3, tension: 0.12, spanGaps: true, fill: false },
+              { label: 'Watch 200m', data: labels.map(() => 200), borderColor: CHART_PALETTE.target, borderDash: [6, 4], pointRadius: 0, borderWidth: 2 },
+              { label: 'High 400m', data: labels.map(() => 400), borderColor: CHART_PALETTE.capacity, borderDash: [2, 3], pointRadius: 0, borderWidth: 2 }
+            ]
+          },
+          options: buildEngineeringChartOptions({
+            scales: {
+              y: { suggestedMax: maxY, title: { display: true, text: 'Queue Length (m)' }, ticks: { stepSize: maxY >= 1200 ? 200 : 100, callback: (v) => Number(v).toLocaleString('en-AU') } },
+              x: { title: { display: true, text: 'Hour of Day' }, grid: { display: true, color: '#f1f5f9' } }
+            },
+            plugins: { tooltip: { callbacks: { label: (ctx) => { const v = ctx.parsed.y; if (!Number.isFinite(v)) return `${ctx.dataset.label}: N/A`; return `${ctx.dataset.label}: ${Math.round(v).toLocaleString('en-AU')} m`; } } } }
+          })
+        });
+      }
+    }
   }
 
   const DEFAULT_PERIOD_DEFS = [
@@ -12852,6 +14080,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     let d1DailyBase = dtca === 'YES' ? num('D1_VADT') : num('VADT') / 2;
     let d2DailyBase = dtca === 'YES' ? num('D2_VADT') : num('VADT') / 2;
+    // Fallback: if DOM fields are empty, read from in-memory data sources
+    if (!d1DailyBase && !d2DailyBase) {
+      if (manualData && manualData.vadt) {
+        d1DailyBase = Math.max(0, Number(manualData.d1) || Math.round(manualData.vadt * 0.5));
+        d2DailyBase = Math.max(0, Number(manualData.d2) || (manualData.vadt - Math.round(manualData.vadt * 0.5)));
+      } else if (window.selectedTiaData && window.selectedTiaData.type === 'references' && window.selectedTiaData.avgVADT) {
+        const refVADT = Math.round(window.selectedTiaData.avgVADT || 0);
+        d1DailyBase = Math.round(window.selectedTiaData.avgD1 || refVADT / 2);
+        d2DailyBase = Math.round(window.selectedTiaData.avgD2 || (refVADT - Math.round(refVADT / 2)));
+      }
+    }
     let totalDailyBase = dtca === 'YES' ? (d1DailyBase + d2DailyBase) : num('VADT');
     if (oneWayMode) {
       if (oneWayActiveDirection === 1) d2DailyBase = 0;
@@ -13815,7 +15054,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
         if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
 
-        if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
+        if (!oneWayMode && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
           const slrfHourly = sharedDv > 0 ? ((d1PerLane + d2PerLane) / sharedDv) : null;
           d1WorkVcr = slrfHourly;
           d2WorkVcr = slrfHourly;
@@ -13937,6 +15176,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       worst: hourlyWorstWorkVcr
     };
     renderHourlyVcrChart(lastHourlyVcrChartData);
+    renderAnalyticsDashboard();
 
     const periodName = {
       AM: 'AM',
@@ -14049,7 +15289,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ['D1 RT% Used', `${numberRoundUp(getRTPercent(1) * 100, 3)}%`],
       ['D2 RT% Used', `${numberRoundUp(getRTPercent(2) * 100, 3)}%`],
       ['Lane Closure Applied', `${getLaneClosureLabel()} when lane count > 1 per direction`],
-      ['SLRF Applied', (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) ? 'Yes (both directions single lane)' : 'No (requires D1=1 and D2=1 lanes)']
+      ['SLRF Applied', (!oneWayMode && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) ? 'Yes (both directions single lane)' : (oneWayMode ? 'No (one-way mode — SLRF not applicable)' : 'No (requires D1=1 and D2=1 lanes)')]
     ];
 
     const traceBody = document.getElementById('traceBody');
@@ -14350,8 +15590,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const avgPceFactor = Math.max(1, (pctLv * pceLv) + (pctHv * pceHv) + (pctRt * pceRt));
     const qInDemandPlVeh = Math.max(0, Number(demandVph) || 0);
     const satFlowVphVeh = Math.max(300, Number(capacityVph) || 1800);
-    const qInDemandPl = qInDemandPlVeh * avgPceFactor;
-    const satFlowVph = satFlowVphVeh * avgPceFactor;
+    // Use raw vehicle flows to stay consistent with kj derived from physical spacing.
+    // avgPceFactor is correctly applied only to avgSpacingMeters above.
+    const qInDemandPl = qInDemandPlVeh;
+    const satFlowVph = satFlowVphVeh;
     const qInActualPl = Math.min(qInDemandPl, satFlowVph); // used only for anomaly detection
     const redTimeSec = Math.max(0, Number(durationSeconds) || 0);
 
@@ -14445,7 +15687,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const qInDemandPl = Math.max(0, Number(arrivalVphPerLane) || 0);
     const satFlowVph = Math.max(0, Number(satFlowVphPerLane) || 0);
     const qInActualPl = Math.min(qInDemandPl, satFlowVph);
-    const qIn = qInActualPl / 3600;
+    // Use uncapped demand (consistent with calculateShockwaveQueue) so oversaturated
+    // periods produce higher shockwave speeds rather than being silently clipped.
+    const qIn = qInDemandPl / 3600;
     const vf = Math.max(0.1, Number(freeFlowKmh) || 1) / 3.6;
     const sOut = satFlowVph / 3600;
     const kj = Math.max(0.001, Number(jamDensityVehKmPerLane) || 120) / 1000;
@@ -14511,12 +15755,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function getQueue95thPercentileFactor(vcr) {
+    // Calibrated against Akcelik (1994) / SIDRA: factor rises to ~3–5 at VCR≥0.95.
+    // Previous cap of 2.5 significantly underestimated high-VCR stochastic queues.
     const ratio = Math.max(0, Number(vcr) || 0);
     if (!Number.isFinite(ratio) || ratio <= 0.85) return 1.0;
-    if (ratio >= 0.999) return 2.5;
+    if (ratio >= 0.999) return 3.5;
 
     const stress = (ratio - 0.85) / 0.15;
-    return 1 + (1.5 * ((Math.exp(stress) - 1) / (Math.E - 1)));
+    return 1 + (2.5 * ((Math.exp(stress) - 1) / (Math.E - 1)));
   }
 
   function calculateMaxBackOfQueue(volumeVph, redTimeSec, satFlowVph, vehicleSpacingM) {
@@ -14538,7 +15784,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function resolveQueueVehicleSpacing(hvPct, isRtrActive) {
     const hv = Math.max(0, Math.min(1, Number(hvPct) || 0));
-    const spacing = (7.0 * (1 - hv)) + (12.0 * hv);
+    const spacing = (7.0 * (1 - hv)) + (20.0 * hv);
     return numberRoundUp(spacing, 2);
   }
 
@@ -15597,8 +16843,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const exportBtn = document.getElementById('tiaSnapshotExportBtn');
     const importInput = document.getElementById('tiaSnapshotImportInput');
 
-    if (importBtn && importInput) {
-      importBtn.addEventListener('click', () => importInput.click());
+    if (importInput) {
       importInput.addEventListener('change', async (event) => {
         const file = event && event.target && event.target.files && event.target.files[0];
         try {
@@ -19552,7 +20797,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d1Label = formatDirectionalCodeLabel('D1', rawD1Label);
     const d2Label = formatDirectionalCodeLabel('D2', rawD2Label);
 
-    const isSlrfMode = d1Lanes === 1 && d2Lanes === 1;
+    const isOneWayRoad = txt('roadOperationMode').toUpperCase() === 'ONE-WAY';
+    const isSlrfMode = !isOneWayRoad && d1Lanes === 1 && d2Lanes === 1;
     const hourlyD1Work = (lastHourlyVcrChartData && Array.isArray(lastHourlyVcrChartData.d1Work) && lastHourlyVcrChartData.d1Work.length === 24)
       ? lastHourlyVcrChartData.d1Work
       : null;
@@ -22212,6 +23458,137 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   }
 
+  function setManualGenMode(mode) {
+    const tripSection = document.getElementById('manualGenTripSection');
+    const directSection = document.getElementById('manualGenDirectSection');
+    const tripBtn = document.getElementById('manualGenModeTrip');
+    const directBtn = document.getElementById('manualGenModeDirect');
+    if (!tripSection || !directSection) return;
+    const isTrip = mode === 'trip';
+    tripSection.style.display = isTrip ? '' : 'none';
+    directSection.style.display = isTrip ? 'none' : '';
+    if (tripBtn) { tripBtn.style.background = isTrip ? '#2a4045' : '#e8f0f1'; tripBtn.style.color = isTrip ? '#fff' : '#2a4045'; }
+    if (directBtn) { directBtn.style.background = isTrip ? '#e8f0f1' : '#2a4045'; directBtn.style.color = isTrip ? '#2a4045' : '#fff'; }
+  }
+
+  function onDirectSplitChange(which) {
+    const d1Input = document.getElementById('directD1Percent');
+    const d2Input = document.getElementById('directD2Percent');
+    if (!d1Input || !d2Input) return;
+    if (which === 'd1') {
+      const v = Math.min(100, Math.max(0, Number(d1Input.value) || 0));
+      d2Input.value = String(100 - v);
+    } else {
+      const v = Math.min(100, Math.max(0, Number(d2Input.value) || 0));
+      d1Input.value = String(100 - v);
+    }
+    previewDirectAadt();
+  }
+
+  function previewDirectAadt() {
+    const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
+    const d1Raw = String(document.getElementById('directD1Percent')?.value ?? '').trim();
+    const d1Pct = d1Raw === '' ? 50 : Math.min(100, Math.max(0, Number(d1Raw) || 0));
+    const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
+    const pmPct = Number(document.getElementById('directPMPercent')?.value) || 11;
+    const preview = document.getElementById('directAadtPreview');
+    if (!preview) return;
+    if (!aadt) { preview.style.display = 'none'; return; }
+    const d1 = Math.round(aadt * d1Pct / 100);
+    const d2 = aadt - d1;
+    const peakAM = Math.round(aadt * amPct / 100);
+    const peakPM = Math.round(aadt * pmPct / 100);
+    preview.innerHTML = `
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;">
+        <div><strong>Total AADT:</strong> ${aadt.toLocaleString()} veh/day</div>
+        <div><strong>D1 / D2:</strong> ${d1.toLocaleString()} / ${d2.toLocaleString()}</div>
+        <div><strong>AM Peak (${amPct}%):</strong> ${peakAM.toLocaleString()} veh/hr</div>
+        <div><strong>PM Peak (${pmPct}%):</strong> ${peakPM.toLocaleString()} veh/hr</div>
+      </div>`;
+    preview.style.display = 'block';
+  }
+
+  function applyDirectAadtEntry() {
+    const aadt = Math.round(Number(document.getElementById('directAadtValue')?.value) || 0);
+    if (!aadt) { alert('⚠️ Please enter a valid AADT value before applying.'); return; }
+    const d1Raw = String(document.getElementById('directD1Percent')?.value ?? '').trim();
+    const d2Raw = String(document.getElementById('directD2Percent')?.value ?? '').trim();
+    const d1Pct = d1Raw === '' ? 50 : Math.min(100, Math.max(0, Number(d1Raw) || 0));
+    const d2Pct = d2Raw === '' ? (100 - d1Pct) : Math.min(100, Math.max(0, Number(d2Raw) || 0));
+    const d1 = Math.round(aadt * d1Pct / 100);
+    const d2 = Math.round(aadt * d2Pct / 100);
+    const amPct = Number(document.getElementById('directAMPercent')?.value) || 10;
+    const pmPct = Number(document.getElementById('directPMPercent')?.value) || 11;
+    const peakAM = Math.round(aadt * amPct / 100);
+    const peakPM = Math.round(aadt * pmPct / 100);
+    const peakAM_In = Math.round(peakAM * 0.5);
+    const peakAM_Out = peakAM - peakAM_In;
+    const peakPM_In = Math.round(peakPM * 0.5);
+    const peakPM_Out = peakPM - peakPM_In;
+
+    // Populate tripGenResult dataset so applyToMainVadt() reads the correct vadt
+    const resultDiv = document.getElementById('tripGenResult');
+    if (resultDiv) resultDiv.dataset.calculatedVadt = String(aadt);
+
+    window.manualTrafficGenData = {
+      totalTrips: aadt,
+      vadt: aadt,
+      d1,
+      d2,
+      peakAM,
+      peakPM,
+      peakAM_In,
+      peakAM_Out,
+      peakPM_In,
+      peakPM_Out,
+      scenario: 'direct_aadt',
+      quantity: aadt,
+      rate: 1,
+      referenceSourceKey: 'direct',
+      referenceSourceLabel: 'Direct AADT Entry',
+      referenceSourceShort: 'Direct'
+    };
+
+    // Override applyToMainVadt description for direct entry
+    const addressInput = document.getElementById('macroSiteSearch');
+    const currentAddress = addressInput?.value || 'CUSTOM ADDRESS';
+    const currentYear = new Date().getFullYear();
+    const baseYearField = document.getElementById('baseYear');
+    const openingYearField = document.getElementById('openingYear') || document.getElementById('macroOpeningYear');
+    if (baseYearField) baseYearField.value = String(currentYear);
+    if (openingYearField) openingYearField.value = String(currentYear);
+    const d1Field = document.getElementById('D1_VADT');
+    const d2Field = document.getElementById('D2_VADT');
+    const mainVadtField = document.getElementById('VADT') || document.getElementById('mainVadtInput');
+    if (mainVadtField) mainVadtField.value = String(aadt);
+    if (d1Field) d1Field.value = String(d1);
+    if (d2Field) d2Field.value = String(d2);
+
+    showCustomAddressDetails({
+      siteId: 'CUSTOM ADDRESS',
+      roadName: currentAddress,
+      description: `Direct AADT Entry — ${aadt.toLocaleString()} veh/day`,
+      countYear: 'Direct entry',
+      d1Label: getCurrentDirectionalLabelContext().d1Raw,
+      d2Label: getCurrentDirectionalLabelContext().d2Raw,
+      d1,
+      d2,
+      total: aadt,
+      lat: null,
+      lon: null,
+      peakAM,
+      peakPM,
+      peakAM_In,
+      peakAM_Out,
+      peakPM_In,
+      peakPM_Out,
+      scenario: 'Direct AADT Entry'
+    });
+
+    alert(`✅ Applied to Assessment!\n\n📈 AADT: ${aadt.toLocaleString()} vehicles/day\n🔀 D1: ${d1.toLocaleString()} / D2: ${d2.toLocaleString()}\n📊 AM Peak: ${peakAM} veh/hr  |  PM Peak: ${peakPM} veh/hr\n🗓️ Year: ${currentYear}`);
+    if (typeof calculateAll === 'function') calculateAll();
+  }
+
   function calculateTripGeneration() {
     try {
       const quantity = Number(document.getElementById('tripQuantity')?.value) || 0;
@@ -22434,6 +23811,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       : '';
     
     alert(`✅ Applied to Assessment!\\n\\n📈 Base VADT: ${generatedVadt.toLocaleString()} vehicles/day\\n🗓️ Base & Target Year: ${currentYear}${peakInfo}\\n\\nNote: Daily VADT uses 50/50 directional split. Peak hour directional splits are preserved for detailed analysis.`);
+    if (typeof calculateAll === 'function') calculateAll();
   }
 
   function applyManualVadtToAssessment(totalVadt) {
@@ -22654,91 +24032,131 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
   });
 
-// ============================================================
-// Script block 2
-// ============================================================
-
 const LoganTrafficEngine = (function() {
 
+  // ─── ROAD CAPACITIES ─────────────────────────────────────────────────────
+  // Hourly capacities (PCE/hr/lane) sourced from Austroads (2020) Table 5.2
+  // urban arterials mid-block, and TMR CBA Manual Table 2 / Austroads AP-R264/05.
+  // dailyLimit = approximate AADT threshold for road type (vpd).
+  // hourlyCapacityPerLane = Austroads mid-block hourly capacity (PCE/hr/lane).
   const ROAD_CAPACITIES = {
-    "Two Lane Urban": { dailyLimit: 10000, designCapacity: 1500 },
-    "Collector Street": { dailyLimit: 5000, designCapacity: null },
-    "Local Street": { dailyLimit: 1500, designCapacity: null }
+    "Motorway / Freeway":      { dailyLimit: 80000, hourlyCapacityPerLane: 1800 },
+    "Urban Arterial (Divided)":{ dailyLimit: 40000, hourlyCapacityPerLane: 1600 },
+    "Two Lane Urban":          { dailyLimit: 20000, hourlyCapacityPerLane: 1200 },
+    "Collector Street":        { dailyLimit: 12000, hourlyCapacityPerLane: 900  },
+    "Local Street":            { dailyLimit: 3000,  hourlyCapacityPerLane: 500  }
   };
 
+  // ─── TEMPORAL DAY FACTORS ─────────────────────────────────────────────────
+  // Source: Austroads AGTM Part 3 – Table of seasonal/day-of-week factors.
+  // Index: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
   const TEMPORAL_DAY_FACTORS = {
     "Urban arterial 1 (Capital City)": [0.98, 0.95, 0.93, 0.92, 0.88, 1.17, 1.37],
-    "Urban arterial 1 (Other)": [1.01, 0.98, 0.95, 0.94, 0.89, 1.09, 1.24],
+    "Urban arterial 1 (Other)":        [1.01, 0.98, 0.95, 0.94, 0.89, 1.09, 1.24],
     "Urban arterial 2 (Capital City)": [0.99, 0.96, 0.95, 0.93, 0.89, 1.13, 1.31],
-    "Urban arterial 2 (Others)": [1.0, 0.97, 0.94, 0.93, 0.88, 1.11, 1.30],
-    "Urban CBD (Capital City)": [1.02, 1.0, 0.97, 0.94, 0.86, 1.07, 1.34],
-    "Urban industrial (Others)": [0.85, 0.85, 0.84, 0.84, 0.84, 1.84, 2.66],
-    "Rural urban fringe": [1.14, 1.14, 1.10, 1.07, 1.07, 0.94, 0.86],
-    "Rural strategic 1": [1.05, 1.01, 0.99, 0.97, 0.97, 1.09, 1.10],
-    "Rural strategic 2": [1.11, 1.14, 1.10, 1.05, 1.05, 1.03, 0.91],
-    "Rural recreation summer": [1.07, 1.17, 1.13, 1.05, 1.05, 1.11, 0.88],
-    "Rural recreation winter": [1.15, 1.25, 1.21, 1.12, 1.12, 1.03, 0.82]
+    "Urban arterial 2 (Others)":       [1.0,  0.97, 0.94, 0.93, 0.88, 1.11, 1.30],
+    "Urban CBD (Capital City)":        [1.02, 1.0,  0.97, 0.94, 0.86, 1.07, 1.34],
+    "Urban industrial (Others)":       [0.85, 0.85, 0.84, 0.84, 0.84, 1.84, 2.66],
+    "Rural urban fringe":              [1.14, 1.14, 1.10, 1.07, 1.07, 0.94, 0.86],
+    "Rural strategic 1":               [1.05, 1.01, 0.99, 0.97, 0.97, 1.09, 1.10],
+    "Rural strategic 2":               [1.11, 1.14, 1.10, 1.05, 1.05, 1.03, 0.91],
+    "Rural recreation summer":         [1.07, 1.17, 1.13, 1.05, 1.05, 1.11, 0.88],
+    "Rural recreation winter":         [1.15, 1.25, 1.21, 1.12, 1.12, 1.03, 0.82]
   };
 
+  // ─── GEOMETRIC QUEUE MULTIPLIERS ─────────────────────────────────────────
+  // Vehicle space assumptions: passenger car ~6m, heavy vehicle ~20m.
   const GEOMETRIC_QUEUE_MULTIPLIERS = {
-    2: { ma: 2.4, mo: 8.0 },
-    5: { ma: 6.0, mo: 20.0 },
-    10: { ma: 12.0, mo: 40.0 },
-    15: { ma: 18.0, mo: 60.0 },
+    2:  { ma: 2.4,  mo: 8.0   },
+    5:  { ma: 6.0,  mo: 20.0  },
+    10: { ma: 12.0, mo: 40.0  },
+    15: { ma: 18.0, mo: 60.0  },
     30: { ma: 36.0, mo: 120.0 }
   };
 
+  // ─── ENGINEERING CONSTANTS ────────────────────────────────────────────────
+  // PEAK_K_FACTOR: proportion of AADT occurring in the peak hour.
+  //   Source: TMR CBA Manual Table 3 / Austroads AP-R264/05.
+  //   Urban single carriageway = 0.10 (10%).
+  //   Urban dual carriageway   = 0.125 (12.5%).
+  //   Rural single carriageway = 0.0833 (8.33%).
+  //   This engine defaults to 0.10 (urban single carriageway — most conservative
+  //   and most common context for development TIAs in South East Queensland).
+  //   Override per project if dual carriageway or rural context applies.
   const ENGINEERING_CONSTANTS = {
-    PEAK_K_FACTOR: 0.15,
-    BASE_PASSENGER_SPLIT: 0.85,
-    MINIMUM_CAPACITY_FLOOR: 500,
+    PEAK_K_FACTOR:           0.10,   // ← corrected from 0.15; TMR/Austroads urban = 0.10
     FIVE_MIN_INTERVAL_RATIO: 5 / 60,
-    PED_TRAVEL_SPEED_MS: 1.2,
-    PED_EXPECTED_DELAY_S: 10
+    PED_TRAVEL_SPEED_MS:     1.2,
+    PED_EXPECTED_DELAY_S:    10,
+    MINIMUM_CAPACITY_FLOOR:  200     // absolute minimum directional floor (PCE/hr)
   };
 
+  // Per-class K factors (keyed to ROAD_CAPACITIES keys).
+  // Rural roads are not in ROAD_CAPACITIES; resolveInfrastructureClass falls back
+  // to 'Two Lane Urban', so the rural entry here is informational only — set it
+  // explicitly if a rural capacity key is added later.
+  const PEAK_K_BY_CLASS = {
+    'Motorway / Freeway':       0.125,  // dual carriageway / freeway
+    'Urban Arterial (Divided)': 0.125,  // divided arterial
+    'Two Lane Urban':           0.10,   // undivided urban arterial / default
+    'Collector Street':         0.10,
+    'Local Street':             0.10,
+    'Rural Single Carriageway': 0.0833  // reserved for future rural capacity key
+  };
+
+  // ─── ROAD TYPE RESOLUTION ─────────────────────────────────────────────────
   function resolveInfrastructureClass(rawRoadType) {
     const raw = String(rawRoadType || '').trim();
     const normalized = raw.toLowerCase();
 
     const temporalAliases = {
-      'tmr': 'Urban arterial 1 (Other)',
-      'state': 'Urban arterial 1 (Other)',
-      'state road': 'Urban arterial 1 (Other)',
-      'motorway': 'Urban arterial 1 (Other)',
-      'highway': 'Urban arterial 1 (Other)',
-      'collector': 'Urban arterial 2 (Others)',
-      'collector street': 'Urban arterial 2 (Others)',
-      'local': 'Urban arterial 2 (Others)',
-      'local street': 'Urban arterial 2 (Others)',
-      'residential': 'Urban arterial 2 (Others)',
-      'urban arterial 1 (other)': 'Urban arterial 1 (Other)',
-      'urban arterial 2 (other)': 'Urban arterial 2 (Others)',
-      'urban arterial 2 (others)': 'Urban arterial 2 (Others)'
+      'tmr':                          'Urban arterial 1 (Other)',
+      'state':                        'Urban arterial 1 (Other)',
+      'state road':                   'Urban arterial 1 (Other)',
+      'motorway':                     'Urban arterial 1 (Other)',
+      'motorway / freeway':           'Urban arterial 1 (Other)',
+      'highway':                      'Urban arterial 1 (Other)',
+      'urban arterial (divided)':     'Urban arterial 1 (Other)',
+      'collector':                    'Urban arterial 2 (Others)',
+      'collector street':             'Urban arterial 2 (Others)',
+      'local':                        'Urban arterial 2 (Others)',
+      'local street':                 'Urban arterial 2 (Others)',
+      'residential':                  'Urban arterial 2 (Others)',
+      'two lane urban':               'Urban arterial 2 (Others)',
+      'urban arterial 1 (other)':     'Urban arterial 1 (Other)',
+      'urban arterial 2 (other)':     'Urban arterial 2 (Others)',
+      'urban arterial 2 (others)':    'Urban arterial 2 (Others)'
     };
 
     const capacityAliases = {
-      'tmr': 'Two Lane Urban',
-      'state': 'Two Lane Urban',
-      'state road': 'Two Lane Urban',
-      'motorway': 'Two Lane Urban',
-      'highway': 'Two Lane Urban',
-      'collector': 'Collector Street',
-      'collector street': 'Collector Street',
-      'local': 'Local Street',
-      'local street': 'Local Street',
-      'residential': 'Local Street'
+      'tmr':                          'Two Lane Urban',
+      'state':                        'Two Lane Urban',
+      'state road':                   'Two Lane Urban',
+      'motorway':                     'Motorway / Freeway',
+      'motorway / freeway':           'Motorway / Freeway',
+      'highway':                      'Urban Arterial (Divided)',
+      'urban arterial (divided)':     'Urban Arterial (Divided)',
+      'two lane urban':               'Two Lane Urban',
+      'collector':                    'Collector Street',
+      'collector street':             'Collector Street',
+      'local':                        'Local Street',
+      'local street':                 'Local Street',
+      'residential':                  'Local Street'
     };
 
     const temporalKey =
       TEMPORAL_DAY_FACTORS[raw]
       ? raw
-      : (TEMPORAL_DAY_FACTORS[temporalAliases[normalized]] ? temporalAliases[normalized] : 'Urban arterial 1 (Other)');
+      : (TEMPORAL_DAY_FACTORS[temporalAliases[normalized]]
+          ? temporalAliases[normalized]
+          : 'Urban arterial 1 (Other)');
 
     const capacityKey =
       ROAD_CAPACITIES[raw]
       ? raw
-      : (ROAD_CAPACITIES[capacityAliases[normalized]] ? capacityAliases[normalized] : 'Two Lane Urban');
+      : (ROAD_CAPACITIES[capacityAliases[normalized]]
+          ? capacityAliases[normalized]
+          : 'Two Lane Urban');
 
     return { temporalKey, capacityKey };
   }
@@ -22747,15 +24165,21 @@ const LoganTrafficEngine = (function() {
     return Math.ceil(Number(value) || 0);
   }
 
+  // ─── AADT PROJECTION ──────────────────────────────────────────────────────
+  // Formula: AADT_projected = AADT_base × (1 + r/100)^n
+  // Source: Austroads / TMR CBA Manual Eq. 3 — Compound traffic growth.
   function computeAADTProjection(rawCount, roadType, dayIndex, growthRatePercent, yearsElapsed) {
     const resolvedClass = resolveInfrastructureClass(roadType);
-    const factors = TEMPORAL_DAY_FACTORS[resolvedClass.temporalKey] || [1, 1, 1, 1, 1, 1, 1];
+    const factors = TEMPORAL_DAY_FACTORS[resolvedClass.temporalKey] || [1,1,1,1,1,1,1];
 
     const safeDayIndex = Math.max(0, Math.min(6, Number(dayIndex) || 0));
     const selectedDayFactor = Number(factors[safeDayIndex]) || 1;
     const normalizedBaseAADT = precisionRoundUp((Number(rawCount) || 0) * selectedDayFactor);
 
-    const compoundGrowthMultiplier = Math.pow(1 + ((Number(growthRatePercent) || 0) / 100), Number(yearsElapsed) || 0);
+    const compoundGrowthMultiplier = Math.pow(
+      1 + ((Number(growthRatePercent) || 0) / 100),
+      Number(yearsElapsed) || 0
+    );
     const projectedTargetAADT = precisionRoundUp(normalizedBaseAADT * compoundGrowthMultiplier);
 
     return {
@@ -22766,14 +24190,21 @@ const LoganTrafficEngine = (function() {
     };
   }
 
-  function extractPeakAndClassify(projectedAADT, commercialPercentage) {
-    const rawPeakThroughput = (Number(projectedAADT) || 0) * ENGINEERING_CONSTANTS.PEAK_K_FACTOR;
-    const scaledBaselinePeak = rawPeakThroughput * ENGINEERING_CONSTANTS.BASE_PASSENGER_SPLIT;
+  // ─── PEAK HOUR VOLUME ─────────────────────────────────────────────────────
+  // Formula: Peak Hour Volume = AADT × K
+  // Source: TMR CBA Manual Table 3 / Austroads AP-R264/05.
+  // K is resolved from PEAK_K_BY_CLASS using the road type; falls back to
+  // ENGINEERING_CONSTANTS.PEAK_K_FACTOR (0.10) when the class is not listed.
+  function extractPeakAndClassify(projectedAADT, commercialPercentage, roadType) {
+    const cls = resolveInfrastructureClass(roadType).capacityKey;
+    const k = PEAK_K_BY_CLASS[cls] !== undefined
+      ? PEAK_K_BY_CLASS[cls]
+      : ENGINEERING_CONSTANTS.PEAK_K_FACTOR;
+    const rawPeakThroughput = (Number(projectedAADT) || 0) * k;
 
     const commercialDecimal = (Number(commercialPercentage) || 0) / 100;
-    const peakCommercialVolume = precisionRoundUp(scaledBaselinePeak * commercialDecimal);
-
-    const peakPassengerVolume = precisionRoundUp(scaledBaselinePeak) - peakCommercialVolume;
+    const peakCommercialVolume = precisionRoundUp(rawPeakThroughput * commercialDecimal);
+    const peakPassengerVolume  = precisionRoundUp(rawPeakThroughput) - peakCommercialVolume;
     const totalPeakVolume = peakPassengerVolume + peakCommercialVolume;
 
     return {
@@ -22783,49 +24214,61 @@ const LoganTrafficEngine = (function() {
     };
   }
 
+  // ─── SATURATION / VCR / LOS ───────────────────────────────────────────────
+  // Formula: VCR = Peak Hour Volume / (Hourly Capacity per Lane × Lanes)
+  // Source: Austroads AGTM Part 2 (VCR) and Austroads (2020) Table 5.2 
+  //         (urban arterial mid-block hourly capacities per lane).
+  // LOS thresholds: Austroads AGTM Part 3, Module 3-2.
   function evaluateSaturationAndLOS(totalPeakVolume, roadType, directionalLanes) {
     const resolvedClass = resolveInfrastructureClass(roadType);
     const structuralData = ROAD_CAPACITIES[resolvedClass.capacityKey] || null;
-    let directionalCapacityLimit;
 
-    if (structuralData && Number(structuralData.dailyLimit) > 0) {
-      const rawCalculatedCapacity = precisionRoundUp(
-        (ENGINEERING_CONSTANTS.PEAK_K_FACTOR * Number(structuralData.dailyLimit)) / 2
-      );
-      directionalCapacityLimit = Math.max(
-        rawCalculatedCapacity,
+    // Directional capacity = hourlyCapacityPerLane × number of lanes in direction.
+    // This is the Austroads-correct method — NOT derived from dailyLimit × K / 2.
+    const lanesInDirection = Math.max(1, Number(directionalLanes) || 1);
+    let directionalCapacity;
+
+    if (structuralData && structuralData.hourlyCapacityPerLane > 0) {
+      directionalCapacity = Math.max(
+        structuralData.hourlyCapacityPerLane * lanesInDirection,
         ENGINEERING_CONSTANTS.MINIMUM_CAPACITY_FLOOR
       );
     } else {
-      directionalCapacityLimit = ENGINEERING_CONSTANTS.MINIMUM_CAPACITY_FLOOR;
+      directionalCapacity = ENGINEERING_CONSTANTS.MINIMUM_CAPACITY_FLOOR;
     }
 
-    const activeFunctionalCapacity = directionalCapacityLimit * Math.max(1, Number(directionalLanes) || 1);
-    const vcr = (Number(totalPeakVolume) || 0) / activeFunctionalCapacity;
+    const vcr = (Number(totalPeakVolume) || 0) / directionalCapacity;
 
+    // LOS thresholds — Austroads AGTM Part 2/3 (mid-block urban arterial):
     let grading = "F";
-    if (vcr <= 0.6) grading = "A";
-    else if (vcr <= 0.7) grading = "B";
-    else if (vcr <= 0.9) grading = "C";
-    else if (vcr <= 0.95) grading = "D";
-    else if (vcr <= 1.0) grading = "E";
+    if      (vcr <= 0.60) grading = "A";
+    else if (vcr <= 0.70) grading = "B";
+    else if (vcr <= 0.80) grading = "C";
+    else if (vcr <= 0.90) grading = "D";
+    else if (vcr <= 1.00) grading = "E";
 
     return {
-      functionalCapacity: activeFunctionalCapacity,
+      functionalCapacity: directionalCapacity,
       saturationRatio: vcr.toFixed(5),
       levelOfService: grading,
       resolvedRoadClass: resolvedClass.capacityKey
     };
   }
 
+  // ─── QUEUE GEOMETRY ───────────────────────────────────────────────────────
   function simulateQueueGeometry(hourlyPassengerVolume, hourlyCommercialVolume) {
-    const pAccumulation5Min = precisionRoundUp((Number(hourlyPassengerVolume) || 0) * ENGINEERING_CONSTANTS.FIVE_MIN_INTERVAL_RATIO);
-    const cAccumulation5Min = precisionRoundUp((Number(hourlyCommercialVolume) || 0) * ENGINEERING_CONSTANTS.FIVE_MIN_INTERVAL_RATIO);
+    const pAccumulation5Min = precisionRoundUp(
+      (Number(hourlyPassengerVolume) || 0) * ENGINEERING_CONSTANTS.FIVE_MIN_INTERVAL_RATIO
+    );
+    const cAccumulation5Min = precisionRoundUp(
+      (Number(hourlyCommercialVolume) || 0) * ENGINEERING_CONSTANTS.FIVE_MIN_INTERVAL_RATIO
+    );
 
     const spatialEstimates = {};
     for (const [duration, factors] of Object.entries(GEOMETRIC_QUEUE_MULTIPLIERS)) {
       const geometricLengthMeters = precisionRoundUp(
-        (pAccumulation5Min * Number(factors.ma || 0)) + (cAccumulation5Min * Number(factors.mo || 0))
+        (pAccumulation5Min * Number(factors.ma || 0)) +
+        (cAccumulation5Min * Number(factors.mo || 0))
       );
       spatialEstimates[`${duration}_Minutes`] = geometricLengthMeters;
     }
@@ -22833,9 +24276,13 @@ const LoganTrafficEngine = (function() {
     return spatialEstimates;
   }
 
+  // ─── PEDESTRIAN FRICTION ──────────────────────────────────────────────────
   function calculatePedestrianFriction(crossingDistanceMeters) {
-    const transitTimeSeconds = (Number(crossingDistanceMeters) || 0) / ENGINEERING_CONSTANTS.PED_TRAVEL_SPEED_MS;
-    const totalNodeDelay = precisionRoundUp(transitTimeSeconds + ENGINEERING_CONSTANTS.PED_EXPECTED_DELAY_S);
+    const transitTimeSeconds =
+      (Number(crossingDistanceMeters) || 0) / ENGINEERING_CONSTANTS.PED_TRAVEL_SPEED_MS;
+    const totalNodeDelay = precisionRoundUp(
+      transitTimeSeconds + ENGINEERING_CONSTANTS.PED_EXPECTED_DELAY_S
+    );
 
     return {
       transitTime: transitTimeSeconds.toFixed(2),
@@ -22843,52 +24290,51 @@ const LoganTrafficEngine = (function() {
     };
   }
 
-  /**
-   * Robust Manual VADT Generation and Distribution
-   * Reflects the worked-out example for Trip Generation
-   */
+  // ─── TRIP GENERATION / VADT ───────────────────────────────────────────────
   const TripGenerationModel = {
-    /**
-     * Calculates Total VADT and divides it into D1 and D23.
-     * @param {Object} params 
-     * @param {number} params.independentVariable - The base unit (e.g., Gross Floor Area in 100m2, Number of Dwellings, etc.)
-     * @param {number} params.tripRate - The generation rate per unit (from your reference example)
-     * @param {number} params.d1Split - The percentage split for D1 (e.g., 0.50 for 50%)
-     * @param {number} params.d23Split - The percentage split for D23 (e.g., 0.50 for 50%)
-     * @returns {Object} VADT breakdown
-     */
     calculateVADT: function(params) {
-      const { 
-        independentVariable = 0, 
-        tripRate = 0, 
-        d1Split = 0.5, 
-        d23Split = 0.5 
+      const {
+        independentVariable = 0,
+        tripRate = 0,
+        d1Split = 0.5,
+        d23Split = 0.5,
+        yearsElapsed = 0,
+        growthRatePercent = 0,
+        baseYear = new Date().getFullYear()
       } = params;
 
-      // 1. Generate the Total Vehicle Average Daily Traffic (VADT)
       const totalGeneratedVADT = independentVariable * tripRate;
 
-      // 2. Distribute the VADT based on the scenario directional splits
-      const d1VADT = totalGeneratedVADT * d1Split;
-      const d23VADT = totalGeneratedVADT * d23Split;
+      const growth = Math.pow(1 + (Number(growthRatePercent) || 0) / 100,
+                              Number(yearsElapsed) || 0);
+      const totalProjected = totalGeneratedVADT * growth;
+      const targetYear = (Number(baseYear) || new Date().getFullYear()) + (Number(yearsElapsed) || 0);
 
-      const currentYear = new Date().getFullYear();
+      const splitSum = (Number(d1Split) || 0) + (Number(d23Split) || 0);
+      const normDivisor = splitSum > 0 ? splitSum : 1;
+      const d1Norm  = (Number(d1Split) || 0)  / normDivisor;
+      const d23Norm = (Number(d23Split) || 0) / normDivisor;
+
+      const d1VADT  = totalProjected * d1Norm;
+      const d23VADT = totalProjected * d23Norm;
 
       return {
-        totalVADT: Number(totalGeneratedVADT.toFixed(2)),
-        d1VADT: Number(d1VADT.toFixed(2)),
-        d23VADT: Number(d23VADT.toFixed(2)),
-        baseYear: currentYear,
-        targetYear: currentYear,
+        totalVADT: Number(totalProjected.toFixed(2)),
+        d1VADT:    Number(d1VADT.toFixed(2)),
+        d23VADT:   Number(d23VADT.toFixed(2)),
+        baseYear,
+        targetYear,
         metadata: {
-          calculationUsed: `(${independentVariable} units) * (${tripRate} rate)`,
-          splitRatio: `D1: ${(d1Split * 100).toFixed(1)}% | D23: ${(d23Split * 100).toFixed(1)}%`,
-          yearsUsed: `Base Year: ${currentYear} | Target Year: ${currentYear}`
+          calculationUsed: `(${independentVariable} units) × (${tripRate} rate)`,
+          splitRatio:      `D1: ${(d1Norm * 100).toFixed(1)}% | D23: ${(d23Norm * 100).toFixed(1)}%`,
+          growthApplied:   `${(Number(growthRatePercent) || 0).toFixed(2)}% p.a. over ${Number(yearsElapsed) || 0} years (factor ${growth.toFixed(4)})`,
+          yearsUsed:       `Base Year: ${baseYear} | Target Year: ${targetYear}`
         }
       };
     }
   };
 
+  // ─── PUBLIC API ───────────────────────────────────────────────────────────
   return {
     executeSimulation: function(payload) {
       const {
@@ -22897,10 +24343,10 @@ const LoganTrafficEngine = (function() {
         devUnits, devTripRate, devD1Split, devD23Split
       } = payload || {};
 
-      const aadtPhase = computeAADTProjection(rawCount, roadType, dayIndex, growthRate, yearsElapsed);
-      const peakPhase = extractPeakAndClassify(aadtPhase.projectedAADT, cvPercentage);
+      const aadtPhase       = computeAADTProjection(rawCount, roadType, dayIndex, growthRate, yearsElapsed);
+      const peakPhase       = extractPeakAndClassify(aadtPhase.projectedAADT, cvPercentage, roadType);
       const saturationPhase = evaluateSaturationAndLOS(peakPhase.total, roadType, directionalLanes);
-      const geometricPhase = simulateQueueGeometry(peakPhase.passenger, peakPhase.commercial);
+      const geometricPhase  = simulateQueueGeometry(peakPhase.passenger, peakPhase.commercial);
 
       let pedestrianPhase = null;
       if (Number(crossingWidth) > 0) {
@@ -22911,25 +24357,29 @@ const LoganTrafficEngine = (function() {
       if (devUnits && devTripRate) {
         generatedVADTPhase = TripGenerationModel.calculateVADT({
           independentVariable: Number(devUnits),
-          tripRate: Number(devTripRate),
-          d1Split: Number(devD1Split || 0.5),
-          d23Split: Number(devD23Split || 0.5)
+          tripRate:            Number(devTripRate),
+          d1Split:             Number(devD1Split  || 0.5),
+          d23Split:            Number(devD23Split || 0.5),
+          yearsElapsed:        Number(yearsElapsed) || 0,
+          growthRatePercent:   Number(growthRate)   || 0,
+          baseYear:            new Date().getFullYear()
         });
-        
-        // Set both base year and target year to current year for manual traffic generation
-        const baseYearField = document.getElementById('baseYear');
-        const openingYearField = document.getElementById('openingYear');
-        if (baseYearField) baseYearField.value = String(generatedVADTPhase.baseYear);
-        if (openingYearField) openingYearField.value = String(generatedVADTPhase.targetYear);
+
+        const baseYearField    = document.getElementById('baseYear');
+        const openingYearField = document.getElementById('macroOpeningYear');
+        if (baseYearField    && !String(baseYearField.value).trim())
+          baseYearField.value    = String(generatedVADTPhase.baseYear);
+        if (openingYearField && !String(openingYearField.value).trim())
+          openingYearField.value = String(generatedVADTPhase.targetYear);
       }
 
       return {
         timestamp: new Date().toISOString(),
         metrics: {
-          aadt: aadtPhase,
-          peak: peakPhase,
-          saturation: saturationPhase,
-          queues: geometricPhase,
+          aadt:             aadtPhase,
+          peak:             peakPhase,
+          saturation:       saturationPhase,
+          queues:           geometricPhase,
           pedestrianFriction: pedestrianPhase,
           generatedTraffic: generatedVADTPhase
         }
@@ -22938,3 +24388,71 @@ const LoganTrafficEngine = (function() {
   };
 
 })();
+
+// ─── FORMULA AGENT BRIDGE ──────────────────────────────────────────────────
+// Exposes pure calculation functions for the Formula Verification Agent.
+// Only stateless, DOM-independent functions are exposed here.
+// Must live outside the LoganTrafficEngine IIFE so TMRCalculator and
+// DetourCapacityModel (defined in the main script block) are in scope.
+window.__tiaCalc = {
+    // VCR
+    vcr: (vol, cap) => TMRCalculator.calculateVCR(vol, cap),
+
+    // Queue length (TMRCalculator net-overflow model)
+    queueLength: (vphPerLane, waitMin, capPerLane) =>
+      TMRCalculator.calculateQueueLength(vphPerLane, waitMin, capPerLane),
+
+    // Base volume: ceil(mean)
+    baseVolume: (arr) => TMRCalculator.calculateBaseVolume(arr),
+
+    // Adjusted LV count
+    adjustedLV: (total, hvPct) => TMRCalculator.calculateAdjustedLightVehicles(total, hvPct),
+
+    // CAGR projection
+    cagr: (base, growthRatePct, years) =>
+      TMRCalculator.calculateProjectedVolume(base, 0, years, growthRatePct),
+
+    // PCE volume via DetourCapacityModel
+    pceVolume: (mix, grade) => {
+      const m = new DetourCapacityModel();
+      return m.calculatePCEVolume(mix, grade);
+    },
+
+    // Intersection gap-acceptance absorption
+    intersectionAbsorption: (opposingVph, critGap, followUpHeadway) => {
+      const m = new DetourCapacityModel();
+      return m.calculateIntersectionAbsorption(opposingVph, critGap, followUpHeadway);
+    },
+
+    // ASD (wraps the pure math, not the DOM-bound calculateASD function)
+    asd: (speedKmh, reactionSec, gradePct) => {
+      const V = Number(speedKmh);
+      const t = Number(reactionSec);
+      const G = Number(gradePct) / 100;
+      const f = V <= 40 ? 0.35 : V <= 50 ? 0.33 : V <= 60 ? 0.31
+              : V <= 70 ? 0.30 : V <= 80 ? 0.29 : 0.28;
+      const reactionDist = (V * t) / 3.6;
+      const eff = f + G;
+      const brakingDist = eff > 0.05 ? (V * V) / (254 * eff) : 9999;
+      return { reactionDist, brakingDist, total: Math.round(reactionDist + brakingDist) };
+    },
+
+    // Shockwave queue (fundamental diagram model)
+    swtQueue: (qa, uf, kj, s, us, r) => calculateSWTQueueLength(qa, uf, kj, s, us, r),
+
+    // Key constants for deviation detection
+    constants: {
+      CAP_FREEWAY:              TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['freeway'],
+      CAP_ARTERIAL:             TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['arterial'],
+      CAP_LOCAL:                TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['local'],
+      QUEUE_VEHICLE_SPACING:    7.6,
+      PCE_HEAVY_RIGID_FLAT:     1.4000,
+      PCE_ARTICULATED_FLAT:     2.4000,
+      PCE_BDOUBLE_FLAT:         4.1000,
+      SWT_PCE_LV:               1.0,
+      SWT_PCE_HV:               1.4,
+      SWT_PCE_RT:               4.1,
+      PED_SPEED_MS:             1.2,
+      PEAK_K_FACTOR:            0.10,
+    },
+  };
