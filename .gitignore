@@ -46,6 +46,10 @@ chroma_db/
 # Front-end dependencies
 node_modules/
 
+# Firebase CLI cache and deployment artefacts
+.firebase/
+Deploying
+
 # IDE/editor
 .vscode/
 .idea/
