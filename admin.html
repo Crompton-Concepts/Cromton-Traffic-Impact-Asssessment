@@ -195,6 +195,7 @@
       </select>
       <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
       <button class="btn" id="migrateAuthBtn" style="background:#fff7ed;color:#9a3412;border:1px solid #fdba74;" onclick="migrateAllUsersToFirebaseAuth()">Migrate Users to Auth + Reset</button>
+      <button class="btn" id="stripHashBtn" style="background:#fdf4ff;color:#6b21a8;border:1px solid #d8b4fe;" onclick="stripPasswordHashes()">Strip Legacy Password Hashes</button>
       <button class="btn" id="syncBtn" style="background:#e0f2f1;color:#1f5e63;border:1px solid #b2dfdb;" onclick="manualSync()">&#8635; Sync from Cloud</button>
       <button class="btn" style="background:#f3f4f6;color:#374151;" onclick="exportCSV()">Export CSV</button>
     </div>
@@ -636,6 +637,47 @@
       errEl.textContent = 'Login failed: ' + error.message;
     }
   });
+
+  async function stripPasswordHashes() {
+    const proceed = confirm(
+      'Remove passwordHash and legacyPassword from all user records in Firebase?\n\n' +
+      'Only run this after all users have been migrated to Firebase Auth.\n' +
+      'This cannot be undone.'
+    );
+    if (!proceed) return;
+
+    const btn = document.getElementById('stripHashBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Stripping…'; }
+
+    try {
+      if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+        try { await TIASync.pullAll(); } catch (_) {}
+      }
+
+      const db = getDB();
+      let stripped = 0;
+      for (const uname of Object.keys(db)) {
+        const rec = db[uname];
+        if (!rec) continue;
+        if (rec.passwordHash || rec.legacyPassword) {
+          delete rec.passwordHash;
+          delete rec.legacyPassword;
+          stripped++;
+        }
+      }
+
+      saveDB(db);
+
+      if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+        try { await TIASync.pushAll(db, null); } catch (_) {}
+      }
+
+      showToast(`Stripped password hashes from ${stripped} record(s). Firebase Auth is now sole credential store.`);
+      renderTable();
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Strip Legacy Password Hashes'; }
+    }
+  }
 
   function adminLogout() {
     const username = sessionStorage.getItem('crompton_tia_admin_user') || 'unknown';
