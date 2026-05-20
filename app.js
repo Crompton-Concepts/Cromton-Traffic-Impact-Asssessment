@@ -4752,11 +4752,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     loginUser.focus();
 
-    const hashPasswordLocal = async (pw) => {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'crompton_tia_v1'));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    };
-
     loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       _formLoginInProgress = true;
@@ -4804,24 +4799,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         _formLoginInProgress = false;
         await unlockApplication({ useFunnyLoading: true });
       } catch (firebaseError) {
-        const code = String(firebaseError.code || '');
-        // Fallback for users created via the admin portal: they have a passwordHash but no
-        // Firebase Auth account yet (auth/user-not-found or auth/invalid-credential).
-        if ((code === 'auth/user-not-found' || code === 'auth/invalid-credential') && found && found.record.passwordHash) {
-          try {
-            const hash = await hashPasswordLocal(enteredPassword);
-            if (hash === found.record.passwordHash) {
-              sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-              sessionStorage.setItem(USER_SESSION_KEY, found.record.username);
-              sessionStorage.setItem(TIER_SESSION_KEY, found.record.tier || 'free');
-              sessionStorage.setItem('IS_ADMIN', found.record.isAdmin ? 'true' : 'false');
-              loginError.textContent = '';
-              _formLoginInProgress = false;
-              await unlockApplication({ useFunnyLoading: true });
-              return;
-            }
-          } catch (_) {}
-        }
         _formLoginInProgress = false;
         console.error('[Login] Firebase Auth error:', firebaseError);
         loginError.textContent = 'Login failed: ' + firebaseError.message;
