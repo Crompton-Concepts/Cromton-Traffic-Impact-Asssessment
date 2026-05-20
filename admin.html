@@ -589,25 +589,31 @@
 
     try {
       let authenticated = false;
+      const authEmail = found.email;
+      const auth = getFirebaseAuth();
 
       // 1. Try legacy local hash (existing admins who still have passwordHash in RTDB).
       if (found.passwordHash || found.legacyPassword) {
         authenticated = await verifyPassword(found, pw);
-        // Persist any legacy→hash migration
-        if (authenticated && window.TIASync && TIASync.isEnabled && TIASync.isEnabled() && found.username) {
-          try { await TIASync.saveUser(found.username, found); } catch (_) {}
+        if (authenticated) {
+          // Persist any legacy→hash migration
+          if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled() && found.username) {
+            try { await TIASync.saveUser(found.username, found); } catch (_) {}
+          }
+          // Sign into Firebase Auth so RTDB security rules (auth != null) pass.
+          if (auth && authEmail) {
+            try { await auth.signInWithEmailAndPassword(authEmail, pw); } catch (_) {}
+          }
         }
       }
 
-      // 2. Fallback: Firebase Auth (new-style accounts without a local hash).
+      // 2. Firebase Auth path (new-style accounts without a local hash).
       if (!authenticated) {
-        const authEmail = found.email;
         if (!authEmail) { errEl.textContent = 'No email on record — cannot authenticate.'; return; }
-        const auth = getFirebaseAuth();
         if (auth) {
           try {
+            // Stay signed in — Firebase Auth session needed for RTDB writes.
             await auth.signInWithEmailAndPassword(authEmail, pw);
-            await auth.signOut();
             authenticated = true;
           } catch (fbErr) {
             const code = String((fbErr && fbErr.code) || '');
@@ -615,7 +621,6 @@
               errEl.textContent = 'Incorrect password.';
               return;
             }
-            // Other Firebase errors fall through to final guard below.
           }
         }
       }
@@ -638,6 +643,8 @@
     sessionStorage.removeItem(ADMIN_SESSION);
     sessionStorage.removeItem('crompton_tia_admin_user');
     sessionStorage.removeItem(SESSION_START_KEY);
+    const auth = getFirebaseAuth();
+    if (auth) try { auth.signOut(); } catch (_) {}
     location.reload();
   }
 
