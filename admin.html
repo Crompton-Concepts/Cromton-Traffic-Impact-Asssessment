@@ -923,32 +923,33 @@
     const tierF    = (document.getElementById('tierFilter').value || '').toLowerCase();
     const tbody    = document.getElementById('userTableBody');
     const noMsg    = document.getElementById('noUsersMsg');
-    let rows = Object.values(db).filter(u => {
-      if (u.deleted) return false;
-      const matchQ = !q || u.username.includes(q) || (u.email || '').toLowerCase().includes(q);
+    let rows = Object.entries(db).filter(([, u]) => {
+      if (!u || u.deleted) return false;
+      const uname = u.username || '';
+      const matchQ = !q || uname.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q);
       const matchT = !tierF || (u.tier || 'free').toLowerCase() === tierF;
       return matchQ && matchT;
     });
     // Sort: admins first, then by createdAt
-    rows.sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0) || new Date(a.createdAt) - new Date(b.createdAt));
+    rows.sort(([, a], [, b]) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0) || new Date(a.createdAt) - new Date(b.createdAt));
     if (!rows.length) { tbody.innerHTML = ''; noMsg.style.display = 'block'; return; }
     noMsg.style.display = 'none';
-    tbody.innerHTML = rows.map(u => {
+    tbody.innerHTML = rows.map(([dbKey, u]) => {
       const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-AU', { year:'numeric', month:'short', day:'numeric' }) : '—';
       const noPw = u.provisionedFromAuth && !u.passwordHash && !u.legacyPassword;
       return `<tr${noPw ? ' style="background:#fffbeb;"' : ''}>
-        <td><strong>${esc(u.username)}</strong>${noPw ? '<span class="no-pw-badge" title="Added via Firebase console — no portal password set yet">No password</span>' : ''}</td>
+        <td><strong>${esc(u.username || dbKey || '—')}</strong>${noPw ? '<span class="no-pw-badge" title="Added via Firebase console — no portal password set yet">No password</span>' : ''}</td>
         <td>${esc(u.email || '—')}</td>
         <td>
-          <select class="tier-select-inline" data-user="${esc(u.username)}" onchange="changeTier(this)">
+          <select class="tier-select-inline" data-user="${esc(dbKey)}" onchange="changeTier(this)">
             ${['free','basic','pro','pro+'].map(t => `<option value="${t}"${(u.tier||'free')===t?' selected':''}>${tierLabel(t)}</option>`).join('')}
           </select>
         </td>
         <td>${u.isAdmin ? '<span style="font-size:0.78rem;font-weight:700;color:#7e22ce;background:#fdf4ff;border:1px solid #c4b5fd;padding:2px 8px;border-radius:20px;">Admin</span>' : '<span style="color:var(--muted);font-size:0.84rem;">User</span>'}</td>
         <td style="color:var(--muted);font-size:0.82rem;">${joined}</td>
         <td style="white-space:nowrap;">
-          <button class="btn btn-sm btn-primary" onclick="openEditModal('${esc(u.username)}')">Edit</button>
-          ${!u.isAdmin ? `<button class="btn btn-sm btn-danger" style="margin-left:6px;" onclick="deleteUser('${esc(u.username)}')">Delete</button>` : ''}
+          <button class="btn btn-sm btn-primary" onclick="openEditModal('${esc(dbKey)}')">Edit</button>
+          ${!u.isAdmin ? `<button class="btn btn-sm btn-danger" style="margin-left:6px;" onclick="deleteUser('${esc(dbKey)}')">Delete</button>` : ''}
         </td>
       </tr>`;
     }).join('');
@@ -972,7 +973,8 @@
   }
 
   function deleteUser(uname) {
-    if (!confirm(`Delete user "${uname}"?\n\nThey will be moved to the Deleted tab and their access will be revoked.`)) return;
+    if (uname == null) return; // allow empty-string keys
+    if (!confirm(`Delete user "${uname || '(no username)'}"?\n\nThey will be moved to the Deleted tab and their access will be revoked.`)) return;
     const db = getDB();
     const user = db[uname];
     if (!user) return;
