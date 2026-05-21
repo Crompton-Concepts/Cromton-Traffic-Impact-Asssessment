@@ -17239,6 +17239,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
+    const R1 = 6371000;
+    const paddedRadius1 = localCounterMatchRadiusMeters * 1.01;
+    const dLat1 = (paddedRadius1 / R1) * (180 / Math.PI);
+    const dLon1 = (paddedRadius1 / (R1 * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+    const minLat1 = pLat - dLat1;
+    const maxLat1 = pLat + dLat1;
+    const minLon1 = pLon - dLon1;
+    const maxLon1 = pLon + dLon1;
+    const wrapLon1 = minLon1 < -180 || maxLon1 > 180;
+
     const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
       id,
       data: s,
@@ -17246,7 +17256,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lon: Number(s.longitude),
       roadName: String(s.road_name || s.description || '').trim(),
       roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    })).filter(s => {
+      if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon) || !s.roadStd || (primaryIdToSkip && s.id === primaryIdToSkip)) return false;
+      let inBox = false;
+      if (s.lat >= minLat1 && s.lat <= maxLat1) {
+        if (wrapLon1) {
+          if (minLon1 < -180 && (s.lon >= minLon1 + 360 || s.lon <= maxLon1)) inBox = true;
+          else if (maxLon1 > 180 && (s.lon >= minLon1 || s.lon <= maxLon1 - 360)) inBox = true;
+        } else {
+          if (s.lon >= minLon1 && s.lon <= maxLon1) inBox = true;
+        }
+      }
+      if (!inBox) return false;
+      return haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -17868,6 +17891,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
+    const R2 = 6371000;
+    const paddedRadius2 = localCounterMatchRadiusMeters * 1.01;
+    const dLat2 = (paddedRadius2 / R2) * (180 / Math.PI);
+    const dLon2 = (paddedRadius2 / (R2 * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+    const minLat2 = pLat - dLat2;
+    const maxLat2 = pLat + dLat2;
+    const minLon2 = pLon - dLon2;
+    const maxLon2 = pLon + dLon2;
+    const wrapLon2 = minLon2 < -180 || maxLon2 > 180;
+
     const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
       id,
       site,
@@ -17875,7 +17908,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
       lat: Number(site && site.latitude),
       lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    })).filter(item => {
+      if (!item.roadStd || !Number.isFinite(item.lat) || !Number.isFinite(item.lon)) return false;
+      let inBox = false;
+      if (item.lat >= minLat2 && item.lat <= maxLat2) {
+        if (wrapLon2) {
+          if (minLon2 < -180 && (item.lon >= minLon2 + 360 || item.lon <= maxLon2)) inBox = true;
+          else if (maxLon2 > 180 && (item.lon >= minLon2 || item.lon <= maxLon2 - 360)) inBox = true;
+        } else {
+          if (item.lon >= minLon2 && item.lon <= maxLon2) inBox = true;
+        }
+      }
+      if (!inBox) return false;
+      return haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
