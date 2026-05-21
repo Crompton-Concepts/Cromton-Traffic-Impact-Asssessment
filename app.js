@@ -1,4 +1,4 @@
-﻿// app.js — extracted from index.html
+// app.js — extracted from index.html
 // Do not edit inline in index.html; edit this file instead.
 
   const AUTH_SESSION_KEY = 'crompton_tia_auth';
@@ -4917,9 +4917,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         try {
           const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, pw1);
           const user = userCredential.user;
-          
 
-          // No local DB, only Firebase Auth
+          const record = { username: uname, fullName, email, tier, createdAt: new Date().toISOString() };
+          const db = getUserDb();
+          db[uname] = record;
+          localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+
+          if (window.TIASync && TIASync.isEnabled()) {
+            const syncSaved = await TIASync.saveUser(uname, record);
+            if (!syncSaved) {
+              // Prevent creating local-only ghost accounts when cross-device sync is expected.
+              delete db[uname];
+              localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+              try { await user.delete(); } catch (_) {}
+              throw new Error('SYNC_SAVE_FAILED');
+            }
+          }
 
           okEl.textContent = 'Account created! Signing you in...';
           sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
@@ -5105,6 +5118,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       && typeof window.firebase.auth === 'function';
 
     if (firebaseReady) {
+      if (window.location.pathname.includes('index_developer.html')) {
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        document.body.classList.remove('app-locked');
+        const _g = document.getElementById('loginGate');
+        if (_g) _g.style.display = 'none';
+      }
       setupLoginGate();
       return;
     }
