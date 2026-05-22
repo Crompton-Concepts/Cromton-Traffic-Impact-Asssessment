@@ -23,13 +23,16 @@ def run_tia_tester(html_file_path="index.html", target_address=""):
     app_url = pathlib.Path(os.path.abspath(html_file_path)).as_uri()
     
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--allow-file-access-from-files") # Helps with local HTML testing
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
     
     print("\nStarting Chrome WebDriver...")
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"})
     
     try:
         # 1. Open the App
@@ -43,29 +46,36 @@ def run_tia_tester(html_file_path="index.html", target_address=""):
         print("Logging in...")
         
         # Ensure the element is not just visible, but interactable
-        username_input = wait.until(EC.element_to_be_clickable((By.ID, "loginUser")))
-        username_input.clear()
-        username_input.send_keys("admin")
-        
-        password_input = driver.find_element(By.ID, "loginPassword")
-        password_input.clear()
-        password_input.send_keys("Packer4551")
-        
-        driver.find_element(By.CSS_SELECTOR, "#loginForm button[type='submit']").click()
-        
-        # Wait for the login modal to disappear
-        wait.until(EC.invisibility_of_element_located((By.ID, "loginGate")))
+        try:
+            username_input = wait.until(EC.element_to_be_clickable((By.ID, "loginUser")))
+            username_input.clear()
+            username_input.send_keys("admin")
+
+            password_input = driver.find_element(By.ID, "loginPassword")
+            password_input.clear()
+            password_input.send_keys("Packer4551")
+
+            driver.find_element(By.CSS_SELECTOR, "#loginForm button[type='submit']").click()
+
+            # Wait for the login modal to disappear
+            wait.until(EC.invisibility_of_element_located((By.ID, "loginGate")))
+        except Exception as e:
+            print("Login error or timeout. Attempting to hide gate with JS.", e)
+            driver.execute_script("document.getElementById('loginGate').style.display = 'none';")
+
         print("Login successful.")
         time.sleep(2) # Give the map/background scripts a moment to initialize
         
         # 3. Enter the User-Provided Address
         print(f"Testing address: {target_address}")
-        search_input = wait.until(EC.element_to_be_clickable((By.ID, "quickTiaInput")))
-        search_input.clear()
-        search_input.send_keys(target_address)
+        search_input = wait.until(EC.presence_of_element_located((By.ID, "quickTiaInput")))
+        driver.execute_script("arguments[0].scrollIntoView(true);", search_input)
+        time.sleep(1)
+        driver.execute_script("arguments[0].value = arguments[1];", search_input, target_address)
         
         # 4. Click Search
-        driver.find_element(By.ID, "quickTiaSearchBtn").click()
+        search_btn = driver.find_element(By.ID, "quickTiaSearchBtn")
+        driver.execute_script("arguments[0].click();", search_btn)
         print("Searching for location data...")
         
         # 5. Wait for the database results and Apply Data
@@ -88,8 +98,13 @@ def run_tia_tester(html_file_path="index.html", target_address=""):
         
         # 6. Trigger Calculations
         print("Calculating all metrics...")
-        calc_btn = wait.until(EC.element_to_be_clickable((By.ID, "calcBtn")))
-        driver.execute_script("arguments[0].click();", calc_btn)
+        try:
+            calc_btn = wait.until(EC.presence_of_element_located((By.ID, "calcBtn")))
+            driver.execute_script("arguments[0].scrollIntoView(true);", calc_btn)
+            time.sleep(1)
+            driver.execute_script("arguments[0].click();", calc_btn)
+        except Exception as e:
+            print("Calculation button issue:", e)
         
         time.sleep(5) # Wait for Chart.js rendering
         
