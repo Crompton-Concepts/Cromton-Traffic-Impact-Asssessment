@@ -1,0 +1,3 @@
+## 2025-05-23 - [Fast Spatial Pre-filtering in Vanilla JS]
+**Learning:** In vanilla JS environments without spatial indexing (like PostGIS or GeoJSON libraries), mapping over thousands of geographic coordinates with the Haversine formula is computationally heavy. A fast pre-filtering bounding box using basic trigonometry (with 1% padding and antimeridian wrap handling) significantly reduces the number of expensive haversine calculation calls, avoiding CPU bottlenecks when processing large datasets on the client-side.
+**Action:** Always implement a lightweight bounding box check (`isWithinBoundingBox`) to cull irrelevant coordinates before invoking the Haversine formula in iterative search or filter functions.
