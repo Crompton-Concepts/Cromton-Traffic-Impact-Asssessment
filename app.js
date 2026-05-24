@@ -5475,6 +5475,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const safeRadius = Math.max(50, Number(radiusMeters) || 200);
     if (!Number.isFinite(safeLat) || !Number.isFinite(safeLon)) return [];
 
+    const bbox = getBoundingBox(safeLat, safeRadius);
+
     const roads = new Set();
     const allSites = Object.values(macroSitesData || {});
     allSites.forEach((site) => {
@@ -5482,6 +5484,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const sLat = Number(site.latitude);
       const sLon = Number(site.longitude);
       if (!Number.isFinite(sLat) || !Number.isFinite(sLon)) return;
+
+      if (Math.abs(safeLat - sLat) > bbox.dLat) return;
+      let lonDiff = Math.abs(safeLon - sLon);
+      lonDiff = lonDiff > 180 ? 360 - lonDiff : lonDiff;
+      if (lonDiff > bbox.dLon) return;
+
       const dist = haversineDistance(safeLat, safeLon, sLat, sLon);
       if (!Number.isFinite(dist) || dist > safeRadius) return;
 
@@ -11601,11 +11609,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     let d2Score = 0;
     let votes = 0;
 
+    const bbox = getBoundingBox(lat, 8000);
+
     Object.values(macroSitesData || {}).forEach(candidate => {
       if (!candidate || candidate === site) return;
       const cLat = Number(candidate.latitude);
       const cLon = Number(candidate.longitude);
       if (!Number.isFinite(cLat) || !Number.isFinite(cLon)) return;
+
+      if (Math.abs(lat - cLat) > bbox.dLat) return;
+      let lonDiff = Math.abs(lon - cLon);
+      lonDiff = lonDiff > 180 ? 360 - lonDiff : lonDiff;
+      if (lonDiff > bbox.dLon) return;
+
       const dist = haversineDistance(lat, lon, cLat, cLon);
       if (!(dist <= 8000)) return;
 
@@ -15891,10 +15907,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // by the primary road's traffic volume (e.g. a 69k highway counter inflating a local street).
     const excludeSet = excludeSiteIds instanceof Set ? excludeSiteIds : new Set(Array.isArray(excludeSiteIds) ? excludeSiteIds : (excludeSiteIds ? [excludeSiteIds] : []));
 
+    const bbox = getBoundingBox(lat, radius);
+
     const allSites = Object.entries(macroSitesData || {}).map(([id, data]) => {
       const sLat = Number(data && data.latitude);
       const sLon = Number(data && data.longitude);
-      const dist = (Number.isFinite(sLat) && Number.isFinite(sLon)) ? haversineDistance(lat, lon, sLat, sLon) : Infinity;
+      if (!Number.isFinite(sLat) || !Number.isFinite(sLon)) return { id, data, dist: Infinity };
+
+      if (Math.abs(lat - sLat) > bbox.dLat) return { id, data, dist: Infinity };
+      let lonDiff = Math.abs(lon - sLon);
+      lonDiff = lonDiff > 180 ? 360 - lonDiff : lonDiff;
+      if (lonDiff > bbox.dLon) return { id, data, dist: Infinity };
+
+      const dist = haversineDistance(lat, lon, sLat, sLon);
       return { id, data, dist };
     }).filter(item => Number.isFinite(item.dist) && item.dist <= radius && Number(item.data && item.data.vadt) > 0 && !excludeSet.has(item.id));
 
@@ -17239,6 +17264,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
+    const bbox = getBoundingBox(pLat, localCounterMatchRadiusMeters);
+
     const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
       id,
       data: s,
@@ -17246,7 +17273,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lon: Number(s.longitude),
       roadName: String(s.road_name || s.description || '').trim(),
       roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    })).filter(s => {
+      if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon) || !s.roadStd || (primaryIdToSkip && s.id === primaryIdToSkip)) return false;
+      if (Math.abs(pLat - s.lat) > bbox.dLat) return false;
+      let lonDiff = Math.abs(pLon - s.lon);
+      lonDiff = lonDiff > 180 ? 360 - lonDiff : lonDiff;
+      if (lonDiff > bbox.dLon) return false;
+      return haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -17868,6 +17902,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
+    const bbox = getBoundingBox(pLat, localCounterMatchRadiusMeters);
+
     const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
       id,
       site,
@@ -17875,7 +17911,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
       lat: Number(site && site.latitude),
       lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    })).filter(item => {
+      if (!item.roadStd || !Number.isFinite(item.lat) || !Number.isFinite(item.lon)) return false;
+      if (Math.abs(pLat - item.lat) > bbox.dLat) return false;
+      let lonDiff = Math.abs(pLon - item.lon);
+      lonDiff = lonDiff > 180 ? 360 - lonDiff : lonDiff;
+      if (lonDiff > bbox.dLon) return false;
+      return haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
@@ -19699,6 +19742,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   
+  // Bounding box calculation for fast spatial pre-filtering
+  function getBoundingBox(lat, distanceMeters) {
+    const R = 6371000;
+    const latDiff = (distanceMeters / R) * (180 / Math.PI);
+    const cosLat = Math.max(Math.abs(Math.cos(lat * Math.PI / 180)), 0.0001);
+    const lonDiff = (distanceMeters / (R * cosLat)) * (180 / Math.PI);
+    // Pad by ~1% to avoid edge-case false negatives
+    return { dLat: latDiff * 1.01, dLon: lonDiff * 1.01 };
+  }
+
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
