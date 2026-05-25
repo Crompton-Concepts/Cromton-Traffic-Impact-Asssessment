@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "tia_users": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

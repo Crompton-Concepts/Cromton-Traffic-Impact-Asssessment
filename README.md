@@ -42,6 +42,27 @@ python report_service.py
 # File: index.html
 ```
 
+### Python Report Service URL (Local vs Hosted)
+
+The frontend now resolves the Python report API URL in this order:
+
+1. `?reportServiceUrl=https://...` query string override
+2. `localStorage['TIA_REPORT_SERVICE_BASE_URL']`
+3. `window.TIA_CONFIG.reportServiceBaseUrl` (if provided)
+4. `<meta name="tia-report-service-url" content="https://...">`
+5. Fallback by host:
+	- `localhost/127.0.0.1` -> `http://127.0.0.1:8060`
+	- all other hosts -> `https://tia-report-service-2nfbbli7oq-ts.a.run.app`
+
+Runtime admin helpers in browser console:
+
+```js
+setReportServiceBaseUrl('https://tia-report-service-2nfbbli7oq-ts.a.run.app')
+getReportServiceBaseUrl()
+```
+
+This allows all external users to use a shared hosted Python report backend once deployed and reachable.
+
 See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive setup and deployment instructions.
 
 ## Documentation

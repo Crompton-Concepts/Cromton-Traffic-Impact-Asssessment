@@ -150,6 +150,29 @@ $env:RELOAD="true"
 python report_service.py
 ```
 
+### Frontend Python Report Endpoint
+
+Production users do not call `localhost`. They must call a hosted Python report backend.
+
+The frontend resolves endpoint in this priority order:
+
+1. `?reportServiceUrl=https://...`
+2. `localStorage['TIA_REPORT_SERVICE_BASE_URL']`
+3. `window.TIA_CONFIG.reportServiceBaseUrl`
+4. `<meta name="tia-report-service-url" content="https://...">`
+5. default fallback:
+   - local hosts: `http://127.0.0.1:8060`
+   - non-local hosts: `https://tia-report-service-2nfbbli7oq-ts.a.run.app`
+
+Admin console helpers:
+
+```js
+setReportServiceBaseUrl('https://tia-report-service-2nfbbli7oq-ts.a.run.app')
+getReportServiceBaseUrl()
+```
+
+To enable all users, deploy `report_service.py` to a public URL and ensure it is reachable from browser clients.
+
 ---
 
 ## Features
@@ -232,6 +255,35 @@ pip install gunicorn
 
 gunicorn -w 4 -b 0.0.0.0:8000 report_service:app
 ```
+
+### Deploy Python Report Service To Cloud Run
+
+Use this when you want all users to access one shared backend.
+
+```powershell
+# 1) Set your GCP project and region
+gcloud config set project <YOUR_GCP_PROJECT_ID>
+gcloud config set run/region australia-southeast1
+
+# 2) Build and deploy report_service.py as a public Cloud Run service
+gcloud run deploy tia-report-service `
+   --source . `
+   --dockerfile Dockerfile.report-service `
+   --allow-unauthenticated `
+   --set-env-vars REPORT_ALLOWED_ORIGIN_REGEX="^https://([a-z0-9-]+\.)?cromptonapps\.com$|^https://[a-z0-9-]+\.web\.app$|^https://[a-z0-9-]+\.firebaseapp\.com$|^https?://(localhost|127\.0\.0\.1)(:\\d+)?$"
+```
+
+After deploy:
+
+1. Map custom domain `tia-report-service.cromptonapps.com` to the Cloud Run service.
+2. Confirm DNS A/AAAA/CNAME records are live.
+3. Verify health endpoint from public internet:
+
+```powershell
+Invoke-WebRequest -UseBasicParsing https://tia-report-service.cromptonapps.com/health
+```
+
+When this endpoint is live, external users will be able to open Python reports without running a local Python service.
 
 ### Nginx Reverse Proxy Configuration (Sample)
 ```nginx

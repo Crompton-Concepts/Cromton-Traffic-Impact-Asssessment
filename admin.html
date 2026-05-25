@@ -315,7 +315,7 @@
   // ── Seed defaults (mirrors index.html) ───────────────────────────────────
   function ensureDefaults() {
     const db = getDB(); let changed = false;
-    if (!db['admin']) { db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true }; changed = true; }
+    if (!db['admin']) { db['admin'] = { username: 'admin', email: 'labs@cromptonapps.com', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true }; changed = true; }
     if (changed) {
       // Only update localStorage — never push to Firebase here as TIASync
       // is not yet initialised and the local DB is incomplete.
@@ -1113,6 +1113,22 @@
     return false;
   }
 
+  // Call the adminSetUserPassword Cloud Function to set/update a Firebase Auth password.
+  // Returns true on success, false on failure (error shown in errEl if provided).
+  async function callAdminSetPassword(email, newPassword, errEl) {
+    try {
+      if (!window.firebase || !firebase.apps.length) throw new Error('Firebase not ready.');
+      const fn = firebase.functions().httpsCallable('adminSetUserPassword');
+      await fn({ email, newPassword });
+      return true;
+    } catch (err) {
+      const msg = (err && err.message) || String(err);
+      if (errEl) errEl.textContent = 'Password set failed: ' + msg;
+      else showToast('Password set failed: ' + msg);
+      return false;
+    }
+  }
+
   async function saveModalUser() {
     const errEl = document.getElementById('muErr');
     errEl.textContent = '';
@@ -1146,7 +1162,11 @@
           errEl.textContent = 'Firebase Auth error: ' + (authErr.message || code);
           return;
         }
-        // email-already-in-use: Auth account exists, still safe to create/update RTDB record.
+        // email-already-in-use: account exists with a different password.
+        // Use Cloud Function (Admin SDK) to overwrite it directly.
+        errEl.textContent = 'Setting password via server…';
+        const ok = await callAdminSetPassword(email, pw, errEl);
+        if (!ok) return;
       } finally {
         if (provApp) try { await provApp.delete(); } catch (_) {}
       }
@@ -1166,14 +1186,12 @@
 
       if (pw) {
         if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
-        // Can't update another user's Firebase Auth password from the client.
-        // Send a password reset email so the user sets their own password via Firebase.
-        const auth = getFirebaseAuth();
-        if (auth) {
-          try { await auth.sendPasswordResetEmail(rec.email); } catch (_) {}
-          showToast(`Reset email sent to ${rec.email}. Password field ignored — Firebase Auth owns credentials.`);
-        }
-        // Strip legacy hash from record now that Firebase Auth is authoritative.
+        // Use Cloud Function (Admin SDK) to set the password directly.
+        errEl.textContent = 'Setting password via server…';
+        const ok = await callAdminSetPassword(rec.email, pw, errEl);
+        if (!ok) return;
+        showToast(`Password updated for ${rec.email}.`);
+        // Strip any legacy hash now that Firebase Auth is authoritative.
         delete rec.passwordHash;
         delete rec.legacyPassword;
       }
@@ -1234,10 +1252,11 @@
   document.getElementById('addUserModal').addEventListener('click', function (e) { if (e.target === this) closeAddUserModal(); });
 </script>
 
-<!-- Firebase Realtime Database SDK (compat) -->
+<!-- Firebase SDKs (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <!-- TIA Firebase config (fill in firebase-config.js with your project credentials) -->
 <script src="firebase-config.js"></script>
 <!-- TIA shared user sync module -->

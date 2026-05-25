@@ -1,4 +1,13 @@
 {
+  "functions": {
+    "source": "functions"
+  },
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "hosting": {
     "public": ".",
     "headers": [
@@ -30,14 +39,18 @@
     "ignore": [
       "firebase.json",
       ".firebaserc",
+      "database.rules.json",
+      "storage.rules",
       "deploy.ps1",
+      "deploy.bat",
       "deploy.sh",
+      "*.bat",
+      "*.py",
       "**/.*",
       "**/.*/**",
       "**/node_modules/**",
       "functions/**",
       "scripts/**",
-      "QLD/**",
       "NSW/**",
       "stitch_design_system_implementation/**",
       "index_developer.html",

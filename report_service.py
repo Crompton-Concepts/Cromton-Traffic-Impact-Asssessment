@@ -47,6 +47,7 @@ ALLOWED_ORIGINS = _parse_allowed_origins_from_env()
 ALLOWED_ORIGIN_REGEX = os.environ.get(
   "REPORT_ALLOWED_ORIGIN_REGEX",
   r"^https://[a-z0-9-]+\.github\.io$"
+  r"|^https://([a-z0-9-]+\.)?cromptonapps\.com$"
   r"|^https://[a-z0-9-]+\.web\.app$"
   r"|^https://[a-z0-9-]+\.firebaseapp\.com$"
   r"|^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
@@ -2612,6 +2613,13 @@ def editor_page(draft_id: str) -> str:
     .btn.ghost {{ background: #64748b; }}
     
     .section-controls {{ display: flex; justify-content: flex-end; margin: 6px 0; gap: 5px; }}
+    .table-inline-controls {{
+      display: flex;
+      justify-content: flex-end;
+      gap: 5px;
+      margin: 4px 0 8px;
+      flex-wrap: wrap;
+    }}
     
     .mini-btn {{ 
       background: #f1f5f9; 
@@ -2723,7 +2731,7 @@ def editor_page(draft_id: str) -> str:
     @media print {{
       body {{ background: #fff; }}
       .document-wrapper {{ box-shadow: none; margin: 0; padding: 0; max-width: 100%; border: none; }}
-      .toolbar, .no-print, .section-controls {{ display: none !important; }}
+      .toolbar, .no-print, .section-controls, .table-inline-controls {{ display: none !important; }}
       .editable {{ border: none; background: transparent; padding: 0; }}
       .toc-container {{ border: 1px solid var(--border); background: #fff; }}
       .embedded-chart {{ box-shadow: none; border: 1px solid var(--border); }}
@@ -2751,6 +2759,8 @@ def editor_page(draft_id: str) -> str:
     /* Table add/remove controls */
     .section-controls .mini-btn {{ margin-right: 4px; }}
     .section-controls .mini-btn:last-child {{ margin-right: 0; }}
+    .table-inline-controls .mini-btn {{ margin-right: 4px; }}
+    .table-inline-controls .mini-btn:last-child {{ margin-right: 0; }}
   </style>
 </head>
 <body>
@@ -2981,12 +2991,28 @@ def editor_page(draft_id: str) -> str:
 
       const observer = new MutationObserver((mutations) => {{
         for (const mutation of mutations) {{
+          const targetEl = mutation.target && mutation.target.nodeType === Node.TEXT_NODE
+            ? mutation.target.parentElement
+            : mutation.target;
+
+          if (targetEl && targetEl.closest && targetEl.closest('.toc-container')) {{
+            continue;
+          }}
+
           if (mutation.type === 'childList') {{
+            const added = Array.from(mutation.addedNodes || []);
+            const removed = Array.from(mutation.removedNodes || []);
+            const hasMeaningfulChildChange = [...added, ...removed].some((node) => {{
+              if (!(node instanceof Element)) return false;
+              return !node.closest('.toc-container');
+            }});
+            if (!hasMeaningfulChildChange) continue;
             scheduleRefresh();
             return;
           }}
           if (mutation.type === 'characterData') {{
             const parent = mutation.target && mutation.target.parentElement;
+            if (parent && parent.closest && parent.closest('.toc-container')) continue;
             if (parent && parent.matches && parent.matches('h2, h3, h4.chart-title')) {{
               scheduleRefresh();
               return;
@@ -3003,6 +3029,7 @@ def editor_page(draft_id: str) -> str:
 
       document.addEventListener('input', (event) => {{
         const target = event && event.target;
+        if (target && target.closest && target.closest('.toc-container')) return;
         if (target && target.matches && target.matches('h2, h3, h4.chart-title')) {{
           scheduleRefresh();
         }}
@@ -3146,6 +3173,19 @@ def editor_page(draft_id: str) -> str:
     }}, true);
 
     function _getTargetTable(btn) {{
+      const inlineWrap = btn && btn.closest('.table-inline-controls');
+      if (inlineWrap) {{
+        const targetId = inlineWrap.getAttribute('data-target-table-id');
+        if (targetId) {{
+          const direct = document.getElementById(targetId);
+          if (direct) return {{ table: direct, block: direct.closest('.report-block') || inlineWrap.closest('.report-block') || null }};
+        }}
+        const nextTable = inlineWrap.nextElementSibling && inlineWrap.nextElementSibling.tagName === 'TABLE'
+          ? inlineWrap.nextElementSibling
+          : null;
+        if (nextTable) return {{ table: nextTable, block: nextTable.closest('.report-block') || inlineWrap.closest('.report-block') || null }};
+      }}
+
       const block = btn && btn.closest('.report-block');
       if (!block) return {{ table: null, block: null }};
       // Prefer the table that contains the focused cell, if it's inside this block.
@@ -3154,6 +3194,131 @@ def editor_page(draft_id: str) -> str:
         if (t) return {{ table: t, block }};
       }}
       return {{ table: block.querySelector('table'), block }};
+    }}
+
+    function _buildBlankTableBlock(titleText) {{
+      const safeTitle = String(titleText || 'New Table').trim() || 'New Table';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'report-section report-block avoid-break';
+      wrapper.innerHTML =
+        '<div class="section-controls no-print">' +
+          '<button type="button" class="mini-btn" onclick="addTableToSection(this)">➕ Add Table to Section</button> ' +
+          '<button type="button" class="mini-btn remove" onclick="removeReportBlock(this)">✕ Remove Block</button>' +
+        '</div>' +
+        '<h4 class="editable-text" contenteditable="true"></h4>' +
+        '<div class="table-detail-lead editable-text" contenteditable="true">Detailed table below sets out values added manually in the Python report editor.</div>' +
+        '<table><thead><tr><th class="editable-text editable-cell" contenteditable="true">Field</th><th class="editable-text editable-cell" contenteditable="true">Value</th></tr></thead>' +
+        '<tbody><tr><td class="editable-text editable-cell" contenteditable="true">Edit</td><td class="editable-text editable-cell" contenteditable="true">Edit</td></tr></tbody></table>' +
+        '<div class="editable table-note table-note-bottom" contenteditable="true"><p>Edit this note with assumptions, interpretation, or mitigation comments for this table.</p></div>';
+      const heading = wrapper.querySelector('h4');
+      if (heading) heading.textContent = safeTitle;
+      return wrapper;
+    }}
+
+    function ensureTableInlineControls(root) {{
+      const scope = root || document;
+      const tables = Array.from(scope.querySelectorAll('main.document-wrapper table')).filter((table) => {{
+        if (!table || !(table instanceof HTMLTableElement)) return false;
+        if (table.closest('.cover-details')) return false;
+        if (table.closest('.toc-container')) return false;
+        return true;
+      }});
+
+      tables.forEach((table, index) => {{
+        if (!table.id) table.id = 'py-table-' + Math.floor(Date.now() / 1000) + '-' + index;
+        const prev = table.previousElementSibling;
+        if (prev && prev.classList && prev.classList.contains('table-inline-controls')) {{
+          prev.setAttribute('data-target-table-id', table.id);
+          return;
+        }}
+
+        const controls = document.createElement('div');
+        controls.className = 'table-inline-controls no-print';
+        controls.setAttribute('data-target-table-id', table.id);
+        controls.innerHTML =
+          '<button type="button" class="mini-btn" onclick="addTableRow(this)">➕ Row</button>' +
+          '<button type="button" class="mini-btn" onclick="removeTableLastRow(this)">➖ Row</button>' +
+          '<button type="button" class="mini-btn" onclick="addTableColumn(this)">➕ Col</button>' +
+          '<button type="button" class="mini-btn" onclick="removeTableLastColumn(this)">➖ Col</button>' +
+          '<button type="button" class="mini-btn" onclick="addTableAfter(this)">➕ Table Below</button>' +
+          '<button type="button" class="mini-btn remove" onclick="removeClosestTable(this)">✕ Remove Table</button>';
+        table.parentNode.insertBefore(controls, table);
+      }});
+    }}
+
+    function addTableAfter(btn) {{
+      const target = _getTargetTable(btn);
+      if (!target || !target.table) return;
+      const anchorBlock = target.table.closest('.report-block') || target.table.parentElement;
+      if (!anchorBlock || !anchorBlock.parentNode) return;
+
+      const newBlock = _buildBlankTableBlock('New Table');
+      anchorBlock.parentNode.insertBefore(newBlock, anchorBlock.nextSibling);
+      ensureTableInlineControls(newBlock);
+      refreshToc();
+      refreshListOfTables();
+    }}
+
+    function addTableToSection(btn) {{
+      const currentBlock = btn && btn.closest('.report-block');
+      const sectionHeading = currentBlock
+        ? (currentBlock.previousElementSibling && currentBlock.previousElementSibling.tagName === 'H2'
+            ? currentBlock.previousElementSibling
+            : currentBlock.closest('main') && Array.from(currentBlock.parentNode.children).slice(0, Array.from(currentBlock.parentNode.children).indexOf(currentBlock)).reverse().find((el) => el.tagName === 'H2'))
+        : (btn && btn.closest('.section-controls') && btn.closest('.section-controls').previousElementSibling && btn.closest('.section-controls').previousElementSibling.tagName === 'H2'
+            ? btn.closest('.section-controls').previousElementSibling
+            : null);
+
+      const main = document.querySelector('main.document-wrapper');
+      if (!main) return;
+
+      let insertBefore = null;
+      if (sectionHeading && sectionHeading.parentNode === main) {{
+        let node = sectionHeading.nextElementSibling;
+        while (node) {{
+          if (node.tagName === 'H2') {{
+            insertBefore = node;
+            break;
+          }}
+          node = node.nextElementSibling;
+        }}
+      }}
+
+      const newBlock = _buildBlankTableBlock('New Table');
+      if (insertBefore) main.insertBefore(newBlock, insertBefore);
+      else main.appendChild(newBlock);
+
+      ensureTableInlineControls(newBlock);
+      refreshToc();
+      refreshListOfTables();
+    }}
+
+    function removeClosestTable(btn) {{
+      const target = _getTargetTable(btn);
+      if (!target || !target.table) return;
+
+      const table = target.table;
+      const controls = table.previousElementSibling && table.previousElementSibling.classList.contains('table-inline-controls')
+        ? table.previousElementSibling
+        : null;
+
+      _pushUndo({{ type: 'table', element: table, parent: table.parentNode, nextSibling: table.nextSibling }});
+      if (controls) controls.remove();
+      table.remove();
+      refreshToc();
+      refreshListOfTables();
+    }}
+
+    function installSectionTableControls() {{
+      const headings = Array.from(document.querySelectorAll('main.document-wrapper > h2')).filter((h) => !h.classList.contains('toc-title'));
+      headings.forEach((heading) => {{
+        const next = heading.nextElementSibling;
+        if (next && next.classList && next.classList.contains('section-controls') && next.classList.contains('section-table-controls')) return;
+        const controls = document.createElement('div');
+        controls.className = 'section-controls section-table-controls no-print';
+        controls.innerHTML = '<button type="button" class="mini-btn" onclick="addTableToSection(this)">➕ Add Table to This Section</button>';
+        heading.insertAdjacentElement('afterend', controls);
+      }});
     }}
 
     function addTableRow(btn) {{
@@ -3291,7 +3456,7 @@ def editor_page(draft_id: str) -> str:
         if (!_undoStack.length) return;
         e.preventDefault();
         const last = _undoStack.pop();
-        if (last.type === 'block' || last.type === 'row') {{
+        if (last.type === 'block' || last.type === 'row' || last.type === 'table') {{
           if (last.parent && last.parent.isConnected) {{
             last.parent.insertBefore(last.element, last.nextSibling || null);
           }} else if (last.parent) {{
@@ -3299,6 +3464,7 @@ def editor_page(draft_id: str) -> str:
           }}
           refreshToc();
           refreshListOfTables();
+          ensureTableInlineControls(last.parent || document);
         }} else if (last.type === 'column') {{
           last.cells.forEach(function(item) {{
             if (item.parent && item.parent.isConnected) {{
@@ -3314,6 +3480,8 @@ def editor_page(draft_id: str) -> str:
     document.addEventListener("DOMContentLoaded", function() {{
       {hydrate_js_call}
       enableStrongEditability();
+      installSectionTableControls();
+      ensureTableInlineControls(document);
       const payload = getEmbeddedReportPayload();
       if (payload && payload.editor_edits_profile) {{
         try {{

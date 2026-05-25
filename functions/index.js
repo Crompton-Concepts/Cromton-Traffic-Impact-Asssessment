@@ -10,10 +10,6 @@
  * admin portal because the portal reads exclusively from `tia_users` (RTDB).
  */
 
-const { onRequest } = require('firebase-functions/v2/https');
-const { beforeUserCreated } = require('firebase-functions/v2/identity');
-
-// Cloud Function v2 uses modular imports
 const functions = require('firebase-functions');
 const admin     = require('firebase-admin');
 
@@ -86,4 +82,49 @@ exports.provisionAuthUser = functions.auth.user().onCreate(async (user) => {
   );
 
   return null;
+});
+
+/**
+ * adminSetUserPassword — callable by signed-in admins only.
+ * Uses Admin SDK to set (or create) a Firebase Auth account with a specific password,
+ * bypassing the client-side limitation that only the current user can change their own password.
+ *
+ * Called from admin.html when the admin sets/resets a user's password.
+ */
+exports.adminSetUserPassword = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Must be signed in.');
+  }
+
+  // Verify the caller is an admin in tia_users.
+  const db       = admin.database();
+  const usersRef = db.ref(USERS_PATH);
+  const snap     = await usersRef.once('value');
+  const users    = snap.val() || {};
+  const callerEmail = (context.auth.token.email || '').toLowerCase();
+  const callerRec   = Object.values(users).find(
+    u => u && u.email && u.email.toLowerCase() === callerEmail
+  );
+  if (!callerRec || !callerRec.isAdmin) {
+    throw new functions.https.HttpsError('permission-denied', 'Admin privileges required.');
+  }
+
+  const { email, newPassword } = data || {};
+  if (!email || typeof newPassword !== 'string' || newPassword.length < 8) {
+    throw new functions.https.HttpsError('invalid-argument', 'Valid email and password (8+ chars) required.');
+  }
+
+  try {
+    // Try to update existing account first.
+    const existing = await admin.auth().getUserByEmail(email);
+    await admin.auth().updateUser(existing.uid, { password: newPassword });
+    return { success: true, created: false };
+  } catch (err) {
+    if (err.code === 'auth/user-not-found') {
+      // Create fresh account — provisionAuthUser will write the RTDB stub.
+      await admin.auth().createUser({ email, password: newPassword });
+      return { success: true, created: true };
+    }
+    throw new functions.https.HttpsError('internal', err.message || String(err));
+  }
 });

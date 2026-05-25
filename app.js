@@ -1094,7 +1094,74 @@
     return { title, site, reportDate, url, summary };
   }
 
-  const REPORT_SERVICE_BASE_URL = 'http://127.0.0.1:8060';
+  const REPORT_SERVICE_LOCAL_URL = 'http://127.0.0.1:8060';
+  const REPORT_SERVICE_PROD_DEFAULT_URL = 'https://tia-report-service-2nfbbli7oq-ts.a.run.app';
+  const REPORT_SERVICE_STORAGE_KEY = 'TIA_REPORT_SERVICE_BASE_URL';
+
+  function isLocalPageHost() {
+    const host = String(window.location.hostname || '').toLowerCase();
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  }
+
+  function normalizeReportServiceBaseUrl(rawUrl) {
+    const value = String(rawUrl || '').trim();
+    if (!value) return '';
+    try {
+      const parsed = new URL(value);
+      const trimmedPath = parsed.pathname.replace(/\/$/, '');
+      const path = trimmedPath && trimmedPath !== '/' ? trimmedPath : '';
+      return `${parsed.protocol}//${parsed.host}${path}`;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function resolveReportServiceBaseUrl() {
+    const queryValue = new URLSearchParams(window.location.search).get('reportServiceUrl');
+    const storedValue = (() => {
+      try { return localStorage.getItem(REPORT_SERVICE_STORAGE_KEY) || ''; }
+      catch (_) { return ''; }
+    })();
+    const globalValue = window.TIA_CONFIG && window.TIA_CONFIG.reportServiceBaseUrl
+      ? String(window.TIA_CONFIG.reportServiceBaseUrl)
+      : '';
+    const metaValue = (() => {
+      const meta = document.querySelector('meta[name="tia-report-service-url"]');
+      return meta ? String(meta.getAttribute('content') || '') : '';
+    })();
+
+    const isLocalPage = isLocalPageHost();
+    const normalizedStoredValue = normalizeReportServiceBaseUrl(storedValue);
+    if (!isLocalPage && normalizedStoredValue && isLoopbackReportServiceUrl(normalizedStoredValue)) {
+      try { localStorage.removeItem(REPORT_SERVICE_STORAGE_KEY); } catch (_) {}
+    }
+
+    const candidate = normalizeReportServiceBaseUrl(queryValue)
+      || (!isLocalPage && normalizedStoredValue && isLoopbackReportServiceUrl(normalizedStoredValue) ? '' : normalizedStoredValue)
+      || normalizeReportServiceBaseUrl(globalValue)
+      || normalizeReportServiceBaseUrl(metaValue);
+    if (candidate) return candidate;
+
+    return isLocalPage ? REPORT_SERVICE_LOCAL_URL : REPORT_SERVICE_PROD_DEFAULT_URL;
+  }
+
+  let REPORT_SERVICE_BASE_URL = resolveReportServiceBaseUrl();
+
+  window.setReportServiceBaseUrl = function(url, persist = true) {
+    const normalized = normalizeReportServiceBaseUrl(url);
+    if (!normalized) {
+      throw new Error('Invalid report service URL. Example: https://tia-report-service.cromptonapps.com');
+    }
+    REPORT_SERVICE_BASE_URL = normalized;
+    if (persist) {
+      try { localStorage.setItem(REPORT_SERVICE_STORAGE_KEY, normalized); } catch (_) {}
+    }
+    return REPORT_SERVICE_BASE_URL;
+  };
+
+  window.getReportServiceBaseUrl = function() {
+    return REPORT_SERVICE_BASE_URL;
+  };
 
   function getElementValueOrText(id) {
     const el = document.getElementById(id);
@@ -1260,7 +1327,7 @@
       .filter((item) => item.value && item.value !== '-');
   }
 
-  function collectVisibleTables(maxTables = 1000) {
+  function collectVisibleTables(maxTables = 220) {
     function normalizeCellText(text) {
       return String(text || '').replace(/\s+/g, ' ').trim();
     }
@@ -1456,7 +1523,7 @@
 
       return {
         columns: effectiveColumns,
-        rows: rows.slice(0, 200)
+        rows: rows.slice(0, 120)
       };
     }
 
@@ -1469,8 +1536,10 @@
         return true;
       })
       .filter((tableEl) => {
-        const rect = tableEl.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
+        // Avoid expensive layout flushes from repeated getBoundingClientRect calls.
+        if (!tableEl) return false;
+        if (tableEl.offsetParent === null && !tableEl.closest('details[open]')) return false;
+        return true;
       })
       .slice(0, maxTables);
 
@@ -1522,7 +1591,7 @@
     }).filter(Boolean);
   }
 
-  function collectChartImages(maxCharts = 1000) {
+  function collectChartImages(maxCharts = 48) {
     const reportChartTableIds = {
       macroHourlyChart: ['analysis_parameters'],
       hourlyQueueChart: ['hourlyQueueTableD1'],
@@ -2043,7 +2112,7 @@
     if (vcrRiskText && vcrRiskText !== '-') notes.push(vcrRiskText);
     if (pedDelayText && pedDelayText !== '-') notes.push(`Pedestrian: ${pedDelayText}`);
 
-    const visibleTables = collectVisibleTables();
+    const visibleTables = collectVisibleTables(220);
     const detourRouteCount = getDetourRouteScenarioCount();
     const reportTables = buildReportTablesForDetourRoutes(visibleTables);
     if (detourRouteCount > 1) {
@@ -2120,23 +2189,38 @@
 
   function showPythonReportSetupInstructions(reasonText = '') {
     const reason = reasonText || 'Python report service is not reachable.';
-    const serviceFolderHint = 'C:\\TIA-Python-Report-Service';
-    const reportServiceDownloadUrl = 'https://traffic-impact-assessment.web.app/report_service.py';
-    const logoDownloadUrl = 'https://traffic-impact-assessment.web.app/logo.jpeg';
-    const guideSteps = [
-      'Keep this app page open.',
-      'Click <strong>Copy Commands</strong> below.',
-      'If Python is not installed, click <strong>Get Python from Microsoft Store</strong> and install it first.',
-      'Open Command Prompt (Windows: press Win key, type "cmd", press Enter).',
-      `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and download the latest <code>report_service.py</code> automatically.`,
-      `If the download fails, click <strong>Download Report-Service</strong> or use the direct link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">Download link</a>.`,
-      `Optional: Download <code>logo.jpeg</code> from <a href="${logoDownloadUrl}" target="_blank" rel="noopener noreferrer">Firebase link</a> and save it in the same folder for branding.`,
-      'Set <code>GEMINI_API_KEY</code> in the same Command Prompt before starting the report service if you want Gemini-generated executive summary notes.',
-      'Confirm the import-check command prints <code>import ok</code>.',
-      'If you see "Could not import module report_service", re-run the download/check commands and confirm the file name is exactly <code>report_service.py</code>.',
-      'Keep that Command Prompt window running (do not close it).',
-      'Return to this app (Firebase app link) and click "Detailed Python Report" or "Python Short Report" again.'
-    ];
+    const usingLoopbackService = isLoopbackReportServiceUrl();
+    const serviceFolderHint = '%USERPROFILE%\\TIA-Python-Report-Service';
+    const appOrigin = (typeof window !== 'undefined' && window.location && /^https?:$/i.test(window.location.protocol))
+      ? String(window.location.origin || '').replace(/\/$/, '')
+      : '';
+    const reportServiceDownloadUrl = appOrigin
+      ? `${appOrigin}/report_service.py`
+      : 'https://crompton-apps.web.app/report_service.py';
+    const reportServiceFallbackUrl = 'https://crompton-apps.web.app/report_service.py';
+    const logoDownloadUrl = 'https://crompton-apps.web.app/logo.jpeg';
+    const guideSteps = usingLoopbackService
+      ? [
+          'Keep this app page open.',
+          'Click <strong>Copy Commands</strong> below.',
+          'If Python is not installed, click <strong>Get Python from Microsoft Store</strong> and install it first.',
+          'Open Command Prompt (Windows: press Win key, type "cmd", press Enter).',
+          `Run the copied commands line by line. They will create <code>${serviceFolderHint}</code>, move into it, and download the latest <code>report_service.py</code> automatically (with fallback URL).`,
+          `If the download fails, click <strong>Download Report-Service</strong> or use the direct link: <a href="${reportServiceDownloadUrl}" target="_blank" rel="noopener noreferrer">Download link</a>.`,
+          `Optional: Download <code>logo.jpeg</code> from <a href="${logoDownloadUrl}" target="_blank" rel="noopener noreferrer">Firebase link</a> and save it in the same folder for branding.`,
+          'Set <code>GEMINI_API_KEY</code> in the same Command Prompt before starting the report service if you want Gemini-generated executive summary notes.',
+          'Confirm the import-check command prints <code>import ok</code>.',
+          'If you see "Could not import module report_service", re-run the download/check commands and confirm the file name is exactly <code>report_service.py</code>.',
+          'Keep that Command Prompt window running (do not close it).',
+          'Return to this app and click "Detailed Python Report" or "Python Short Report" again.'
+        ]
+      : [
+          `This environment is configured to use a hosted Python report service at <code>${REPORT_SERVICE_BASE_URL}</code>.`,
+          'The hosted service is currently unreachable from your browser.',
+          'Check that the backend service is running and publicly accessible.',
+          'If the endpoint changed, update the app runtime using <code>setReportServiceBaseUrl("https://your-host")</code> in browser console, then refresh.',
+          'Contact support/admin to restore the hosted report API if this is a production outage.'
+        ];
 
     const guide = [
       '<ol style="margin:0; padding-left:20px; line-height:1.55;">',
@@ -2145,23 +2229,35 @@
       '<p style="margin:8px 0 0 0;"><strong>Still failing?</strong> Take a screenshot of Command Prompt and share it with support.</p>'
     ].join('');
 
-    const commands = [
-      '# If Python is not installed, install from Microsoft Store: https://apps.microsoft.com/detail/9NCVDN91XZQP',
-      `mkdir "${serviceFolderHint}"`,
-      `cd /d "${serviceFolderHint}"`,
-      '# Always download the latest report_service.py:',
-      `powershell -Command "Invoke-WebRequest -Uri '${reportServiceDownloadUrl}' -OutFile 'report_service.py'"`,
-      'dir report_service.py',
-      'python -m venv .venv',
-      '.\\.venv\\Scripts\\activate',
-      'set GEMINI_API_KEY=PASTE_YOUR_GEMINI_KEY_HERE',
-      'python -m pip install --upgrade pip',
-      'python -m pip install fastapi uvicorn python-docx jinja2 pydantic',
-      'python -c "import os, pathlib; p=pathlib.Path(\'report_service.py\'); print(\'cwd=\', os.getcwd()); print(\'exists=\', p.exists()); print(\'size=\', p.stat().st_size if p.exists() else 0)"',
-      'python -c "import report_service; print(\'import ok\')"',
-      'python -m uvicorn --app-dir . report_service:app --host 127.0.0.1 --port 8060',
-      '# Then click "Detailed Python Report" or "Python Short Report" again'
-    ].join('\n');
+    const commands = usingLoopbackService
+      ? [
+          'REM If Python is not installed, install from Microsoft Store: https://apps.microsoft.com/detail/9NCVDN91XZQP',
+          'set "TIA_REPORT_HOME=%USERPROFILE%\\TIA-Python-Report-Service"',
+          'if not exist "%TIA_REPORT_HOME%" mkdir "%TIA_REPORT_HOME%"',
+          'cd /d "%TIA_REPORT_HOME%"',
+          'REM Always download the latest report_service.py (URL 1, then fallback URL 2):',
+          `set "REPORT_SERVICE_URL_1=${reportServiceDownloadUrl}"`,
+          `set "REPORT_SERVICE_URL_2=${reportServiceFallbackUrl}"`,
+          'del /f /q report_service.py 2>nul',
+          'powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -UseBasicParsing -Uri $env:REPORT_SERVICE_URL_1 -OutFile \"report_service.py\" -ErrorAction Stop } catch { exit 1 }"',
+          'python -c "import pathlib,sys; p=pathlib.Path(\'report_service.py\'); sys.exit(0 if (p.exists() and p.stat().st_size > 0) else 1)" || powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -UseBasicParsing -Uri $env:REPORT_SERVICE_URL_2 -OutFile \"report_service.py\" -ErrorAction Stop } catch { exit 1 }"',
+          'dir report_service.py',
+          'python -m venv .venv',
+          'call .venv\\Scripts\\activate.bat',
+          'set GEMINI_API_KEY=PASTE_YOUR_GEMINI_KEY_HERE',
+          'python -m pip install --upgrade pip',
+          'python -m pip install fastapi uvicorn python-docx jinja2 pydantic',
+          'python -c "import os, pathlib; p=pathlib.Path(\'report_service.py\'); print(\'cwd=\', os.getcwd()); print(\'exists=\', p.exists()); print(\'size=\', p.stat().st_size if p.exists() else 0)"',
+          'python -c "import pathlib,sys; p=pathlib.Path(\'report_service.py\'); txt=p.read_text(encoding=\'utf-8\', errors=\'ignore\') if p.exists() else str(); ok=(\'app = FastAPI\' in txt and \'/health\' in txt); print(\'download_valid=\',ok); sys.exit(0 if ok else 1)"',
+          'python -c "import report_service; print(\'import ok\')"',
+          'python -m uvicorn --app-dir . report_service:app --host 127.0.0.1 --port 8060',
+          'REM Then click "Detailed Python Report" or "Python Short Report" again'
+        ].join('\n')
+      : [
+          'REM Hosted mode: no local Python commands required.',
+          `REM Current endpoint: ${REPORT_SERVICE_BASE_URL}`,
+          'REM Ask admin to restore backend availability or update endpoint using setReportServiceBaseUrl("https://your-host").'
+        ].join('\n');
 
     const modal = document.getElementById('pythonSetupModal');
     const reasonEl = document.getElementById('pythonSetupReason');
@@ -2172,7 +2268,11 @@
     if (commandsEl) commandsEl.textContent = commands;
     if (modal) modal.style.display = 'block';
     if (typeof setAppStatusBanner === 'function') {
-      setAppStatusBanner('<strong>Python Report unavailable:</strong> Install/start Python report service on 127.0.0.1:8060 and try again.', 'warning');
+      if (usingLoopbackService) {
+        setAppStatusBanner('<strong>Python Report unavailable:</strong> Install/start local Python report service on 127.0.0.1:8060 and try again.', 'warning');
+      } else {
+        setAppStatusBanner(`<strong>Python Report unavailable:</strong> Hosted report service is not reachable at ${REPORT_SERVICE_BASE_URL}.`, 'warning');
+      }
     }
   }
 
@@ -2262,6 +2362,12 @@
 
   async function openPythonEditableReport(mode = 'detailed') {
     const normalizedMode = String(mode || 'detailed').toLowerCase() === 'short' ? 'short' : 'detailed';
+    const serviceAvailable = await isPythonReportServiceAvailable();
+    if (!serviceAvailable) {
+      showPythonReportSetupInstructions(lastPythonServiceCheckReason || 'Python report service is offline.');
+      return;
+    }
+
     const payload = normalizedMode === 'short'
       ? await buildShortEditableReportPayload()
       : await buildEditableReportPayload();
@@ -2271,12 +2377,6 @@
     const title = normalizedMode === 'short'
       ? `${baseTitle} - Short Report`
       : `${baseTitle} - Detailed Report`;
-
-    const serviceAvailable = await isPythonReportServiceAvailable();
-    if (!serviceAvailable) {
-      showPythonReportSetupInstructions(lastPythonServiceCheckReason || 'Python report service is offline.');
-      return;
-    }
 
     let response;
     try {
@@ -2889,17 +2989,33 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return;
     }
     
-    // Create a new section for the AI summary
+    // Create a new section for the AI summary (DOM construction avoids
+    // re-parsing AI output as HTML — prevents XSS via <script> or event handlers).
     const summarySection = document.createElement('div');
     summarySection.className = 'ai-generated-summary';
     summarySection.style.cssText = 'background: #f0f9ff; border-left: 4px solid #2196f3; padding: 20px; margin: 20px 0; border-radius: 4px;';
-    summarySection.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="margin: 0; color: #1f5e63;">📋 Summary</h3>
-        <button onclick="this.parentElement.parentElement.remove()" class="report-remove-x" style="background: #e53935; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Remove</button>
-      </div>
-      <div class="report-editable" contenteditable="true" style="white-space: pre-wrap; line-height: 1.6;">${text}</div>
-    `;
+
+    const headerRow = document.createElement('div');
+    headerRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;';
+    const heading = document.createElement('h3');
+    heading.style.cssText = 'margin: 0; color: #1f5e63;';
+    heading.textContent = '📋 Summary';
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'report-remove-x';
+    removeBtn.style.cssText = 'background: #e53935; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', () => summarySection.remove());
+    headerRow.appendChild(heading);
+    headerRow.appendChild(removeBtn);
+
+    const editableBody = document.createElement('div');
+    editableBody.className = 'report-editable';
+    editableBody.setAttribute('contenteditable', 'true');
+    editableBody.style.cssText = 'white-space: pre-wrap; line-height: 1.6;';
+    editableBody.textContent = text;
+
+    summarySection.appendChild(headerRow);
+    summarySection.appendChild(editableBody);
     
     // Insert at the beginning of the report
     const firstChild = container.firstElementChild;
@@ -4111,14 +4227,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Use scrollWidth/scrollHeight as primary to capture full content (including off-screen)
     let width = Math.max(1, Math.ceil(previewNode.scrollWidth || previewNode.offsetWidth || 0));
     let height = Math.max(1, Math.ceil(previewNode.scrollHeight || previewNode.offsetHeight || 0));
-    
+
     // Fallback to bounding rect if scroll dimensions are not available
     if (width <= 1 || height <= 1) {
       const rect = previewNode.getBoundingClientRect();
       width = Math.max(1, Math.ceil(rect.width || 0));
       height = Math.max(1, Math.ceil(rect.height || 0));
     }
-    
+
     const pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 2));
     const bgColor = String(options.backgroundColor || '#ffffff');
 
@@ -4141,92 +4257,105 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const areaScaleCap = Math.max(0.45, Math.min(1, Math.sqrt(maxPixels / area)));
     const baseScale = Math.max(0.5, Math.min(pixelRatio, pixelRatio * areaScaleCap));
 
-    // Preferred path: html2canvas is bundled by html2pdf in this app.
-    if (typeof window.html2canvas === 'function') {
-      const scalesToTry = [baseScale, Math.max(0.75, baseScale * 0.8), 0.6, 0.5]
-        .map((v) => Math.max(0.5, Math.min(2, Number(v) || 1)))
-        .filter((v, i, arr) => arr.indexOf(v) === i);
-
-      let html2CanvasError = null;
-      for (const scale of scalesToTry) {
-        try {
-          const canvas = await window.html2canvas(previewNode, {
-            backgroundColor: bgColor,
-            scale,
-            useCORS: true,
-            allowTaint: true,
-            logging: false,
-            width,
-            height,
-            windowWidth: width,
-            windowHeight: height,
-            scrollX: 0,
-            scrollY: 0
-          });
-          
-          return await blobFromCanvas(canvas);
-        } catch (error) {
-          html2CanvasError = error;
-        }
-      }
-      if (html2CanvasError) {
-        console.warn('[TGS Export] html2canvas path failed, trying fallback:', html2CanvasError);
-      }
+    // The previewNode sits inside an overflow:auto / max-height container. html2canvas
+    // clips its output to the parent's visible area, producing a truncated image.
+    // Fix: temporarily remove overflow restrictions from the immediate parent so html2canvas
+    // captures the full sheet, then restore the original styles.
+    const parentEl = previewNode.parentElement;
+    const savedParent = parentEl ? {
+      overflow: parentEl.style.overflow,
+      overflowY: parentEl.style.overflowY,
+      maxHeight: parentEl.style.maxHeight
+    } : null;
+    if (parentEl) {
+      parentEl.style.overflow = 'visible';
+      parentEl.style.overflowY = 'visible';
+      parentEl.style.maxHeight = 'none';
     }
 
-    // Fallback: SVG foreignObject render.
-    const clone = previewNode.cloneNode(true);
-    clone.style.margin = '0';
-    clone.style.width = `${width}px`;
-    clone.style.height = `${height}px`;
-    clone.style.maxWidth = `${width}px`;
-    clone.style.background = bgColor;
-
-    const serializer = new XMLSerializer();
-    const cloneMarkup = serializer.serializeToString(clone);
-    const svgMarkup = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-        <foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${cloneMarkup}</div></foreignObject>
-      </svg>
-    `;
-    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
-
     try {
-      const imageEl = new Image();
-      await new Promise((resolve, reject) => {
-        imageEl.onload = () => resolve(true);
-        imageEl.onerror = () => reject(new Error('SVG fallback render failed'));
-        imageEl.src = svgUrl;
-      });
+      // Preferred path: html2canvas is bundled by html2pdf in this app.
+      if (typeof window.html2canvas === 'function') {
+        const scalesToTry = [baseScale, Math.max(0.75, baseScale * 0.8), 0.6, 0.5]
+          .map((v) => Math.max(0.5, Math.min(2, Number(v) || 1)))
+          .filter((v, i, arr) => arr.indexOf(v) === i);
 
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.ceil(width * pixelRatio);
-      canvas.height = Math.ceil(height * pixelRatio);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas context unavailable');
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      ctx.drawImage(imageEl, 0, 0, width, height);
+        let html2CanvasError = null;
+        for (const scale of scalesToTry) {
+          try {
+            const canvas = await window.html2canvas(previewNode, {
+              backgroundColor: bgColor,
+              scale,
+              useCORS: true,
+              allowTaint: true,
+              logging: false,
+              width,
+              height,
+              windowWidth: width,
+              windowHeight: height,
+              scrollX: window.scrollX || window.pageXOffset || 0,
+              scrollY: window.scrollY || window.pageYOffset || 0
+            });
 
-      // Apply landscape rotation if needed (SVG fallback)
-      if (needsRotation) {
-        const rotatedCanvas = document.createElement('canvas');
-        rotatedCanvas.width = canvas.height;
-        rotatedCanvas.height = canvas.width;
-        const rotCtx = rotatedCanvas.getContext('2d');
-        if (rotCtx) {
-          rotCtx.translate(rotatedCanvas.width, 0);
-          rotCtx.rotate(Math.PI / 2);
-          rotCtx.drawImage(canvas, 0, 0);
+            return await blobFromCanvas(canvas);
+          } catch (error) {
+            html2CanvasError = error;
+          }
         }
-        return await blobFromCanvas(rotatedCanvas);
+        if (html2CanvasError) {
+          console.warn('[TGS Export] html2canvas path failed, trying fallback:', html2CanvasError);
+        }
       }
 
-      return await blobFromCanvas(canvas);
+      // Fallback: SVG foreignObject render.
+      const clone = previewNode.cloneNode(true);
+      clone.style.margin = '0';
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.maxWidth = `${width}px`;
+      clone.style.maxHeight = 'none';
+      clone.style.overflow = 'visible';
+      clone.style.background = bgColor;
+
+      const serializer = new XMLSerializer();
+      const cloneMarkup = serializer.serializeToString(clone);
+      const svgMarkup = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+          <foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${cloneMarkup}</div></foreignObject>
+        </svg>
+      `;
+      const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      try {
+        const imageEl = new Image();
+        await new Promise((resolve, reject) => {
+          imageEl.onload = () => resolve(true);
+          imageEl.onerror = () => reject(new Error('SVG fallback render failed'));
+          imageEl.src = svgUrl;
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(width * pixelRatio);
+        canvas.height = Math.ceil(height * pixelRatio);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context unavailable');
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        ctx.drawImage(imageEl, 0, 0, width, height);
+
+        return await blobFromCanvas(canvas);
+      } finally {
+        URL.revokeObjectURL(svgUrl);
+      }
     } finally {
-      URL.revokeObjectURL(svgUrl);
+      // Restore parent overflow styles
+      if (parentEl && savedParent) {
+        parentEl.style.overflow = savedParent.overflow;
+        parentEl.style.overflowY = savedParent.overflowY;
+        parentEl.style.maxHeight = savedParent.maxHeight;
+      }
     }
   }
 
@@ -4539,6 +4668,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const loginError = document.getElementById('loginError');
     if (!loginGate || !loginForm || !loginUser || !loginPassword || !loginError) return;
 
+    const hasFirebaseAuth = !!(window.firebase && typeof window.firebase.auth === 'function');
+
     const USERS_STORE_KEY = 'crompton_tia_users';
 
     function getUserDb() {
@@ -4565,18 +4696,43 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return null;
     }
 
+    async function hashPassword(pw) {
+      const subtle = window.crypto && crypto.subtle;
+      if (!subtle) return '';
+      const buffer = await subtle.digest('SHA-256', new TextEncoder().encode(String(pw || '') + 'crompton_tia_v1'));
+      return Array.from(new Uint8Array(buffer)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyLocalPassword(record, enteredPassword) {
+      if (!record) return false;
+
+      if (record.legacyPassword) {
+        if (String(enteredPassword || '') !== String(record.legacyPassword || '')) return false;
+        record.passwordHash = await hashPassword(enteredPassword);
+        delete record.legacyPassword;
+        return true;
+      }
+
+      if (record.passwordHash) {
+        return record.passwordHash === await hashPassword(enteredPassword);
+      }
+
+      return false;
+    }
+
     // Seed default admin user so username lookup works even on a fresh browser
     (function ensureDefaultAdmin() {
       try {
         const db = getUserDb();
         if (!db['admin']) {
-          db['admin'] = { username: 'admin', email: 'admin@cromptonconcepts.com.au', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
+          db['admin'] = { username: 'admin', email: 'labs@cromptonapps.com', tier: 'pro+', createdAt: new Date().toISOString(), isAdmin: true };
           localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
         }
       } catch (_) {}
     })();
 
     let isUnlockStarted = false;
+    const DATA_LOAD_UNLOCK_TIMEOUT_MS = 60000;
     async function unlockApplication(options = {}) {
       if (isUnlockStarted) return;
       isUnlockStarted = true;
@@ -4602,13 +4758,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       
       try {
+        let unlockTimedOut = false;
         await Promise.race([
           dataLoadingPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Data load timeout')), 20000))
+          new Promise((resolve) => setTimeout(() => {
+            unlockTimedOut = true;
+            resolve(null);
+          }, DATA_LOAD_UNLOCK_TIMEOUT_MS))
         ]);
+        if (unlockTimedOut) {
+          dataLoadIssue = new Error('Data load still in progress');
+          console.warn('[Login] Data loading still in progress at unlock timeout; continuing and waiting in background.');
+        }
       } catch (error) {
         dataLoadIssue = error;
-        console.error('[Login] Data loading did not finish before unlock:', error);
+        console.error('[Login] Data loading failed before unlock:', error);
       }
       
       // Unlock app interface
@@ -4663,9 +4827,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     // Hide login gate while Firebase checks persisted auth (prevents flash on page load)
-    loginGate.style.visibility = 'hidden';
-    loginGate.style.opacity = '0';
-    loginGate.style.transition = 'opacity 0.15s ease';
+    // If Firebase auth is unavailable, keep the gate visible and show a clear message.
+    if (hasFirebaseAuth) {
+      loginGate.style.visibility = 'hidden';
+      loginGate.style.opacity = '0';
+      loginGate.style.transition = 'opacity 0.15s ease';
+    } else {
+      loginGate.style.visibility = 'visible';
+      loginGate.style.opacity = '1';
+      loginError.textContent = 'Authentication service unavailable. Please refresh and check your network connection.';
+      console.warn('[Login] Firebase auth SDK not available. Login/create handlers stay enabled, but auth calls will fail.');
+    }
 
     let _authCheckFired = false;
     let _formLoginInProgress = false;
@@ -4675,39 +4847,49 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       loginGate.style.opacity = '1';
     }
 
-    // Safety fallback: show login gate after 3s if Firebase auth check hasn't fired
-    const _authFallback = setTimeout(() => { if (!_authCheckFired) _revealLoginGate(); }, 3000);
+    if (hasFirebaseAuth) {
+      // Safety fallback: show login gate after 3s if Firebase auth check hasn't fired
+      const _authFallback = setTimeout(() => { if (!_authCheckFired) _revealLoginGate(); }, 3000);
 
-    // Firebase Auth State Listener — auto-login when Firebase auth is persisted
-    firebase.auth().onAuthStateChanged(async (user) => {
-      _authCheckFired = true;
-      clearTimeout(_authFallback);
-      if (user && !_formLoginInProgress) {
-        // Persisted Firebase auth — auto-login without requiring form entry
-        if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
-          sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-          const localDb = getUserDb();
-          const localFound = findUserRecord(localDb, user.email) || findUserRecord(localDb, (user.email || '').split('@')[0]);
-          const localUname = localFound ? localFound.record.username : (user.email || 'user').split('@')[0];
-          const localRec = localFound ? localFound.record : { username: localUname, email: user.email, tier: 'free' };
-          sessionStorage.setItem(USER_SESSION_KEY, localUname);
-          sessionStorage.setItem(TIER_SESSION_KEY, localRec.tier || 'free');
-          sessionStorage.setItem('IS_ADMIN', localRec.isAdmin ? 'true' : 'false');
-        }
-        unlockApplication().catch(function(err) {
-          console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
-          document.body.classList.remove('app-locked');
-          loginGate.style.display = 'none';
+      // Firebase Auth State Listener — auto-login when Firebase auth is persisted
+      try {
+        firebase.auth().onAuthStateChanged(async (user) => {
+          _authCheckFired = true;
+          clearTimeout(_authFallback);
+          if (user && !_formLoginInProgress) {
+            // Persisted Firebase auth — auto-login without requiring form entry
+            if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
+              sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+              const localDb = getUserDb();
+              const localFound = findUserRecord(localDb, user.email) || findUserRecord(localDb, (user.email || '').split('@')[0]);
+              const localUname = localFound ? localFound.record.username : (user.email || 'user').split('@')[0];
+              const localRec = localFound ? localFound.record : { username: localUname, email: user.email, tier: 'free' };
+              sessionStorage.setItem(USER_SESSION_KEY, localUname);
+              sessionStorage.setItem(TIER_SESSION_KEY, localRec.tier || 'free');
+              sessionStorage.setItem('IS_ADMIN', localRec.isAdmin ? 'true' : 'false');
+            }
+            unlockApplication().catch(function(err) {
+              console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
+              document.body.classList.remove('app-locked');
+              loginGate.style.display = 'none';
+            });
+          } else if (!user) {
+            // No authenticated user — reveal login gate
+            _revealLoginGate();
+          }
         });
-      } else if (!user) {
-        // No authenticated user — reveal login gate
+      } catch (authBootstrapError) {
+        clearTimeout(_authFallback);
+        _authCheckFired = true;
+        console.error('[Login] Firebase auth bootstrap failed:', authBootstrapError);
+        loginError.textContent = 'Authentication service unavailable. Please refresh and try again.';
         _revealLoginGate();
       }
-    });
 
-    if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-      // Logic handled by onAuthStateChanged
-      return;
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        // Logic handled by onAuthStateChanged
+        return;
+      }
     }
 
     // Auto-login from URL hash (e.g. shared link) — credentials passed via
@@ -4770,15 +4952,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const found = findUserRecord(db, userIdentifier);
       const email = found ? found.record.email : (userIdentifier.includes('@') ? userIdentifier : null);
 
-      if (!email) {
+      if (!found && !email) {
         _formLoginInProgress = false;
         loginError.textContent = 'Username not recognised. Please sign in using your email address instead.';
         return;
       }
 
       try {
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
-        const user = userCredential.user;
+        let authenticated = false;
+        let firebaseUser = null;
+
+        if (found && (found.record.passwordHash || found.record.legacyPassword)) {
+          authenticated = await verifyLocalPassword(found.record, enteredPassword);
+          if (authenticated) {
+            db[found.key] = found.record;
+            localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
+            if (window.TIASync && TIASync.isEnabled()) {
+              try { await TIASync.saveUser(found.key, found.record); } catch (_) {}
+            }
+          }
+        }
+
+        if (!authenticated && email) {
+          const userCredential = await firebase.auth().signInWithEmailAndPassword(email, enteredPassword);
+          firebaseUser = userCredential.user;
+          authenticated = true;
+        }
+
+        if (!authenticated) {
+          _formLoginInProgress = false;
+          loginError.textContent = 'Incorrect password.';
+          return;
+        }
+
+        const user = firebaseUser || { email: email || (found && found.record && found.record.email) || '' };
 
         // Post-auth pull: now authenticated, Firebase DB reads succeed — gets correct tier/admin.
         if (window.TIASync && TIASync.isEnabled()) {
@@ -4787,8 +4994,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         const freshDb = getUserDb();
         const freshFound = findUserRecord(freshDb, userIdentifier) || findUserRecord(freshDb, user.email);
-        const finalUname = freshFound ? freshFound.record.username : user.email.split('@')[0];
-        const finalRec   = freshFound ? freshFound.record : { username: finalUname, email: user.email, tier: 'free' };
+        const finalUname = freshFound ? freshFound.record.username : ((user.email || userIdentifier || 'user').split('@')[0]);
+        const finalRec   = freshFound ? freshFound.record : { username: finalUname, email: user.email || email || '', tier: 'free' };
 
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         sessionStorage.setItem(USER_SESSION_KEY, finalUname);
@@ -4912,9 +5119,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (pw1.length < 8) { if (errEl) errEl.textContent = 'Password must be at least 8 characters.'; return; }
         if (pw1 !== pw2) { if (errEl) errEl.textContent = 'Passwords do not match.'; return; }
 
+        const handleExistingEmail = () => {
+          if (errEl) errEl.textContent = 'This email is already registered. Please sign in or reset your password.';
+          const loginUserInput = document.getElementById('loginUser');
+          if (loginUserInput && email) loginUserInput.value = email;
+          if (tabSignIn && typeof tabSignIn.click === 'function') tabSignIn.click();
+          const loginErrorEl = document.getElementById('loginError');
+          if (loginErrorEl) loginErrorEl.textContent = 'Account already exists for this email. Please sign in.';
+        };
+
         okEl.textContent = 'Creating account...';
 
         try {
+          // Pre-check existing account to provide immediate guidance before signUp request.
+          const signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email);
+          if (Array.isArray(signInMethods) && signInMethods.length > 0) {
+            okEl.textContent = '';
+            handleExistingEmail();
+            return;
+          }
+
           const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, pw1);
           const user = userCredential.user;
 
@@ -4924,14 +5148,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
 
           if (window.TIASync && TIASync.isEnabled()) {
-            const syncSaved = await TIASync.saveUser(uname, record);
-            if (!syncSaved) {
-              // Prevent creating local-only ghost accounts when cross-device sync is expected.
-              delete db[uname];
-              localStorage.setItem(USERS_STORE_KEY, JSON.stringify(db));
-              try { await user.delete(); } catch (_) {}
-              throw new Error('SYNC_SAVE_FAILED');
-            }
+            // Best-effort RTDB sync — if it fails (e.g. permission denied), the
+            // cloud provisionAuthUser function already created the RTDB record.
+            // Do NOT delete the Firebase Auth account on sync failure.
+            await TIASync.saveUser(uname, record).catch(() => {});
           }
 
           okEl.textContent = 'Account created! Signing you in...';
@@ -4947,7 +5167,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         } catch (error) {
           console.error('[Create] Firebase error:', error);
           okEl.textContent = '';
-          errEl.textContent = 'Error: ' + error.message;
+          const errorCode = String((error && error.code) || '');
+          if (errorCode === 'auth/email-already-in-use') {
+            handleExistingEmail();
+          } else if (errorCode === 'auth/invalid-email') {
+            errEl.textContent = 'Please enter a valid email address.';
+          } else if (errorCode === 'auth/weak-password') {
+            errEl.textContent = 'Password is too weak. Use at least 8 characters.';
+          } else if (errorCode === 'auth/network-request-failed') {
+            errEl.textContent = 'Network error while creating account. Check connection and try again.';
+          } else {
+            errEl.textContent = 'Error: ' + (error && error.message ? error.message : 'Unable to create account.');
+          }
         }
       });
     }
@@ -5294,17 +5525,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   // ===== DATA CONFIG & LOADING =====
   // Firebase Storage — primary source (Google CDN, fastest)
-  const FIREBASE_STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/traffic-impact-assessment.firebasestorage.app/o/datasets%2F';
+  const FIREBASE_STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2F';
   const FIREBASE_STORAGE_SUFFIX = '?alt=media';
-  const FIREBASE_TMR_URL       = `${FIREBASE_STORAGE_BASE}tmr.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_GOLDCOAST_URL = `${FIREBASE_STORAGE_BASE}goldcoast.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_BRISBANE_URL  = `${FIREBASE_STORAGE_BASE}Brisbane.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_IPSWICH_URL   = `${FIREBASE_STORAGE_BASE}Ipswich.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_LOGAN_URL     = `${FIREBASE_STORAGE_BASE}logan.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_TOOWOOMBA_URL = `${FIREBASE_STORAGE_BASE}toowoomba.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_TEWANTIN_URL  = `${FIREBASE_STORAGE_BASE}tewantin.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_NSW_2026_URL  = `${FIREBASE_STORAGE_BASE}nsw_2026.geojson${FIREBASE_STORAGE_SUFFIX}`;
-  const FIREBASE_NSW_TNSW_URL  = `${FIREBASE_STORAGE_BASE}tnsw.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_TMR_URL       = `${FIREBASE_STORAGE_BASE}QLD%2Ftmr.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_GOLDCOAST_URL = `${FIREBASE_STORAGE_BASE}QLD%2Fgoldcoast.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_BRISBANE_URL  = `${FIREBASE_STORAGE_BASE}QLD%2Fbrisbane.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_IPSWICH_URL   = `${FIREBASE_STORAGE_BASE}QLD%2Fipswich.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_LOGAN_URL     = `${FIREBASE_STORAGE_BASE}QLD%2Flogan.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_TOOWOOMBA_URL = `${FIREBASE_STORAGE_BASE}QLD%2Ftoowoomba.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_TEWANTIN_URL  = `${FIREBASE_STORAGE_BASE}QLD%2Ftewantin.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_NSW_2026_URL  = `${FIREBASE_STORAGE_BASE}NSW%2Fnsw_2026.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_NSW_TNSW_URL  = `${FIREBASE_STORAGE_BASE}NSW%2Fnsw.geojson${FIREBASE_STORAGE_SUFFIX}`;
   const FIREBASE_DATASET_MANIFEST_URL = `${FIREBASE_STORAGE_BASE}dataset_manifest.json${FIREBASE_STORAGE_SUFFIX}`;
 
   // GitHub fallback sources removed — all data loads from Firebase Storage or Firebase Hosting.
@@ -5324,6 +5555,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const DATASET_REQUEST_BUST_KEY = '2026-05-08';
   const DATASET_MANIFEST_CACHE_KEY = 'crompton_tia_dataset_manifest_sig_v1';
   const DATASET_MANIFEST_LOCAL_URL = './dataset_manifest.json';
+  const CURRENT_HOSTNAME = String((window.location && window.location.hostname) || '').toLowerCase();
+  const CURRENT_PROTOCOL = String((window.location && window.location.protocol) || '').toLowerCase();
+  const SKIP_FIREBASE_STORAGE_DATASETS = CURRENT_PROTOCOL === 'file:' || CURRENT_HOSTNAME.endsWith('.cromptonapps.com') || CURRENT_HOSTNAME === 'cromptonapps.com';
   const githubRefreshInflight = new Map();
   let datasetManifestSyncPromise = null;
 
@@ -6005,9 +6239,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const badge = document.createElement('div');
     badge.className = 'smart-suggest-badge';
     badge.style.cssText = 'display:flex; align-items:center; gap:6px; margin-top:5px; padding:4px 8px; background:#e8f0fe; border:1px solid #90caf9; border-radius:6px; font-size:0.75em; color:#1565c0;';
-    badge.innerHTML = `<span>💡 Suggested for <strong>${label}</strong>: <strong>${suggestedValue}</strong></span><button type="button" style="margin-left:auto; padding:2px 8px; border-radius:10px; border:1px solid #1565c0; background:#1565c0; color:#fff; font-size:0.9em; cursor:pointer; white-space:nowrap;">Apply</button><button type="button" style="padding:2px 6px; border-radius:10px; border:1px solid #90caf9; background:#fff; color:#1565c0; font-size:0.9em; cursor:pointer;">✕</button>`;
-    const applyBtn = badge.querySelectorAll('button')[0];
-    const dismissBtn = badge.querySelectorAll('button')[1];
+
+    const messageSpan = document.createElement('span');
+    messageSpan.appendChild(document.createTextNode('💡 Suggested for '));
+    const labelStrong = document.createElement('strong');
+    labelStrong.textContent = String(label != null ? label : '');
+    messageSpan.appendChild(labelStrong);
+    messageSpan.appendChild(document.createTextNode(': '));
+    const valueStrong = document.createElement('strong');
+    valueStrong.textContent = String(suggestedValue != null ? suggestedValue : '');
+    messageSpan.appendChild(valueStrong);
+    badge.appendChild(messageSpan);
+
+    const applyBtn = document.createElement('button');
+    applyBtn.type = 'button';
+    applyBtn.style.cssText = 'margin-left:auto; padding:2px 8px; border-radius:10px; border:1px solid #1565c0; background:#1565c0; color:#fff; font-size:0.9em; cursor:pointer; white-space:nowrap;';
+    applyBtn.textContent = 'Apply';
+    const dismissBtn = document.createElement('button');
+    dismissBtn.type = 'button';
+    dismissBtn.style.cssText = 'padding:2px 6px; border-radius:10px; border:1px solid #90caf9; background:#fff; color:#1565c0; font-size:0.9em; cursor:pointer;';
+    dismissBtn.textContent = '✕';
+    badge.appendChild(applyBtn);
+    badge.appendChild(dismissBtn);
+
     applyBtn.addEventListener('click', () => { onAccept(); badge.remove(); });
     dismissBtn.addEventListener('click', () => badge.remove());
     container.appendChild(badge);
@@ -7475,10 +7729,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   async function syncDatasetCacheWithManifest() {
     let manifest = null;
-    // Try Firebase Storage first, then local Firebase Hosting copy.
-    try {
-      manifest = await fetchJsonNoCache(FIREBASE_DATASET_MANIFEST_URL);
-    } catch (_) {
+    // Try Firebase Storage first when permitted, then local Firebase Hosting copy.
+    if (!SKIP_FIREBASE_STORAGE_DATASETS) {
+      try {
+        manifest = await fetchJsonNoCache(FIREBASE_DATASET_MANIFEST_URL);
+      } catch (_) {
+        manifest = null;
+      }
+    }
+    if (!manifest) {
       try {
         manifest = await fetchJsonNoCache(DATASET_MANIFEST_LOCAL_URL);
       } catch (_) {
@@ -7572,7 +7831,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const mirrorUrl = buildGithubCdnMirrorUrl(rawFromMedia || primary);
 
     // Priority: Firebase Storage (Google CDN) → GitHub media → GitHub raw → jsDelivr → local files.
-    pushUnique(firebaseUrl);
+    // On Firebase Hosting / file:// development, Storage CORS can be intentionally blocked.
+    if (!SKIP_FIREBASE_STORAGE_DATASETS) pushUnique(firebaseUrl);
     pushUnique(primary);
     pushUnique(rawFromMedia);
     pushUnique(mirrorUrl);
@@ -8435,6 +8695,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           site.d1_vadt = Math.round(totalVadt * 0.5);
           site.d2_vadt = Math.round(totalVadt * 0.5);
           site.direction_split_mode = 'fallback_50_50';
+          // Surface the directional assumption — source data lacked D1/D2 splits.
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn(`[TIA] Site ${siteId} (${sourceUpper}): no directional VADT; applied 50/50 split of total ${totalVadt}.`);
+          }
         }
       } else if (!site.vadt || site.vadt <= 0) {
         // If we have d1/d2 but no total, calculate it (for Ipswich data)
@@ -8789,7 +9053,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       await ensureDatasetManifestSynced();
       console.log('[Data Load] Leaflet is ready');
       
-      console.log('[Data Load] Fetching data from GitHub...');
+      console.log('[Data Load] Fetching traffic datasets...');
       let tmrData = null;
       let goldCoastData = null;
       let brisbaneData = null;
@@ -8803,20 +9067,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (requestedScope === 'NSW') {
         setLoadingState('Downloading live records...', 'Fetching NSW 2026 traffic feed.', 42);
         [nswData2026, nswDataLegacy] = await Promise.all([
-          fetchDatasetWithFallback(FIREBASE_NSW_2026_URL, GITHUB_NSW_2026_URL, ['./nsw_2026.geojson', './NSW/nsw_2026.geojson'], 'NSW 2026'),
-          fetchDatasetWithFallback(FIREBASE_NSW_TNSW_URL, GITHUB_NSW_TNSW_URL, ['./tnsw.geojson', './NSW/latest_nsw_traffic_volume.geojson', './NSW/nsw.geojson'], 'NSW Legacy')
+          fetchDatasetWithFallback(FIREBASE_NSW_2026_URL, GITHUB_NSW_2026_URL, ['./datasets/NSW/nsw_2026.geojson'], 'NSW 2026'),
+          fetchDatasetWithFallback(FIREBASE_NSW_TNSW_URL, GITHUB_NSW_TNSW_URL, ['./datasets/NSW/nsw.geojson', './datasets/NSW/tnsw.geojson'], 'NSW Legacy')
         ]);
         setLoadingState('Downloading live records...', 'Fetched NSW traffic feeds.', 68);
       } else {
         setLoadingState('Downloading live records...', 'Fetching Queensland traffic feeds.', 42);
         [tmrData, goldCoastData, brisbaneData, ipswichData, loganData, toowoombaData, tewantinData] = await Promise.all([
-          fetchDatasetWithFallback(FIREBASE_TMR_URL, GITHUB_TMR_URL, ['./tmr.geojson', './QLD/tmr.geojson'], 'TMR'),
-          fetchDatasetWithFallback(FIREBASE_GOLDCOAST_URL, GITHUB_GOLDCOAST_URL, ['./goldcoast.geojson', './QLD/goldcoast.geojson'], 'Gold Coast'),
-          fetchDatasetWithFallback(FIREBASE_BRISBANE_URL, GITHUB_BRISBANE_URL, ['./Brisbane.geojson', './QLD/Brisbane.geojson'], 'Brisbane'),
-          fetchDatasetWithFallback(FIREBASE_IPSWICH_URL, GITHUB_IPSWICH_URL, ['./Ipswich.geojson', './QLD/Ipswich.geojson'], 'Ipswich'),
-          fetchDatasetWithFallback(FIREBASE_LOGAN_URL, GITHUB_LOGAN_URL, ['./logan.geojson', './QLD/logan.geojson'], 'Logan'),
-          fetchDatasetWithFallback(FIREBASE_TOOWOOMBA_URL, GITHUB_TOOWOOMBA_URL, ['./toowoomba.geojson', './QLD/toowoomba.geojson'], 'Toowoomba'),
-          fetchDatasetWithFallback(FIREBASE_TEWANTIN_URL, GITHUB_TEWANTIN_URL, ['./tewantin.geojson'], 'Tewantin')
+          fetchDatasetWithFallback(FIREBASE_TMR_URL, GITHUB_TMR_URL, ['./datasets/QLD/tmr.geojson'], 'TMR'),
+          fetchDatasetWithFallback(FIREBASE_GOLDCOAST_URL, GITHUB_GOLDCOAST_URL, ['./datasets/QLD/goldcoast.geojson'], 'Gold Coast'),
+          fetchDatasetWithFallback(FIREBASE_BRISBANE_URL, GITHUB_BRISBANE_URL, ['./datasets/QLD/brisbane.geojson'], 'Brisbane'),
+          fetchDatasetWithFallback(FIREBASE_IPSWICH_URL, GITHUB_IPSWICH_URL, ['./datasets/QLD/ipswich.geojson'], 'Ipswich'),
+          fetchDatasetWithFallback(FIREBASE_LOGAN_URL, GITHUB_LOGAN_URL, ['./datasets/QLD/logan.geojson'], 'Logan'),
+          fetchDatasetWithFallback(FIREBASE_TOOWOOMBA_URL, GITHUB_TOOWOOMBA_URL, ['./datasets/QLD/toowoomba.geojson'], 'Toowoomba'),
+          fetchDatasetWithFallback(FIREBASE_TEWANTIN_URL, GITHUB_TEWANTIN_URL, ['./datasets/QLD/tewantin.geojson'], 'Tewantin')
         ]);
         setLoadingState('Downloading live records...', 'Fetched Queensland traffic feeds.', 66);
       }
@@ -8825,7 +9089,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const tmrSites = tmrData ? parseMacroTrafficData(tmrData, 'TMR') : {};
       const goldCoastSites = goldCoastData ? parseMacroTrafficData(goldCoastData, 'Gold Coast') : {};
       const brisbaneSites = brisbaneData ? parseMacroTrafficData(brisbaneData, 'Brisbane') : {};
-      const ipswichSites = ipswichData ? parseMacroTrafficData(ipswichData, 'Ipswich') : (console.warn('ipswichData is null/falsy'), {});
+      const ipswichSites = ipswichData ? parseMacroTrafficData(ipswichData, 'Ipswich') : (console.warn('[Data Load] Ipswich dataset unavailable; continuing with remaining sources.'), {});
       const loganSites = loganData ? parseMacroTrafficData(loganData, 'Logan') : {};
       const toowoomSites = toowoombaData ? parseMacroTrafficData(toowoombaData, 'Toowoomba') : {};
       const tewantinSites = tewantinData ? parseMacroTrafficData(tewantinData, 'Tewantin') : {};
@@ -9970,6 +10234,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     statusEl.style.color = isError ? '#b71c1c' : '#0d47a1';
   }
 
+  // Render error into #quickTiaError using textContent (not innerHTML) so
+  // error.message cannot inject HTML/script.
+  function renderQuickTiaErrorBanner(prefix, errOrReason) {
+    const errEl = document.getElementById('quickTiaError');
+    if (!errEl) return;
+    const detail = errOrReason && errOrReason.message
+      ? errOrReason.message
+      : String(errOrReason != null ? errOrReason : '');
+    errEl.textContent = '';
+    const strong = document.createElement('strong');
+    strong.textContent = String(prefix || '');
+    errEl.appendChild(strong);
+    if (detail) {
+      errEl.appendChild(document.createTextNode(' ' + detail));
+    }
+    errEl.style.display = 'block';
+  }
+
   async function ensureSelectedStateDataLoaded(showOverlay = true) {
     const stateScope = getQuickTiaSelectedState();
     if (loadedDataScope === stateScope && Object.keys(baseMacroSitesData || {}).length > 0) {
@@ -10506,20 +10788,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       try {
         await ensureSelectedStateDataLoaded(true);
       } catch (err) {
-        const errEl = document.getElementById('quickTiaError');
-        if (errEl) {
-          errEl.innerHTML = `<strong>❌ Could not load ${getQuickTiaSelectedState()} database:</strong> ${String(err && err.message ? err.message : err)}`;
-          errEl.style.display = 'block';
-        }
+        renderQuickTiaErrorBanner(`❌ Could not load ${getQuickTiaSelectedState()} database:`, err);
         return;
       }
       Promise.resolve(fn()).catch(err => {
         console.error(err);
-        const errEl = document.getElementById('quickTiaError');
-        if (errEl) {
-          errEl.innerHTML = `<strong>❌ Search failed:</strong> ${String(err && err.message ? err.message : err)}`;
-          errEl.style.display = 'block';
-        }
+        renderQuickTiaErrorBanner('❌ Search failed:', err);
       });
     };
 
@@ -10540,11 +10814,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           updateQuickTiaStateStatus(`Current database: ${label}`);
         } catch (err) {
           updateQuickTiaStateStatus(`Failed to load ${label} database`, true);
-          const errEl = document.getElementById('quickTiaError');
-          if (errEl) {
-            errEl.innerHTML = `<strong>❌ Database switch failed:</strong> ${String(err && err.message ? err.message : err)}`;
-            errEl.style.display = 'block';
-          }
+          renderQuickTiaErrorBanner('❌ Database switch failed:', err);
         }
       });
     }
@@ -10610,8 +10880,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         return;
       }
       console.error('Unhandled promise rejection:', ev.reason);
-      const errEl = document.getElementById('quickTiaError');
-      if (errEl) { errEl.innerHTML = `<strong>❌ Unexpected error:</strong> ${String(ev.reason && ev.reason.message ? ev.reason.message : ev.reason)}`; errEl.style.display = 'block'; }
+      renderQuickTiaErrorBanner('❌ Unexpected error:', ev.reason);
       try { ev.preventDefault(); } catch (_) {}
     });
 
@@ -11104,29 +11373,42 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d1 = Math.max(1, num('D1_Lanes'));
     const d2 = Math.max(1, num('D2_Lanes'));
     const maxLanes = Math.max(d1, d2);
+    const laneSignature = `${d1}|${d2}`;
     const wrap = document.getElementById('laneClosureModeWrap');
     const selectEl = document.getElementById('laneClosureCount');
     if (!wrap || !selectEl) return;
+    const lanesChanged = selectEl.dataset.lastLaneSignature !== laneSignature;
+    selectEl.dataset.lastLaneSignature = laneSignature;
 
     const allowContraflow = d1 >= 2 && d2 >= 2;
-    const show = maxLanes > 2 || allowContraflow;
+    const show = maxLanes > 1 || allowContraflow;
     wrap.style.display = show ? '' : 'none';
 
     const twoLaneOption = selectEl.querySelector('option[value="2"]');
+    const singleLaneOption = selectEl.querySelector('option[value="1"]');
+    const contraflowOption = selectEl.querySelector('option[value="contraflow"]');
+
+    // Keep option order predictable for users: 1 lane, 2 lanes, then contraflow.
+    [singleLaneOption, twoLaneOption, contraflowOption].filter(Boolean).forEach(opt => selectEl.appendChild(opt));
+
     if (twoLaneOption) {
-      const allowTwo = maxLanes > 3;
+      const allowTwo = maxLanes > 1;
       twoLaneOption.disabled = !allowTwo;
-      twoLaneOption.textContent = allowTwo ? 'Two Lane Closure' : 'Two Lane Closure (requires >3 lanes)';
+      twoLaneOption.textContent = allowTwo ? 'Two Lane Closure' : 'Two Lane Closure (requires >=2 lanes)';
       if (!allowTwo && Number(selectEl.value) === 2) selectEl.value = '1';
     }
 
-    const contraflowOption = selectEl.querySelector('option[value="contraflow"]');
     if (contraflowOption) {
       contraflowOption.disabled = !allowContraflow;
       contraflowOption.textContent = allowContraflow
         ? 'Contraflow (1 lane each direction)'
         : 'Contraflow (requires ≥2 lanes each direction)';
       if (!allowContraflow && selectEl.value === 'contraflow') selectEl.value = '1';
+    }
+
+    // After lane-count edits, default back to the safest/common mode.
+    if (lanesChanged && show) {
+      selectEl.value = '1';
     }
   }
 
@@ -14249,8 +14531,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d2OpenLaneExpr = d2Metrics.lanes > 1 ? `${d2Metrics.lanes} - ${d2Metrics.lanes - d2OpenLanes}` : '1';
     const selectedClosureCount = getSelectedLaneClosureCount();
     const contraflowSelected = isContraflowMode();
-    const d1CloseScenarios = Array.from({ length: Math.max(0, d1Metrics.lanes - 1) }, (_, i) => ({ closureCount: i + 1, openLanes: d1Metrics.lanes - i - 1, values: {}, formulas: {} }));
-    const d2CloseScenarios = Array.from({ length: Math.max(0, d2Metrics.lanes - 1) }, (_, i) => ({ closureCount: i + 1, openLanes: d2Metrics.lanes - i - 1, values: {}, formulas: {} }));
+    const buildCloseScenarios = (directionLanes) => {
+      const lanes = Math.max(1, Number(directionLanes) || 1);
+      if (lanes <= 1) return [];
+      const maxClosureCount = 2;
+      return Array.from({ length: Math.max(0, maxClosureCount) }, (_, i) => {
+        const closureCount = i + 1;
+        const openLanes = Math.max(1, lanes - closureCount);
+        return { closureCount, openLanes, values: {}, formulas: {} };
+      });
+    };
+    const d1CloseScenarios = buildCloseScenarios(d1Metrics.lanes);
+    const d2CloseScenarios = buildCloseScenarios(d2Metrics.lanes);
     const formatClosureScenarioLabel = (closureCount, openLanes, { includeOpen = true } = {}) => {
       const genericLabel = closureCount === 1
         ? `1 Lane Closed${includeOpen ? ` (${openLanes} open)` : ''}`
@@ -14517,23 +14809,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           <tr><td class="rowhead">Per 15 minutes Length (m)</td>${'<td>N/A</td>'.repeat(4)}<td>-</td></tr>
         `;
       } else {
-        // Closure scenario comparison rows: show scaled Per 5 min queue for each possible closure count
-        const d2QScaleFactor = d2Metrics.lanes > 1 ? (d2Metrics.lanes / d2OpenLanes) : 1;
-        const queueScenRowsD2 = d2CloseScenarios.map(sc => {
-          const isSel = sc.closureCount === selectedClosureCount;
-          const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
-          const sf = d2Metrics.lanes / sc.openLanes;
-          return { label: isSel ? `★ ${scenLbl} — Per 5 min` : `${scenLbl} — Per 5 min`, values: ['AM','OP','PM','EV'].map(p => (queuePeriodD2[p].q5 || 0) * sf), highlighted: isSel };
-        });
-        const queueFallbackD2 = d2CloseScenarios.length === 0 ? [{ label: 'Per 5 min (SLRF — 1 lane)', values: ['AM','OP','PM','EV'].map(k => queuePeriodD2[k].q5) }] : [];
-        const queueRowsD2 = [
-          ...queueScenRowsD2,
-          ...queueFallbackD2,
-          { label: 'Per 2 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD2[k].q2 || 0) * d2QScaleFactor) },
-          { label: 'Per 5 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD2[k].q5 || 0) * d2QScaleFactor) },
-          { label: 'Per 10 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD2[k].q10 || 0) * d2QScaleFactor) },
-          { label: 'Per 15 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD2[k].q15 || 0) * d2QScaleFactor) }
+        // Closure scenario comparison rows: show scaled queue for each closure count and duration.
+        const queueDurations = [
+          { key: 'q2', label: 'Per 2 min' },
+          { key: 'q5', label: 'Per 5 min' },
+          { key: 'q10', label: 'Per 10 min' },
+          { key: 'q15', label: 'Per 15 min' }
         ];
+        const queueRowsD2 = d2CloseScenarios.length > 0
+          ? queueDurations.flatMap(duration => d2CloseScenarios.map(sc => {
+              const isSel = sc.closureCount === selectedClosureCount;
+              const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
+              const sf = d2Metrics.lanes / sc.openLanes;
+              return {
+                label: isSel ? `★ ${scenLbl} — ${duration.label}` : `${scenLbl} — ${duration.label}`,
+                values: ['AM','OP','PM','EV'].map(p => (queuePeriodD2[p][duration.key] || 0) * sf),
+                highlighted: isSel
+              };
+            }))
+          : queueDurations.map(duration => ({
+              label: `${duration.label} (SLRF — 1 lane)`,
+              values: ['AM','OP','PM','EV'].map(k => queuePeriodD2[k][duration.key] || 0)
+            }));
 
         queueGroupedBodyD2.innerHTML = queueRowsD2.map(row => {
           const maxQueue = Math.max(...row.values);
@@ -14568,23 +14865,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           <tr><td class="rowhead">Per 15 minutes Length (m)</td>${'<td>N/A</td>'.repeat(4)}<td>-</td></tr>
         `;
       } else {
-        // Closure scenario comparison rows: show scaled Per 5 min queue for each possible closure count
-        const d1QScaleFactor = d1Metrics.lanes > 1 ? (d1Metrics.lanes / d1OpenLanes) : 1;
-        const queueScenRowsD1 = d1CloseScenarios.map(sc => {
-          const isSel = sc.closureCount === selectedClosureCount;
-          const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
-          const sf = d1Metrics.lanes / sc.openLanes;
-          return { label: isSel ? `★ ${scenLbl} — Per 5 min` : `${scenLbl} — Per 5 min`, values: ['AM','OP','PM','EV'].map(p => (queuePeriodD1[p].q5 || 0) * sf), highlighted: isSel };
-        });
-        const queueFallbackD1 = d1CloseScenarios.length === 0 ? [{ label: 'Per 5 min (SLRF — 1 lane)', values: ['AM','OP','PM','EV'].map(k => queuePeriodD1[k].q5) }] : [];
-        const queueRowsD1 = [
-          ...queueScenRowsD1,
-          ...queueFallbackD1,
-          { label: 'Per 2 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD1[k].q2 || 0) * d1QScaleFactor) },
-          { label: 'Per 5 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD1[k].q5 || 0) * d1QScaleFactor) },
-          { label: 'Per 10 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD1[k].q10 || 0) * d1QScaleFactor) },
-          { label: 'Per 15 min', values: ['AM','OP','PM','EV'].map(k => (queuePeriodD1[k].q15 || 0) * d1QScaleFactor) }
+        // Closure scenario comparison rows: show scaled queue for each closure count and duration.
+        const queueDurations = [
+          { key: 'q2', label: 'Per 2 min' },
+          { key: 'q5', label: 'Per 5 min' },
+          { key: 'q10', label: 'Per 10 min' },
+          { key: 'q15', label: 'Per 15 min' }
         ];
+        const queueRowsD1 = d1CloseScenarios.length > 0
+          ? queueDurations.flatMap(duration => d1CloseScenarios.map(sc => {
+              const isSel = sc.closureCount === selectedClosureCount;
+              const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
+              const sf = d1Metrics.lanes / sc.openLanes;
+              return {
+                label: isSel ? `★ ${scenLbl} — ${duration.label}` : `${scenLbl} — ${duration.label}`,
+                values: ['AM','OP','PM','EV'].map(p => (queuePeriodD1[p][duration.key] || 0) * sf),
+                highlighted: isSel
+              };
+            }))
+          : queueDurations.map(duration => ({
+              label: `${duration.label} (SLRF — 1 lane)`,
+              values: ['AM','OP','PM','EV'].map(k => queuePeriodD1[k][duration.key] || 0)
+            }));
 
         queueGroupedBodyD1.innerHTML = queueRowsD1.map(row => {
           const maxQueue = Math.max(...row.values);
@@ -20880,7 +21182,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     if (isSlrfMode) {
       const combinedVcr = new Array(24).fill(0).map((_, h) => {
-        const fromWorst = Number.isFinite(Number(hourlyWorstVcr && hourlyWorstVcr[h])) ? Number(hourlyWorstVcr[h]) : null;
+        const fromWorst = (hourlyWorstVcr && Number.isFinite(Number(hourlyWorstVcr[h]))) ? Number(hourlyWorstVcr[h]) : null;
         if (Number.isFinite(fromWorst)) return fromWorst;
         const vol1 = Number(gazData[h]) || 0;
         const vol2 = Number(agData[h]) || 0;
@@ -20901,14 +21203,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     const d1VcrByHour = new Array(24).fill(0).map((_, h) => {
-      const fromChart = Number.isFinite(Number(hourlyD1Work && hourlyD1Work[h])) ? Number(hourlyD1Work[h]) : null;
+      const fromChart = (hourlyD1Work && Number.isFinite(Number(hourlyD1Work[h]))) ? Number(hourlyD1Work[h]) : null;
       if (Number.isFinite(fromChart)) return fromChart;
       const vol1 = Number(gazData[h]) || 0;
       return d1Lanes > 1 ? ((vol1 / getEffectiveOpenLanes(d1Lanes)) / dv1) : (vol1 / dv1);
     });
 
     const d2VcrByHour = new Array(24).fill(0).map((_, h) => {
-      const fromChart = Number.isFinite(Number(hourlyD2Work && hourlyD2Work[h])) ? Number(hourlyD2Work[h]) : null;
+      const fromChart = (hourlyD2Work && Number.isFinite(Number(hourlyD2Work[h]))) ? Number(hourlyD2Work[h]) : null;
       if (Number.isFinite(fromChart)) return fromChart;
       const vol2 = Number(agData[h]) || 0;
       return d2Lanes > 1 ? ((vol2 / getEffectiveOpenLanes(d2Lanes)) / dv2) : (vol2 / dv2);

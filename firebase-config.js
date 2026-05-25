@@ -11,12 +11,14 @@
 // ============================================================
 
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyD1CbyfAwsC-rSLsIEByt_otA22RNR0mBE",
-  authDomain:        "traffic-impact-assessment.firebaseapp.com",
-  databaseURL:       "https://traffic-impact-assessment-default-rtdb.firebaseio.com",
-  projectId:         "traffic-impact-assessment",
-  storageBucket:     "traffic-impact-assessment.firebasestorage.app",
-  messagingSenderId: "875501083841",
-  appId:             "1:875501083841:web:01a65b38ce287c90250840",
-  measurementId:     "G-TGCDCJB66J"
+  apiKey:            "AIzaSyA8_CBlh3dCbjxn6A3jO_6MxgRr78o4oWo",
+  authDomain:        "crompton-apps.firebaseapp.com",
+  // NOTE: Enable Realtime Database in the Firebase console, then verify this URL.
+  // Default RTDB URL format: https://<project-id>-default-rtdb.firebaseio.com
+  databaseURL:       "https://crompton-apps-default-rtdb.firebaseio.com",
+  projectId:         "crompton-apps",
+  storageBucket:     "crompton-apps.firebasestorage.app",
+  messagingSenderId: "896651039604",
+  appId:             "1:896651039604:web:87d8321762c1b7acd11221",
+  measurementId:     "G-DGNYLXYL3L"
 };

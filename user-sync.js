@@ -19,6 +19,13 @@
 
   let _db          = null;
   let _syncEnabled = false;
+  let _permissionDeniedLogged = false;
+
+  function _isPermissionDenied(err) {
+    const code = String((err && err.code) || '').toLowerCase();
+    const msg = String((err && err.message) || '').toLowerCase();
+    return code.includes('permission-denied') || msg.includes('permission denied');
+  }
 
   // ── Initialise ────────────────────────────────────────────────────────────
   function _init() {
@@ -90,7 +97,14 @@
 
       return true;
     } catch (err) {
-      console.warn('[TIASync] pullAll failed:', err.message);
+      if (_isPermissionDenied(err)) {
+        if (!_permissionDeniedLogged) {
+          console.info('[TIASync] pullAll skipped: current Firebase rules do not allow this read in the active session.');
+          _permissionDeniedLogged = true;
+        }
+      } else {
+        console.warn('[TIASync] pullAll failed:', err.message);
+      }
       return false;
     }
   }
