@@ -17246,7 +17246,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lon: Number(s.longitude),
       roadName: String(s.road_name || s.description || '').trim(),
       roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && isWithinBoundingBox(s.lat, s.lon, pLat, pLon, localCounterMatchRadiusMeters) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -17875,7 +17875,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
       lat: Number(site && site.latitude),
       lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && isWithinBoundingBox(item.lat, item.lon, pLat, pLon, localCounterMatchRadiusMeters) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
@@ -19699,6 +19699,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   
+  // Fast spatial bounding box pre-filter
+  // O(1) mathematical bounds check before executing computationally expensive O(N) Haversine iterations
+  function isWithinBoundingBox(lat, lon, centerLat, centerLon, radiusMeters) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(centerLat) || !Number.isFinite(centerLon)) return false;
+    const R = 6371000;
+    const paddedRadius = radiusMeters * 1.01; // 1% padding to avoid edge-case false negatives
+    const dLat = (paddedRadius / R) * (180 / Math.PI);
+
+    if (Math.abs(lat - centerLat) > dLat) return false;
+
+    // Guard against division by zero near poles
+    const cosLat = Math.max(Math.abs(Math.cos(centerLat * Math.PI / 180)), 0.0001);
+    const dLon = (paddedRadius / (R * cosLat)) * (180 / Math.PI);
+
+    let lonDiff = Math.abs(lon - centerLon);
+    // Handle antimeridian wrapping
+    if (lonDiff > 180) lonDiff = 360 - lonDiff;
+
+    if (lonDiff > dLon) return false;
+
+    return true;
+  }
+
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
