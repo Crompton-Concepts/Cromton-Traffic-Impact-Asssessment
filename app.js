@@ -18782,14 +18782,58 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
-    const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
-      id,
-      data: s,
-      lat: Number(s.latitude),
-      lon: Number(s.longitude),
-      roadName: String(s.road_name || s.description || '').trim(),
-      roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    const dbCandidates = [];
+    if (macroSitesData) {
+      // Pre-calculate spatial bounding box to skip expensive haversine and obj creation
+      const paddedRadius = localCounterMatchRadiusMeters * 1.01;
+      const R = 6371000;
+      const dLat = (paddedRadius / R) * (180 / Math.PI);
+      const pLatRad = pLat * Math.PI / 180;
+      // Guard against division by zero at poles
+      const dLon = (paddedRadius / (R * Math.max(Math.abs(Math.cos(pLatRad)), 0.0001))) * (180 / Math.PI);
+      const minLat = pLat - dLat;
+      const maxLat = pLat + dLat;
+      let minLon = pLon - dLon;
+      let maxLon = pLon + dLon;
+
+      const wrapLon = minLon < -180 || maxLon > 180;
+
+      for (const id in macroSitesData) {
+        if (!Object.prototype.hasOwnProperty.call(macroSitesData, id)) continue;
+        const s = macroSitesData[id];
+        if (primaryIdToSkip && id === primaryIdToSkip) continue;
+
+        const lat = Number(s.latitude);
+        const lon = Number(s.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+        // Bounding box pre-filter
+        if (lat < minLat || lat > maxLat) continue;
+        if (!wrapLon) {
+          if (lon < minLon || lon > maxLon) continue;
+        } else {
+          // Antimeridian wrapping check
+          let inBounds = false;
+          if (minLon < -180 && (lon >= (minLon + 360) || lon <= maxLon)) inBounds = true;
+          else if (maxLon > 180 && (lon >= minLon || lon <= (maxLon - 360))) inBounds = true;
+          if (!inBounds) continue;
+        }
+
+        const roadStd = standardizeRoadName(s.road_name || s.description);
+        if (!roadStd) continue;
+
+        if (haversineDistance(pLat, pLon, lat, lon) <= localCounterMatchRadiusMeters) {
+          dbCandidates.push({
+            id,
+            data: s,
+            lat,
+            lon,
+            roadName: String(s.road_name || s.description || '').trim(),
+            roadStd
+          });
+        }
+      }
+    }
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -19411,14 +19455,58 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
-    const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
-      id,
-      site,
-      roadName: String((site && (site.road_name || site.description)) || '').trim(),
-      roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
-      lat: Number(site && site.latitude),
-      lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    const candidateSites = [];
+    if (macroSitesData) {
+      // Pre-calculate spatial bounding box to skip expensive haversine and obj creation
+      const paddedRadius = localCounterMatchRadiusMeters * 1.01;
+      const R = 6371000;
+      const dLat = (paddedRadius / R) * (180 / Math.PI);
+      const pLatRad = pLat * Math.PI / 180;
+      // Guard against division by zero at poles
+      const dLon = (paddedRadius / (R * Math.max(Math.abs(Math.cos(pLatRad)), 0.0001))) * (180 / Math.PI);
+      const minLat = pLat - dLat;
+      const maxLat = pLat + dLat;
+      let minLon = pLon - dLon;
+      let maxLon = pLon + dLon;
+
+      const wrapLon = minLon < -180 || maxLon > 180;
+
+      for (const id in macroSitesData) {
+        if (!Object.prototype.hasOwnProperty.call(macroSitesData, id)) continue;
+        const site = macroSitesData[id];
+        if (!site) continue;
+
+        const lat = Number(site.latitude);
+        const lon = Number(site.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+        // Bounding box pre-filter
+        if (lat < minLat || lat > maxLat) continue;
+        if (!wrapLon) {
+          if (lon < minLon || lon > maxLon) continue;
+        } else {
+          // Antimeridian wrapping check
+          let inBounds = false;
+          if (minLon < -180 && (lon >= (minLon + 360) || lon <= maxLon)) inBounds = true;
+          else if (maxLon > 180 && (lon >= minLon || lon <= (maxLon - 360))) inBounds = true;
+          if (!inBounds) continue;
+        }
+
+        const roadStd = standardizeRoadName((site.road_name || site.description) || '');
+        if (!roadStd) continue;
+
+        if (haversineDistance(pLat, pLon, lat, lon) <= localCounterMatchRadiusMeters) {
+          candidateSites.push({
+            id,
+            site,
+            roadName: String(site.road_name || site.description || '').trim(),
+            roadStd,
+            lat,
+            lon
+          });
+        }
+      }
+    }
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
