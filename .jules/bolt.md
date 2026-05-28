@@ -1,0 +1,3 @@
+## 2025-05-28 - [Performance] Spatial Pre-Filtering Bounding Boxes
+**Learning:** Computing haversine distances in large map dataset loops is a significant bottleneck. When implementing spatial bounding box filters to pre-filter coordinates before calculating true distance, applying limits to unbounded global searches can cause false negatives. Always verify that bounding boxes are only applied to explicitly bounded search ranges, and remember to pad bounds by 1% to account for float inaccuracy.
+**Action:** When working on spatial datasets in Javascript, refactor expensive chained `.map().filter()` calls into single `.reduce()` loops, using cheap bounding box subtraction to cull points before running expensive trigonometric functions.
