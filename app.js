@@ -18782,6 +18782,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
+    // ⚡ Bolt Optimization: Fast spatial bounding box pre-filter to bypass expensive haversine calculations
+    const maxRadiusMeters1 = localCounterMatchRadiusMeters * 1.01; // 1% padding to prevent edge case false negatives
+    const dLatDeg1 = (maxRadiusMeters1 / 6371000) * (180 / Math.PI);
+    const minLat1 = pLat - dLatDeg1;
+    const maxLat1 = pLat + dLatDeg1;
+    // Guard against division by zero near the poles
+    const dLonDeg1 = (maxRadiusMeters1 / (6371000 * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+
     const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
       id,
       data: s,
@@ -18789,7 +18797,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lon: Number(s.longitude),
       roadName: String(s.road_name || s.description || '').trim(),
       roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    })).filter(s => {
+      if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon) || !s.roadStd) return false;
+      if (primaryIdToSkip && s.id === primaryIdToSkip) return false;
+      if (s.lat < minLat1 || s.lat > maxLat1) return false;
+      if (dLonDeg1 < 180) {
+        let lonDiff = Math.abs(s.lon - pLon);
+        if (lonDiff > 180) lonDiff = 360 - lonDiff;
+        if (lonDiff > dLonDeg1) return false;
+      }
+      return haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -19411,6 +19429,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
+    // ⚡ Bolt Optimization: Fast spatial bounding box pre-filter to bypass expensive haversine calculations
+    const maxRadiusMeters2 = localCounterMatchRadiusMeters * 1.01; // 1% padding
+    const dLatDeg2 = (maxRadiusMeters2 / 6371000) * (180 / Math.PI);
+    const minLat2 = pLat - dLatDeg2;
+    const maxLat2 = pLat + dLatDeg2;
+    // Guard against division by zero near the poles
+    const dLonDeg2 = (maxRadiusMeters2 / (6371000 * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+
     const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
       id,
       site,
@@ -19418,7 +19444,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
       lat: Number(site && site.latitude),
       lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    })).filter(item => {
+      if (!item.roadStd || !Number.isFinite(item.lat) || !Number.isFinite(item.lon)) return false;
+      if (item.lat < minLat2 || item.lat > maxLat2) return false;
+      if (dLonDeg2 < 180) {
+        let lonDiff = Math.abs(item.lon - pLon);
+        if (lonDiff > 180) lonDiff = 360 - lonDiff;
+        if (lonDiff > dLonDeg2) return false;
+      }
+      return haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
