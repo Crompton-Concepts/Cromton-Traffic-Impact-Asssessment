@@ -567,7 +567,7 @@
       <div style="display: grid; grid-template-columns: 1fr 180px; gap: 12px; margin-bottom: 12px;">
         <div>
           <input type="text" id="quickTiaInput" list="quickTiaHistoryList" placeholder="eg. Brisbane Road, Bellbird Park, Rockhampton" 
-                 style="width: 100%; border: 2px solid #1976d2; padding: 10px; border-radius: 4px; font-size: 1em;" />
+                 aria-label="Search for a location or street name" style="width: 100%; border: 2px solid #1976d2; padding: 10px; border-radius: 4px; font-size: 1em;" />
           <datalist id="quickTiaHistoryList"></datalist>
           <p class="field-help" style="color:#0d47a1;">Tip: Include suburb/city to improve geocoding reliability and speed.</p>
              <p id="quickTiaTypingStatus" style="display:none; margin: 4px 0 0 0; font-size: 0.82em; color: #1565c0;">Searching suggestions...</p>
@@ -859,7 +859,7 @@
             <button type="button" id="customDataClearBtn" style="width: auto; margin: 0; padding: 6px 10px; font-size: 0.85em; background: #9e9e9e; box-shadow: none;">Clear Custom Uploads</button>
           </div>
           <div id="customDataUploadStatus" style="font-size: 0.76em; color: #2e7d32; margin: 0 0 8px 0;">No custom upload loaded.</div>
-          <input type="text" id="macroSiteSearch" list="macroSitesList" placeholder="Type Site ID or Name to autofill..." style="border: 2px solid #4caf50; background-color: #f0fdf4;" />
+          <input type="text" id="macroSiteSearch" list="macroSitesList" aria-label="Search and select site from database" placeholder="Type Site ID or Name to autofill..." style="border: 2px solid #4caf50; background-color: #f0fdf4;" />
           <datalist id="macroSitesList"></datalist>
           <p style="font-size: 0.75em; color: #666; margin-top: 6px;">Or manually enter VADT & parameters below</p>
         </div>
