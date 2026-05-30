@@ -1,0 +1,3 @@
+## 2025-02-28 - [Spatial Pre-filtering Optimization]
+**Learning:** [In vanilla JavaScript applications processing large GeoJSON datasets, iterating with `.map().filter()` over spatial data and applying the Haversine formula to every point is highly inefficient due to intermediate object allocation and expensive trig functions. Utilizing spatial bounding boxes (calculating min/max Lat and Lon) allows for O(1) mathematical exclusion of points before running the Haversine formula.]
+**Action:** [Next time I see `.map().filter()` processing spatial datasets, I should refactor to a single `.reduce()` step and implement bounding box limits (with antimeridian and pole safety guards) to skip unnecessary trig calculations and allocations.]
