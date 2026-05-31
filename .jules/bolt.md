@@ -1,0 +1,3 @@
+## 2025-05-31 - [Spatial Pre-filtering Optimization]
+**Learning:** In frontend spatial operations (like iterating over large datasets such as `macroSitesData`), relying on `.map().filter()` combined with the computationally expensive Haversine formula is a significant performance bottleneck due to excessive intermediate array allocations and trig math overhead.
+**Action:** When filtering spatial objects within a known radius, dynamically calculate a bounding box (`dLat`, `dLon`) and combine it with `Object.keys().reduce()` to quickly filter out out-of-bounds items before calling the Haversine function. This avoids unnecessary O(N) calculations and allocations.
