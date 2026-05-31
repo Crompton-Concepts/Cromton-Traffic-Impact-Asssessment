@@ -18782,14 +18782,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
-    const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
-      id,
-      data: s,
-      lat: Number(s.latitude),
-      lon: Number(s.longitude),
-      roadName: String(s.road_name || s.description || '').trim(),
-      roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    // ⚡ Bolt: Fast spatial pre-filtering using bounding box & single-pass reduce to avoid map/filter overhead
+    const dbCandidates = (() => {
+      const R = 6371000;
+      const rMeters = localCounterMatchRadiusMeters * 1.01;
+      const dLat = (rMeters / R) * (180 / Math.PI);
+      const dLon = (rMeters / (R * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+
+      return Object.keys(macroSitesData).reduce((acc, id) => {
+        if (primaryIdToSkip && id === primaryIdToSkip) return acc;
+        const s = macroSitesData[id];
+        const lat = Number(s.latitude);
+        const lon = Number(s.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return acc;
+
+        if (Math.abs(lat - pLat) <= dLat) {
+          let diffLon = Math.abs(lon - pLon);
+          if (diffLon > 180) diffLon = 360 - diffLon;
+          if (diffLon <= dLon) {
+            const roadStd = standardizeRoadName(s.road_name || s.description);
+            if (roadStd && haversineDistance(pLat, pLon, lat, lon) <= localCounterMatchRadiusMeters) {
+              acc.push({
+                id,
+                data: s,
+                lat,
+                lon,
+                roadName: String(s.road_name || s.description || '').trim(),
+                roadStd
+              });
+            }
+          }
+        }
+        return acc;
+      }, []);
+    })();
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -19411,14 +19437,40 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
-    const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
-      id,
-      site,
-      roadName: String((site && (site.road_name || site.description)) || '').trim(),
-      roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
-      lat: Number(site && site.latitude),
-      lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    // ⚡ Bolt: Fast spatial pre-filtering using bounding box & single-pass reduce to avoid map/filter overhead
+    const candidateSites = (() => {
+      const data = macroSitesData || {};
+      const R = 6371000;
+      const rMeters = localCounterMatchRadiusMeters * 1.01;
+      const dLat = (rMeters / R) * (180 / Math.PI);
+      const dLon = (rMeters / (R * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+
+      return Object.keys(data).reduce((acc, id) => {
+        const site = data[id];
+        const lat = Number(site && site.latitude);
+        const lon = Number(site && site.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return acc;
+
+        if (Math.abs(lat - pLat) <= dLat) {
+          let diffLon = Math.abs(lon - pLon);
+          if (diffLon > 180) diffLon = 360 - diffLon;
+          if (diffLon <= dLon) {
+            const roadStd = standardizeRoadName((site && (site.road_name || site.description)) || '');
+            if (roadStd && haversineDistance(pLat, pLon, lat, lon) <= localCounterMatchRadiusMeters) {
+              acc.push({
+                id,
+                site,
+                roadName: String((site && (site.road_name || site.description)) || '').trim(),
+                roadStd,
+                lat,
+                lon
+              });
+            }
+          }
+        }
+        return acc;
+      }, []);
+    })();
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
