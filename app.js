@@ -18782,14 +18782,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
-    const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
-      id,
-      data: s,
-      lat: Number(s.latitude),
-      lon: Number(s.longitude),
-      roadName: String(s.road_name || s.description || '').trim(),
-      roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    const paddedRadius1 = localCounterMatchRadiusMeters * 1.01;
+    const latDegreeMeters1 = (Math.PI * 6371000) / 180;
+    const dLatThresh1 = paddedRadius1 / latDegreeMeters1;
+    const dLonThresh1 = paddedRadius1 / (latDegreeMeters1 * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001));
+
+    const dbCandidates = Object.entries(macroSitesData).reduce((acc, [id, s]) => {
+      const lat = Number(s.latitude);
+      const lon = Number(s.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return acc;
+      if (primaryIdToSkip && id === primaryIdToSkip) return acc;
+
+      let dLat = Math.abs(lat - pLat);
+      let dLon = Math.abs(lon - pLon);
+      if (dLon > 180) dLon = 360 - dLon;
+
+      if (dLat > dLatThresh1 || dLon > dLonThresh1) return acc;
+
+      const roadStd = standardizeRoadName(s.road_name || s.description);
+      if (!roadStd) return acc;
+
+      if (haversineDistance(pLat, pLon, lat, lon) <= localCounterMatchRadiusMeters) {
+        acc.push({
+          id,
+          data: s,
+          lat,
+          lon,
+          roadName: String(s.road_name || s.description || '').trim(),
+          roadStd
+        });
+      }
+      return acc;
+    }, []);
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -19411,14 +19435,37 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
-    const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
-      id,
-      site,
-      roadName: String((site && (site.road_name || site.description)) || '').trim(),
-      roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
-      lat: Number(site && site.latitude),
-      lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    const paddedRadius2 = localCounterMatchRadiusMeters * 1.01;
+    const latDegreeMeters2 = (Math.PI * 6371000) / 180;
+    const dLatThresh2 = paddedRadius2 / latDegreeMeters2;
+    const dLonThresh2 = paddedRadius2 / (latDegreeMeters2 * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001));
+
+    const candidateSites = Object.entries(macroSitesData || {}).reduce((acc, [id, site]) => {
+      const lat = Number(site && site.latitude);
+      const lon = Number(site && site.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return acc;
+
+      let dLat = Math.abs(lat - pLat);
+      let dLon = Math.abs(lon - pLon);
+      if (dLon > 180) dLon = 360 - dLon;
+
+      if (dLat > dLatThresh2 || dLon > dLonThresh2) return acc;
+
+      const roadStd = standardizeRoadName((site && (site.road_name || site.description)) || '');
+      if (!roadStd) return acc;
+
+      if (haversineDistance(pLat, pLon, lat, lon) <= localCounterMatchRadiusMeters) {
+        acc.push({
+          id,
+          site,
+          roadName: String((site && (site.road_name || site.description)) || '').trim(),
+          roadStd,
+          lat,
+          lon
+        });
+      }
+      return acc;
+    }, []);
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];

@@ -1,0 +1,3 @@
+## 2024-06-03 - Spatial Pre-filtering
+**Learning:** Bounding box calculations utilizing standard geometric coordinate projection (`Math.max(..., 0.0001)`) provide a fast, efficient mechanism to pre-filter dense spatial maps in Javascript, sidestepping repetitive heavy sine/cosine computations of haversine algorithms in unbounded `.filter()` paths.
+**Action:** When filtering geographic data arrays by radius, always implement an O(1) rectangular bounding box check (`dLat` and `dLon`) to eliminate out-of-bounds items before passing them to the precise, trigonometric O(n) distance calculation. Combine map+filter into reduce for maximum efficiency.
