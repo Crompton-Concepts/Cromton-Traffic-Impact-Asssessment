@@ -1,0 +1,3 @@
+## 2024-06-11 - [Trigonometric Redundancy in Spatial Loops]
+**Learning:** High-frequency geographic functions like `haversineDistance` and `getBearingDirection` repeatedly calculate static conversion constants (e.g., `Math.PI / 180`) and evaluate redundant trigonometric expressions (e.g., `Math.sin(delta/2) * Math.sin(delta/2)` instead of caching the `Math.sin(delta/2)` result).
+**Action:** Extract repeated calculations into constant variables outside the functions or cache intermediate function results before squaring, significantly reducing the amount of redundant processing in heavily utilized loops.
