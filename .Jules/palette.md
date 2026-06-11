@@ -1,0 +1,3 @@
+## 2024-06-11 - ARIA Labels and FontAwesome Icons Sync Across Templates
+**Learning:** Found multiple FontAwesome icons (`<i class="fa-solid ...">`) lacking `aria-hidden="true"`. Also noted that updates made to `index.html` often need to be replicated in `index_formulas.html` and `index_developer.html` as these templates share common structures and need to be kept in sync, possibly manually via script if powershell is not available.
+**Action:** When adding accessibility attributes like `aria-hidden="true"` to structural UI components in `index.html`, always use a script to apply the same modification to `index_formulas.html` and `index_developer.html`.
