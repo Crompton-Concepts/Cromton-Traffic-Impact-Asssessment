@@ -18782,6 +18782,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
+    // Pre-calculate bounding box thresholds to avoid expensive Haversine calls for distant points
+    const _R = 6371000;
+    const _padMeters = localCounterMatchRadiusMeters * 1.01; // Pad radius by ~1%
+    const _dLatThreshold = (_padMeters / _R) * (180 / Math.PI);
+    const _dLonThreshold = (_padMeters / (_R * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+
     const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
       id,
       data: s,
@@ -18789,7 +18795,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lon: Number(s.longitude),
       roadName: String(s.road_name || s.description || '').trim(),
       roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    })).filter(s => {
+      if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon) || !s.roadStd) return false;
+      if (primaryIdToSkip && s.id === primaryIdToSkip) return false;
+
+      // Fast bounding box pre-check
+      if (Math.abs(s.lat - pLat) > _dLatThreshold) return false;
+      let dLon = Math.abs(s.lon - pLon);
+      if (dLon > 180) dLon = 360 - dLon; // Handle antimeridian wrapping
+      if (dLon > _dLonThreshold) return false;
+
+      return haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -19411,6 +19428,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
+    // Pre-calculate bounding box thresholds to avoid expensive Haversine calls for distant points
+    const _R2 = 6371000;
+    const _padMeters2 = localCounterMatchRadiusMeters * 1.01; // Pad radius by ~1%
+    const _dLatThreshold2 = (_padMeters2 / _R2) * (180 / Math.PI);
+    const _dLonThreshold2 = (_padMeters2 / (_R2 * Math.max(Math.abs(Math.cos(pLat * Math.PI / 180)), 0.0001))) * (180 / Math.PI);
+
     const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
       id,
       site,
@@ -19418,7 +19441,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
       lat: Number(site && site.latitude),
       lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    })).filter(item => {
+      if (!item.roadStd || !Number.isFinite(item.lat) || !Number.isFinite(item.lon)) return false;
+
+      // Fast bounding box pre-check
+      if (Math.abs(item.lat - pLat) > _dLatThreshold2) return false;
+      let dLon = Math.abs(item.lon - pLon);
+      if (dLon > 180) dLon = 360 - dLon; // Handle antimeridian wrapping
+      if (dLon > _dLonThreshold2) return false;
+
+      return haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
