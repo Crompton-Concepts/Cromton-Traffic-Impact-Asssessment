@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -23,28 +23,28 @@
 </head>
 <body class="app-locked input-color-mode formula-mode">
   <button id="exitPreviewBtn" onclick="exitPrintPreview()" title="Exit print preview (Esc)">
-    <i class="fa-solid fa-xmark"></i> Exit Print Preview
+    <i class="fa-solid fa-xmark" aria-hidden="true"></i> Exit Print Preview
   </button>
 
   <!-- Floating Action Bar for Editable Report View -->
   <div id="reportModeBar" class="hide-print" style="display:none; position:fixed; top:0; left:0; width:100%; background:linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%); color:white; padding:8px 14px; z-index:9999; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
     <div class="report-mode-intro" style="display:flex; align-items:center; gap: 15px; flex-wrap:wrap;">
-      <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">â†© Back to Calculation</button>
-      <div style="font-weight:bold; font-size:1.15em; letter-spacing: 0.5px;">ðŸ“ Editable Report View</div>
+      <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">↩ Back to Calculation</button>
+      <div style="font-weight:bold; font-size:1.15em; letter-spacing: 0.5px;">📝 Editable Report View</div>
       <div style="font-size:0.85em; color:#a2d5d8; border-left:1px solid #4a868a; padding-left:15px;">Click inside any commentary box to edit text before printing.</div>
     </div>
     <div class="report-mode-actions">
-      <button class="report-mode-btn" onclick="restoreReportRemovals()" style="background:#1e88e5; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">â†º Restore Removed Sections</button>
+      <button class="report-mode-btn" onclick="restoreReportRemovals()" style="background:#1e88e5; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">↺ Restore Removed Sections</button>
     </div>
   </div>
   <div id="reportModeBottomBar" class="hide-print">
-    <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">â†© Back to Calculation</button>
+    <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">↩ Back to Calculation</button>
     <div class="report-mode-actions">
-      <button class="report-mode-btn" onclick="openAISummaryGenerator()" style="background:#ff6b6b; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">ðŸ¤– AI Summary</button>
-      <button id="printPreviewToggleBtn" class="report-mode-btn" onclick="togglePrintPreview()" style="background:#5e35b1; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">ðŸ‘ï¸ Print Preview</button>
-      <button class="report-mode-btn" onclick="printFinalReport()" style="background:#4caf50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">ðŸ–¨ï¸ Print / Save PDF</button>
+      <button class="report-mode-btn" onclick="openAISummaryGenerator()" style="background:#ff6b6b; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">🤖 AI Summary</button>
+      <button id="printPreviewToggleBtn" class="report-mode-btn" onclick="togglePrintPreview()" style="background:#5e35b1; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">👁️ Print Preview</button>
+      <button class="report-mode-btn" onclick="printFinalReport()" style="background:#4caf50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">🖨️ Print / Save PDF</button>
       <div id="reportShareWrap" class="report-share-wrap">
-        <button class="report-mode-btn" onclick="toggleReportShareMenu()" style="background:#6d4c41; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">ðŸ”— Share Report</button>
+        <button class="report-mode-btn" onclick="toggleReportShareMenu()" style="background:#6d4c41; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">🔗 Share Report</button>
         <div id="reportShareMenu" class="report-share-menu hide-print">
           <div class="report-share-title">Share Final Report</div>
           <button class="report-mode-btn report-share-item" onclick="shareFinalReport('email')">Email Link</button>
@@ -60,12 +60,12 @@
   <div id="aiSummaryModal" class="ai-summary-modal hide-print">
     <div class="ai-summary-content">
       <div class="ai-summary-header">
-        <div class="ai-summary-title">ðŸ¤– AI Report Summary Generator</div>
-        <button class="ai-summary-close" onclick="closeAISummaryModal()" aria-label="Close">Ã—</button>
+        <div class="ai-summary-title">🤖 AI Report Summary Generator</div>
+        <button class="ai-summary-close" onclick="closeAISummaryModal()" aria-label="Close">×</button>
       </div>
       <div class="ai-summary-body">
         <div class="ai-summary-section">
-          <div class="ai-summary-section-title">ðŸ“ Select Summary Type:</div>
+          <div class="ai-summary-section-title">📝 Select Summary Type:</div>
           <div style="margin: 10px 0;">
             <select id="aiSummaryType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
               <option value="executive">Executive Summary</option>
@@ -81,16 +81,16 @@
           <div>Generating summary...</div>
         </div>
         <div class="ai-summary-section">
-          <div class="ai-summary-section-title">âœ¨ Generated Summary:</div>
+          <div class="ai-summary-section-title">✨ Generated Summary:</div>
           <div id="aiSummaryOutput" class="ai-summary-output" contenteditable="true">Click "Generate Summary" to create an AI-powered summary based on your traffic impact assessment data.</div>
         </div>
         <div class="ai-summary-actions">
-          <button class="ai-summary-btn primary" onclick="generateAISummary()">âœ¨ Generate Summary</button>
-          <button class="ai-summary-btn secondary" onclick="copyAISummaryToClipboard()">ðŸ“‹ Copy to Clipboard</button>
-          <button class="ai-summary-btn secondary" onclick="insertAISummaryToReport()">ðŸ“„ Insert into Report</button>
+          <button class="ai-summary-btn primary" onclick="generateAISummary()">✨ Generate Summary</button>
+          <button class="ai-summary-btn secondary" onclick="copyAISummaryToClipboard()">📋 Copy to Clipboard</button>
+          <button class="ai-summary-btn secondary" onclick="insertAISummaryToReport()">📄 Insert into Report</button>
         </div>
         <div style="margin-top: 16px; padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px; font-size: 0.9em;">
-          <strong>ðŸ’¡ Tip:</strong> The summary is editable. Click inside the text area to customize it before copying or inserting.
+          <strong>💡 Tip:</strong> The summary is editable. Click inside the text area to customize it before copying or inserting.
         </div>
       </div>
     </div>
@@ -125,22 +125,22 @@
         <p class="loading-funny-comment" id="loadingFunnyComment">Traffic control says the coffee truck can pass after one more cycle.</p>
         <div class="loading-funny-road-wrap">
           <div class="loading-funny-road"></div>
-          <div class="loading-funny-cone c1">ðŸš§</div>
-          <div class="loading-funny-cone c2">ðŸš§</div>
-          <div class="loading-funny-cone c3">ðŸš§</div>
-          <div class="loading-funny-cone c4">ðŸš§</div>
+          <div class="loading-funny-cone c1">🚧</div>
+          <div class="loading-funny-cone c2">🚧</div>
+          <div class="loading-funny-cone c3">🚧</div>
+          <div class="loading-funny-cone c4">🚧</div>
           <div class="loading-funny-controller controller-left">
-            <div class="worker">ðŸ‘·</div>
-            <div class="paddle">ðŸ›‘</div>
+            <div class="worker">👷</div>
+            <div class="paddle">🛑</div>
             <div class="label">Hold</div>
           </div>
           <div class="loading-funny-controller controller-right">
-            <div class="worker">ðŸ‘·</div>
-            <div class="paddle">âœ…</div>
+            <div class="worker">👷</div>
+            <div class="paddle">✅</div>
             <div class="label">Wave</div>
           </div>
-          <div class="loading-funny-truck">ðŸšš</div>
-          <div class="loading-funny-police">ðŸš“</div>
+          <div class="loading-funny-truck">🚚</div>
+          <div class="loading-funny-police">🚓</div>
         </div>
       </div>
     </div>
@@ -156,10 +156,10 @@
           <p class="login-brand-tagline">Professional traffic engineering tools for Queensland &amp; NSW</p>
         </div>
         <ul class="login-brand-features">
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-map-location-dot"></i></span> Live traffic count data</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-calculator"></i></span> Austroads / TMR calculations</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-file-pdf"></i></span> Professional PDF reports</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-chart-line"></i></span> Growth rate &amp; LOS analysis</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i></span> Live traffic count data</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-calculator" aria-hidden="true"></i></span> Austroads / TMR calculations</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></span> Professional PDF reports</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span> Growth rate &amp; LOS analysis</li>
         </ul>
         <p class="login-brand-footer">&copy; 2025 Crompton Concepts</p>
       </div>
@@ -180,7 +180,7 @@
           <div class="login-field-group">
             <label for="loginUser">Username or Email</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
+              <i class="fa-solid fa-user" aria-hidden="true"></i>
               <input id="loginUser" name="loginUser" type="text" placeholder="Enter username or email" autocomplete="username" required />
             </div>
           </div>
@@ -190,13 +190,13 @@
               <a href="#" id="forgotPasswordLink" class="forgot-pw-link">Forgot password?</a>
             </div>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-lock input-icon"></i>
+              <i class="fa-solid fa-lock input-icon" aria-hidden="true"></i>
               <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Sign In</span>
           </button>
           <div id="loginError" class="login-error" aria-live="polite"></div>
@@ -209,38 +209,38 @@
           <div class="login-field-group">
             <label for="newFullName">Full Name</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-id-card"></i>
+              <i class="fa-solid fa-id-card" aria-hidden="true"></i>
               <input id="newFullName" name="newFullName" type="text" placeholder="Your full name" autocomplete="name" />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newUsername">Username</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
+              <i class="fa-solid fa-user" aria-hidden="true"></i>
               <input id="newUsername" name="newUsername" type="text" placeholder="Choose a username" autocomplete="off" required />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newEmail">Email</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-envelope"></i>
+              <i class="fa-solid fa-envelope" aria-hidden="true"></i>
               <input id="newEmail" name="newEmail" type="email" placeholder="your@email.com" autocomplete="email" required />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newPassword">Password <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(min. 8 characters)</span></label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-key input-icon"></i>
+              <i class="fa-solid fa-key input-icon" aria-hidden="true"></i>
               <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
             <label for="newPasswordConfirm">Confirm Password</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-key input-icon"></i>
+              <i class="fa-solid fa-key input-icon" aria-hidden="true"></i>
               <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
@@ -270,7 +270,7 @@
             <input type="hidden" id="selectedTierInput" value="free" />
           </div>
           <button type="submit" class="login-submit-btn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Create Account</span>
           </button>
           <div id="createError" class="login-error" aria-live="polite"></div>
@@ -285,12 +285,12 @@
           <div class="login-field-group">
             <label for="resetEmail">Email Address</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-envelope"></i>
+              <i class="fa-solid fa-envelope" aria-hidden="true"></i>
               <input id="resetEmail" name="resetEmail" type="email" placeholder="your@email.com" required />
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="resetSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Send Reset Link</span>
           </button>
           <button type="button" id="backToSignInBtn" class="login-back-link">Back to Sign In</button>
@@ -306,7 +306,7 @@
   <!-- Upgrade prompt modal -->
   <div id="upgradeModal" role="dialog" aria-modal="true" aria-labelledby="upgradeModalTitle">
     <div class="upgrade-modal-card">
-      <div class="upgrade-modal-icon">ðŸ”’</div>
+      <div class="upgrade-modal-icon">🔒</div>
       <h2 id="upgradeModalTitle" class="upgrade-modal-title">Upgrade Required</h2>
       <p id="upgradeModalDesc" class="upgrade-modal-desc"></p>
       <div class="upgrade-modal-actions">
@@ -328,14 +328,14 @@
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayName">Cardholder Name</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-id-card"></i>
+            <i class="fa-solid fa-id-card" aria-hidden="true"></i>
             <input id="demoPayName" type="text" placeholder="Name on card" autocomplete="off" />
           </div>
         </div>
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayEmail">Billing Email</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-envelope"></i>
+            <i class="fa-solid fa-envelope" aria-hidden="true"></i>
             <input id="demoPayEmail" type="email" placeholder="billing@email.com" autocomplete="off" />
           </div>
         </div>
@@ -344,14 +344,14 @@
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayCard">Card Number (Demo)</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-credit-card"></i>
+            <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
             <input id="demoPayCard" type="text" placeholder="4242 4242 4242 4242" autocomplete="off" />
           </div>
         </div>
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayExpiry">Expiry</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-calendar"></i>
+            <i class="fa-solid fa-calendar" aria-hidden="true"></i>
             <input id="demoPayExpiry" type="text" placeholder="MM/YY" autocomplete="off" />
           </div>
         </div>
@@ -401,19 +401,19 @@
         <span class="sites-loaded-badge">
           <strong>Sites Loaded:</strong> <span id="sitesLoadedCount">0</span>
         </span>
-        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal">ðŸ“– <span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
-        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View">ðŸ“˜ <span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
-        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View">ðŸ§ª <span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
+        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal">📖 <span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
+        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View">📘 <span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
+        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View">🧪 <span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
         <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="display:none; text-decoration: none;" title="Open Admin Portal"><span class="nav-label-full">Admin Portal</span><span class="nav-label-short">Admin</span></a>
         <div class="contact-dev-wrap">
-          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel">ðŸ’¬ <span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
+          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel">💬 <span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
           <div id="contactDevPanel" class="contact-dev-panel hidden" role="dialog" aria-label="Developer contact details">
             <p class="contact-dev-title">Feedback or issue report</p>
             <p class="contact-dev-note">Share any bug details, screenshots, and steps to reproduce.</p>
-            <a class="contact-dev-link" href="mailto:SANJU@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">ðŸ“§ SANJU@CROMPTONCONCEPTS.COM.AU</a>
-            <a class="contact-dev-link" href="tel:+610405535187">ðŸ“ž +610405535187</a>
-            <a class="contact-dev-link" href="mailto:AARON@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">ðŸ“§ AARON@CROMPTONCONCEPTS.COM.AU</a>
-            <a class="contact-dev-link" href="tel:+610405535187">ðŸ“ž +610405535187</a>
+            <a class="contact-dev-link" href="mailto:SANJU@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">📧 SANJU@CROMPTONCONCEPTS.COM.AU</a>
+            <a class="contact-dev-link" href="tel:+610405535187">📞 +610405535187</a>
+            <a class="contact-dev-link" href="mailto:AARON@CROMPTONCONCEPTS.COM.AU?subject=TIA%20Tool%20Feedback%20or%20Issue">📧 AARON@CROMPTONCONCEPTS.COM.AU</a>
+            <a class="contact-dev-link" href="tel:+610405535187">📞 +610405535187</a>
           </div>
         </div>
         <span class="navbar-acct-sep" aria-hidden="true"></span>
@@ -424,7 +424,7 @@
     <!-- Developer View PIN Modal -->
     <div id="devPinModal" role="dialog" aria-modal="true" aria-labelledby="devPinModalTitle" style="display:none; position:fixed; inset:0; background:rgba(7,20,22,0.75); z-index:200000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);">
       <div style="background:#fff; border-radius:12px; border:1px solid #dbe2ea; box-shadow:0 16px 40px rgba(0,0,0,0.3); padding:36px 32px; max-width:340px; width:100%; text-align:center;">
-        <div style="font-size:2.2rem; margin-bottom:8px;">ðŸ”’</div>
+        <div style="font-size:2.2rem; margin-bottom:8px;">🔒</div>
         <h2 id="devPinModalTitle" style="margin:0 0 6px; color:#0f2f32; font-size:1.2rem;">Developer Access</h2>
         <p style="margin:0 0 20px; color:#5a7a7d; font-size:0.9rem;">Enter PIN to open Developer View</p>
         <input id="devPinModalInput" type="password" inputmode="numeric" maxlength="10" placeholder="Enter PIN" autocomplete="off"
@@ -489,7 +489,7 @@
         <p style="margin-bottom:8px; color:#334155;"><strong>Step 3: Run these commands in Terminal/Command Prompt:</strong></p>
         <pre id="pythonSetupCommands" style="white-space:pre-wrap; word-break:break-word; margin:0; padding:12px; border:1px solid #dbe2ea; border-radius:8px; background:#f8fafc; color:#0f172a; font-family:Consolas, 'Courier New', monospace; font-size:13px;"></pre>
         <div id="cmdOpenHint" style="display:none; margin-top:10px; padding:8px 12px; background:#ede9fe; border:1px solid #a78bfa; border-radius:8px; font-size:0.88em; color:#4c1d95;">
-          âœ… Commands copied! Now:<br>
+          ✅ Commands copied! Now:<br>
           1. Press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Win + R</kbd>, type <code style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">cmd</code>, press Enter.<br>
           2. In the Command Prompt window, press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Ctrl + V</kbd> to paste and then press <kbd style="background:#fff; border:1px solid #a78bfa; border-radius:3px; padding:1px 5px;">Enter</kbd>.
         </div>
@@ -541,7 +541,7 @@
     <div class="card" id="quickSearchCard" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #1976d2;">
       <div class="snapshot-toolbar">
         <div class="snapshot-toolbar-copy">
-          <h2 style="color: #1565c0; margin: 0;">ðŸš— Search Address</h2>
+          <h2 style="color: #1565c0; margin: 0;">🚗 Search Address</h2>
           <p>
             Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
           </p>
@@ -573,7 +573,7 @@
              <p id="quickTiaTypingStatus" style="display:none; margin: 4px 0 0 0; font-size: 0.82em; color: #1565c0;">Searching suggestions...</p>
         </div>
         <button id="quickTiaSearchBtn" type="button" style="background: #1976d2; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95em;">
-          ðŸ” Search
+          🔍 Search
         </button>
       </div>
       
@@ -601,17 +601,17 @@
         </div>
         <div id="quickTiaOneWaySettings" style="display:grid; grid-template-columns:1fr; gap:8px; margin-top:8px;">
           <div>
-            <label style="display:block; font-size:0.8em; color:#8e0000; font-weight:700; margin-bottom:4px;">ðŸ§­ Active One-way Direction</label>
+            <label style="display:block; font-size:0.8em; color:#8e0000; font-weight:700; margin-bottom:4px;">🧭 Active One-way Direction</label>
             <select id="quickTiaOneWayDirection" style="width:100%; border:1px solid #ef9a9a; background:#fff5f5; color:#8e0000;">
-              <option value="D1" selected>â†”ï¸ EAST (Primary)</option>
-              <option value="D2">â†”ï¸ WEST (Opposing)</option>
+              <option value="D1" selected>↔️ EAST (Primary)</option>
+              <option value="D2">↔️ WEST (Opposing)</option>
             </select>
           </div>
         </div>
       </div>
       
       <div id="quickTiaPanel" style="display: none; background: white; border: 1px solid #1976d2; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-        <h3 style="margin: 0 0 10px 0; color: #1565c0; border-bottom: 2px solid #1976d2; padding-bottom: 8px;">ðŸ“ Analysis Results</h3>
+        <h3 style="margin: 0 0 10px 0; color: #1565c0; border-bottom: 2px solid #1976d2; padding-bottom: 8px;">📍 Analysis Results</h3>
         
         <div id="quickTiaMatchInfo" style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px; margin-bottom: 10px; border-radius: 3px;">
           <strong style="color: #1565c0;">Match Type:</strong> <span id="quickTiaMatchType">-</span><br>
@@ -621,7 +621,7 @@
         </div>
 
         <div id="quickTiaNearbyRoads" style="display: none; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-          <h4 style="margin: 0 0 8px 0; color: #6a1b9a;">ðŸ›£ï¸ All Nearby Roads</h4>
+          <h4 style="margin: 0 0 8px 0; color: #6a1b9a;">🛣️ All Nearby Roads</h4>
           <p style="font-size: 0.8em; color: #8e24aa; margin: 0 0 8px 0;">Streets within <span id="quickTiaNearbyRoadsRadiusValue">0.2</span> km of the searched address:</p>
           <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 10px 0;">
             <span style="font-size: 0.78em; color: #6a1b9a; min-width: 34px;">0.2 km</span>
@@ -636,7 +636,7 @@
         <!-- For Exact Match -->
         <div id="quickTiaExactMatch" style="display: none;">
           <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">âœ“ Exact Data Found</h4>
+            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">✓ Exact Data Found</h4>
             <div style="font-size: 0.9em; line-height: 1.6;">
               <div><strong>VADT:</strong> <span id="quickTiaExactVADT">-</span> vehicles/day</div>
               <div><strong id="quickTiaExactD1Label">D1 VADT:</strong> <span id="quickTiaExactD1">-</span></div>
@@ -644,25 +644,25 @@
             </div>
           </div>
           <button onclick="useExactTIAData()" style="background: #4caf50; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-            âœ“ Use This Data
+            ✓ Use This Data
           </button>
         </div>
 
         <!-- For Multiple References -->
         <div id="quickTiaMultipleRefs" style="display: none;">
-          <h4 style="margin: 0 0 10px 0; color: #d32f2f;">âŠ™ Using 3+ Reference Points (within 5km)</h4>
+          <h4 style="margin: 0 0 10px 0; color: #d32f2f;">⊙ Using 3+ Reference Points (within 5km)</h4>
           <div id="quickTiaRefList" style="background: white; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px;"></div>
           <div id="quickTiaRoadWeightWrap" style="display:none; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; padding:8px; margin-bottom:10px;">
             <div style="font-size:0.8em; color:#1b5e20; font-weight:700; margin-bottom:6px;">Road-level weighting (used when references span multiple roads)</div>
             <div id="quickTiaRoadWeightList" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:8px;"></div>
           </div>
           <p style="font-size: 0.82em; color: #4e342e; margin: 0 0 10px 0; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 6px; padding: 8px;">
-            Each reference has its own route possibility slider (0â€“100%). Final traffic volume is a weighted average (not a sum).
+            Each reference has its own route possibility slider (0–100%). Final traffic volume is a weighted average (not a sum).
           </p>
 
           <!-- Calculation Method Selector -->
           <div style="background: #fff3e0; border: 2px solid #f57c00; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-            <h5 style="margin: 0 0 10px 0; color: #e65100;">ðŸ§® Choose Calculation Method</h5>
+            <h5 style="margin: 0 0 10px 0; color: #e65100;">🧮 Choose Calculation Method</h5>
             <div style="display: flex; gap: 16px; flex-wrap: wrap;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
                 <input type="radio" name="trafficCalcMethod" value="weighted" checked onchange="toggleTrafficCalcMethod()">
@@ -681,8 +681,8 @@
 
             <!-- Mode toggle -->
             <div style="display: flex; gap: 0; margin-bottom: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #c9d8da;">
-              <button id="manualGenModeTrip" onclick="setManualGenMode('trip')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #2a4045; color: #fff; transition: background 0.2s;">ðŸ“Š Trip Generation</button>
-              <button id="manualGenModeDirect" onclick="setManualGenMode('direct')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #e8f0f1; color: #2a4045; transition: background 0.2s;">ðŸ”¢ Direct AADT Entry</button>
+              <button id="manualGenModeTrip" onclick="setManualGenMode('trip')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #2a4045; color: #fff; transition: background 0.2s;">📊 Trip Generation</button>
+              <button id="manualGenModeDirect" onclick="setManualGenMode('direct')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #e8f0f1; color: #2a4045; transition: background 0.2s;">🔢 Direct AADT Entry</button>
             </div>
 
             <!-- Trip Generation Calculator section -->
@@ -744,11 +744,11 @@
             </div>
 
             <button onclick="calculateTripGeneration()" style="margin-top: 15px; padding: 10px 15px; background: linear-gradient(135deg, #2a4045 0%, #1a2c2f 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(42, 64, 69, 0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
-              ðŸ“Š Calculate VADT & Peak Hours
+              📊 Calculate VADT & Peak Hours
             </button>
 
             <div style="margin-top: 10px; background: #e8f4f8; border: 1px solid #84cad8; border-radius: 6px; padding: 10px; font-size: 0.82em; line-height: 1.5;">
-              <strong>ðŸ’¡ Tip:</strong> Reference source is selected automatically from the state database above (QLD -> TMR Guide, NSW -> RMS NSW Guide). Peak % is the portion of daily trips occurring in peak hour. AM/PM peaks show directional splits (In/Out) based on land use type.
+              <strong>💡 Tip:</strong> Reference source is selected automatically from the state database above (QLD -> TMR Guide, NSW -> RMS NSW Guide). Peak % is the portion of daily trips occurring in peak hour. AM/PM peaks show directional splits (In/Out) based on land use type.
             </div>
 
             <div id="tripGenResult" style="display: none; margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #ffffff 0%, #f0f7f8 100%); border: 2px solid #14746f; border-radius: 8px; box-shadow: 0 2px 8px rgba(20, 116, 111, 0.15);">
@@ -759,7 +759,7 @@
             <!-- Direct AADT Entry section -->
             <div id="manualGenDirectSection" style="display: none;">
               <div style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 0.84em; line-height: 1.5; color: #0d47a1;">
-                <strong>â„¹ï¸ Direct AADT Entry</strong> â€” Use this when you already have an AADT figure (e.g., from a traffic count, council data, or another study). Enter the total daily volume and the directional/peak splits will be calculated automatically.
+                <strong>ℹ️ Direct AADT Entry</strong> — Use this when you already have an AADT figure (e.g., from a traffic count, council data, or another study). Enter the total daily volume and the directional/peak splits will be calculated automatically.
               </div>
 
               <div class="input-group" style="margin-bottom: 14px;">
@@ -794,7 +794,7 @@
               </div>
 
               <button onclick="applyDirectAadtEntry()" style="padding: 10px 15px; background: linear-gradient(135deg, #14746f 0%, #0a3f3c 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(20,116,111,0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
-                âœ“ Apply AADT to Assessment
+                ✓ Apply AADT to Assessment
               </button>
             </div><!-- end manualGenDirectSection -->
 
@@ -803,7 +803,7 @@
           <div id="quickTiaCalcResult" style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
             <h5 style="margin: 0 0 8px 0; color: #2e7d32;">Calculated AADT (Weighted Average of References)</h5>
             <div style="font-size: 0.9em; line-height: 1.6;">
-              <div><strong>Detected Area Type:</strong> <span id="quickTiaAreaType">-</span> â€¢ <strong>Type%:</strong> <span id="quickTiaTypePercent">100%</span></div>
+              <div><strong>Detected Area Type:</strong> <span id="quickTiaAreaType">-</span> • <strong>Type%:</strong> <span id="quickTiaTypePercent">100%</span></div>
               <div><strong>Weighted Avg VADT:</strong> <span id="quickTiaCalcAvgVADT">-</span> vehicles/day</div>
               <div><strong>AADT to use:</strong> <span id="quickTiaCalcAdjVADT">-</span> vehicles/day</div>
               <div><strong id="quickTiaCalcD1Label">Calculated D1 VADT:</strong> <span id="quickTiaCalcD1">-</span></div>
@@ -812,13 +812,13 @@
           </div>
 
           <button id="quickTiaUseCalculatedBtn" onclick="useCalculatedTIAData()" style="background: linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; box-shadow: 0 4px 12px rgba(15, 47, 50, 0.25);">
-            âœ“ Use Calculated Data
+            ✓ Use Calculated Data
           </button>
         </div>
       </div>
 
       <div id="quickTiaError" style="display: none; background: #ffebee; border: 1px solid #ef5350; border-radius: 6px; padding: 10px; color: #c30000;">
-        <strong>âŒ No matches found</strong><br>
+        <strong>❌ No matches found</strong><br>
         <span style="font-size: 0.9em;">Try searching by different road name or manually select from database below.</span>
       </div>
     </div>
@@ -827,8 +827,8 @@
     <div class="input-legend-panel" aria-label="Input color guide">
       <p class="input-legend-title">Input Guide</p>
       <div class="input-legend-grid">
-        <p class="field-instruction user">ðŸ”´ Red input boxes require user entry/review and are editable.</p>
-        <p class="field-instruction auto">ðŸŸ¢ Green input boxes are auto-filled or read-only. If marked editable, they can still be adjusted.</p>
+        <p class="field-instruction user">🔴 Red input boxes require user entry/review and are editable.</p>
+        <p class="field-instruction auto">🟢 Green input boxes are auto-filled or read-only. If marked editable, they can still be adjusted.</p>
       </div>
     </div>
 
@@ -854,7 +854,7 @@
             </select>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-            <button type="button" id="customDataUploadBtn" style="width: auto; margin: 0; padding: 6px 10px; font-size: 0.85em; background: #2e7d32; box-shadow: none;">â¬† Upload Custom Data (CSV/JSON)</button>
+            <button type="button" id="customDataUploadBtn" style="width: auto; margin: 0; padding: 6px 10px; font-size: 0.85em; background: #2e7d32; box-shadow: none;">⬆ Upload Custom Data (CSV/JSON)</button>
             <input type="file" id="customDataUploadInput" accept=".csv,.txt,.json,.geojson,application/json,text/csv,text/plain" style="display: none;" />
             <button type="button" id="customDataClearBtn" style="width: auto; margin: 0; padding: 6px 10px; font-size: 0.85em; background: #9e9e9e; box-shadow: none;">Clear Custom Uploads</button>
           </div>
@@ -866,14 +866,14 @@
       </div>
 
       <div id="macroSiteDetailsPanel" style="display:none; background:#e8f5e9; border:1px solid #81c784; border-radius:6px; padding:12px; margin-bottom:12px;">
-        <h3 style="margin:0 0 8px 0; color:#2e7d32;">ðŸ“ Selected Site Details</h3>
+        <h3 style="margin:0 0 8px 0; color:#2e7d32;">📍 Selected Site Details</h3>
         <div style="display:grid; grid-template-columns:160px 1fr; gap:6px; font-size:0.9em;">
           <div style="font-weight:700;">Site ID:</div><div id="macroDetailSiteId">-</div>
           <div style="font-weight:700;">Source:</div><div id="macroDetailSource">-</div>
           <div style="font-weight:700;">Road Name:</div><div id="macroDetailRoadName">-</div>
           <div style="font-weight:700;">Description:</div><div id="macroDetailDescription">-</div>
           <div style="font-weight:700;">Coordinates:</div><div id="macroDetailCoords">-</div>
-          <div style="font-weight:700;">Google Maps:</div><div>ðŸ“ <a id="macroMapLink" href="javascript:void(0)" target="_blank" style="color:#0056b3; text-decoration:none;">View on Google Maps</a></div>
+          <div style="font-weight:700;">Google Maps:</div><div>📍 <a id="macroMapLink" href="javascript:void(0)" target="_blank" style="color:#0056b3; text-decoration:none;">View on Google Maps</a></div>
           <div style="font-weight:700;">Count Year:</div><div id="macroDetailCountYear">-</div>
           <div style="font-weight:700;">Growth Rate:</div><div id="macroDetailGrowthRate">-</div>
           <div style="font-weight:700;">HV%:</div><div id="macroDetailHV">-</div>
@@ -915,7 +915,7 @@
       <h2 style="display: flex; justify-content: space-between; align-items: center;">
         Analysis Parameters
         <span style="font-size: 0.75em; font-weight: normal;">
-          <span style="color:#f44336;">ðŸ”´ User Input</span> | <span style="color:#4caf50;">ðŸŸ¢ Auto-filled</span>
+          <span style="color:#f44336;">🔴 User Input</span> | <span style="color:#4caf50;">🟢 Auto-filled</span>
         </span>
       </h2>
       <p class="section-help">All manual entry fields are shown in red. All auto-filled fields are shown in green, and each editable auto-filled field is explicitly marked.</p>
@@ -923,8 +923,8 @@
 
       <!-- AUTO-FILLED TAB -->
       <fieldset class="auto-fill-zone" style="border: 2px solid #4caf50; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: #f0fdf4;">
-        <legend style="padding: 0 12px; font-weight: bold; color: #2e7d32; font-size: 1.1em;">âœ“ Auto-filled from Database</legend>
-        <p class="field-instruction auto">ðŸŸ¢ Green fields are auto-filled. If a label says "editable", you can adjust that value; otherwise treat it as read-only source data.</p>
+        <legend style="padding: 0 12px; font-weight: bold; color: #2e7d32; font-size: 1.1em;">✓ Auto-filled from Database</legend>
+        <p class="field-instruction auto">🟢 Green fields are auto-filled. If a label says "editable", you can adjust that value; otherwise treat it as read-only source data.</p>
         <div class="grid-2">
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
             <label style="color: #2e7d32; font-weight: bold;">Site ID</label>
@@ -1015,8 +1015,8 @@
 
       <!-- USER INPUT TAB -->
       <fieldset class="user-input-zone" style="border: 2px solid #f44336; padding: 15px; border-radius: 8px; background: #fff8f8;">
-        <legend style="padding: 0 12px; font-weight: bold; color: #c30000; font-size: 1.1em;">âœŽ You Must Fill These</legend>
-        <p class="field-instruction user">ðŸ”´ Red fields require user input/review before running calculations. These values are intended to be editable.</p>
+        <legend style="padding: 0 12px; font-weight: bold; color: #c30000; font-size: 1.1em;">✎ You Must Fill These</legend>
+        <p class="field-instruction user">🔴 Red fields require user input/review before running calculations. These values are intended to be editable.</p>
         
         <div class="grid" style="margin-bottom: 12px;">
           <div style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
@@ -1057,9 +1057,9 @@
             <select id="roadCapacityClass" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
               <option value="freeway">Freeway / Motorway (1,800 vph/lane)</option>
               <option value="multi_lane">Multi-lane Arterial (1,600 vph/lane)</option>
-              <option value="arterial" selected>Urban Arterial 60â€“80 km/h (1,500 vph/lane)</option>
+              <option value="arterial" selected>Urban Arterial 60–80 km/h (1,500 vph/lane)</option>
               <option value="sub_arterial">Sub-arterial / Collector (1,200 vph/lane)</option>
-              <option value="local">Local Street â‰¤50 km/h (900 vph/lane)</option>
+              <option value="local">Local Street ≤50 km/h (900 vph/lane)</option>
               <option value="rural_highway">Rural Highway (1,000 vph/lane)</option>
             </select>
           </div>
@@ -1073,18 +1073,18 @@
             <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Shown when any direction has >=2 lanes. For multi-lane roads, closure options include 1 lane closed and 2 lanes closed. Contraflow requires >=2 lanes in both directions.</p>
           </div>
           <div id="contraflowClosedWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px; margin-top: 8px;">
-            <label style="color: #c30000; font-weight: bold;">â†”ï¸ Contraflow â€” Closed Carriageway *</label>
+            <label style="color: #c30000; font-weight: bold;">↔️ Contraflow — Closed Carriageway *</label>
             <select id="contraflowClosedCarriageway" onchange="if (typeof calculateAll === 'function') calculateAll();" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
               <option value="D1">D1 Carriageway Closed (D2 carriageway used 1+1)</option>
               <option value="D2" selected>D2 Carriageway Closed (D1 carriageway used 1+1)</option>
             </select>
-            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Both traffic directions (D1 and D2) share the open carriageway in a 1+1 contraflow arrangement. The combined demand VCR applies to both directions, with per-lane capacity reduced to â‰ˆ 85% per Austroads AGTTM Part 8 / HCM Ch. 10.</p>
+            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Both traffic directions (D1 and D2) share the open carriageway in a 1+1 contraflow arrangement. The combined demand VCR applies to both directions, with per-lane capacity reduced to ≈ 85% per Austroads AGTTM Part 8 / HCM Ch. 10.</p>
           </div>
           <div id="oneWayDirectionWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
-            <label style="color: #c30000; font-weight: bold;">ðŸ§­ Active One-way Direction *</label>
+            <label style="color: #c30000; font-weight: bold;">🧭 Active One-way Direction *</label>
             <select id="oneWayActiveDirection" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
-              <option value="D1" selected>â†”ï¸ EAST (Primary)</option>
-              <option value="D2">â†”ï¸ WEST (Opposing)</option>
+              <option value="D1" selected>↔️ EAST (Primary)</option>
+              <option value="D2">↔️ WEST (Opposing)</option>
             </select>
           </div>
         </div>
@@ -1137,10 +1137,10 @@
 
       <div id="calcStickyContainer" style="position: sticky; bottom: 20px; z-index: 100; margin-top: 20px;">
         <button id="calcBtn" style="padding: 16px; font-size: 1.1em; font-weight: bold; background: var(--brand); color: white; border: none; border-radius: 12px; cursor: pointer; width: 100%; box-shadow: 0 8px 20px rgba(31, 94, 99, 0.3); transition: transform 0.1s, box-shadow 0.1s;">
-          ðŸš€ Calculate All Metrics
+          🚀 Calculate All Metrics
         </button>
         <button id="tia-verify-btn" onclick="window.TIAFormulaAgent && window.TIAFormulaAgent.run()" title="Run formula verification against Austroads / TMR reference implementations" style="margin-top:8px; padding:10px 16px; font-size:0.85em; font-weight:600; background:#37474f; color:white; border:none; border-radius:10px; cursor:pointer; width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.18); transition:transform 0.1s, box-shadow 0.1s;">
-          âœ“ Verify Formulas
+          ✓ Verify Formulas
         </button>
         <p class="field-help" style="text-align:center; margin-top:8px;">This updates directional summary, queue, VCR/LOS, optional diagnostics, and charts in one pass.</p>
       </div>
@@ -1149,7 +1149,7 @@
     <!-- Data Visualization -->
     <details class="card" id="macroDataVizSection" style="display:none;" open>
       <summary id="macroDataVizSummaryText" style="cursor: pointer; font-size: 1.1em; font-weight: 700; color: #1f5e63; padding: 10px 0;">
-        ðŸ“Š Traffic Data Visualization
+        📊 Traffic Data Visualization
       </summary>
       <div style="margin-top: 15px;">
         <p id="macroDataVizSourceText" style="margin: 0 0 10px 0; font-size: 0.86em; color: #455a64; background: #f5f8fa; border: 1px solid #d7e2e8; border-radius: 6px; padding: 7px 10px;">
@@ -1179,7 +1179,7 @@
       <h2>Grouped Directional Summary</h2>
       <p class="section-help">Compares AM/OP/PM/EV directional splits and totals used by downstream queue and VCR calculations.</p>
       
-      <h3 id="groupedHeaderD2" class="dir-heading dir-heading-negative">ðŸ”´ Direction 2, Against Gazettal</h3>
+      <h3 id="groupedHeaderD2" class="dir-heading dir-heading-negative">🔴 Direction 2, Against Gazettal</h3>
       <div class="table-wrap">
         <table id="groupedTableD2">
           <thead>
@@ -1202,7 +1202,7 @@
         </table>
       </div>
 
-      <h3 id="groupedHeaderD1" class="dir-heading dir-heading-spaced dir-heading-positive">ðŸŸ¢ Direction 1, Gazettal</h3>
+      <h3 id="groupedHeaderD1" class="dir-heading dir-heading-spaced dir-heading-positive">🟢 Direction 1, Gazettal</h3>
       <div class="table-wrap">
         <table id="groupedTableD1">
           <thead>
@@ -1236,7 +1236,7 @@
       </div>
 
       <div id="queueTableView">
-        <h3 id="queueHeaderD2" class="dir-heading dir-heading-negative">ðŸ”´ Direction 2, Against Gazettal</h3>
+        <h3 id="queueHeaderD2" class="dir-heading dir-heading-negative">🔴 Direction 2, Against Gazettal</h3>
         <div class="table-wrap" style="width:100%;">
           <table id="queueGroupedTableD2">
             <thead>
@@ -1253,7 +1253,7 @@
           </table>
         </div>
 
-        <h3 id="queueHeaderD1" class="dir-heading dir-heading-spaced dir-heading-positive">ðŸŸ¢ Direction 1, Gazettal</h3>
+        <h3 id="queueHeaderD1" class="dir-heading dir-heading-spaced dir-heading-positive">🟢 Direction 1, Gazettal</h3>
         <div class="table-wrap" style="width:100%;">
           <table id="queueGroupedTableD1">
             <thead>
@@ -1271,7 +1271,7 @@
         </div>
 
         <div id="queueSwtSummaryWrap">
-          <h3 class="dir-heading dir-heading-spaced">ðŸŸ  SWT Queue Summary</h3>
+          <h3 class="dir-heading dir-heading-spaced">🟠 SWT Queue Summary</h3>
           <div class="table-wrap">
           <table id="queueSwtSummaryTable">
             <thead>
@@ -1291,12 +1291,12 @@
       </div>
 
       <div id="queueChartView" style="display: none;">
-        <h3 id="queueHeaderD2Chart" class="dir-heading dir-heading-negative">ðŸ”´ Direction 2, Against Gazettal</h3>
+        <h3 id="queueHeaderD2Chart" class="dir-heading dir-heading-negative">🔴 Direction 2, Against Gazettal</h3>
         <div class="chart-panel">
           <canvas id="queueChartD2" class="chart-canvas-300"></canvas>
         </div>
 
-        <h3 id="queueHeaderD1Chart" class="dir-heading dir-heading-spaced dir-heading-positive">ðŸŸ¢ Direction 1, Gazettal</h3>
+        <h3 id="queueHeaderD1Chart" class="dir-heading dir-heading-spaced dir-heading-positive">🟢 Direction 1, Gazettal</h3>
         <div class="chart-panel">
           <canvas id="queueChartD1" class="chart-canvas-300"></canvas>
         </div>
@@ -1316,7 +1316,7 @@
 
       <div id="vcrTableView">
       
-      <h3 id="vcrHeaderD2" class="dir-heading dir-heading-negative">ðŸ”´ Direction 2, Against Gazettal</h3>
+      <h3 id="vcrHeaderD2" class="dir-heading dir-heading-negative">🔴 Direction 2, Against Gazettal</h3>
       <div class="table-wrap" style="width:100%;">
         <table id="vcrGroupedTableD2">
           <thead>
@@ -1326,7 +1326,7 @@
         </table>
       </div>
 
-      <h3 id="vcrHeaderD1" class="dir-heading dir-heading-spaced dir-heading-positive">ðŸŸ¢ Direction 1, Gazettal</h3>
+      <h3 id="vcrHeaderD1" class="dir-heading dir-heading-spaced dir-heading-positive">🟢 Direction 1, Gazettal</h3>
       <div class="table-wrap" style="width:100%;">
         <table id="vcrGroupedTableD1">
           <thead>
@@ -1338,12 +1338,12 @@
       </div>
 
       <div id="vcrChartView" style="display: none;">
-        <h3 id="vcrHeaderD2Chart" class="dir-heading dir-heading-negative">ðŸ”´ Direction 2, Against Gazettal</h3>
+        <h3 id="vcrHeaderD2Chart" class="dir-heading dir-heading-negative">🔴 Direction 2, Against Gazettal</h3>
         <div class="chart-panel">
           <canvas id="vcrChartD2" class="chart-canvas-280"></canvas>
         </div>
 
-        <h3 id="vcrHeaderD1Chart" class="dir-heading dir-heading-spaced dir-heading-positive">ðŸŸ¢ Direction 1, Gazettal</h3>
+        <h3 id="vcrHeaderD1Chart" class="dir-heading dir-heading-spaced dir-heading-positive">🟢 Direction 1, Gazettal</h3>
         <div class="chart-panel">
           <canvas id="vcrChartD1" class="chart-canvas-280"></canvas>
         </div>
@@ -1354,40 +1354,40 @@
     <!-- Analytics Dashboard -->
     <div id="analyticsDashboardCard" class="card" style="display:none; margin-top:20px;">
       <h2><span style="background:#e8f4f5;border-radius:6px;padding:4px 6px;font-size:0.85em;line-height:1;"><i class="fa-solid fa-chart-column section-icon" aria-hidden="true"></i></span> Analytics Dashboard</h2>
-      <p class="section-help">Consolidated 24-hour performance view â€” is the road healthy, where is the bottleneck, what changed?</p>
+      <p class="section-help">Consolidated 24-hour performance view — is the road healthy, where is the bottleneck, what changed?</p>
 
       <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin:0 0 18px 0;">
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; text-align:center;">
           <div style="font-size:0.75em; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Worst VCR</div>
-          <div id="dashWorstVcr" style="font-size:2em; font-weight:900; color:#1f5e63;">â€”</div>
-          <div id="dashVcrLos" style="font-size:0.82em; font-weight:700; margin-top:3px; color:#64748b;">LOS â€”</div>
+          <div id="dashWorstVcr" style="font-size:2em; font-weight:900; color:#1f5e63;">—</div>
+          <div id="dashVcrLos" style="font-size:0.82em; font-weight:700; margin-top:3px; color:#64748b;">LOS —</div>
         </div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; text-align:center;">
           <div style="font-size:0.75em; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">D1 Peak Queue</div>
-          <div id="dashD1PeakQueue" style="font-size:2em; font-weight:900; color:#3b528b;">â€”</div>
+          <div id="dashD1PeakQueue" style="font-size:2em; font-weight:900; color:#3b528b;">—</div>
           <div style="font-size:0.82em; color:#64748b; margin-top:3px;">metres</div>
         </div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; text-align:center;">
           <div style="font-size:0.75em; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">D2 Peak Queue</div>
-          <div id="dashD2PeakQueue" style="font-size:2em; font-weight:900; color:#21918c;">â€”</div>
+          <div id="dashD2PeakQueue" style="font-size:2em; font-weight:900; color:#21918c;">—</div>
           <div style="font-size:0.82em; color:#64748b; margin-top:3px;">metres</div>
         </div>
       </div>
 
       <h3 style="margin:0 0 4px 0; color:#1f5e63; font-size:1em; font-weight:700;">24-Hour Traffic Profile</h3>
-      <p style="font-size:0.8em; color:#64748b; margin:0 0 8px 0;">Hourly vehicle volumes â€” D1 vs D2 (opening year)</p>
+      <p style="font-size:0.8em; color:#64748b; margin:0 0 8px 0;">Hourly vehicle volumes — D1 vs D2 (opening year)</p>
       <div class="chart-panel">
         <canvas id="dashTrafficChart" class="chart-canvas-300"></canvas>
       </div>
 
       <h3 style="margin:18px 0 4px 0; color:#1f5e63; font-size:1em; font-weight:700;">Volume-to-Capacity Ratio by Hour</h3>
-      <p style="font-size:0.8em; color:#64748b; margin:0 0 8px 0;">Work VCR per direction â€” target 0.85, capacity 1.00</p>
+      <p style="font-size:0.8em; color:#64748b; margin:0 0 8px 0;">Work VCR per direction — target 0.85, capacity 1.00</p>
       <div class="chart-panel">
         <canvas id="dashVcrChart" class="chart-canvas-280"></canvas>
       </div>
 
       <h3 style="margin:18px 0 4px 0; color:#1f5e63; font-size:1em; font-weight:700;">Queue Length by Hour</h3>
-      <p style="font-size:0.8em; color:#64748b; margin:0 0 8px 0;">Peak queue estimate per direction â€” watch 200 m, high 400 m</p>
+      <p style="font-size:0.8em; color:#64748b; margin:0 0 8px 0;">Peak queue estimate per direction — watch 200 m, high 400 m</p>
       <div class="chart-panel">
         <canvas id="dashQueueChart" class="chart-canvas-300"></canvas>
       </div>
@@ -1453,7 +1453,7 @@
           </select>
         </div>
         <input type="number" id="swtRedTime" value="120" step="10" min="30" max="600" oninput="generateWorkWindow();" style="width: 120px; padding: 6px; border: 1px solid #999; border-radius: 4px; margin-top: 4px;" />
-        <div id="queueOperationHint" style="font-size: 0.75em; color: #666; margin-top: 4px;">âš ï¸ Use red time per cycle, NOT total hourly accumulation. Temporary work-zone stop/go commonly uses around 120s in a 240s cycle.</div>
+        <div id="queueOperationHint" style="font-size: 0.75em; color: #666; margin-top: 4px;">⚠️ Use red time per cycle, NOT total hourly accumulation. Temporary work-zone stop/go commonly uses around 120s in a 240s cycle.</div>
       </div>
 
       <div class="queue-calculator-module">
@@ -1594,7 +1594,7 @@
 
     <div class="card" id="detourCard" style="border: 2px solid #8e24aa;">
       <h2 class="optional-card-title">
-        ðŸ”„ Detailed Detour Route Capacity
+        🔄 Detailed Detour Route Capacity
         <button type="button" class="print-toggle-btn" data-target-card="detourCard" aria-pressed="true">Include in Print: Yes</button>
       </h2>
       <p class="optional-card-note">
@@ -1668,16 +1668,16 @@
 
       <div id="detourResults" style="display: none; margin-top: 15px; border-top: 2px dashed #ce93d8; padding-top: 15px;">
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px 0; justify-content: center;">
-          <a id="detourMeasureGoogleLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #1a73e8; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">ðŸ“ Measure Distance (Google Maps)</a>
-          <a id="detourMeasureMetroLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #6a1b9a; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">ðŸ“ Measure Distance (MetroMaps)</a>
+          <a id="detourMeasureGoogleLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #1a73e8; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">📏 Measure Distance (Google Maps)</a>
+          <a id="detourMeasureMetroLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #6a1b9a; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">📏 Measure Distance (MetroMaps)</a>
         </div>
         <h4 class="optional-subtitle-center optional-subtitle-default" id="detourRouteName">-</h4>
         <div id="detourSelectedPathDisplay" style="font-size: 0.85em; color: #6a1b9a; text-align: center; margin: 0 0 10px 0;">Selected path: -</div>
-        <div id="detourActiveStreetIndicator" style="font-size: 0.82em; color: #4a148c; text-align: center; margin: 0 0 10px 0; background: #f8f2fb; border: 1px solid #e1bee7; border-radius: 6px; padding: 6px 10px;">ðŸ“ Selected street: -</div>
+        <div id="detourActiveStreetIndicator" style="font-size: 0.82em; color: #4a148c; text-align: center; margin: 0 0 10px 0; background: #f8f2fb; border: 1px solid #e1bee7; border-radius: 6px; padding: 6px 10px;">📍 Selected street: -</div>
 
         <div id="detourManualVpdPanel" style="display: none; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
           <label style="color: #6a1b9a; font-weight: bold;">Manual Inputs for Selected Roads (when no nearby counter is found)</label>
-          <div style="font-size: 0.76em; color: #8e24aa; margin-top: 4px;">Choose a <strong>Road VPD method</strong> for each road: <strong>ðŸ“¡ Nearby Datapoints</strong> calculates a weighted current-road VPD from the selected reference counters; <strong>ðŸš— Trip Generation</strong> uses calculated VADT. Datapoint mode is read-only and updates from the selected weights below.</div>
+          <div style="font-size: 0.76em; color: #8e24aa; margin-top: 4px;">Choose a <strong>Road VPD method</strong> for each road: <strong>📡 Nearby Datapoints</strong> calculates a weighted current-road VPD from the selected reference counters; <strong>🚗 Trip Generation</strong> uses calculated VADT. Datapoint mode is read-only and updates from the selected weights below.</div>
           <div id="detourManualVpdRows" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
 
@@ -1716,7 +1716,7 @@
               <input type="number" id="detourRouteLengthKm" value="0.4" step="0.1" min="0" oninput="calculateDetourOverlay()" style="border: 1px solid #ce93d8; background: #fff; width: 100%;" />
             </div>
             <div style="background: #f8f2fb; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
-              <label style="color: #6a1b9a; font-size: 0.78em;">Average Speed (km/h) <span style="font-size: 0.85em; color: #8e24aa;">â€” auto from road speeds</span></label>
+              <label style="color: #6a1b9a; font-size: 0.78em;">Average Speed (km/h) <span style="font-size: 0.85em; color: #8e24aa;">— auto from road speeds</span></label>
               <input type="number" id="detourAvgSpeedKmh" value="55" step="1" min="1" readonly style="border: 1px solid #ce93d8; background: #f8f2fb; width: 100%; cursor: default;" />
             </div>
             <div style="background: #fff; border: 1px solid #e1bee7; border-radius: 6px; padding: 8px;">
@@ -1746,10 +1746,10 @@
               <tr>
                 <th style="background: #8e24aa;">Road</th>
                 <th style="background: #8e24aa;">Metric</th>
-                <th style="background: #8e24aa;">AM (7â€“9)</th>
-                <th style="background: #8e24aa;">OP (9â€“16)</th>
-                <th style="background: #8e24aa;">PM (16â€“18)</th>
-                <th style="background: #8e24aa;">EV (18â€“7)</th>
+                <th style="background: #8e24aa;">AM (7–9)</th>
+                <th style="background: #8e24aa;">OP (9–16)</th>
+                <th style="background: #8e24aa;">PM (16–18)</th>
+                <th style="background: #8e24aa;">EV (18–7)</th>
               </tr>
             </thead>
             <tbody id="detourSegmentDetailedBody"></tbody>
@@ -1759,7 +1759,7 @@
         <p class="optional-warning-note" id="detourWarningText"></p>
 
         <div id="postDiversionResults" style="display: none; margin-top: 15px;">
-          <h3 style="color: #00695c; margin: 0 0 10px 0; border-bottom: 2px solid #80cbc4; padding-bottom: 6px;">ðŸ›£ï¸ Road Status After Diversion (Existing Road)</h3>
+          <h3 style="color: #00695c; margin: 0 0 10px 0; border-bottom: 2px solid #80cbc4; padding-bottom: 6px;">🛣️ Road Status After Diversion (Existing Road)</h3>
           <p style="font-size: 0.85em; color: #555; margin-bottom: 8px;">Shows the remaining traffic on the work zone road after diversion, with separate D1 and D2 LOS for each period.</p>
           <div class="table-wrap">
             <table id="postDiversionTable" style="font-size: 0.82em; width: 100%; text-align: center;">
@@ -1777,7 +1777,7 @@
 
     <details class="card" id="formulaTraceSection">
       <summary style="cursor: pointer; font-size: 1.2em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">Formula Trace</summary>
-      <button id="formulaTraceRemoveBtn" type="button" class="report-remove-x report-remove-section-btn hide-print" title="Remove Formula Trace from report" aria-label="Remove Formula Trace from report" onclick="if(window.confirm('Remove Formula Trace from this report view?')){ document.getElementById('formulaTraceSection')?.classList.add('report-section-excluded'); }">âœ•</button>
+      <button id="formulaTraceRemoveBtn" type="button" class="report-remove-x report-remove-section-btn hide-print" title="Remove Formula Trace from report" aria-label="Remove Formula Trace from report" onclick="if(window.confirm('Remove Formula Trace from this report view?')){ document.getElementById('formulaTraceSection')?.classList.add('report-section-excluded'); }">✕</button>
       <div id="assumptionsCard" style="margin-bottom: 12px;">
         <h3 style="margin: 0 0 10px 0; color: #1f5e63;">Analysis Assumptions</h3>
         <div class="assumptions-grid">
@@ -1804,7 +1804,7 @@
     <div id="engineeringConflictWarnings" style="display:none; margin-bottom:12px; padding:10px 14px; background:#fff5f5; border-left:4px solid #e74c3c; border-radius:6px;"></div>
 
     <details class="card diag-card" id="selfDiagnosticsCard" style="display:none;">
-      <summary style="cursor: pointer; font-size: 1em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">ðŸ§ª Internal Diagnostics (Hidden, Click to Expand)</summary>
+      <summary style="cursor: pointer; font-size: 1em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">🧪 Internal Diagnostics (Hidden, Click to Expand)</summary>
       <div style="display:flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
         <p id="diagSummaryText" class="diag-summary">Run diagnostics to check formula consistency.</p>
         <button id="runDiagnosticsBtn" type="button" class="diag-btn">Run Deep Self-Check</button>
@@ -1869,7 +1869,7 @@
     </div>
 
     <details class="card print-custom-card" id="printCustomizationCard" hidden>
-      <summary style="cursor: pointer; font-size: 1em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">ðŸ–¨ï¸ Print Customization (All Sections & Tables) (Click to Expand)</summary>
+      <summary style="cursor: pointer; font-size: 1em; font-weight: 700; color: #1f5e63; margin-bottom: 10px;">🖨️ Print Customization (All Sections & Tables) (Click to Expand)</summary>
       <p style="margin: 0 0 10px 0; font-size: 0.85rem; color: #546e7a;">Toggle any section or table to fully customize what appears in the printed report.</p>
       <div class="print-custom-actions">
         <button type="button" id="printSelectAllBtn">All: Yes</button>
@@ -1899,9 +1899,9 @@
 
     <details class="card input-color-mode" id="optionalFeaturesSection">
       <summary class="optional-section-summary">Beta Features (Click to Expand)</summary>
-      <h3 class="optional-section-note">Trial Features â€” Use for exploratory assessment only. Always validate outputs with independent manual engineering checks before reporting.</h3>
-      <p class="field-instruction user">ðŸ”´ In Beta Features, editable input boxes are red and should be reviewed before use.</p>
-      <p class="field-instruction auto">ðŸŸ¢ Auto-filled/read-only boxes are green. If a field is auto-filled but marked editable, you can still adjust it.</p>
+      <h3 class="optional-section-note">Trial Features — Use for exploratory assessment only. Always validate outputs with independent manual engineering checks before reporting.</h3>
+      <p class="field-instruction user">🔴 In Beta Features, editable input boxes are red and should be reviewed before use.</p>
+      <p class="field-instruction auto">🟢 Auto-filled/read-only boxes are green. If a field is auto-filled but marked editable, you can still adjust it.</p>
 
     <div class="card queue-calculator-card" id="intersectionQueueCapacityCard">
       <h3>Intersection Queue &amp; Capacity Calculator</h3>
@@ -1948,7 +1948,7 @@
     <!-- ===== MULTI-STAGE SCENARIO MANAGER ===== -->
     <div class="card" id="scenarioManagerCard" style="border: 2px solid #0056b3; background: #f8fbff;">
       <h2 class="optional-card-title">
-        <span><span class="hide-print">ðŸ’¾</span> Multi-Stage Scenario Manager</span>
+        <span><span class="hide-print">💾</span> Multi-Stage Scenario Manager</span>
         <button type="button" class="print-toggle-btn" data-target-card="scenarioManagerCard" aria-pressed="true">Include in Print: Yes</button>
       </h2>
       <p class="optional-card-note">
@@ -1958,8 +1958,8 @@
       <div class="hide-print" style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #b3d4ff;">
         <label for="scenarioNameInput" style="margin: 0; color: #004c99;">Stage Name:</label>
         <input type="text" id="scenarioNameInput" placeholder="e.g. Stage 1: Contraflow setup" style="flex: 1; min-width: 250px; border: 1px solid #0056b3; margin: 0;" />
-        <button type="button" onclick="saveCurrentScenario()" style="width: auto; margin: 0; background: #0056b3; box-shadow: none; font-size: 0.9em; padding: 8px 14px;">âž• Save Current Setup</button>
-        <button type="button" onclick="clearScenarios()" style="width: auto; margin: 0; background: #dc3545; box-shadow: none; font-size: 0.9em; padding: 8px 14px;">ðŸ—‘ï¸ Clear All</button>
+        <button type="button" onclick="saveCurrentScenario()" style="width: auto; margin: 0; background: #0056b3; box-shadow: none; font-size: 0.9em; padding: 8px 14px;">➕ Save Current Setup</button>
+        <button type="button" onclick="clearScenarios()" style="width: auto; margin: 0; background: #dc3545; box-shadow: none; font-size: 0.9em; padding: 8px 14px;">🗑️ Clear All</button>
       </div>
 
       <div class="table-wrap" id="scenarioTableWrap" style="display: none;">
@@ -1985,7 +1985,7 @@
     <div class="card" id="agttmGeometryCard" style="border: 2px solid #00695c; background: #e0f2f1;">
       <div class="optional-card-title" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <div>
-          <span><span class="hide-print">ðŸ“</span> AGTTM Layout Geometry &amp; Cross-Section</span>
+          <span><span class="hide-print">📐</span> AGTTM Layout Geometry &amp; Cross-Section</span>
           <div style="font-size: 0.75rem; color: #546e7a; font-weight: 600; margin-top: 2px;">Ref: Austroads AGRD Part 3 / AGTTM Part 3 (Static Work Sites)</div>
         </div>
         <button type="button" class="print-toggle-btn" data-target-card="agttmGeometryCard" aria-pressed="true">Include in Print: Yes</button>
@@ -2059,7 +2059,7 @@
     <!-- APPROACH SIGHT DISTANCE (ASD) CALCULATOR -->
     <div class="card" id="asdCard" style="border: 2px solid #5e35b1; background: #ede7f6;">
       <h2 class="optional-card-title">
-        <span><span class="hide-print">ðŸ‘ï¸</span> Approach Sight Distance (ASD)</span>
+        <span><span class="hide-print">👁️</span> Approach Sight Distance (ASD)</span>
         <button type="button" class="print-toggle-btn" data-target-card="asdCard" aria-pressed="true">Include in Print: Yes</button>
       </h2>
       <p class="optional-card-note">
@@ -2088,7 +2088,7 @@
           <select id="asdRt" onchange="calculateASD()" style="border: 1px solid #b39ddb; background: #f9f6fd;">
             <option value="1.5">1.5s (Alert / Urban)</option>
             <option value="2.0">2.0s (Normal / General)</option>
-            <option value="2.5" selected>2.5s (Austroads AGRD Â§5.4 / Rural â€” default)</option>
+            <option value="2.5" selected>2.5s (Austroads AGRD §5.4 / Rural — default)</option>
           </select>
         </div>
         <div style="background: #ffffff; border: 1px solid #b39ddb; border-radius: 6px; padding: 10px;">
@@ -2113,13 +2113,13 @@
       </div>
 
       <div id="asdWarning" style="display: none; margin-top: 12px; padding: 8px 12px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 6px; font-size: 0.85em; font-weight: bold;">
-        âš ï¸ Warning message here
+        ⚠️ Warning message here
       </div>
     </div>
 
     <div class="card" id="roadTypeSensitivityCard" style="border: 2px solid #0288d1; background: #e1f5fe;">
       <h2 class="optional-card-title">
-        ðŸ§  Road Type Sensitivity (Quick Search)
+        🧠 Road Type Sensitivity (Quick Search)
         <button type="button" class="print-toggle-btn" data-target-card="roadTypeSensitivityCard" aria-pressed="true">Include in Print: Yes</button>
       </h2>
       <p class="optional-card-note">
@@ -2151,7 +2151,7 @@
 
     <div class="card" id="speedDelayCard" style="border: 2px solid #546e7a; background: #eceff1;">
       <h2 class="optional-card-title">
-        ðŸ“‰ Speed Reduction Travel Time Impact
+        📉 Speed Reduction Travel Time Impact
         <button type="button" class="print-toggle-btn" data-target-card="speedDelayCard" aria-pressed="true">Include in Print: Yes</button>
       </h2>
       <p class="optional-card-note">
@@ -2191,7 +2191,7 @@
     <!-- ECONOMIC DELAY COST CALCULATOR -->
     <div class="card" id="economicCostCard" style="border: 2px solid #2e7d32; background: #f1f8e9;">
       <h2 class="optional-card-title">
-        <span><span class="hide-print">ðŸ’¸</span> Economic Delay Cost (Road User Cost)</span>
+        <span><span class="hide-print">💸</span> Economic Delay Cost (Road User Cost)</span>
         <button type="button" class="print-toggle-btn" data-target-card="economicCostCard" aria-pressed="true">Include in Print: Yes</button>
       </h2>
       <p class="optional-card-note">
@@ -2224,7 +2224,7 @@
 
     <div class="card" id="workWindowCard" style="display: none; border: 2px solid #1f5e63;">
       <h2 class="optional-card-title">
-        â±ï¸ Work Window Optimizer (Auto-Scheduler)
+        ⏱️ Work Window Optimizer (Auto-Scheduler)
         <div style="font-size: 0.8em; font-weight: normal; display: flex; align-items: center; gap: 8px; background: #f0fdf4; padding: 6px 12px; border-radius: 8px; border: 1px solid #81c784;">
           <label style="margin:0; color:#2e7d32; font-weight: bold;" class="tooltip" data-tip="Maximum Volume-to-Capacity Ratio permitted during roadworks.">Max Allowable VCR:</label>
           <input type="number" id="wwMaxVcr" value="0.85" step="0.05" min="0.5" max="1.5" style="width: 70px; padding: 4px 8px; font-size:1em; border: 1px solid #4caf50; border-radius: 4px;" onchange="generateWorkWindow()" />
@@ -2292,13 +2292,13 @@
       </div>
       
       <div id="sgWarning" style="display: none; margin-top: 10px; padding: 8px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 6px; font-size: 0.9em; text-align: center; font-weight: bold;">
-        âš ï¸ Warning message here
+        ⚠️ Warning message here
       </div>
     </div>
 
     <div class="card" id="austroadsVizCard" style="border: 2px solid #3f51b5; background: #e8eaf6;">
       <h2 class="optional-card-title">
-        ðŸ—ºï¸ AustRoads Management Visualization
+        🗺️ AustRoads Management Visualization
         <button type="button" class="print-toggle-btn" data-target-card="austroadsVizCard" aria-pressed="true">Include in Print: Yes</button>
       </h2>
       <p class="optional-card-note">
@@ -2354,8 +2354,8 @@
       </div>
       <h4 id="pedDetourDelayTitle" class="optional-subtitle-center optional-subtitle-teal">Estimated Delay - Detour route (-)</h4>
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px 0;">
-        <a id="pedMeasureGoogleLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #1a73e8; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">ðŸ“ Measure Distance (Google Maps)</a>
-        <a id="pedMeasureMetroLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #6a1b9a; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">ðŸ“ Measure Distance (MetroMaps)</a>
+        <a id="pedMeasureGoogleLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #1a73e8; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">📏 Measure Distance (Google Maps)</a>
+        <a id="pedMeasureMetroLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="background: #6a1b9a; color: #fff; text-decoration: none; border-radius: 6px; padding: 8px 12px; font-size: 0.88em; font-weight: 700;">📏 Measure Distance (MetroMaps)</a>
       </div>
       <p class="optional-card-note">
         Calculates estimated maximum pedestrian delay using route distances, walking speed, and controlled/uncontrolled crossing delays.
@@ -2429,15 +2429,15 @@
     
 
     <div class="report-actions" style="display:flex; flex-wrap:nowrap; gap:10px; align-items:center; justify-content:center;">
-      <button class="print-btn" onclick="toggleReportMode(true, 'detailed')" style="background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">ðŸ“ HTML Detailed Report</button>
-      <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">ðŸ“„ HTML Short Report</button>
-      <button class="print-btn" id="pythonReportDetailedBtn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">ðŸ Detailed Python Report</button>
-      <button class="print-btn" id="pythonReportShortBtn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">ðŸ Python Short Report</button>
-      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" onclick="downloadTiaSessionSnapshot();" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">ðŸ’¾ Export Session JSON</button>
+      <button class="print-btn" onclick="toggleReportMode(true, 'detailed')" style="background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📝 HTML Detailed Report</button>
+      <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 HTML Short Report</button>
+      <button class="print-btn" id="pythonReportDetailedBtn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
+      <button class="print-btn" id="pythonReportShortBtn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
+      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" onclick="downloadTiaSessionSnapshot();" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">💾 Export Session JSON</button>
     </div>
   </div>
 
-    <div class="copyright-footer">Â© 2026 Crompton Concepts. All rights reserved.</div>
+    <div class="copyright-footer">© 2026 Crompton Concepts. All rights reserved.</div>
 <script src="app.js?v=20260525i"></script>
 <!-- Firebase Realtime Database SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
