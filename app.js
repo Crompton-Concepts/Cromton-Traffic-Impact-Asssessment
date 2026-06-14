@@ -1,6 +1,8 @@
 // app.js — extracted from index.html
 // Do not edit inline in index.html; edit this file instead.
 
+  const TO_RAD = Math.PI / 180;
+
   const AUTH_SESSION_KEY = 'crompton_tia_auth';
   const USER_SESSION_KEY = 'crompton_tia_user';
   const TIER_SESSION_KEY = 'crompton_tia_tier';
@@ -18782,6 +18784,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return 'other';
     };
 
+    const R_EARTH = 6371000;
+    const paddedRadius = localCounterMatchRadiusMeters * 1.01;
+    const dLatBox = (paddedRadius / R_EARTH) * (180 / Math.PI);
+    const dLonBox = (paddedRadius / (R_EARTH * Math.max(Math.abs(Math.cos(pLat * TO_RAD)), 0.0001))) * (180 / Math.PI);
+
     const dbCandidates = Object.entries(macroSitesData).map(([id, s]) => ({
       id,
       data: s,
@@ -18789,7 +18796,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       lon: Number(s.longitude),
       roadName: String(s.road_name || s.description || '').trim(),
       roadStd: standardizeRoadName(s.road_name || s.description)
-    })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.roadStd && (!primaryIdToSkip || s.id !== primaryIdToSkip) && haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters);
+    })).filter(s => {
+      if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon) || !s.roadStd || (primaryIdToSkip && s.id === primaryIdToSkip)) return false;
+      let dLon = Math.abs(s.lon - pLon);
+      if (dLon > 180) dLon = 360 - dLon;
+      if (Math.abs(s.lat - pLat) > dLatBox || dLon > dLonBox) return false;
+      return haversineDistance(pLat, pLon, s.lat, s.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const pickBestCounterForRoad = (roadName, roadLat, roadLon) => {
       const target = String(roadName || '').trim();
@@ -19411,6 +19424,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
+    const R_EARTH = 6371000;
+    const paddedRadius = localCounterMatchRadiusMeters * 1.01;
+    const dLatBox = (paddedRadius / R_EARTH) * (180 / Math.PI);
+    const dLonBox = (paddedRadius / (R_EARTH * Math.max(Math.abs(Math.cos(pLat * TO_RAD)), 0.0001))) * (180 / Math.PI);
+
     const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
       id,
       site,
@@ -19418,7 +19436,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
       lat: Number(site && site.latitude),
       lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    })).filter(item => {
+      if (!item.roadStd || !Number.isFinite(item.lat) || !Number.isFinite(item.lon)) return false;
+      let dLon = Math.abs(item.lon - pLon);
+      if (dLon > 180) dLon = 360 - dLon;
+      if (Math.abs(item.lat - pLat) > dLatBox || dLon > dLonBox) return false;
+      return haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters;
+    });
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
@@ -21246,13 +21270,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    const phi1 = lat1 * TO_RAD;
+    const phi2 = lat2 * TO_RAD;
+    const deltaPhi = (lat2 - lat1) * TO_RAD;
+    const deltaLambda = (lon2 - lon1) * TO_RAD;
+    const sinDeltaPhi2 = Math.sin(deltaPhi / 2);
+    const sinDeltaLambda2 = Math.sin(deltaLambda / 2);
+    const a = (sinDeltaPhi2 * sinDeltaPhi2) +
               Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+              (sinDeltaLambda2 * sinDeltaLambda2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -22139,12 +22165,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Distance in kilometers.
   function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const dLat = (lat2 - lat1) * TO_RAD;
+    const dLon = (lon2 - lon1) * TO_RAD;
+    const sinDLat2 = Math.sin(dLat / 2);
+    const sinDLon2 = Math.sin(dLon / 2);
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      (sinDLat2 * sinDLat2) +
+      Math.cos(lat1 * TO_RAD) * Math.cos(lat2 * TO_RAD) *
+      (sinDLon2 * sinDLon2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
