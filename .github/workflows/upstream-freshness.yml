@@ -1,0 +1,65 @@
+name: Upstream Freshness Watch
+
+# Watches the ORIGINAL government data sources and reports when a publisher
+# releases newer data than what we last built from. Complements:
+#   - Dataset Update Check  (syncs our committed mirror)
+#   - State Dataset Build    (weekly rebuild of the 6 auto-buildable states)
+#
+# This job does NOT rebuild anything. It records the upstream signal in
+# scripts/upstream_freshness_state.json (committed, so the diff is a permanent
+# record of what changed) and raises a visible alert when a source moves.
+
+on:
+  schedule:
+    # Weekly, Monday 18:00 UTC (after the Sunday state rebuild).
+    - cron: "0 18 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  watch-upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Probe upstream sources
+        id: probe
+        run: |
+          set +e
+          python scripts/check_upstream_freshness.py | tee freshness_output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Summarise
+        run: |
+          {
+            echo '## Upstream freshness check'
+            echo '```'
+            cat freshness_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.probe.outputs.exit_code }}" = "3" ]; then
+            echo "::warning title=Upstream data changed::A government source published newer data than our last build. See the job summary for the rebuild command."
+          fi
+
+      - name: Commit updated freshness state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/upstream_freshness_state.json
+          if git diff --cached --quiet; then
+            echo "No upstream change since last run."
+          else
+            git commit -m "chore(data): record upstream freshness state"
+            git push origin HEAD:main
+          fi
