@@ -5069,6 +5069,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       event.preventDefault();
       _formLoginInProgress = true;
       isUnlockStarted = false; // Reset so form-initiated unlock can run
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      if (submitBtn) submitBtn.classList.add('loading');
       const userIdentifier = String(loginUser.value || '').trim().toLowerCase();
       const enteredPassword = String(loginPassword.value || '').trim();
 
@@ -5086,6 +5088,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (!found && !email) {
         _formLoginInProgress = false;
         loginError.textContent = 'Username not recognised. Please sign in using your email address instead.';
+        if (submitBtn) submitBtn.classList.remove('loading');
         return;
       }
 
@@ -5113,6 +5116,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         if (!authenticated) {
           _formLoginInProgress = false;
           loginError.textContent = 'Incorrect password.';
+          if (submitBtn) submitBtn.classList.remove('loading');
           return;
         }
 
@@ -5134,9 +5138,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
 
         loginError.textContent = '';
+        if (submitBtn) submitBtn.classList.remove('loading');
         _formLoginInProgress = false;
         await unlockApplication({ useFunnyLoading: true });
       } catch (firebaseError) {
+        if (submitBtn) submitBtn.classList.remove('loading');
         _formLoginInProgress = false;
         console.error('[Login] Firebase Auth error:', firebaseError);
         loginError.textContent = 'Login failed: ' + firebaseError.message;
@@ -5210,6 +5216,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const rError = document.getElementById('resetError');
         const rSuccess = document.getElementById('resetSuccess');
 
+        const submitBtn = document.getElementById('resetSubmitBtn');
+        if (submitBtn) submitBtn.classList.add('loading');
+
         rError.textContent = '';
         rSuccess.textContent = 'Sending reset link...';
 
@@ -5220,10 +5229,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             resetPasswordForm.reset();
             backToSignInBtn.click();
           }, 4000);
+          if (submitBtn) submitBtn.classList.remove('loading');
         } catch (error) {
           console.error('[Reset] Firebase error:', error);
           rSuccess.textContent = '';
           rError.textContent = 'Error: ' + error.message;
+          if (submitBtn) submitBtn.classList.remove('loading');
         }
       });
     }
@@ -5233,6 +5244,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (createForm) {
       createForm.addEventListener('submit', async function (e) {
         e.preventDefault();
+        const submitBtn = createForm.querySelector('.login-submit-btn');
+        if (submitBtn) submitBtn.classList.add('loading');
         const errEl = document.getElementById('createError');
         const okEl  = document.getElementById('createSuccess');
         if (errEl) errEl.textContent = '';
@@ -5267,6 +5280,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           if (Array.isArray(signInMethods) && signInMethods.length > 0) {
             okEl.textContent = '';
             handleExistingEmail();
+            if (submitBtn) submitBtn.classList.remove('loading');
             return;
           }
 
@@ -5295,6 +5309,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             try { await unlockApplication({ useFunnyLoading: true }); }
             catch (err) { if (errEl) errEl.textContent = 'Account created but app init failed. Please refresh.'; }
           }, 800);
+          if (submitBtn) submitBtn.classList.remove('loading');
         } catch (error) {
           console.error('[Create] Firebase error:', error);
           okEl.textContent = '';
