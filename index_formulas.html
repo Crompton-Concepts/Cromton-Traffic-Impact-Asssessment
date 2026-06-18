@@ -23,7 +23,7 @@
 </head>
 <body class="app-locked input-color-mode formula-mode">
   <button id="exitPreviewBtn" onclick="exitPrintPreview()" title="Exit print preview (Esc)">
-    <i class="fa-solid fa-xmark"></i> Exit Print Preview
+    <i aria-hidden="true" class="fa-solid fa-xmark"></i> Exit Print Preview
   </button>
 
   <!-- Floating Action Bar for Editable Report View -->
@@ -243,10 +243,10 @@
           <p class="login-brand-tagline">Professional traffic engineering tools for Queensland &amp; NSW</p>
         </div>
         <ul class="login-brand-features">
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-map-location-dot"></i></span> Live traffic count data</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-calculator"></i></span> Austroads / TMR calculations</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-file-pdf"></i></span> Professional PDF reports</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-chart-line"></i></span> Growth rate &amp; LOS analysis</li>
+          <li><span class="login-brand-feat-icon"><i aria-hidden="true" class="fa-solid fa-map-location-dot"></i></span> Live traffic count data</li>
+          <li><span class="login-brand-feat-icon"><i aria-hidden="true" class="fa-solid fa-calculator"></i></span> Austroads / TMR calculations</li>
+          <li><span class="login-brand-feat-icon"><i aria-hidden="true" class="fa-solid fa-file-pdf"></i></span> Professional PDF reports</li>
+          <li><span class="login-brand-feat-icon"><i aria-hidden="true" class="fa-solid fa-chart-line"></i></span> Growth rate &amp; LOS analysis</li>
         </ul>
         <p class="login-brand-footer">&copy; 2025 Crompton Concepts</p>
       </div>
@@ -267,7 +267,7 @@
           <div class="login-field-group">
             <label for="loginUser">Username or Email</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
+              <i aria-hidden="true" class="fa-solid fa-user"></i>
               <input id="loginUser" name="loginUser" type="text" placeholder="Enter username or email" autocomplete="username" required />
             </div>
           </div>
@@ -277,13 +277,13 @@
               <a href="#" id="forgotPasswordLink" class="forgot-pw-link">Forgot password?</a>
             </div>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-lock input-icon"></i>
+              <i aria-hidden="true" class="fa-solid fa-lock input-icon"></i>
               <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i aria-hidden="true" class="fa-solid fa-eye"></i></button>
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i aria-hidden="true" class="fa-solid fa-spinner"></i>
             <span class="btn-text">Sign In</span>
           </button>
           <div id="loginError" class="login-error" aria-live="polite"></div>
@@ -296,38 +296,38 @@
           <div class="login-field-group">
             <label for="newFullName">Full Name</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-id-card"></i>
+              <i aria-hidden="true" class="fa-solid fa-id-card"></i>
               <input id="newFullName" name="newFullName" type="text" placeholder="Your full name" autocomplete="name" />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newUsername">Username</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
+              <i aria-hidden="true" class="fa-solid fa-user"></i>
               <input id="newUsername" name="newUsername" type="text" placeholder="Choose a username" autocomplete="off" required />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newEmail">Email</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-envelope"></i>
+              <i aria-hidden="true" class="fa-solid fa-envelope"></i>
               <input id="newEmail" name="newEmail" type="email" placeholder="your@email.com" autocomplete="email" required />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newPassword">Password <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(min. 8 characters)</span></label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-key input-icon"></i>
+              <i aria-hidden="true" class="fa-solid fa-key input-icon"></i>
               <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i aria-hidden="true" class="fa-solid fa-eye"></i></button>
             </div>
           </div>
           <div class="login-field-group">
             <label for="newPasswordConfirm">Confirm Password</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-key input-icon"></i>
+              <i aria-hidden="true" class="fa-solid fa-key input-icon"></i>
               <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i aria-hidden="true" class="fa-solid fa-eye"></i></button>
             </div>
           </div>
           <div class="login-field-group">
@@ -357,7 +357,7 @@
             <input type="hidden" id="selectedTierInput" value="free" />
           </div>
           <button type="submit" class="login-submit-btn">
-            <i class="fa-solid fa-spinner"></i>
+            <i aria-hidden="true" class="fa-solid fa-spinner"></i>
             <span class="btn-text">Create Account</span>
           </button>
           <div id="createError" class="login-error" aria-live="polite"></div>
@@ -372,12 +372,12 @@
           <div class="login-field-group">
             <label for="resetEmail">Email Address</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-envelope"></i>
+              <i aria-hidden="true" class="fa-solid fa-envelope"></i>
               <input id="resetEmail" name="resetEmail" type="email" placeholder="your@email.com" required />
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="resetSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i aria-hidden="true" class="fa-solid fa-spinner"></i>
             <span class="btn-text">Send Reset Link</span>
           </button>
           <button type="button" id="backToSignInBtn" class="login-back-link">Back to Sign In</button>
@@ -415,14 +415,14 @@
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayName">Cardholder Name</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-id-card"></i>
+            <i aria-hidden="true" class="fa-solid fa-id-card"></i>
             <input id="demoPayName" type="text" placeholder="Name on card" autocomplete="off" />
           </div>
         </div>
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayEmail">Billing Email</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-envelope"></i>
+            <i aria-hidden="true" class="fa-solid fa-envelope"></i>
             <input id="demoPayEmail" type="email" placeholder="billing@email.com" autocomplete="off" />
           </div>
         </div>
@@ -431,14 +431,14 @@
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayCard">Card Number (Demo)</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-credit-card"></i>
+            <i aria-hidden="true" class="fa-solid fa-credit-card"></i>
             <input id="demoPayCard" type="text" placeholder="4242 4242 4242 4242" autocomplete="off" />
           </div>
         </div>
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayExpiry">Expiry</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-calendar"></i>
+            <i aria-hidden="true" class="fa-solid fa-calendar"></i>
             <input id="demoPayExpiry" type="text" placeholder="MM/YY" autocomplete="off" />
           </div>
         </div>
