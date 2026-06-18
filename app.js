@@ -22108,15 +22108,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   
   // Haversine distance calculation (meters)
+  const HAVERSINE_TO_RAD = Math.PI / 180;
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    const phi1 = lat1 * HAVERSINE_TO_RAD;
+    const phi2 = lat2 * HAVERSINE_TO_RAD;
+    const deltaPhi = (lat2 - lat1) * HAVERSINE_TO_RAD;
+    const deltaLambda = (lon2 - lon1) * HAVERSINE_TO_RAD;
+
+    // Cache Math.sin results to avoid redundant trigonometric computations
+    const sinHalfDeltaPhi = Math.sin(deltaPhi / 2);
+    const sinHalfDeltaLambda = Math.sin(deltaLambda / 2);
+
+    const a = sinHalfDeltaPhi * sinHalfDeltaPhi +
               Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+              sinHalfDeltaLambda * sinHalfDeltaLambda;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
