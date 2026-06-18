@@ -45,7 +45,7 @@
       const M = {
         PRIVATE_CAR: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000],
         COMMERCIAL:  [1.0667, 1.1667, 1.3333, 1.6667, 2.0000],
-        HEAVY_RIGID: [1.4000, 2.1000, 2.8000, 4.2000, 5.2222],
+        HEAVY_RIGID: [1.5000, 2.1000, 2.8000, 4.2000, 5.2222],
         ARTICULATED: [2.4000, 4.8000, 7.2000, 9.6000, 12.000],
         B_DOUBLE:    [4.1000, 8.1000, 12.200, 16.200, 20.300],
       };
@@ -109,7 +109,7 @@
       CAP_ARTERIAL:          1500,
       CAP_LOCAL:              900,
       QUEUE_VEHICLE_SPACING:  7.6,
-      PCE_HEAVY_RIGID_FLAT:   1.40,
+      PCE_HEAVY_RIGID_FLAT:   1.50,
       PCE_ARTICULATED_FLAT:   2.40,
       PCE_BDOUBLE_FLAT:       4.10,
       SWT_PCE_LV:             1.0,
@@ -215,8 +215,8 @@
       fn: (C) => ({ ref: 900,  app: C.constants.CAP_LOCAL,             tol: 0, unit: 'vph' }) },
     { id: 'ec-4', group: 'Constants', name: 'Queue vehicle spacing = 7.6 m',
       fn: (C) => ({ ref: 7.6,  app: C.constants.QUEUE_VEHICLE_SPACING, tol: 1e-9, unit: 'm' }) },
-    { id: 'ec-5', group: 'Constants', name: 'PCE heavy-rigid flat = 1.40',
-      fn: (C) => ({ ref: 1.40, app: C.constants.PCE_HEAVY_RIGID_FLAT,  tol: 1e-9, unit: 'PCE' }) },
+    { id: 'ec-5', group: 'Constants', name: 'PCE heavy-rigid flat = 1.50 (Austroads AGTM Part 3 minimum)',
+      fn: (C) => ({ ref: 1.50, app: C.constants.PCE_HEAVY_RIGID_FLAT,  tol: 1e-9, unit: 'PCE' }) },
     { id: 'ec-6', group: 'Constants', name: 'PCE articulated flat = 2.40',
       fn: (C) => ({ ref: 2.40, app: C.constants.PCE_ARTICULATED_FLAT,  tol: 1e-9, unit: 'PCE' }) },
     { id: 'ec-7', group: 'Constants', name: 'PCE B-double flat = 4.10',

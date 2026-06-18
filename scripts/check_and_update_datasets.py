@@ -76,6 +76,44 @@ DATASETS: list[DatasetConfig] = [
         local_file="tnsw.geojson",
         url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/TNSW.geojson",
     ),
+    DatasetConfig(
+        key="sa",
+        local_file="datasets/SA/sa.geojson",
+        url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/datasets/SA/sa.geojson",
+    ),
+    # State datasets produced by scripts/build_all_states.py
+    # (State Dataset Build workflow). The 6-hourly check below watches the
+    # committed copies for changes, same as the QLD/NSW entries above.
+    DatasetConfig(
+        key="vic",
+        local_file="datasets/VIC/vic.geojson",
+        url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/datasets/VIC/vic.geojson",
+    ),
+    DatasetConfig(
+        key="wa",
+        local_file="datasets/WA/wa.geojson",
+        url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/datasets/WA/wa.geojson",
+    ),
+    DatasetConfig(
+        key="nt",
+        local_file="datasets/NT/nt.geojson",
+        url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/datasets/NT/nt.geojson",
+    ),
+    DatasetConfig(
+        key="tas",
+        local_file="datasets/TAS/tas.geojson",
+        url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/datasets/TAS/tas.geojson",
+    ),
+    DatasetConfig(
+        key="act",
+        local_file="datasets/ACT/act.geojson",
+        url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/datasets/ACT/act.geojson",
+    ),
+    DatasetConfig(
+        key="qld_census",
+        local_file="datasets/QLD/qld_census.geojson",
+        url="https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/datasets/QLD/qld_census.geojson",
+    ),
 ]
 
 
@@ -100,12 +138,18 @@ def fetch_bytes(url: str) -> bytes:
 
 
 def load_manifest() -> dict[str, Any]:
+    # A missing manifest is legitimate on first run -> empty baseline.
     if not MANIFEST_PATH.exists():
         return {"generated_at": "", "datasets": {}}
+    # A *corrupt* manifest must fail loudly: silently returning an empty baseline
+    # would disable the feature-count drop guard and let bad datasets through.
     try:
         return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return {"generated_at": "", "datasets": {}}
+    except (json.JSONDecodeError, OSError) as err:
+        raise RuntimeError(
+            f"Corrupt or unreadable manifest at {MANIFEST_PATH}: {err}. "
+            "Refusing to proceed (the row-drop safety guard relies on it)."
+        ) from err
 
 
 def validate_geojson_blob(blob: bytes, dataset_key: str) -> int:
@@ -155,8 +199,14 @@ def main() -> int:
         try:
             remote_blob = fetch_bytes(dataset.url)
         except urllib.error.URLError as err:
-            print(f"ERROR: {dataset.key}: failed to fetch remote data ({err})")
-            return 1
+            # Non-fatal: a dataset that is not yet published (e.g. new state
+            # datasets before their first build) or a transient upstream
+            # outage must not block updates for every other dataset.
+            print(f"WARNING: {dataset.key}: failed to fetch remote data ({err}); keeping previous state")
+            old_meta = previous_datasets.get(dataset.key) if isinstance(previous_datasets, dict) else None
+            if isinstance(old_meta, dict) and old_meta:
+                updated_manifest_datasets[dataset.key] = old_meta
+            continue
 
         digest = sha256_hex(remote_blob)
         feature_count = validate_geojson_blob(remote_blob, dataset.key)

@@ -1,0 +1,8 @@
+# Dependencies for the dataset build/enrichment scripts in scripts/ and the
+# repo-root enrich_*/upload_* tools. The production report service uses the
+# separate, minimal requirements.txt.
+#
+# Install with:  pip install -r requirements-scripts.txt
+openpyxl>=3.1
+pandas>=2.0
+xlrd>=2.0

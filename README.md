@@ -63,12 +63,15 @@ getReportServiceBaseUrl()
 
 This allows all external users to use a shared hosted Python report backend once deployed and reachable.
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive setup and deployment instructions.
+See [DEPLOYMENT.md](docs/operations/DEPLOYMENT.md) for comprehensive setup and deployment instructions.
 
 ## Documentation
 
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Full setup, configuration, and deployment guide
-- **[LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)** - Pre-launch verification checklist
+- **[DEPLOYMENT.md](docs/operations/DEPLOYMENT.md)** - Full setup, configuration, and deployment guide
+- **[LAUNCH_CHECKLIST.md](docs/operations/LAUNCH_CHECKLIST.md)** - Pre-launch verification checklist
+- **[IMPROVEMENTS_SUMMARY.md](docs/analysis/IMPROVEMENTS_SUMMARY.md)** - Implementation and hardening summary
+- **[BRISBANE_DISTRIBUTION_FIX.md](docs/analysis/BRISBANE_DISTRIBUTION_FIX.md)** - Brisbane dataset correction notes
+- **[design.md](docs/design/design.md)** - Design and architecture notes
 - **[manual.html](manual.html)** - User manual (open in browser)
 - **[LICENSE](LICENSE)** - Proprietary license terms
 - **[COPYRIGHT.md](COPYRIGHT.md)** - Copyright notice

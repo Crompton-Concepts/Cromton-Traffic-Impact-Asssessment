@@ -10,6 +10,16 @@
   },
   "hosting": {
     "public": ".",
+    "rewrites": [
+      {
+        "source": "/api/google-address-search",
+        "function": "googleAddressSearch"
+      },
+      {
+        "source": "/api/reconcile-auth-users",
+        "function": "reconcileAuthUsers"
+      }
+    ],
     "headers": [
       {
         "source": "**/*.geojson",
@@ -54,7 +64,10 @@
       "NSW/**",
       "stitch_design_system_implementation/**",
       "index_developer.html",
+      "calc/*.test.js",
       "requirements.txt",
+      "requirements-scripts.txt",
+      "package.json",
       "cors.json",
       "tester.py",
       "*.md",
@@ -66,9 +79,9 @@
       "*.gz",
       "*.bak",
       "*.png",
+      "docs/**",
       "**/__pycache__/**",
       "**/*.pyc",
-      "design.md",
       "desktop.ini"
     ]
   }

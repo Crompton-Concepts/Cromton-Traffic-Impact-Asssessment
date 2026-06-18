@@ -1,0 +1,78 @@
+{
+  "_README": "Australian-standard formula lock for the TIA calculator. The check-formulas hook asserts these constants/expressions still exist in the source (catches silent drift), flags conflicting constants for the same formula, and warns on items whose exact standard value is UNVERIFIED. A hook cannot read a paywalled standards PDF, so 'locked' = a value a human confirmed against the cited standard; 'unverified' = present in code but NOT yet confirmed against the source document — confirm and promote to 'locked'.",
+  "version": 1,
+  "targets": ["app.js", "report_service.py"],
+  "checks": [
+    {
+      "id": "vcr-formula",
+      "status": "locked",
+      "file": "app.js",
+      "citation": "Austroads AGTM Part 3 / AGTTM - V/C = hourly volume per lane / design capacity per lane",
+      "mustContain": ["hourlyVolumePerLane / capacity"]
+    },
+    {
+      "id": "los-thresholds",
+      "status": "unverified",
+      "file": "app.js",
+      "citation": "Austroads LOS by V/C (midblock). CONFIRM breakpoints A<=0.6,B<=0.7,C<=0.8,D<=0.9,E<=1.0 against the relevant Austroads/TMR table for the road category.",
+      "mustContain": ["vcr <= 0.6", "vcr <= 0.7", "vcr <= 0.8", "vcr <= 0.9", "vcr <= 1.0"]
+    },
+    {
+      "id": "growth-cagr",
+      "status": "locked",
+      "file": "app.js",
+      "citation": "Compound growth (CAGR): VADT_design = VADT_base * (1 + r/100)^n",
+      "mustContain": ["Math.pow(1 + "]
+    },
+    {
+      "id": "queue-lv-hv-coefficients",
+      "status": "unverified",
+      "file": "app.js",
+      "citation": "AGTTM queue method: queue = avg*Ma + oversized*Mo + roadtrain*Mr, multipliers by max stop time (2/5/10/15 min). LV (Ma) 2.4/6/12/18 and HV (Mo) 8/20/40/60 - CONFIRM against AGTTM multiplier table.",
+      "mustContain": ["2.4", "* 8", "* 20"]
+    },
+    {
+      "id": "queue-roadtrain-coefficient",
+      "status": "locked",
+      "file": "app.js",
+      "citation": "AGTTM road-train multiplier (Mr) = 25.2/63/126/189 per stop time (2/5/10/15 min); 12.6 m per RT per minute. Confirmed (user, 2026-06). All paths aligned to this basis. Guard: the old 15.2/38/76/114 basis must NOT reappear.",
+      "mustContain": ["rt5 * 25.2", "Rt_5min * 25.2"],
+      "mustNotContain": ["rt5 * 15.2", "Rt_5min * 15.2"]
+    },
+    {
+      "id": "pce-shockwave",
+      "status": "unverified",
+      "file": "app.js",
+      "citation": "Shockwave PCE: pceLv=1.0, pceHv=1.4, pceRt=4.1. NOTE these differ from the capacity model's terrain PCE (flat eHV=2.0, eRt=3.0). CONFIRM both against Austroads AGTM Part 3 heavy-vehicle equivalents and reconcile.",
+      "mustContain": ["pceLv = 1.0", "pceHv = 1.4", "pceRt = 4.1"]
+    },
+    {
+      "id": "capacity-lane-defaults",
+      "status": "unverified",
+      "file": "app.js",
+      "citation": "Per-lane capacities vph: freeway 1800, multi_lane 1600, arterial 1500, sub_arterial 1200, local 900, rural 850. CONFIRM against Austroads AGTM Part 3 / TMR Road Planning & Design Manual.",
+      "mustContain": ["'freeway':", "1800", "'arterial':", "1500"]
+    },
+    {
+      "id": "peak-hour-80th-factor",
+      "status": "unverified",
+      "file": "app.js",
+      "citation": "Daily->peak-hour factor DETOUR_80TH_HOUR_FACTOR = 0.08 (8% of daily). CONFIRM design-hour factor against Austroads AGTM Part 3 / local DHV practice.",
+      "mustContain": ["DETOUR_80TH_HOUR_FACTOR = 0.08"]
+    },
+    {
+      "id": "saturation-speed",
+      "status": "unverified",
+      "file": "app.js",
+      "citation": "Saturation discharge speed default 25 km/h (shockwave). CONFIRM against Austroads signalised discharge guidance.",
+      "mustContain": ["satSpeedKmh) || 25"]
+    },
+    {
+      "id": "shockwave-jam-spacings",
+      "status": "unverified",
+      "file": "app.js",
+      "citation": "Shockwave jam spacings (m): LV 8, HV 24, RT 69. CONFIRM against Austroads vehicle dimensions / jam density basis.",
+      "mustContain": ["lvSpace = 8", "hvSpace = 24", "rtSpace = 69"]
+    }
+  ]
+}

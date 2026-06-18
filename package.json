@@ -1,0 +1,10 @@
+{
+  "name": "cromton-traffic-impact-assessment",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crompton Traffic Impact Assessment - calculation library tests",
+  "scripts": {
+    "test": "node --test calc/tia-calc.test.js",
+    "test:watch": "node --test --watch calc/tia-calc.test.js"
+  }
+}

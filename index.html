@@ -29,22 +29,22 @@
   <!-- Floating Action Bar for Editable Report View -->
   <div id="reportModeBar" class="hide-print" style="display:none; position:fixed; top:0; left:0; width:100%; background:linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%); color:white; padding:8px 14px; z-index:9999; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
     <div class="report-mode-intro" style="display:flex; align-items:center; gap: 15px; flex-wrap:wrap;">
-      <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">↩ Back to Calculation</button>
-      <div style="font-weight:bold; font-size:1.15em; letter-spacing: 0.5px;">📝 Editable Report View</div>
+      <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i>Back to Calculation</button>
+      <div style="font-weight:bold; font-size:1.15em; letter-spacing: 0.5px;"><i class="fa-solid fa-pen-to-square" style="margin-right:8px;"></i>Editable Report View</div>
       <div style="font-size:0.85em; color:#a2d5d8; border-left:1px solid #4a868a; padding-left:15px;">Click inside any commentary box to edit text before printing.</div>
     </div>
     <div class="report-mode-actions">
-      <button class="report-mode-btn" onclick="restoreReportRemovals()" style="background:#1e88e5; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">↺ Restore Removed Sections</button>
+      <button class="report-mode-btn" onclick="restoreReportRemovals()" style="background:#1e88e5; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-rotate-left" style="margin-right:6px;"></i>Restore Removed Sections</button>
     </div>
   </div>
   <div id="reportModeBottomBar" class="hide-print">
-    <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">↩ Back to Calculation</button>
+    <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i>Back to Calculation</button>
     <div class="report-mode-actions">
-      <button class="report-mode-btn" onclick="openAISummaryGenerator()" style="background:#ff6b6b; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">🤖 AI Summary</button>
-      <button id="printPreviewToggleBtn" class="report-mode-btn" onclick="togglePrintPreview()" style="background:#5e35b1; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">👁️ Print Preview</button>
-      <button class="report-mode-btn" onclick="printFinalReport()" style="background:#4caf50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">🖨️ Print / Save PDF</button>
+      <button class="report-mode-btn" onclick="openAISummaryGenerator()" style="background:#ff6b6b; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-robot" style="margin-right:6px;"></i>AI Summary</button>
+      <button id="printPreviewToggleBtn" class="report-mode-btn" onclick="togglePrintPreview()" style="background:#5e35b1; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-eye" style="margin-right:6px;"></i>Print Preview</button>
+      <button class="report-mode-btn" onclick="printFinalReport()" style="background:#4caf50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-print" style="margin-right:6px;"></i>Print / Save PDF</button>
       <div id="reportShareWrap" class="report-share-wrap">
-        <button class="report-mode-btn" onclick="toggleReportShareMenu()" style="background:#6d4c41; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;">🔗 Share Report</button>
+        <button class="report-mode-btn" onclick="toggleReportShareMenu()" style="background:#6d4c41; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-share-nodes" style="margin-right:6px;"></i>Share Report</button>
         <div id="reportShareMenu" class="report-share-menu hide-print">
           <div class="report-share-title">Share Final Report</div>
           <button class="report-mode-btn report-share-item" onclick="shareFinalReport('email')">Email Link</button>
@@ -56,16 +56,137 @@
       </div>
     </div>
   </div>
+  <!-- Volume Adjustment Model Modal -->
+  <div id="volumeAdjModal" class="vol-adj-backdrop hide-print" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="volAdjTitle">
+    <div class="vol-adj-panel">
+      <div class="vol-adj-header">
+        <h2 id="volAdjTitle"><i class="fa-solid fa-ruler-combined" style="margin-right:8px;"></i>Visual Volume Adjustment Model</h2>
+        <p class="vol-adj-subtitle">Apply step-by-step adjustment factors to the road's base volume and project to the opening year.</p>
+        <button type="button" class="vol-adj-close" onclick="VolumeAdjModel.close()" aria-label="Close">×</button>
+        <div class="vol-adj-site-info"><span class="vol-adj-site-label">Road:</span><span id="volAdjSiteName">—</span></div>
+      </div>
+      <div class="vol-adj-body">
+        <!-- LEFT: Controls -->
+        <div class="vol-adj-controls">
+          <!-- Step 1: Base Volume -->
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">① Base Volume (from DB)</div>
+            <div class="vol-adj-row">
+              <label>D1 Base AADT (vpd)</label>
+              <input type="number" id="vadj_d1Base" min="0" step="1" oninput="VolumeAdjModel.recalc()" />
+            </div>
+            <div class="vol-adj-row">
+              <label>D2 Base AADT (vpd)</label>
+              <input type="number" id="vadj_d2Base" min="0" step="1" oninput="VolumeAdjModel.recalc()" />
+            </div>
+            <div class="vol-adj-total-row">Total Base: <strong id="vadj_totalBase">0</strong> vpd</div>
+          </div>
+          <!-- Step 2: Growth Projection -->
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">② Growth Projection</div>
+            <div class="vol-adj-row">
+              <label>Growth Rate (% p.a.)</label>
+              <input type="number" id="vadj_growthRate" min="0" max="20" step="0.1" value="2.5" oninput="VolumeAdjModel.recalc()" />
+            </div>
+            <div class="vol-adj-row">
+              <label>Years to Opening</label>
+              <input type="number" id="vadj_growthYears" min="0" max="30" step="1" value="1" oninput="VolumeAdjModel.recalc()" />
+            </div>
+            <div class="vol-adj-multiplier-badge" id="vadj_growthBadge">× 1.025</div>
+          </div>
+          <!-- Step 3: Seasonal Factor -->
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">③ Seasonal Factor</div>
+            <div class="vol-adj-slider-row">
+              <label>Factor: <strong id="vadj_seasonVal">1.00</strong></label>
+              <input type="range" id="vadj_seasonSlider" min="0.70" max="1.30" step="0.01" value="1.00" oninput="VolumeAdjModel.onSlider('season')" />
+            </div>
+            <div class="vol-adj-quick-btns">
+              <button type="button" onclick="VolumeAdjModel.setSeason('summer')">Summer</button>
+              <button type="button" onclick="VolumeAdjModel.setSeason('shoulder')">Shoulder</button>
+              <button type="button" onclick="VolumeAdjModel.setSeason('winter')">Winter</button>
+              <button type="button" onclick="VolumeAdjModel.setSeason('1.00')">Reset</button>
+            </div>
+            <div class="vol-adj-multiplier-badge" id="vadj_seasonBadge">× 1.00</div>
+          </div>
+          <!-- Step 4: Day-of-Week -->
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">④ Day-of-Week Factor</div>
+            <div class="vol-adj-slider-row">
+              <label>Factor: <strong id="vadj_dowVal">1.00</strong></label>
+              <input type="range" id="vadj_dowSlider" min="0.50" max="1.20" step="0.01" value="1.00" oninput="VolumeAdjModel.onSlider('dow')" />
+            </div>
+            <div class="vol-adj-quick-btns">
+              <button type="button" onclick="VolumeAdjModel.setDow('weekday')">Weekday</button>
+              <button type="button" onclick="VolumeAdjModel.setDow('weekend')">Weekend</button>
+              <button type="button" onclick="VolumeAdjModel.setDow('1.00')">Reset</button>
+            </div>
+            <div class="vol-adj-multiplier-badge" id="vadj_dowBadge">× 1.00</div>
+          </div>
+          <!-- Step 5: Directional Split -->
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">⑤ Directional Split Override</div>
+            <div class="vol-adj-slider-row">
+              <label>D1 Split: <strong id="vadj_d1PctVal">50</strong>%</label>
+              <input type="range" id="vadj_d1PctSlider" min="0" max="100" step="1" value="50" oninput="VolumeAdjModel.onSplitSlider()" />
+            </div>
+            <div class="vol-adj-split-preview">
+              <span>D1: <strong id="vadj_splitD1Pct">50</strong>%</span>
+              <span style="color:#888;">|</span>
+              <span>D2: <strong id="vadj_splitD2Pct">50</strong>%</span>
+            </div>
+            <div class="vol-adj-note">Overrides the DB directional split for this analysis.</div>
+          </div>
+          <!-- Step 6: PHF -->
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">⑥ Peak Hour Factor (PHF)</div>
+            <div class="vol-adj-slider-row">
+              <label>PHF: <strong id="vadj_phfVal">0.92</strong></label>
+              <input type="range" id="vadj_phfSlider" min="0.80" max="1.00" step="0.01" value="0.92" oninput="VolumeAdjModel.onSlider('phf')" />
+            </div>
+            <div class="vol-adj-note">Peak Hour Vol = AADT × K(10%) ÷ PHF</div>
+          </div>
+          <!-- Step 7: Construction Traffic -->
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">⑦ Construction Traffic (Additive)</div>
+            <div class="vol-adj-row">
+              <label>Add D1 (vpd)</label>
+              <input type="number" id="vadj_constrD1" min="0" step="1" value="0" oninput="VolumeAdjModel.recalc()" />
+            </div>
+            <div class="vol-adj-row">
+              <label>Add D2 (vpd)</label>
+              <input type="number" id="vadj_constrD2" min="0" step="1" value="0" oninput="VolumeAdjModel.recalc()" />
+            </div>
+          </div>
+        </div>
+        <!-- RIGHT: Waterfall + Summary + Chart -->
+        <div class="vol-adj-visual">
+          <div class="vol-adj-wf-title">Calculation Waterfall</div>
+          <div class="vol-adj-waterfall" id="volAdjWaterfall"></div>
+          <div class="vol-adj-final-summary" id="volAdjFinalSummary"></div>
+          <div class="vol-adj-chart-wrap">
+            <div class="vol-adj-chart-title">Step-by-Step Volume Chart</div>
+            <canvas id="volAdjBarChart" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="vol-adj-footer">
+        <button type="button" class="vol-adj-reset-btn" onclick="VolumeAdjModel.reset()">↺ Reset to DB Values</button>
+        <button type="button" class="vol-adj-apply-btn" onclick="VolumeAdjModel.applyToAssessment()">✓ Apply Adjusted Volume to Assessment</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AI Summary Generator Modal -->
   <div id="aiSummaryModal" class="ai-summary-modal hide-print">
     <div class="ai-summary-content">
       <div class="ai-summary-header">
-        <div class="ai-summary-title">🤖 AI Report Summary Generator</div>
+        <div class="ai-summary-title"><i class="fa-solid fa-robot" style="margin-right:8px;"></i>AI Report Summary Generator</div>
         <button class="ai-summary-close" onclick="closeAISummaryModal()" aria-label="Close">×</button>
       </div>
       <div class="ai-summary-body">
         <div class="ai-summary-section">
-          <div class="ai-summary-section-title">📝 Select Summary Type:</div>
+          <div class="ai-summary-section-title"><i class="fa-solid fa-list-check" style="margin-right:8px;"></i>Select Summary Type:</div>
           <div style="margin: 10px 0;">
             <select id="aiSummaryType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
               <option value="executive">Executive Summary</option>
@@ -81,13 +202,13 @@
           <div>Generating summary...</div>
         </div>
         <div class="ai-summary-section">
-          <div class="ai-summary-section-title">✨ Generated Summary:</div>
+          <div class="ai-summary-section-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:8px;"></i>Generated Summary:</div>
           <div id="aiSummaryOutput" class="ai-summary-output" contenteditable="true">Click "Generate Summary" to create an AI-powered summary based on your traffic impact assessment data.</div>
         </div>
         <div class="ai-summary-actions">
-          <button class="ai-summary-btn primary" onclick="generateAISummary()">✨ Generate Summary</button>
-          <button class="ai-summary-btn secondary" onclick="copyAISummaryToClipboard()">📋 Copy to Clipboard</button>
-          <button class="ai-summary-btn secondary" onclick="insertAISummaryToReport()">📄 Insert into Report</button>
+          <button class="ai-summary-btn primary" onclick="generateAISummary()"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:6px;"></i>Generate Summary</button>
+          <button class="ai-summary-btn secondary" onclick="copyAISummaryToClipboard()"><i class="fa-solid fa-clipboard" style="margin-right:6px;"></i>Copy to Clipboard</button>
+          <button class="ai-summary-btn secondary" onclick="insertAISummaryToReport()"><i class="fa-solid fa-file-import" style="margin-right:6px;"></i>Insert into Report</button>
         </div>
         <div style="margin-top: 16px; padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px; font-size: 0.9em;">
           <strong>💡 Tip:</strong> The summary is editable. Click inside the text area to customize it before copying or inserting.
@@ -98,18 +219,7 @@
   
   <!-- Loading overlay -->
   <div id="appLoadingOverlay" class="loading-overlay hidden" role="status" aria-live="polite" aria-busy="true">
-    <div class="loading-shell">
-      <div class="loading-top-grid">
-        <article class="loading-top-card" aria-live="polite">
-          <p class="loading-top-label">Interesting Traffic Facts</p>
-          <p class="loading-top-value" id="loadingTrafficFact">Urban signal coordination can reduce arterial travel delay by around 10-20% in peak periods.</p>
-        </article>
-        <article class="loading-top-card" aria-live="polite">
-          <p class="loading-top-label">Recommended By System</p>
-          <p class="loading-top-value" id="loadingRecommendation">Start with one primary and two secondary reference counters before tuning detour assumptions.</p>
-        </article>
-      </div>
-
+    <div class="loading-shell loading-shell-compact">
       <div class="loading-card">
         <div class="loading-brand">Crompton Traffic Systems</div>
         <div class="loading-spinner"></div>
@@ -119,29 +229,6 @@
           <div class="loading-progress-fill" id="loadingProgressFill"></div>
         </div>
         <div class="loading-progress-value" id="loadingProgressValue">12%</div>
-      </div>
-
-      <div class="loading-funny-stage" aria-hidden="true">
-        <p class="loading-funny-comment" id="loadingFunnyComment">Traffic control says the coffee truck can pass after one more cycle.</p>
-        <div class="loading-funny-road-wrap">
-          <div class="loading-funny-road"></div>
-          <div class="loading-funny-cone c1">🚧</div>
-          <div class="loading-funny-cone c2">🚧</div>
-          <div class="loading-funny-cone c3">🚧</div>
-          <div class="loading-funny-cone c4">🚧</div>
-          <div class="loading-funny-controller controller-left">
-            <div class="worker">👷</div>
-            <div class="paddle">🛑</div>
-            <div class="label">Hold</div>
-          </div>
-          <div class="loading-funny-controller controller-right">
-            <div class="worker">👷</div>
-            <div class="paddle">✅</div>
-            <div class="label">Wave</div>
-          </div>
-          <div class="loading-funny-truck">🚚</div>
-          <div class="loading-funny-police">🚓</div>
-        </div>
       </div>
     </div>
   </div>
@@ -401,12 +488,12 @@
         <span class="sites-loaded-badge">
           <strong>Sites Loaded:</strong> <span id="sitesLoadedCount">0</span>
         </span>
-        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal">📖 <span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
-        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View">📘 <span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
-        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View">🧪 <span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
+        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal"><i class="fa-solid fa-book" style="margin-right:6px;"></i><span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
+        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View"><i class="fa-solid fa-square-root-variable" style="margin-right:6px;"></i><span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
+        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View"><i class="fa-solid fa-flask" style="margin-right:6px;"></i><span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
         <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="display:none; text-decoration: none;" title="Open Admin Portal"><span class="nav-label-full">Admin Portal</span><span class="nav-label-short">Admin</span></a>
         <div class="contact-dev-wrap">
-          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel">💬 <span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
+          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel"><i class="fa-solid fa-comment-dots" style="margin-right:6px;"></i><span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
           <div id="contactDevPanel" class="contact-dev-panel hidden" role="dialog" aria-label="Developer contact details">
             <p class="contact-dev-title">Feedback or issue report</p>
             <p class="contact-dev-note">Share any bug details, screenshots, and steps to reproduce.</p>
@@ -541,7 +628,7 @@
     <div class="card" id="quickSearchCard" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #1976d2;">
       <div class="snapshot-toolbar">
         <div class="snapshot-toolbar-copy">
-          <h2 style="color: #1565c0; margin: 0;">🚗 Search Address</h2>
+          <h2 style="color: #1565c0; margin: 0;"><i class="fa-solid fa-magnifying-glass-location" style="margin-right:8px;"></i>Search Address</h2>
           <p>
             Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
           </p>
@@ -559,6 +646,11 @@
           <select id="quickTiaStateSelect" style="width:100%; border:2px solid #1976d2; background:#ffffff; color:#0d47a1; border-radius:4px; padding:9px 10px; font-weight:700;">
             <option value="QLD" selected>Queensland (QLD)</option>
             <option value="NSW">New South Wales (NSW)</option>
+            <option value="SA">South Australia (SA)</option>
+            <option value="VIC">Victoria (VIC)</option>
+            <option value="WA">Western Australia (WA)</option>
+            <option value="TAS">Tasmania (TAS)</option>
+            <option value="NT">Northern Territory (NT)</option>
           </select>
         </div>
         <div id="quickTiaStateLoadStatus" style="font-size:0.82em; color:#0d47a1; font-weight:700;">Current database: Queensland (QLD)</div>
@@ -573,7 +665,7 @@
              <p id="quickTiaTypingStatus" style="display:none; margin: 4px 0 0 0; font-size: 0.82em; color: #1565c0;">Searching suggestions...</p>
         </div>
         <button id="quickTiaSearchBtn" type="button" style="background: #1976d2; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95em;">
-          🔍 Search
+          <i class="fa-solid fa-magnifying-glass" style="margin-right:6px;"></i>Search
         </button>
       </div>
       
@@ -611,7 +703,7 @@
       </div>
       
       <div id="quickTiaPanel" style="display: none; background: white; border: 1px solid #1976d2; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-        <h3 style="margin: 0 0 10px 0; color: #1565c0; border-bottom: 2px solid #1976d2; padding-bottom: 8px;">📍 Analysis Results</h3>
+        <h3 style="margin: 0 0 10px 0; color: #1565c0; border-bottom: 2px solid #1976d2; padding-bottom: 8px;"><i class="fa-solid fa-location-dot" style="margin-right:8px;"></i>Analysis Results</h3>
         
         <div id="quickTiaMatchInfo" style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px; margin-bottom: 10px; border-radius: 3px;">
           <strong style="color: #1565c0;">Match Type:</strong> <span id="quickTiaMatchType">-</span><br>
@@ -621,7 +713,7 @@
         </div>
 
         <div id="quickTiaNearbyRoads" style="display: none; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-          <h4 style="margin: 0 0 8px 0; color: #6a1b9a;">🛣️ All Nearby Roads</h4>
+          <h4 style="margin: 0 0 8px 0; color: #6a1b9a;"><i class="fa-solid fa-road" style="margin-right:8px;"></i>All Nearby Roads</h4>
           <p style="font-size: 0.8em; color: #8e24aa; margin: 0 0 8px 0;">Streets within <span id="quickTiaNearbyRoadsRadiusValue">0.2</span> km of the searched address:</p>
           <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 10px 0;">
             <span style="font-size: 0.78em; color: #6a1b9a; min-width: 34px;">0.2 km</span>
@@ -636,11 +728,11 @@
         <!-- For Exact Match -->
         <div id="quickTiaExactMatch" style="display: none;">
           <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">✓ Exact Data Found</h4>
+            <h4 style="margin: 0 0 8px 0; color: #2e7d32;"><i class="fa-solid fa-circle-check" style="margin-right:8px;"></i>Exact Data Found</h4>
             <div style="font-size: 0.9em; line-height: 1.6;">
-              <div><strong>VADT:</strong> <span id="quickTiaExactVADT">-</span> vehicles/day</div>
-              <div><strong id="quickTiaExactD1Label">D1 VADT:</strong> <span id="quickTiaExactD1">-</span></div>
-              <div><strong id="quickTiaExactD2Label">D2 VADT:</strong> <span id="quickTiaExactD2">-</span></div>
+              <div><strong>AADT:</strong> <span id="quickTiaExactVADT">-</span> vehicles/day</div>
+              <div><strong id="quickTiaExactD1Label">D1 AADT:</strong> <span id="quickTiaExactD1">-</span></div>
+              <div><strong id="quickTiaExactD2Label">D2 AADT:</strong> <span id="quickTiaExactD2">-</span></div>
             </div>
           </div>
           <button onclick="useExactTIAData()" style="background: #4caf50; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
@@ -650,19 +742,19 @@
 
         <!-- For Multiple References -->
         <div id="quickTiaMultipleRefs" style="display: none;">
-          <h4 style="margin: 0 0 10px 0; color: #d32f2f;">⊙ Using 3+ Reference Points (within 5km)</h4>
+          <h4 style="margin: 0 0 10px 0; color: #d32f2f;"><i class="fa-solid fa-location-crosshairs" style="margin-right:8px;"></i>Using 3+ Reference Points (within 5km)</h4>
           <div id="quickTiaRefList" style="background: white; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px;"></div>
           <div id="quickTiaRoadWeightWrap" style="display:none; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; padding:8px; margin-bottom:10px;">
-            <div style="font-size:0.8em; color:#1b5e20; font-weight:700; margin-bottom:6px;">Road-level weighting (used when references span multiple roads)</div>
+              <div style="font-size:0.8em; color:#1b5e20; font-weight:700; margin-bottom:6px;">Road-level weighting with suggested road volume</div>
             <div id="quickTiaRoadWeightList" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:8px;"></div>
           </div>
           <p style="font-size: 0.82em; color: #4e342e; margin: 0 0 10px 0; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 6px; padding: 8px;">
-            Each reference has its own route possibility slider (0–100%). Final traffic volume is a weighted average (not a sum).
+              Each road now shows a suggested AADT and one road-level % slider set (no duplicate sliders). Reference cards stay interactive for Use/Remove and show informative weighting context. Final traffic volume is a weighted average, not a sum.
           </p>
 
           <!-- Calculation Method Selector -->
           <div style="background: #fff3e0; border: 2px solid #f57c00; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-            <h5 style="margin: 0 0 10px 0; color: #e65100;">🧮 Choose Calculation Method</h5>
+            <h5 style="margin: 0 0 10px 0; color: #e65100;"><i class="fa-solid fa-calculator" style="margin-right:8px;"></i>Choose Calculation Method</h5>
             <div style="display: flex; gap: 16px; flex-wrap: wrap;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
                 <input type="radio" name="trafficCalcMethod" value="weighted" checked onchange="toggleTrafficCalcMethod()">
@@ -681,8 +773,8 @@
 
             <!-- Mode toggle -->
             <div style="display: flex; gap: 0; margin-bottom: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #c9d8da;">
-              <button id="manualGenModeTrip" onclick="setManualGenMode('trip')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #2a4045; color: #fff; transition: background 0.2s;">📊 Trip Generation</button>
-              <button id="manualGenModeDirect" onclick="setManualGenMode('direct')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #e8f0f1; color: #2a4045; transition: background 0.2s;">🔢 Direct AADT Entry</button>
+              <button id="manualGenModeTrip" onclick="setManualGenMode('trip')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #2a4045; color: #fff; transition: background 0.2s;"><i class="fa-solid fa-chart-column" style="margin-right:6px;"></i>Trip Generation</button>
+              <button id="manualGenModeDirect" onclick="setManualGenMode('direct')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #e8f0f1; color: #2a4045; transition: background 0.2s;"><i class="fa-solid fa-hashtag" style="margin-right:6px;"></i>Direct AADT Entry</button>
             </div>
 
             <!-- Trip Generation Calculator section -->
@@ -744,7 +836,7 @@
             </div>
 
             <button onclick="calculateTripGeneration()" style="margin-top: 15px; padding: 10px 15px; background: linear-gradient(135deg, #2a4045 0%, #1a2c2f 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(42, 64, 69, 0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
-              📊 Calculate VADT & Peak Hours
+              <i class="fa-solid fa-chart-column" style="margin-right:6px;"></i>Calculate AADT &amp; Peak Hours
             </button>
 
             <div style="margin-top: 10px; background: #e8f4f8; border: 1px solid #84cad8; border-radius: 6px; padding: 10px; font-size: 0.82em; line-height: 1.5;">
@@ -794,7 +886,7 @@
               </div>
 
               <button onclick="applyDirectAadtEntry()" style="padding: 10px 15px; background: linear-gradient(135deg, #14746f 0%, #0a3f3c 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(20,116,111,0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
-                ✓ Apply AADT to Assessment
+                <i class="fa-solid fa-check" style="margin-right:6px;"></i>Apply AADT to Assessment
               </button>
             </div><!-- end manualGenDirectSection -->
 
@@ -804,21 +896,21 @@
             <h5 style="margin: 0 0 8px 0; color: #2e7d32;">Calculated AADT (Weighted Average of References)</h5>
             <div style="font-size: 0.9em; line-height: 1.6;">
               <div><strong>Detected Area Type:</strong> <span id="quickTiaAreaType">-</span> • <strong>Type%:</strong> <span id="quickTiaTypePercent">100%</span></div>
-              <div><strong>Weighted Avg VADT:</strong> <span id="quickTiaCalcAvgVADT">-</span> vehicles/day</div>
+              <div><strong>Weighted Avg AADT:</strong> <span id="quickTiaCalcAvgVADT">-</span> vehicles/day</div>
               <div><strong>AADT to use:</strong> <span id="quickTiaCalcAdjVADT">-</span> vehicles/day</div>
-              <div><strong id="quickTiaCalcD1Label">Calculated D1 VADT:</strong> <span id="quickTiaCalcD1">-</span></div>
-              <div><strong id="quickTiaCalcD2Label">Calculated D2 VADT:</strong> <span id="quickTiaCalcD2">-</span></div>
+              <div><strong id="quickTiaCalcD1Label">Calculated D1 AADT:</strong> <span id="quickTiaCalcD1">-</span></div>
+              <div><strong id="quickTiaCalcD2Label">Calculated D2 AADT:</strong> <span id="quickTiaCalcD2">-</span></div>
             </div>
           </div>
 
           <button id="quickTiaUseCalculatedBtn" onclick="useCalculatedTIAData()" style="background: linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; box-shadow: 0 4px 12px rgba(15, 47, 50, 0.25);">
-            ✓ Use Calculated Data
+            <i class="fa-solid fa-check" style="margin-right:6px;"></i>Use Calculated Data
           </button>
         </div>
       </div>
 
       <div id="quickTiaError" style="display: none; background: #ffebee; border: 1px solid #ef5350; border-radius: 6px; padding: 10px; color: #c30000;">
-        <strong>❌ No matches found</strong><br>
+        <strong><i class="fa-solid fa-circle-exclamation" style="margin-right:6px;"></i>No matches found</strong><br>
         <span style="font-size: 0.9em;">Try searching by different road name or manually select from database below.</span>
       </div>
     </div>
@@ -850,6 +942,7 @@
               <option value="Logan">Logan Only</option>
               <option value="Toowoomba">Toowoomba Only</option>
               <option value="Tewantin">Tewantin Only</option>
+              <option value="QLD Census">QLD Census Only</option>
               <option value="NSW">NSW Only</option>
             </select>
           </div>
@@ -861,12 +954,12 @@
           <div id="customDataUploadStatus" style="font-size: 0.76em; color: #2e7d32; margin: 0 0 8px 0;">No custom upload loaded.</div>
           <input type="text" id="macroSiteSearch" list="macroSitesList" placeholder="Type Site ID or Name to autofill..." style="border: 2px solid #4caf50; background-color: #f0fdf4;" />
           <datalist id="macroSitesList"></datalist>
-          <p style="font-size: 0.75em; color: #666; margin-top: 6px;">Or manually enter VADT & parameters below</p>
+          <p style="font-size: 0.75em; color: #666; margin-top: 6px;">Or manually enter AADT & parameters below</p>
         </div>
       </div>
 
       <div id="macroSiteDetailsPanel" style="display:none; background:#e8f5e9; border:1px solid #81c784; border-radius:6px; padding:12px; margin-bottom:12px;">
-        <h3 style="margin:0 0 8px 0; color:#2e7d32;">📍 Selected Site Details</h3>
+        <h3 style="margin:0 0 8px 0; color:#2e7d32;"><i class="fa-solid fa-location-dot" style="margin-right:8px;"></i>Selected Site Details</h3>
         <div style="display:grid; grid-template-columns:160px 1fr; gap:6px; font-size:0.9em;">
           <div style="font-weight:700;">Site ID:</div><div id="macroDetailSiteId">-</div>
           <div style="font-weight:700;">Source:</div><div id="macroDetailSource">-</div>
@@ -877,10 +970,11 @@
           <div style="font-weight:700;">Count Year:</div><div id="macroDetailCountYear">-</div>
           <div style="font-weight:700;">Growth Rate:</div><div id="macroDetailGrowthRate">-</div>
           <div style="font-weight:700;">HV%:</div><div id="macroDetailHV">-</div>
+          <div style="font-weight:700;" id="macroDetailRTLabel">RT%:</div><div id="macroDetailRT">-</div>
           <div style="font-weight:700;">Data Quality:</div><div id="macroDetailQuality">-</div>
-          <div id="macroDetailD1Label" style="font-weight:700;">D1 VADT:</div><div id="macroDetailD1">-</div>
-          <div id="macroDetailD2Label" style="font-weight:700;">D2 VADT:</div><div id="macroDetailD2">-</div>
-          <div style="font-weight:700;">Total VADT:</div><div id="macroDetailTotal">-</div>
+          <div id="macroDetailD1Label" style="font-weight:700;">D1 AADT:</div><div id="macroDetailD1">-</div>
+          <div id="macroDetailD2Label" style="font-weight:700;">D2 AADT:</div><div id="macroDetailD2">-</div>
+          <div style="font-weight:700;">Total AADT:</div><div id="macroDetailTotal">-</div>
           <div id="macroDetailPdfLabel" style="font-weight:700;">PDF Report:</div><div id="macroDetailPdfValue"><a id="macroPdfLink" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="color:#6b7280; text-decoration:none; pointer-events:none; opacity:0.75;">No PDF available for this site</a></div>
         </div>
         <div id="macroDetailDirInfo" style="display:none; margin-top:10px; background:#f0f7ff; border:1px solid #90caf9; border-radius:6px; padding:8px 10px;">
@@ -939,15 +1033,15 @@
             <input id="baseHVPercent" type="number" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20;" />
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
-            <label id="macroInputD1Label" style="color: #2e7d32; font-weight: bold;">D1 VADT (from DB)</label>
+            <label id="macroInputD1Label" style="color: #2e7d32; font-weight: bold;">D1 AADT (from DB)</label>
             <input id="D1_VADT" type="number" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20;" />
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
-            <label id="macroInputD2Label" style="color: #2e7d32; font-weight: bold;">D2 VADT (from DB)</label>
+            <label id="macroInputD2Label" style="color: #2e7d32; font-weight: bold;">D2 AADT (from DB)</label>
             <input id="D2_VADT" type="number" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20;" />
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
-            <label style="color: #2e7d32; font-weight: bold;">VADT (Auto-calc)</label>
+            <label style="color: #2e7d32; font-weight: bold;">AADT (Auto-calc)</label>
             <input id="VADT" type="number" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20;" />
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
@@ -995,20 +1089,27 @@
             Target Year Projection (Grouped)
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
-            <label style="color: #2e7d32; font-weight: bold;">Predicted VADT @ Opening Year</label>
+            <label style="color: #2e7d32; font-weight: bold;">Predicted AADT @ Opening Year</label>
             <input id="predictedVADT" type="number" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20;" />
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
-            <label id="predictedD1Label" style="color: #2e7d32; font-weight: bold;">Predicted D1 VADT @ Opening Year</label>
+            <label id="predictedD1Label" style="color: #2e7d32; font-weight: bold;">Predicted D1 AADT @ Opening Year</label>
             <input id="predictedD1VADT" type="number" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20;" />
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
-            <label id="predictedD2Label" style="color: #2e7d32; font-weight: bold;">Predicted D2 VADT @ Opening Year</label>
+            <label id="predictedD2Label" style="color: #2e7d32; font-weight: bold;">Predicted D2 AADT @ Opening Year</label>
             <input id="predictedD2VADT" type="number" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20;" />
           </div>
           <div style="background: #e8f5e9; border: 1px solid #81c784; border-radius: 6px; padding: 10px;">
             <label style="color: #2e7d32; font-weight: bold;" class="tooltip" data-tip="Directional Traffic Characterisation Algorithm">DTCA (Auto-detect)</label>
             <select id="DTCA" readonly style="border: 1px solid #81c784; background-color: #f1f8f6; color: #1b5e20; pointer-events: none;"><option>Yes</option><option>No</option></select>
+          </div>
+          <div style="grid-column: 1 / -1; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="font-weight: 700; color: #0d47a1; font-size: 0.9em;">Road Scenario Volume Predictor</div>
+              <div style="font-size: 0.78em; color: #1565c0; margin-top: 2px;">Predict road traffic using turning lanes, through lanes, movement split and real operating conditions.</div>
+            </div>
+            <button type="button" onclick="VolumeAdjModel.open()" style="width: auto; margin: 0; padding: 8px 16px; font-size: 0.85em; background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); box-shadow: 0 3px 10px rgba(13,71,161,0.3); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700;">Open Predictor →</button>
           </div>
         </div>
       </fieldset>
@@ -1063,14 +1164,9 @@
               <option value="rural_highway">Rural Highway (1,000 vph/lane)</option>
             </select>
           </div>
-          <div id="laneClosureModeWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
-            <label style="color: #c30000; font-weight: bold;">Lane Closure Mode *</label>
-            <select id="laneClosureCount" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
-              <option value="1" selected>Single Lane Closure</option>
-              <option value="2">Two Lane Closure</option>
-              <option value="contraflow">Contraflow (1 lane each direction)</option>
-            </select>
-            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Shown when any direction has >=2 lanes. For multi-lane roads, closure options include 1 lane closed and 2 lanes closed. Contraflow requires >=2 lanes in both directions.</p>
+          <div style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
+            <label style="color: #c30000; font-weight: bold;">Work-Zone Control Modes</label>
+            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">All control modes are now compared directly in the <strong>Queue Length Estimation</strong> table below — lane closures, contraflow / single-lane reversible flow, and traffic holds (Full / Single-Direction Stop-Go) — so there is no single mode to select here. For hold modes, work V/C is not applicable (capacity is zero during the hold); the governing metric is the queue accumulated over the hold time.</p>
           </div>
           <div id="contraflowClosedWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px; margin-top: 8px;">
             <label style="color: #c30000; font-weight: bold;">↔️ Contraflow — Closed Carriageway *</label>
@@ -1227,7 +1323,7 @@
     </div>
 
     <div class="card">
-      <h2><span style="background:#e8f4f5;border-radius:6px;padding:4px 6px;font-size:0.85em;line-height:1;"><i class="fa-solid fa-car-side section-icon" aria-hidden="true"></i></span>Queue Length Estimation</h2>
+      <h2><span style="background:#e8f4f5;border-radius:6px;padding:4px 6px;font-size:0.85em;line-height:1;"><i class="fa-solid fa-car-side section-icon" aria-hidden="true"></i></span>Queue Length Estimation<span class="std-badge" title="Method per Austroads Guide to Traffic Management"><i class="fa-solid fa-book-bookmark" aria-hidden="true"></i>Austroads AGTTM</span></h2>
       <p class="section-help">Toggle between table and chart views. Queue values are shown by duration window and period for both directions.</p>
       <div id="queueRiskBadge" style="display:none; margin: 6px 0 10px 0; padding: 8px 10px; border-radius: 6px; background: #fff3e0; border: 1px solid #ffcc80; color: #e65100; font-weight: 700; font-size: 0.9em;"></div>
       <div class="table-actions" style="justify-content: flex-end; margin: 0 0 8px 0;">
@@ -1305,7 +1401,7 @@
     </div>
 
     <div class="card">
-      <h2><span style="background:#e8f4f5;border-radius:6px;padding:4px 6px;font-size:0.85em;line-height:1;"><i class="fa-solid fa-chart-line section-icon" aria-hidden="true"></i></span>VCR / LOS Analysis</h2>
+      <h2><span style="background:#e8f4f5;border-radius:6px;padding:4px 6px;font-size:0.85em;line-height:1;"><i class="fa-solid fa-chart-line section-icon" aria-hidden="true"></i></span>VCR / LOS Analysis<span class="std-badge" title="Method per Austroads Guide to Traffic Management Part 3"><i class="fa-solid fa-book-bookmark" aria-hidden="true"></i>Austroads AGTM Pt 3</span></h2>
       <p class="section-help">Tracks directional and network stress across periods using LOS color bands. Use this as primary capacity risk screening.</p>
       <p id="laneClosureAssumptionNote" class="section-help" style="margin-top:-4px; color:#0d47a1; font-weight:700;">Work VCR assumes: Single Lane Closure (default)</p>
       <div id="vcrRiskBadge" style="display:none; margin: 6px 0 10px 0; padding: 8px 10px; border-radius: 6px; background: #ffebee; border: 1px solid #ef9a9a; color: #b71c1c; font-weight: 700; font-size: 0.9em;"></div>
@@ -1677,7 +1773,7 @@
 
         <div id="detourManualVpdPanel" style="display: none; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
           <label style="color: #6a1b9a; font-weight: bold;">Manual Inputs for Selected Roads (when no nearby counter is found)</label>
-          <div style="font-size: 0.76em; color: #8e24aa; margin-top: 4px;">Choose a <strong>Road VPD method</strong> for each road: <strong>📡 Nearby Datapoints</strong> calculates a weighted current-road VPD from the selected reference counters; <strong>🚗 Trip Generation</strong> uses calculated VADT. Datapoint mode is read-only and updates from the selected weights below.</div>
+          <div style="font-size: 0.76em; color: #8e24aa; margin-top: 4px;">Choose a <strong>Road VPD method</strong> for each road: <strong>📡 Nearby Datapoints</strong> calculates a weighted current-road VPD from the selected reference counters; <strong>🚗 Trip Generation</strong> uses calculated AADT. Datapoint mode is read-only and updates from the selected weights below.</div>
           <div id="detourManualVpdRows" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
 
@@ -1923,6 +2019,10 @@
           <label for="hvPercent">Heavy Vehicles (%)</label>
           <input type="number" id="hvPercent" value="5" step="1" max="100">
         </div>
+        <div class="input-group">
+          <label for="postedSpeed">Posted Speed (km/h)</label>
+          <input type="number" id="postedSpeed" value="60" step="10" min="10" max="130" title="&#8804;60 km/h uses 6 m/car (city); &gt;60 km/h uses 7 m/car (highway)">
+        </div>
       </div>
 
       <div class="results-panel">
@@ -2127,11 +2227,11 @@
       </p>
       <div class="grid" style="margin-bottom: 0;">
         <div style="background: #ffffff; border: 1px solid #81d4fa; border-radius: 6px; padding: 10px;">
-          <label style="color: #01579b;">Residential Max Avg VADT</label>
+          <label style="color: #01579b;">Residential Max Avg AADT</label>
           <input type="number" id="rtResidentialMaxVadt" value="4500" min="500" step="100" oninput="updateTiaCalculations()" style="border: 1px solid #81d4fa;" />
         </div>
         <div style="background: #ffffff; border: 1px solid #81d4fa; border-radius: 6px; padding: 10px;">
-          <label style="color: #01579b;">Busy Min Avg VADT</label>
+          <label style="color: #01579b;">Busy Min Avg AADT</label>
           <input type="number" id="rtBusyMinVadt" value="14000" min="3000" step="500" oninput="updateTiaCalculations()" style="border: 1px solid #81d4fa;" />
         </div>
         <div style="background: #ffffff; border: 1px solid #81d4fa; border-radius: 6px; padding: 10px;">
@@ -2181,7 +2281,7 @@
         </div>
         
         <div style="background: #ffffff; border-left: 5px solid #d32f2f; padding: 12px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-          <div style="font-size: 0.8em; color: #666; font-weight: bold; text-transform: uppercase;" class="tooltip" data-tip="Delay per vehicle multiplied by the total daily traffic volume (VADT).">Total Daily Network Delay</div>
+          <div style="font-size: 0.8em; color: #666; font-weight: bold; text-transform: uppercase;" class="tooltip" data-tip="Delay per vehicle multiplied by the total daily traffic volume (AADT).">Total Daily Network Delay</div>
           <div id="srTotalHours" style="font-size: 1.6em; font-weight: bold; color: #c62828; margin-top: 4px;">-</div>
           <div style="font-size: 0.8em; color: #777; margin-top: 4px;">Lost hours per day</div>
         </div>
@@ -2433,22 +2533,25 @@
       <button class="print-btn" onclick="toggleReportMode(true, 'short')" style="background: linear-gradient(135deg, #8e24aa 0%, #6a1b9a 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">📄 HTML Short Report</button>
       <button class="print-btn" id="pythonReportDetailedBtn" onclick="openPythonEditableReport('detailed')" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Detailed Python Report</button>
       <button class="print-btn" id="pythonReportShortBtn" onclick="openPythonEditableReport('short')" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">🐍 Python Short Report</button>
-      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" onclick="downloadTiaSessionSnapshot();" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">💾 Export Session JSON</button>
+      <button id="tiaSnapshotExportBtn" type="button" class="print-btn" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); font-size: 0.88em; padding: 8px 14px; white-space: nowrap;">💾 Export Session JSON</button>
     </div>
   </div>
 
     <div class="copyright-footer">© 2026 Crompton Concepts. All rights reserved.</div>
-<script src="app.js?v=20260525i"></script>
+<!-- Canonical calculation library — must load before app.js so production and
+     the formula verifier share one tested source (calc/tia-calc.js). -->
+<script src="calc/tia-calc.js?v=20260611"></script>
+<script src="app.js?v=20260611"></script>
 <!-- Firebase Realtime Database SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <!-- TIA Firebase config (fill in with your project credentials) -->
-<script src="firebase-config.js"></script>
+<script defer src="firebase-config.js"></script>
 <!-- TIA shared user sync module -->
-<script src="user-sync.js"></script>
-<script src="tia-shared-sync.js"></script>
-<script src="formula-agent.js"></script>
+<script defer src="user-sync.js"></script>
+<script defer src="tia-shared-sync.js"></script>
+<script defer src="formula-agent.js"></script>
 </body>
 </html>
 

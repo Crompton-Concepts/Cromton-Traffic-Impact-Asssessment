@@ -478,6 +478,46 @@
         hint: 'Auto-selected because NSW database is active.'
       };
     }
+    if (stateScope === 'SA') {
+      return {
+        key: 'DPTI_SA',
+        label: 'Austroads Guide to Traffic Management (SA)',
+        shortLabel: 'Austroads (SA)',
+        hint: 'Auto-selected because South Australia database is active.'
+      };
+    }
+    if (stateScope === 'VIC') {
+      return {
+        key: 'DTP_VIC',
+        label: 'Austroads Guide to Traffic Management (VIC)',
+        shortLabel: 'Austroads (VIC)',
+        hint: 'Auto-selected because Victoria database is active.'
+      };
+    }
+    if (stateScope === 'WA') {
+      return {
+        key: 'MRWA_WA',
+        label: 'Austroads Guide to Traffic Management (WA)',
+        shortLabel: 'Austroads (WA)',
+        hint: 'Auto-selected because Western Australia database is active.'
+      };
+    }
+    if (stateScope === 'TAS') {
+      return {
+        key: 'DSG_TAS',
+        label: 'Austroads Guide to Traffic Management (TAS)',
+        shortLabel: 'Austroads (TAS)',
+        hint: 'Auto-selected because Tasmania database is active.'
+      };
+    }
+    if (stateScope === 'NT') {
+      return {
+        key: 'DIPL_NT',
+        label: 'Austroads Guide to Traffic Management (NT)',
+        shortLabel: 'Austroads (NT)',
+        hint: 'Auto-selected because Northern Territory database is active.'
+      };
+    }
     return {
       key: 'TMR_QLD_2024',
       label: 'TMR Guide to Traffic Impact Assessment (2024)',
@@ -1308,13 +1348,12 @@
     const fields = [
       ['Road operation mode', 'roadOperationMode'],
       ['Base Year AADT', 'VADT'],
-      ['Base Year D1 VADT', 'D1_VADT'],
-      ['Base Year D2 VADT', 'D2_VADT'],
+      ['Base Year D1 AADT', 'D1_VADT'],
+      ['Base Year D2 AADT', 'D2_VADT'],
       ['Predicted AADT @ Opening Year', 'predictedVADT'],
-      ['Predicted D1 VADT @ Opening Year', 'predictedD1VADT'],
-      ['Predicted D2 VADT @ Opening Year', 'predictedD2VADT'],
+      ['Predicted D1 AADT @ Opening Year', 'predictedD1VADT'],
+      ['Predicted D2 AADT @ Opening Year', 'predictedD2VADT'],
       ['Growth rate (%)', 'macroGrowthRate'],
-      ['Lane closure mode', 'laneClosureCount'],
       ['Road lanes', 'roadLanesCount'],
       ['Work duration (days)', 'macroWorkDurationDays'],
       ['Work hours / day', 'macroWorkHoursPerDay'],
@@ -1895,7 +1934,7 @@
     tables.push({
       table_id: 'syntheticVpdCalculated',
       title: 'Detour VPD Calculated',
-      columns: ['Detour Road', 'Base VADT (vpd)', 'Growth Factor', 'Design Year VADT (vpd)', 'Diverted Traffic (vpd)', 'Total VPD on Detour'],
+      columns: ['Detour Road', 'Base AADT (vpd)', 'Growth Factor', 'Design Year AADT (vpd)', 'Diverted Traffic (vpd)', 'Total VPD on Detour'],
       rows: vpdRows
     });
 
@@ -2187,8 +2226,9 @@
     showPythonReportSetupInstructions(reasonText || 'Python report service is unavailable.');
   }
 
-  function showPythonReportSetupInstructions(reasonText = '') {
+  function showPythonReportSetupInstructions(reasonText = '', options = {}) {
     const reason = reasonText || 'Python report service is not reachable.';
+    const forceModal = !!(options && options.forceModal);
     const usingLoopbackService = isLoopbackReportServiceUrl();
     const serviceFolderHint = '%USERPROFILE%\\TIA-Python-Report-Service';
     const appOrigin = (typeof window !== 'undefined' && window.location && /^https?:$/i.test(window.location.protocol))
@@ -2266,13 +2306,17 @@
     if (reasonEl) reasonEl.textContent = reason;
     if (guideEl) guideEl.innerHTML = guide;
     if (commandsEl) commandsEl.textContent = commands;
-    if (modal) modal.style.display = 'block';
+    const shouldOpenModal = usingLoopbackService || forceModal;
+    if (modal) modal.style.display = shouldOpenModal ? 'block' : 'none';
     if (typeof setAppStatusBanner === 'function') {
       if (usingLoopbackService) {
         setAppStatusBanner('<strong>Python Report unavailable:</strong> Install/start local Python report service on 127.0.0.1:8060 and try again.', 'warning');
       } else {
         setAppStatusBanner(`<strong>Python Report unavailable:</strong> Hosted report service is not reachable at ${REPORT_SERVICE_BASE_URL}.`, 'warning');
       }
+    }
+    if (!shouldOpenModal && typeof showNotification === 'function') {
+      showNotification('Hosted Python report service is unreachable right now. You can continue using the rest of the app.');
     }
   }
 
@@ -2830,7 +2874,16 @@
     
     // Get growth data if available
     const growthRate = document.getElementById('annualGrowthRate')?.value || 'N/A';
-    
+
+    // Safe percentage helper: returns '—' when the denominator is missing or zero
+    // so the summary never prints Infinity or NaN.
+    const safePct = (numerator, denominator) => {
+      const n = parseInt(numerator, 10);
+      const d = parseInt(denominator, 10);
+      if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return '—';
+      return Math.round((n / d) * 100) + '%';
+    };
+
     const templates = {
       executive: `EXECUTIVE SUMMARY
 
@@ -2853,13 +2906,13 @@ Recommendations include monitoring peak hour operations and consideration of inf
 
 Assessment Parameters:
 • Assessment Period: ${baseYear} to ${targetYear}
-• Base Traffic Volume (VADT): ${baseVADT} vehicles/day
+• Base Traffic Volume (AADT): ${baseVADT} vehicles/day
 • Projected Traffic Volume: ${targetVADT} vehicles/day
 • Annual Growth Rate: ${growthRate}%
 
 Directional Distribution:
-• Direction 1: ${d1VADT} vpd (${Math.round((parseInt(d1VADT)/parseInt(baseVADT))*100)}%)
-• Direction 2: ${d2VADT} vpd (${Math.round((parseInt(d2VADT)/parseInt(baseVADT))*100)}%)
+• Direction 1: ${d1VADT} vpd (${safePct(d1VADT, baseVADT)})
+• Direction 2: ${d2VADT} vpd (${safePct(d2VADT, baseVADT)})
 
 Methodology:
 This assessment utilizes hourly traffic profile analysis, queue length calculations using Akçelik's method, and Volume-to-Capacity Ratio (VCR) analysis to determine road performance. Peak hour operations have been identified for both AM and PM periods, with consideration for directional splits and vehicle classification.
@@ -2871,7 +2924,7 @@ The analysis considers existing infrastructure capacity, projected traffic growt
 Traffic Volume Analysis:
 • Current daily traffic: ${baseVADT} vehicles per day
 • Projected traffic (${targetYear}): ${targetVADT} vehicles per day
-• Growth over assessment period: ${Math.round(((parseInt(targetVADT) - parseInt(baseVADT)) / parseInt(baseVADT)) * 100)}%
+• Growth over assessment period: ${safePct(parseInt(targetVADT, 10) - parseInt(baseVADT, 10), baseVADT)}
 
 Peak Hour Performance:
 The assessment has identified critical peak periods where traffic demand is highest. Queue length analysis indicates ${parseInt(targetVADT) > parseInt(baseVADT) * 1.2 ? 'potential capacity constraints' : 'adequate capacity'} for the assessment period.
@@ -3101,12 +3154,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ['Target Year', getFieldValue('macroOpeningYear')],
       ['Growth Rate (% p.a.)', getFieldValue('macroGrowthRate')],
       ['HV % (from DB / current)', getFieldValue('baseHVPercent')],
-      ['Direction 1 VADT', getFieldValue('D1_VADT')],
-      ['Direction 2 VADT', getFieldValue('D2_VADT')],
-      ['Total VADT', getFieldValue('VADT')],
-      ['Predicted VADT @ Opening Year', getFieldValue('predictedVADT')],
-      ['Predicted D1 VADT @ Opening Year', getFieldValue('predictedD1VADT')],
-      ['Predicted D2 VADT @ Opening Year', getFieldValue('predictedD2VADT')],
+      ['Direction 1 AADT', getFieldValue('D1_VADT')],
+      ['Direction 2 AADT', getFieldValue('D2_VADT')],
+      ['Total AADT', getFieldValue('VADT')],
+      ['Predicted AADT @ Opening Year', getFieldValue('predictedVADT')],
+      ['Predicted D1 AADT @ Opening Year', getFieldValue('predictedD1VADT')],
+      ['Predicted D2 AADT @ Opening Year', getFieldValue('predictedD2VADT')],
       ['AM Peak Flow Direction', getFieldValue('amPeakDirection')],
       ['Terrain', getFieldValue('macroTerrainType')],
       ['Road Trains (RTR)', getFieldValue('RTR')],
@@ -3856,7 +3909,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const hvPercent = getValue('HVP') || '-';
     const d1Lanes = getValue('D1_Lanes') || '1';
     const d2Lanes = getValue('D2_Lanes') || '1';
-    const laneClosureMode = (typeof getLaneClosureLabel === 'function' ? getLaneClosureLabel() : getValue('laneClosureCount')) || '-';
+    // All control modes are enumerated in the Queue Length table (no single selected mode).
+    const laneClosureMode = 'All modes compared (see Queue Length table)';
+    const closureAssumptionExtra = ' Lane closures, contraflow / single-lane reversible flow, and traffic holds (Full / Single-Direction Stop-Go) are all shown in the Queue Length table. For hold modes, work V/C is not applicable (capacity = 0 during the hold); the queue accumulated over the hold time governs.';
 
     const worstVcr = getNumber('kpiWorstVcr') ?? getNumber('vcrResult');
     const worstVcrText = Number.isFinite(worstVcr) ? worstVcr.toFixed(2) : '-';
@@ -3945,7 +4000,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Use Of Output</div><div style="color:#111827; font-size:11px; line-height:1.45;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
         <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Worst Capacity Condition</div><div style="color:#111827; font-size:11px; line-height:1.45;">Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
         <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Queue Interpretation</div><div style="color:#111827; font-size:11px; line-height:1.45;">Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
-        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.</div></div>
+        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.${escapeHtml(closureAssumptionExtra)}</div></div>
         <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Assessment Periods</div><div style="color:#111827; font-size:11px; line-height:1.45;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
         <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Design Check</div><div style="color:#111827; font-size:11px; line-height:1.45;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
       </div>
@@ -4599,8 +4654,84 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   let isQuickTiaSearchInitialized = false;
   // Track data loading state for optimized auth flow
   let dataLoadingPromise = null;
+  let dataLoadingScope = '';
   let requestedDataScope = 'QLD';
   let loadedDataScope = '';
+
+  // Single source of truth for supported state databases. Add a new state
+  // here (plus a FIREBASE_*_URL + loadMacroSitesData branch) to wire it in.
+  const SUPPORTED_STATE_SCOPES = ['QLD', 'NSW', 'SA', 'VIC', 'WA', 'TAS', 'NT'];
+  const STATE_LONG_NAMES = {
+    QLD: 'Queensland',
+    NSW: 'New South Wales',
+    SA: 'South Australia',
+    VIC: 'Victoria',
+    WA: 'Western Australia',
+    TAS: 'Tasmania',
+    NT: 'Northern Territory'
+  };
+
+  function normalizeStateScope(stateScopeOverride = '') {
+    const _s = String(stateScopeOverride || getQuickTiaSelectedState() || 'QLD').trim().toUpperCase();
+    return SUPPORTED_STATE_SCOPES.includes(_s) ? _s : 'QLD';
+  }
+
+  function getStateLongName(stateScope) {
+    return STATE_LONG_NAMES[normalizeStateScope(stateScope)] || 'Queensland';
+  }
+
+  function getStateDbLabel(stateScope) {
+    const scope = normalizeStateScope(stateScope);
+    return `${getStateLongName(scope)} (${scope})`;
+  }
+
+  function beginMacroSitesDataLoad(showOverlay = true, stateScopeOverride = '') {
+    const scope = normalizeStateScope(stateScopeOverride);
+    requestedDataScope = scope;
+    dataLoadingScope = scope;
+
+    const loadPromise = loadMacroSitesData(showOverlay, scope)
+      .then((result) => {
+        if (dataLoadingPromise === loadPromise) {
+          dataLoadingScope = '';
+        }
+        return result;
+      })
+      .catch((error) => {
+        if (dataLoadingPromise === loadPromise) {
+          dataLoadingScope = '';
+          dataLoadingPromise = null;
+        }
+        throw error;
+      });
+
+    dataLoadingPromise = loadPromise;
+    return loadPromise;
+  }
+
+  function scheduleInitialDataWarmup() {
+    // Network warmup needs no auth — datasets are public. Start filling the
+    // Cache API immediately so the post-login load reads from disk.
+    try { prefetchDatasetsForScope().catch(() => {}); } catch (_) {}
+
+    if (dataLoadingPromise || (loadedDataScope === normalizeStateScope() && Object.keys(baseMacroSitesData || {}).length > 0)) {
+      return;
+    }
+
+    const warmup = () => {
+      if (dataLoadingPromise || sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') return;
+      beginMacroSitesDataLoad(false).catch((error) => {
+        console.error('Background data loading failed:', error);
+      });
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(warmup, { timeout: 1500 });
+      return;
+    }
+
+    setTimeout(warmup, 250);
+  }
 
   async function initializeUIComponents() {
     if (isUIInitialized) return;
@@ -5536,6 +5667,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const FIREBASE_TEWANTIN_URL  = `${FIREBASE_STORAGE_BASE}QLD%2Ftewantin.geojson${FIREBASE_STORAGE_SUFFIX}`;
   const FIREBASE_NSW_2026_URL  = `${FIREBASE_STORAGE_BASE}NSW%2Fnsw_2026.geojson${FIREBASE_STORAGE_SUFFIX}`;
   const FIREBASE_NSW_TNSW_URL  = `${FIREBASE_STORAGE_BASE}NSW%2Fnsw.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_SA_URL        = `${FIREBASE_STORAGE_BASE}SA%2Fsa.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_VIC_URL       = `${FIREBASE_STORAGE_BASE}VIC%2Fvic.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_WA_URL        = `${FIREBASE_STORAGE_BASE}WA%2Fwa.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_TAS_URL       = `${FIREBASE_STORAGE_BASE}TAS%2Ftas.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_NT_URL        = `${FIREBASE_STORAGE_BASE}NT%2Fnt.geojson${FIREBASE_STORAGE_SUFFIX}`;
+  const FIREBASE_QLD_CENSUS_URL = `${FIREBASE_STORAGE_BASE}QLD%2Fqld_census.geojson${FIREBASE_STORAGE_SUFFIX}`;
   const FIREBASE_DATASET_MANIFEST_URL = `${FIREBASE_STORAGE_BASE}dataset_manifest.json${FIREBASE_STORAGE_SUFFIX}`;
 
   // GitHub fallback sources removed — all data loads from Firebase Storage or Firebase Hosting.
@@ -5548,18 +5685,35 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const GITHUB_TEWANTIN_URL = '';
   const GITHUB_NSW_2026_URL = '';
   const GITHUB_NSW_TNSW_URL = '';
+  const GITHUB_SA_URL = '';
+  const GITHUB_VIC_URL = '';
+  const GITHUB_WA_URL = '';
+  const GITHUB_TAS_URL = '';
+  const GITHUB_NT_URL = '';
+  const GITHUB_QLD_CENSUS_URL = '';
   const GITHUB_DATASET_MANIFEST_URL = '';
-  const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v4:';
+  const GITHUB_CACHE_PREFIX = 'crompton_tia_cache_v6:';
   const GITHUB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const GITHUB_FETCH_TIMEOUT_MS = 60000;
-  const DATASET_REQUEST_BUST_KEY = '2026-05-08';
+  const DATASET_REQUEST_BUST_KEY = '2026-06-08';
   const DATASET_MANIFEST_CACHE_KEY = 'crompton_tia_dataset_manifest_sig_v1';
   const DATASET_MANIFEST_LOCAL_URL = './dataset_manifest.json';
   const CURRENT_HOSTNAME = String((window.location && window.location.hostname) || '').toLowerCase();
   const CURRENT_PROTOCOL = String((window.location && window.location.protocol) || '').toLowerCase();
-  const SKIP_FIREBASE_STORAGE_DATASETS = CURRENT_PROTOCOL === 'file:' || CURRENT_HOSTNAME.endsWith('.cromptonapps.com') || CURRENT_HOSTNAME === 'cromptonapps.com';
+  // Firebase Storage holds the optimized (small) dataset copies — Gold Coast is
+  // ~4 MB there vs ~109 MB for the raw GitHub/local files. Prefer Storage on every
+  // origin whose CORS allowlist (see cors.json) permits it. Only file:// dev is
+  // skipped, since Storage CORS cannot grant a null origin.
+  const SKIP_FIREBASE_STORAGE_DATASETS = CURRENT_PROTOCOL === 'file:';
   const githubRefreshInflight = new Map();
   let datasetManifestSyncPromise = null;
+  // Cache API store for dataset payloads. localStorage cannot hold the big
+  // GeoJSON files (Gold Coast alone is ~110 MB vs a ~5 MB quota), so dataset
+  // bytes go into CacheStorage and only tiny timestamps go into localStorage.
+  const DATASET_CACHE_STORE = 'crompton-tia-datasets-v3';
+  const DATASET_CACHE_META_PREFIX = 'crompton_tia_cache_meta_v1:';
+  const supportsCacheStorage = typeof window !== 'undefined' && 'caches' in window && CURRENT_PROTOCOL !== 'file:';
+  const datasetPrefetchInflight = new Map(); // url -> Promise (pre-login network warmup)
 
   let macroSitesData = {};
   window.macroSitesData = macroSitesData;
@@ -5587,6 +5741,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   let detourSharpTurnMarkers = []; // NEW: Stores Swept Path warning icons
   let macroSourceFilter = 'ALL';
   const CUSTOM_SOURCE_NAME = 'Custom Upload';
+  const QLD_MACRO_SOURCE_FILTER_OPTIONS = [
+    { value: 'ALL', label: 'All Sources (QLD)' },
+    { value: 'TMR', label: 'TMR Only' },
+    { value: 'Gold Coast', label: 'Gold Coast Only' },
+    { value: 'Ipswich', label: 'Ipswich Only' },
+    { value: 'Logan', label: 'Logan Only' },
+    { value: 'Toowoomba', label: 'Toowoomba Only' },
+    { value: 'Tewantin', label: 'Tewantin Only' },
+    { value: 'QLD Census', label: 'QLD Census Only' }
+  ];
   const macroMarkersById = {};
   const DIRECTION_INFERENCE_RADIUS_METERS = 5000;
   const DIRECTION_INFERENCE_NEIGHBORS = 3;
@@ -5595,10 +5759,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     'https://lz4.overpass-api.de/api/interpreter',
     'https://overpass.kumi.systems/api/interpreter'
   ];
-  const OVERPASS_CACHE_TTL_MS = 60 * 1000;
+  const OVERPASS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min: road geometry is static, so a longer TTL makes repeat/nearby searches near-instant
   const OVERPASS_COOLDOWN_MS = 15 * 1000;
   const OVERPASS_MIN_REQUEST_GAP_MS = 900;
   const OVERPASS_FETCH_TIMEOUT_MS = 5000;
+
+  // Light-vehicle queued-car spacing (m), context-dependent on posted speed.
+  // City (posted <= 60 km/h): 6.0 m — drivers close up in compact urban queues.
+  // Highway (posted > 60 km/h): 7.0 m — conservative storage at higher approach speeds.
+  // Unknown / non-positive speed: 7.0 m (conservative default; preserves legacy behaviour).
+  // Mirrors TIACalc.lvQueueSpacing in calc/tia-calc.js — keep the two in sync.
+  function lvQueueSpacing(postedSpeedKmh) {
+    const s = Number(postedSpeedKmh);
+    return (Number.isFinite(s) && s > 0 && s <= 60) ? 6.0 : 7.0;
+  }
 
   const TMRCalculator = {
     // 1. Fix Chronological Sorting & Excel Date Error
@@ -5627,7 +5801,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const sum = mondayToSundayArray.reduce((acc, val) => acc + val, 0);
       const avg = sum / mondayToSundayArray.length;
       // ROUNDUP is a strict requirement to prevent underestimation of physical demand
-      return Math.ceil(avg); 
+      return Math.ceil(avg);
     },
 
     // 3. Heavy Vehicle (HV) Proportioning
@@ -5639,7 +5813,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     // 4. Deterministic Growth Modeling (CAGR)
     calculateProjectedVolume: function(baseVolume, baseYear, designYear, growthRate) {
-      const t = designYear - baseYear;
+      // Clamp horizon to >= 0: a design year earlier than the base year must not
+      // shrink volume below the base (projections only ever grow forward in time).
+      const t = Math.max(0, designYear - baseYear);
       const projected = baseVolume * Math.pow(1 + (growthRate / 100), t);
       return Math.ceil(projected);
     },
@@ -5653,7 +5829,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       'arterial':      1500,  // Urban arterial 60–80 km/h (e.g. main state road)
       'sub_arterial':  1200,  // Sub-arterial / collector 50–60 km/h
       'local':          900,  // Local street / residential ≤50 km/h
-      'rural_highway': 1000,  // Rural two-lane undivided highway
+      'rural_highway':  850,  // Rural two-lane undivided highway (Austroads: ~1700 veh/h combined ÷ 2 lanes)
     },
     calculateCapacity: function(roadClassKey) {
       // Returns physical per-lane capacity in vph based on road classification.
@@ -5668,7 +5844,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     },
 
     // 7. Spatial Shockwaves (Queue Length Estimation)
-    calculateQueueLength: function(hourlyVolumePerLane, waitTimeMinutes, physicalCapacityPerLane) {
+    calculateQueueLength: function(hourlyVolumePerLane, waitTimeMinutes, physicalCapacityPerLane, hvPct, postedSpeedKmh) {
       // physicalCapacityPerLane (vph/lane): effective discharge capacity during the restriction.
       // Pass 0 (or omit) for a complete Stop/Go blockage (no discharge at all).
       // For partial restrictions / signalised approaches, pass the available throughput
@@ -5676,8 +5852,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       // Net overflow model: Q = max(0, v - c) * t * vehicle_spacing
       const c = Math.max(0, Number(physicalCapacityPerLane) || 0);
       const netHourlyPerLane = Math.max(0, hourlyVolumePerLane - c);
-      // 7.6 is the constant derived for average vehicle length + jam density gap + heavy vehicle mix
-      const vehicleLengthConstant = 7.6;
+      // HV-adjusted jam spacing: speed-aware LV (6m city / 7m highway), 20.0m HV (heavy rigid avg).
+      // When hvPct is not provided, falls back to 7.6 (legacy mixed-fleet default ~5% HV).
+      const vehicleLengthConstant = (hvPct !== undefined && hvPct !== null)
+        ? (lvQueueSpacing(postedSpeedKmh) * (1 - Math.max(0, Math.min(1, Number(hvPct) || 0)))) + (20.0 * Math.max(0, Math.min(1, Number(hvPct) || 0)))
+        : 7.6;
       return (netHourlyPerLane * (waitTimeMinutes / 60)) * vehicleLengthConstant;
     }
   };
@@ -5694,7 +5873,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       this.PCE_MATRIX = {
         PRIVATE_CAR: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000],
         COMMERCIAL: [1.0667, 1.1667, 1.3333, 1.6667, 2.0000],
-        HEAVY_RIGID: [1.4000, 2.1000, 2.8000, 4.2000, 5.2222],
+        HEAVY_RIGID: [1.5000, 2.1000, 2.8000, 4.2000, 5.2222],
         ARTICULATED: [2.4000, 4.8000, 7.2000, 9.6000, 12.0000],
         B_DOUBLE: [4.1000, 8.1000, 12.2000, 16.2000, 20.3000]
       };
@@ -6176,6 +6355,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') return row[k];
     }
     return null;
+  }
+
+  // Escape HTML so untrusted strings (GeoJSON road names, API error messages)
+  // can be safely interpolated into innerHTML. Hoisted, so usable app-wide.
+  function escHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   function numberOrNull(value) {
@@ -6690,16 +6880,48 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return sites;
   }
 
-  function ensureCustomSourceFilterOption() {
-    const filterEl = document.getElementById('macroSourceFilter');
-    if (!filterEl) return;
-    const hasOption = Array.from(filterEl.options || []).some(opt => String(opt.value) === CUSTOM_SOURCE_NAME);
-    if (!hasOption) {
-      const option = document.createElement('option');
-      option.value = CUSTOM_SOURCE_NAME;
-      option.textContent = 'Custom Upload Only';
-      filterEl.appendChild(option);
+  function getDefaultMacroSourceFilterValue(stateScope = '') {
+    return normalizeStateScope(stateScope) === 'QLD' ? 'ALL' : 'ALL';
+  }
+
+  function getMacroSourceFilterOptions(stateScope = '') {
+    const scope = normalizeStateScope(stateScope);
+    if (scope === 'QLD') {
+      return QLD_MACRO_SOURCE_FILTER_OPTIONS.map((option) => ({ ...option }));
     }
+    return [
+      {
+        value: 'ALL',
+        label: `${scope} Only`
+      }
+    ];
+  }
+
+  function syncMacroSourceFilterOptions(stateScope = '', preferredValue = '') {
+    const filterEl = document.getElementById('macroSourceFilter');
+    if (!filterEl) return getDefaultMacroSourceFilterValue(stateScope);
+
+    const options = getMacroSourceFilterOptions(stateScope);
+    if (Object.keys(customUploadedSitesData || {}).length > 0) {
+      options.push({ value: CUSTOM_SOURCE_NAME, label: 'Custom Upload Only' });
+    }
+
+    const nextValue = options.some((option) => option.value === preferredValue)
+      ? preferredValue
+      : options.some((option) => option.value === macroSourceFilter)
+      ? macroSourceFilter
+      : getDefaultMacroSourceFilterValue(stateScope);
+
+    filterEl.innerHTML = '';
+    options.forEach(({ value, label }) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      filterEl.appendChild(option);
+    });
+    filterEl.value = nextValue;
+    macroSourceFilter = nextValue;
+    return nextValue;
   }
 
   function refreshMacroSitesView() {
@@ -6755,11 +6977,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const zeroVolumeCount = Object.values(parsedSites).filter(site => (Number(site && site.vadt) || 0) <= 0).length;
 
       customUploadedSitesData = mergeMacroSites(customUploadedSitesData, parsedSites);
-      ensureCustomSourceFilterOption();
 
-      const filterEl = document.getElementById('macroSourceFilter');
-      macroSourceFilter = CUSTOM_SOURCE_NAME;
-      if (filterEl) filterEl.value = CUSTOM_SOURCE_NAME;
+      syncMacroSourceFilterOptions(getQuickTiaSelectedState(), CUSTOM_SOURCE_NAME);
 
       refreshMacroSitesView();
 
@@ -6787,14 +7006,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function clearCustomUploads() {
     customUploadedSitesData = {};
-    macroSourceFilter = 'ALL';
-    const filterEl = document.getElementById('macroSourceFilter');
-    if (filterEl) {
-      Array.from(filterEl.options || []).forEach(opt => {
-        if (String(opt.value) === CUSTOM_SOURCE_NAME) opt.remove();
-      });
-      filterEl.value = 'ALL';
-    }
+    syncMacroSourceFilterOptions(getQuickTiaSelectedState());
     const statusEl = document.getElementById('customDataUploadStatus');
     if (statusEl) {
       statusEl.style.color = '#666';
@@ -7137,7 +7349,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (t.includes('distance') || t.includes('length')) return 'Distance-based result = speed * time or queue vehicles * spacing';
     if (t.includes('capacity') || t.includes('dv')) return 'Capacity (DV) = base class capacity × terrain factor × lane-width factor × lateral-clearance factor × HV/RT factor, floor 500 vph/lane';
     if (t.includes('peak')) return 'Peak value = max(values across AM, OP, PM, EV or hourly profile)';
-    if (t.includes('hour') || t.includes('profile')) return 'Hourly value = DB measured profile (if ≥6 non-zero hours stored) scaled to daily total; otherwise Austroads diurnal template (Brisbane urban arterial: peak 8–9am / 5–6pm)';
+    if (t.includes('hour') || t.includes('profile')) return 'Hourly value = DB measured profile (if ≥6 non-zero hours stored) scaled to daily total; otherwise TMR-derived directional diurnal template (AM/PM commuter shape) with capped overnight share';
     if (t.includes('ratio') || t.includes('%') || t.includes('percent')) return 'Ratio (%) = part / total * 100';
     if (t.includes('util')) return 'Utilization = demand / capacity';
     if (t.includes('hourly vol') || t.includes('vol (vph)')) return 'Hourly volume = projected daily volume * diurnal factor';
@@ -7153,11 +7365,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (!key) return '';
 
     const exact = {
-      predictedvadt: 'Predicted VADT = Base VADT * (1 + growth rate)^years',
-      predictedd1vadt: 'Predicted D1 VADT = Base D1 * (1 + growth rate)^years',
-      predictedd2vadt: 'Predicted D2 VADT = Base D2 * (1 + growth rate)^years',
+      predictedvadt: 'Predicted AADT = Base AADT * (1 + growth rate)^years',
+      predictedd1vadt: 'Predicted D1 AADT = Base D1 * (1 + growth rate)^years',
+      predictedd2vadt: 'Predicted D2 AADT = Base D2 * (1 + growth rate)^years',
       srpervehicle: 'Delay/vehicle = (Length/WorkSpeed) - (Length/NormalSpeed)',
-      srtotalhours: 'Total delay (h/day) = Delay/vehicle(s) * VADT / 3600',
+      srtotalhours: 'Total delay (h/day) = Delay/vehicle(s) * AADT / 3600',
       asdreaction: 'Reaction distance = (Speed * reaction time) / 3.6',
       asdbraking: 'Braking distance = Speed^2 / [254 * (f + grade)]',
       asdtotal: 'ASD total = reaction distance + braking distance',
@@ -7166,8 +7378,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       agttmshift: 'Shift taper = max(15, round(T/2))',
       agttmshoulder: 'Shoulder taper = max(15, round(T/3))',
       queueresult: 'Qmax = ((v*R/3600) / (1 - v/s)) * spacing',
-      quicktiacalcavgvadt: 'Weighted Avg VADT = sum(weight_i * reference VADT_i)',
-      quicktiacalcadjvadt: 'Adjusted AADT = Weighted Avg VADT * area factor',
+      quicktiacalcavgvadt: 'Weighted Avg AADT = sum(weight_i * reference AADT_i)',
+      quicktiacalcadjvadt: 'Adjusted AADT = Weighted Avg AADT * area factor',
       quicktiacalcd1: 'Calculated D1 = weighted D1 * area factor',
       quicktiacalcd2: 'Calculated D2 = weighted D2 * area factor',
       sgclearance: 'Clearance = work zone length / (speed/3.6)',
@@ -7194,9 +7406,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (exact[key]) return exact[key];
 
     if (key.startsWith('macrodetail')) {
-      if (key.includes('total')) return 'Total VADT = D1 VADT + D2 VADT';
-      if (key.includes('d1')) return 'D1 VADT = DTCA directional input or 0.5*VADT (if DTCA=NO), then growth-adjusted';
-      if (key.includes('d2')) return 'D2 VADT = DTCA directional input or 0.5*VADT (if DTCA=NO), then growth-adjusted';
+      if (key.includes('total')) return 'Total AADT = D1 AADT + D2 AADT';
+      if (key.includes('d1')) return 'D1 AADT = DTCA directional input or 0.5*AADT (if DTCA=NO), then growth-adjusted';
+      if (key.includes('d2')) return 'D2 AADT = DTCA directional input or 0.5*AADT (if DTCA=NO), then growth-adjusted';
       return 'Macro detail value = derived from selected site base data + growth + directional settings';
     }
 
@@ -7241,17 +7453,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function applyGlobalFormulaAnnotations() {
     const explicitById = {
       baseYear: 'Base Year = source count year (or user override) used in growth projection',
-      D1_VADT: 'D1 VADT = directional daily volume from DTCA/source or user input',
-      D2_VADT: 'D2 VADT = directional daily volume from DTCA/source or user input',
-      VADT: 'VADT Total = D1 VADT + D2 VADT (auto-calc when directional values exist)',
+      D1_VADT: 'D1 AADT = directional daily volume from DTCA/source or user input',
+      D2_VADT: 'D2 AADT = directional daily volume from DTCA/source or user input',
+      VADT: 'AADT Total = D1 AADT + D2 AADT (auto-calc when directional values exist)',
       macroGrowthRate: 'Growth rate (% p.a.) = annual compounding factor used in projection',
       macroOpeningYear: 'Projection years = max(0, Target Year - Base Year)',
       DTCA: 'DTCA = Yes when directional source data exists; No uses 50/50 split from total',
       amPeakDirection: 'AM Peak Direction = selected dominant inbound direction for AM period',
-      predictedVADT: 'Predicted VADT = Base VADT * (1 + growth rate)^years',
+      predictedVADT: 'Predicted AADT = Base AADT * (1 + growth rate)^years',
       predictedD1VADT: 'Predicted D1 = Base D1 * (1 + growth rate)^years',
       predictedD2VADT: 'Predicted D2 = Base D2 * (1 + growth rate)^years',
-      macroHourlyChart: 'Hourly profile = DB measured 24h data (if available, ≥6 non-zero hours) scaled to daily total; otherwise Austroads diurnal template (Brisbane urban arterial pattern: morning peak 8-9am, evening peak 5-6pm)',
+      macroHourlyChart: 'Hourly profile = DB measured 24h data (if available, ≥6 non-zero hours) scaled to daily total; otherwise TMR-derived directional diurnal template (AM/PM commuter pattern) with capped overnight share',
       macroD1PieChart: 'Pie share = bucket total / daily directional total for D1 (AM/OP/PM/EV)',
       macroD2PieChart: 'Pie share = bucket total / daily directional total for D2 (AM/OP/PM/EV)',
       macroD1PeakHours: 'Peak list = highlighted peak hours shown in chronological timing order for D1',
@@ -7429,9 +7641,20 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       console.warn('[Map Init] Leaflet not available yet');
       return;
     }
-    const stateScope = String(requestedDataScope || getQuickTiaSelectedState() || 'QLD').toUpperCase() === 'NSW' ? 'NSW' : 'QLD';
-    const initialCenter = stateScope === 'NSW' ? [-33.87, 151.21] : [-27.55, 152.95];
-    const australiaEastBounds = [[-39.5, 140.0], [-9.0, 154.8]];
+    const _rawMapScope = String(requestedDataScope || getQuickTiaSelectedState() || 'QLD').toUpperCase();
+    const stateScope = normalizeStateScope(_rawMapScope);
+    const STATE_MAP_CENTERS = {
+      QLD: [-27.55, 152.95],
+      NSW: [-33.87, 151.21],
+      SA:  [-34.93, 138.60],
+      VIC: [-37.81, 144.96],
+      WA:  [-31.95, 115.86],
+      TAS: [-42.88, 147.33],
+      NT:  [-12.46, 130.84]
+    };
+    const initialCenter = STATE_MAP_CENTERS[stateScope] || STATE_MAP_CENTERS.QLD;
+    // Bounds cover all of mainland Australia + Tasmania (WA/SA/VIC/TAS included).
+    const australiaEastBounds = [[-44.5, 111.5], [-9.0, 155.5]];
     macroMapInstance = L.map('macroMap', {
       maxBounds: australiaEastBounds
     }).setView(initialCenter, 8);
@@ -7583,6 +7806,34 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return true;
   }
 
+  async function readCacheStorageEntry(url) {
+    if (!supportsCacheStorage) return null;
+    try {
+      const cache = await caches.open(DATASET_CACHE_STORE);
+      const hit = await cache.match(url);
+      if (!hit) return null;
+      let timestamp = 0;
+      try { timestamp = Number(localStorage.getItem(`${DATASET_CACHE_META_PREFIX}${url}`)) || 0; } catch (_) {}
+      const data = await hit.json();
+      const ageMs = Math.max(0, Date.now() - timestamp);
+      return { data, isFresh: timestamp > 0 && ageMs <= GITHUB_CACHE_TTL_MS };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function writeCacheStorageEntry(url, response) {
+    if (!supportsCacheStorage) return false;
+    try {
+      const cache = await caches.open(DATASET_CACHE_STORE);
+      await cache.put(url, response);
+      try { localStorage.setItem(`${DATASET_CACHE_META_PREFIX}${url}`, String(Date.now())); } catch (_) {}
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   async function fetchGitHubData(url) {
     const cacheKey = `${GITHUB_CACHE_PREFIX}${url}`;
     const now = Date.now();
@@ -7623,7 +7874,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     };
 
+    // Legacy localStorage write — only viable for small payloads (quota ~5 MB).
+    // Used when CacheStorage is unavailable (e.g. file:// development).
     const writeCached = (data) => {
+      if (supportsCacheStorage) return;
       try {
         localStorage.setItem(cacheKey, JSON.stringify({
           timestamp: Date.now(),
@@ -7641,8 +7895,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const timeoutId = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
           const response = await fetch(url, { signal: controller.signal, cache: 'no-cache' });
           clearTimeout(timeoutId);
-          const data = await parseJsonResponse(response, url);
-          writeCached(data);
+          if (supportsCacheStorage) {
+            const cacheCopy = response.clone();
+            await parseJsonResponse(response, url); // validate before caching
+            await writeCacheStorageEntry(url, cacheCopy);
+          } else {
+            const data = await parseJsonResponse(response, url);
+            writeCached(data);
+          }
         } catch (_) {
           // Keep stale cache if refresh fails.
         }
@@ -7652,27 +7912,54 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       githubRefreshInflight.set(url, refreshPromise);
     };
 
-    const cachedEntry = readCachedEntry();
-    if (cachedEntry && cachedEntry.data) {
-      if (!cachedEntry.isFresh) {
-        refreshInBackground();
+    // If a pre-login prefetch is mid-flight for this URL, wait for it so we
+    // read its cached bytes instead of downloading the same file twice.
+    const inflightPrefetch = datasetPrefetchInflight.get(url);
+    if (inflightPrefetch) {
+      try { await inflightPrefetch; } catch (_) {}
+    }
+
+    if (supportsCacheStorage) {
+      const cachedResponse = await readCacheStorageEntry(url);
+      if (cachedResponse && cachedResponse.data) {
+        if (!cachedResponse.isFresh) refreshInBackground();
+        return cachedResponse.data;
       }
-      return cachedEntry.data;
+    } else {
+      const cachedEntry = readCachedEntry();
+      if (cachedEntry && cachedEntry.data) {
+        if (!cachedEntry.isFresh) {
+          refreshInBackground();
+        }
+        return cachedEntry.data;
+      }
     }
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
-      const response = await fetch(url, {
-        signal: controller.signal,
-        cache: 'no-cache'
-      });
+      // 'default' lets the browser HTTP cache help; release changes are handled
+      // by the dataset manifest signature which clears our caches explicitly.
+      const response = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
+      if (supportsCacheStorage) {
+        const cacheCopy = response.clone();
+        const data = await parseJsonResponse(response, url);
+        writeCacheStorageEntry(url, cacheCopy); // async; no need to block on disk write
+        return data;
+      }
       const data = await parseJsonResponse(response, url);
       writeCached(data);
       return data;
     } catch (err) {
       console.error(`Fetch failed for ${url}:`, err.message, err);
+      if (supportsCacheStorage) {
+        const staleResponse = await readCacheStorageEntry(url);
+        if (staleResponse && staleResponse.data) {
+          console.warn(`Using stale cached data for ${url}`);
+          return staleResponse.data;
+        }
+      }
       const staleCached = readCachedEntry();
       if (staleCached && staleCached.data) {
         console.warn(`Using stale cached data for ${url}`);
@@ -7714,17 +8001,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function clearDatasetCaches() {
+    let cleared = 0;
     try {
       const keysToDelete = [];
       for (let i = 0; i < localStorage.length; i += 1) {
         const key = localStorage.key(i);
-        if (key && key.startsWith(GITHUB_CACHE_PREFIX)) keysToDelete.push(key);
+        if (key && (key.startsWith(GITHUB_CACHE_PREFIX) || key.startsWith(DATASET_CACHE_META_PREFIX))) keysToDelete.push(key);
       }
       keysToDelete.forEach((key) => localStorage.removeItem(key));
-      return keysToDelete.length;
+      cleared = keysToDelete.length;
     } catch (_) {
-      return 0;
     }
+    if (supportsCacheStorage) {
+      try { caches.delete(DATASET_CACHE_STORE); } catch (_) {}
+    }
+    return cleared;
   }
 
   async function syncDatasetCacheWithManifest() {
@@ -7862,13 +8153,94 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return null;
   }
 
+  // ── Pre-login dataset warmup ─────────────────────────────────────────────
+  // Downloads dataset bytes into the Cache API while the user is still signing
+  // in. No JSON.parse, no UI — the post-login load then reads from disk
+  // instead of the network. Safe to call any time; deduped per URL.
+  function prefetchDatasetIntoCache(firebaseUrl, primaryUrl, fallbackUrls, sourceLabel) {
+    if (!supportsCacheStorage) return Promise.resolve(false);
+    const localList = Array.isArray(fallbackUrls) ? fallbackUrls : [fallbackUrls];
+    const candidates = buildDatasetCandidates(firebaseUrl, primaryUrl, localList);
+    if (!candidates.length) return Promise.resolve(false);
+    const existing = datasetPrefetchInflight.get(candidates[0]);
+    if (existing) return existing;
+
+    const task = (async () => {
+      try {
+        const cache = await caches.open(DATASET_CACHE_STORE);
+        for (const url of candidates) {
+          if (await cache.match(url)) return true; // already warm
+        }
+        for (const url of candidates) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (!response || !response.ok) continue;
+            const stored = await writeCacheStorageEntry(url, response);
+            if (stored) {
+              console.log(`[Data Prefetch] Cached ${sourceLabel || url}`);
+              return true;
+            }
+          } catch (_) {
+            // Try the next candidate.
+          }
+        }
+      } catch (_) {
+      }
+      return false;
+    })().finally(() => {
+      candidates.forEach((url) => {
+        if (datasetPrefetchInflight.get(url) === task) datasetPrefetchInflight.delete(url);
+      });
+    });
+
+    candidates.forEach((url) => datasetPrefetchInflight.set(url, task));
+    return task;
+  }
+
+  function getDatasetSpecsForScope(stateScope) {
+    const scope = normalizeStateScope(stateScope);
+    if (scope === 'NSW') {
+      return [
+        [FIREBASE_NSW_2026_URL, GITHUB_NSW_2026_URL, ['./datasets/NSW/nsw_2026.geojson'], 'NSW 2026'],
+        [FIREBASE_NSW_TNSW_URL, GITHUB_NSW_TNSW_URL, ['./datasets/NSW/nsw.geojson', './datasets/NSW/tnsw.geojson'], 'NSW Legacy']
+      ];
+    }
+    if (scope === 'SA')  return [[FIREBASE_SA_URL, GITHUB_SA_URL, ['./datasets/SA/sa.geojson'], 'SA']];
+    if (scope === 'VIC') return [[FIREBASE_VIC_URL, GITHUB_VIC_URL, ['./datasets/VIC/vic.geojson'], 'VIC']];
+    if (scope === 'WA')  return [[FIREBASE_WA_URL, GITHUB_WA_URL, ['./datasets/WA/wa.geojson'], 'WA']];
+    if (scope === 'TAS') return [[FIREBASE_TAS_URL, GITHUB_TAS_URL, ['./datasets/TAS/tas.geojson'], 'TAS']];
+    if (scope === 'NT')  return [[FIREBASE_NT_URL, GITHUB_NT_URL, ['./datasets/NT/nt.geojson'], 'NT']];
+    return [
+      [FIREBASE_TMR_URL, GITHUB_TMR_URL, ['./datasets/QLD/tmr.geojson'], 'TMR'],
+      [FIREBASE_GOLDCOAST_URL, GITHUB_GOLDCOAST_URL, ['./datasets/QLD/goldcoast.geojson'], 'Gold Coast'],
+      [FIREBASE_IPSWICH_URL, GITHUB_IPSWICH_URL, ['./datasets/QLD/ipswich.geojson'], 'Ipswich'],
+      [FIREBASE_LOGAN_URL, GITHUB_LOGAN_URL, ['./datasets/QLD/logan.geojson'], 'Logan'],
+      [FIREBASE_TOOWOOMBA_URL, GITHUB_TOOWOOMBA_URL, ['./datasets/QLD/toowoomba.geojson'], 'Toowoomba'],
+      [FIREBASE_TEWANTIN_URL, GITHUB_TEWANTIN_URL, ['./datasets/QLD/tewantin.geojson'], 'Tewantin'],
+      [FIREBASE_QLD_CENSUS_URL, GITHUB_QLD_CENSUS_URL, ['./datasets/QLD/qld_census.geojson'], 'QLD Census']
+    ];
+  }
+
+  async function prefetchDatasetsForScope(stateScopeOverride = '') {
+    if (!supportsCacheStorage) return false;
+    // Sync the manifest first so we never warm the cache with a stale release.
+    try { await ensureDatasetManifestSynced(); } catch (_) {}
+    const specs = getDatasetSpecsForScope(stateScopeOverride);
+    const results = await Promise.all(specs.map((s) => prefetchDatasetIntoCache(s[0], s[1], s[2], s[3])));
+    return results.some(Boolean);
+  }
+
   function parseMacroTrafficData(jsonData, sourceName = 'TMR') {
     const sites = {};
     const features = Array.isArray(jsonData && jsonData.features)
       ? jsonData.features
       : (Array.isArray(jsonData) ? jsonData.map(row => ({ properties: row, geometry: null })) : []);
     const sourceUpper = String(sourceName || '').toUpperCase();
-    const isNsw = sourceUpper === 'NSW';
+    // Datasets published in the NSW/SA-compatible point schema (see datasets/TIA-dataset-builder).
+    const isNsw = sourceUpper === 'NSW' || sourceUpper === 'SA' || sourceUpper === 'VIC' || sourceUpper === 'WA' || sourceUpper === 'TAS' || sourceUpper === 'QLD CENSUS';
     const isIpswich = sourceUpper === 'IPSWICH';
     const isLogan = sourceUpper === 'LOGAN';
     const isToowoomba = sourceUpper === 'TOOWOOMBA';
@@ -7893,13 +8265,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         props['PDF Link'],
         props['Report PDF'],
         props['REPORT_PDF'],
+        props['REPORT_LINK'],
+        props['report_link'],
         props['document_url'],
         props['DOCUMENT_URL']
       ));
       if (directUrl) return directUrl;
 
       for (const [key, value] of Object.entries(props || {})) {
-        if (!/\b(pdf|report|document|attachment|file)\b/i.test(String(key))) continue;
+        // Use [^a-zA-Z] boundaries instead of \b — \b treats underscores as word chars,
+        // so it silently skips field names like REPORT_LINK and PDF_LINK in the fallback pass.
+        if (!/(?:^|[^a-zA-Z])(pdf|report|document|attachment|file)(?:[^a-zA-Z]|$)/i.test(String(key))) continue;
         const normalized = normalizePdfUrl(value);
         if (normalized) return normalized;
       }
@@ -8211,7 +8587,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
 
       const countYear = parseYearFromAny(
-        props['COUNT_YEAR'], props['Count Year'], props['count_year'], props['DATA_YEAR'], props['YEAR'], props['AADT_DATE'], props['SURVEY_DATE'], props['AAWT_DATE'], props['Start Day|Survey'], props['Finish_Date'], props['Count Date (dd/mm/yyyy)'], props['Count Date'], props['recorded']
+        props['COUNT_YEAR'], props['Count Year'], props['count_year'], props['DATA_YEAR'],
+        props['YEAR'], props['year'],
+        props['Latest_Year'], props['Latest_Date'],
+        props['AADT_DATE'], props['SURVEY_DATE'], props['AAWT_DATE'],
+        props['Start Day|Survey'], props['Finish_Date'], props['Count Date (dd/mm/yyyy)'], props['Count Date'], props['recorded']
       );
       const countDayOfWeek = deriveDayOfWeekFromAny(
         props['DAY_OF_WEEK'],
@@ -8232,7 +8612,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         props['COUNT_DATE']
       );
       const growthRate = normalizeGrowthPercent(props['GROWTH_RATE'] || props['Growth Rate'] || props['GROWTH'] || null);
-      const hvPercentDirectRaw = props['HV_PERCENT'] || props['HVP'] || props['Percentage Commercial Vehicles'] || props['Percent_Commercial_Heavy_Vehicl'];
+      const hvPercentDirectRaw = props['HV_PERCENT'] || props['HVP'] || props['Percentage Commercial Vehicles'] || props['Percent_Commercial_Heavy_Vehicl'] || props['heavy_vehicle_pct'];
+      const hvYear = props['heavy_vehicle_year'] ? Number(props['heavy_vehicle_year']) : null;
+      const hvSource = props['hv_source'] || null;                       // 'tmr_site_id' | 'tmr_proximity' | null
+      const hvSourceRoadName = props['hv_source_road_name'] || null;
+      const hvSourceRoadClass = props['hv_source_road_class'] || null;
+      const rtPctRaw = props['rt_pct'] != null ? Number(props['rt_pct']) : null;
+      const rtPct = (rtPctRaw !== null && rtPctRaw > 0) ? rtPctRaw : null;
+      const rtYear = props['rt_year'] ? Number(props['rt_year']) : null;
       const hvPercentDirect = normalizePercentValue(hvPercentDirectRaw);
       const hvPercent = hvPercentDirect !== null ? hvPercentDirect : normalizePercentValue(isLogan ? calcLoganHvPercent(props) : null);
       const roadClass = normalizeRoadClass(props['ROAD_CLASS'] || props['ROAD_TYPE'] || props['Road Type'] || props['ROAD TYPE'] || props['road type'] || props['CLASSIFICATION'] || props['ROAD CATEGORY'] || 'tmr');
@@ -8315,6 +8702,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           vadt_estimate_note: '',
           growth_rate: growthRate,
           hv_percent: hvPercent,
+          hv_year: hvYear,
+          hv_source: hvSource,
+          hv_source_road_name: hvSourceRoadName,
+          hv_source_road_class: hvSourceRoadClass,
+          rt_pct: rtPct,
+          rt_year: rtYear,
           pdf_url: pdfUrl,
           road_class: roadClass,
           design_capacity_daily: designCapacityDaily,
@@ -8362,14 +8755,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (isNswPeriodSchema) {
         const cls = String(props['classification_type'] || '').trim().toUpperCase();
         const period = String(props['period'] || '').trim().toUpperCase();
-        if (cls && cls !== 'ALL VEHICLES') return;
+        // Accept both 'ALL VEHICLES' and 'UNCLASSIFIED' — the latter means all vehicles
+        // counted without Austroads vehicle-class breakdown, not a vehicle sub-class.
+        if (cls && cls !== 'ALL VEHICLES' && cls !== 'UNCLASSIFIED') return;
         if (period && period !== 'ALL DAYS') return;
 
         const dir = String(props['cardinal_direction_name'] || '').trim().toUpperCase();
         const nswCount = parseVolumeValue(props['traffic_count']);
         if (!Number.isFinite(nswCount) || nswCount <= 0) return;
 
-        if (dir === 'BOTH') {
+        const isBothDirs = dir === 'BOTH'
+          || dir === 'NORTHBOUND AND SOUTHBOUND'
+          || dir === 'EASTBOUND AND WESTBOUND';
+        if (isBothDirs) {
           if (!site.vadt || site.vadt < nswCount) {
             site.vadt = Math.round(nswCount);
             site.vadt_is_estimated = false;
@@ -8378,7 +8776,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           return;
         }
 
-        if (dir === 'NORTH' || dir === 'SOUTH' || dir === 'EAST' || dir === 'WEST') {
+        if (dir === 'NORTH' || dir === 'SOUTH' || dir === 'EAST' || dir === 'WEST'
+            || dir === 'NORTHBOUND' || dir === 'SOUTHBOUND'
+            || dir === 'EASTBOUND' || dir === 'WESTBOUND') {
           let targetDir = site._nswCardinalMap[dir];
           if (!targetDir) {
             targetDir = site._nswCardinalMap.__hasPrimary ? 'AGAINST GAZETTAL' : 'GAZETTAL';
@@ -8668,7 +9068,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     };
 
-    // Calculate D1 & D2 VADT from directional data and set labels
+    // Calculate D1 & D2 AADT from directional data and set labels
     const isGoldCoast = sourceUpper === 'GOLD COAST';
     Object.keys(sites).forEach(siteId => {
       const site = sites[siteId];
@@ -8823,6 +9223,65 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
     });
     return merged;
+  }
+
+  // --- TMR <-> QLD Census de-duplication ----------------------------------
+  // The TMR feed (hourly, directional) and the QLD Census feed (clean two-way
+  // all-days AADT) describe the SAME state-controlled stations, keyed by the
+  // same SITE_ID (TMR: SITE_ID, census: station_id). Showing both produces
+  // duplicate reference points with two different numbers (e.g. SITE 23733:
+  // census 53,579 vs TMR weekday-sum 43,519) and double-weights the road.
+  // Keep ONE entry per station: the census site (authoritative all-days AADT),
+  // with the TMR hourly profile grafted on and scaled to the census AADT so the
+  // shape + directional ratio are preserved at the correct magnitude.
+  function graftTmrProfileToCensus(tmrSite, censusSite) {
+    const censusTotal = Number(censusSite && censusSite.vadt) || 0;
+    if (censusTotal <= 0) return false;
+    const src = (tmrSite && tmrSite.directions_weekday) || {};
+    const dirs = ['GAZETTAL', 'AGAINST GAZETTAL'];
+    const dirSum = (d) => (Array.isArray(src[d]) ? src[d].reduce((a, v) => a + (Number(v) || 0), 0) : 0);
+    const tmrTotal = dirs.reduce((s, d) => s + dirSum(d), 0);
+    if (tmrTotal <= 0) return false;
+    const scale = censusTotal / tmrTotal;
+    if (!censusSite.directions_weekday) censusSite.directions_weekday = {};
+    if (!censusSite.directions) censusSite.directions = {};
+    const sums = {};
+    dirs.forEach((d) => {
+      const arr = src[d];
+      if (!Array.isArray(arr) || arr.length !== 24) return;
+      const scaled = arr.map((v) => Math.max(0, Math.round((Number(v) || 0) * scale)));
+      censusSite.directions_weekday[d] = scaled;
+      censusSite.directions[d] = scaled.slice();
+      sums[d] = scaled.reduce((a, v) => a + v, 0);
+    });
+    const d1 = sums['GAZETTAL'] || 0;
+    const d2 = sums['AGAINST GAZETTAL'] || 0;
+    if (d1 > 0 || d2 > 0) {
+      censusSite.d1_vadt = d1;
+      censusSite.d2_vadt = d2;
+      censusSite.direction_split_mode = 'hourly';
+    }
+    if (tmrSite.direction_descriptions) censusSite.direction_descriptions = Object.assign({}, censusSite.direction_descriptions, tmrSite.direction_descriptions);
+    if (tmrSite.direction_base_labels) censusSite.direction_base_labels = Object.assign({}, censusSite.direction_base_labels, tmrSite.direction_base_labels);
+    censusSite.profile_source = 'TMR hourly profile (scaled to census AADT)';
+    return true;
+  }
+
+  function dedupeTmrAgainstCensus(tmrSites, censusSites) {
+    if (!tmrSites || !censusSites) return tmrSites || {};
+    const remaining = Object.assign({}, tmrSites);
+    let merged = 0;
+    Object.keys(censusSites).forEach((key) => {
+      const tmrSite = remaining[key];
+      if (!tmrSite) return;                                          // census-only station: keep census
+      const censusSite = censusSites[key];
+      if (!censusSite || (Number(censusSite.vadt) || 0) <= 0) return; // census has no AADT: keep TMR untouched
+      graftTmrProfileToCensus(tmrSite, censusSite);
+      delete remaining[key];                                          // drop the duplicate TMR station
+      merged += 1;
+    });
+    if (merged > 0) console.log(`[Data Load] De-duplicated ${merged} TMR stations against QLD Census (kept census AADT + grafted TMR profile)`);
+    return remaining;
   }
 
   function mergeNswSites(primarySites, supplementalSites) {
@@ -9028,7 +9487,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     console.log('[Data Load] Starting loadMacroSitesData, showOverlay=', showOverlay);
     const loadingOverlay = document.getElementById('appLoadingOverlay');
     const loadingText = document.getElementById('loadingText');
-    const requestedScope = String(stateScopeOverride || getQuickTiaSelectedState() || 'QLD').trim().toUpperCase() === 'NSW' ? 'NSW' : 'QLD';
+    const _rawLoadScope = String(stateScopeOverride || getQuickTiaSelectedState() || 'QLD').trim().toUpperCase();
+    const requestedScope = normalizeStateScope(_rawLoadScope);
     requestedDataScope = requestedScope;
     
     try {
@@ -9063,6 +9523,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let tewantinData = null;
       let nswData2026 = null;
       let nswDataLegacy = null;
+      let saData = null;
+      let vicData = null;
+      let waData = null;
+      let tasData = null;
+      let ntData = null;
+      let qldCensusData = null;
 
       if (requestedScope === 'NSW') {
         setLoadingState('Downloading live records...', 'Fetching NSW 2026 traffic feed.', 42);
@@ -9071,16 +9537,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           fetchDatasetWithFallback(FIREBASE_NSW_TNSW_URL, GITHUB_NSW_TNSW_URL, ['./datasets/NSW/nsw.geojson', './datasets/NSW/tnsw.geojson'], 'NSW Legacy')
         ]);
         setLoadingState('Downloading live records...', 'Fetched NSW traffic feeds.', 68);
+      } else if (requestedScope === 'SA') {
+        setLoadingState('Downloading live records...', 'Fetching South Australia traffic feed.', 42);
+        saData = await fetchDatasetWithFallback(FIREBASE_SA_URL, GITHUB_SA_URL, ['./datasets/SA/sa.geojson'], 'SA');
+        setLoadingState('Downloading live records...', 'Fetched South Australia traffic feed.', 68);
+      } else if (requestedScope === 'VIC') {
+        setLoadingState('Downloading live records...', 'Fetching Victoria traffic feed.', 42);
+        vicData = await fetchDatasetWithFallback(FIREBASE_VIC_URL, GITHUB_VIC_URL, ['./datasets/VIC/vic.geojson'], 'VIC');
+        setLoadingState('Downloading live records...', 'Fetched Victoria traffic feed.', 68);
+      } else if (requestedScope === 'WA') {
+        setLoadingState('Downloading live records...', 'Fetching Western Australia traffic feed.', 42);
+        waData = await fetchDatasetWithFallback(FIREBASE_WA_URL, GITHUB_WA_URL, ['./datasets/WA/wa.geojson'], 'WA');
+        setLoadingState('Downloading live records...', 'Fetched Western Australia traffic feed.', 68);
+      } else if (requestedScope === 'TAS') {
+        setLoadingState('Downloading live records...', 'Fetching Tasmania traffic feed.', 42);
+        tasData = await fetchDatasetWithFallback(FIREBASE_TAS_URL, GITHUB_TAS_URL, ['./datasets/TAS/tas.geojson'], 'TAS');
+        setLoadingState('Downloading live records...', 'Fetched Tasmania traffic feed.', 68);
+      } else if (requestedScope === 'NT') {
+        setLoadingState('Downloading live records...', 'Fetching Northern Territory traffic feed.', 42);
+        ntData = await fetchDatasetWithFallback(FIREBASE_NT_URL, GITHUB_NT_URL, ['./datasets/NT/nt.geojson'], 'NT');
+        setLoadingState('Downloading live records...', 'Fetched Northern Territory traffic feed.', 68);
       } else {
         setLoadingState('Downloading live records...', 'Fetching Queensland traffic feeds.', 42);
-        [tmrData, goldCoastData, brisbaneData, ipswichData, loganData, toowoombaData, tewantinData] = await Promise.all([
+        // Brisbane removed: its only open data is intersection volumes (not road
+        // AADT) and the upstream feed is defunct — see scripts/audit_datasets.py notes.
+        [tmrData, goldCoastData, ipswichData, loganData, toowoombaData, tewantinData, qldCensusData] = await Promise.all([
           fetchDatasetWithFallback(FIREBASE_TMR_URL, GITHUB_TMR_URL, ['./datasets/QLD/tmr.geojson'], 'TMR'),
           fetchDatasetWithFallback(FIREBASE_GOLDCOAST_URL, GITHUB_GOLDCOAST_URL, ['./datasets/QLD/goldcoast.geojson'], 'Gold Coast'),
-          fetchDatasetWithFallback(FIREBASE_BRISBANE_URL, GITHUB_BRISBANE_URL, ['./datasets/QLD/brisbane.geojson'], 'Brisbane'),
           fetchDatasetWithFallback(FIREBASE_IPSWICH_URL, GITHUB_IPSWICH_URL, ['./datasets/QLD/ipswich.geojson'], 'Ipswich'),
           fetchDatasetWithFallback(FIREBASE_LOGAN_URL, GITHUB_LOGAN_URL, ['./datasets/QLD/logan.geojson'], 'Logan'),
           fetchDatasetWithFallback(FIREBASE_TOOWOOMBA_URL, GITHUB_TOOWOOMBA_URL, ['./datasets/QLD/toowoomba.geojson'], 'Toowoomba'),
-          fetchDatasetWithFallback(FIREBASE_TEWANTIN_URL, GITHUB_TEWANTIN_URL, ['./datasets/QLD/tewantin.geojson'], 'Tewantin')
+          fetchDatasetWithFallback(FIREBASE_TEWANTIN_URL, GITHUB_TEWANTIN_URL, ['./datasets/QLD/tewantin.geojson'], 'Tewantin'),
+          fetchDatasetWithFallback(FIREBASE_QLD_CENSUS_URL, GITHUB_QLD_CENSUS_URL, ['./datasets/QLD/qld_census.geojson'], 'QLD Census')
         ]);
         setLoadingState('Downloading live records...', 'Fetched Queensland traffic feeds.', 66);
       }
@@ -9096,22 +9584,35 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const nswSites2026 = nswData2026 ? parseMacroTrafficData(nswData2026, 'NSW') : {};
       const nswSitesLegacy = nswDataLegacy ? parseMacroTrafficData(nswDataLegacy, 'NSW') : {};
       const nswSites = mergeNswSites(nswSites2026, nswSitesLegacy);
+      const saSites = saData ? parseMacroTrafficData(saData, 'SA') : {};
+      const vicSites = vicData ? parseMacroTrafficData(vicData, 'VIC') : {};
+      const waSites = waData ? parseMacroTrafficData(waData, 'WA') : {};
+      const tasSites = tasData ? parseMacroTrafficData(tasData, 'TAS') : {};
+      const ntSites = ntData ? parseMacroTrafficData(ntData, 'NT') : {};
+      const qldCensusSites = qldCensusData ? parseMacroTrafficData(qldCensusData, 'QLD Census') : {};
       setLoadingState('Processing records...', 'Normalizing dataset schema and deriving direction labels.', 58);
       console.log('[Data Load] Parsed site data');
 
       baseMacroSitesData = requestedScope === 'NSW'
         ? mergeMacroSites(nswSites)
-        : mergeMacroSites(tmrSites, goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites);
-      const brisbaneFallbackCount = requestedScope === 'NSW' ? 0 : applyBrisbaneRoadContextFallbacks(baseMacroSitesData);
+        : requestedScope === 'SA'
+        ? mergeMacroSites(saSites)
+        : requestedScope === 'VIC'
+        ? mergeMacroSites(vicSites)
+        : requestedScope === 'WA'
+        ? mergeMacroSites(waSites)
+        : requestedScope === 'TAS'
+        ? mergeMacroSites(tasSites)
+        : requestedScope === 'NT'
+        ? mergeMacroSites(ntSites)
+        : mergeMacroSites(dedupeTmrAgainstCensus(tmrSites, qldCensusSites), goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites, qldCensusSites);
+      const brisbaneFallbackCount = requestedScope !== 'QLD' ? 0 : applyBrisbaneRoadContextFallbacks(baseMacroSitesData);
       macroSitesData = mergeMacroSites(baseMacroSitesData, customUploadedSitesData);
       window.macroSitesData = macroSitesData;
-      const filterEl = document.getElementById('macroSourceFilter');
-      if (requestedScope === 'NSW') {
-        macroSourceFilter = 'NSW';
-        if (filterEl) filterEl.value = 'NSW';
-      } else if (macroSourceFilter === 'NSW') {
-        macroSourceFilter = 'ALL';
-        if (filterEl) filterEl.value = 'ALL';
+      if (macroSourceFilter !== CUSTOM_SOURCE_NAME) {
+        syncMacroSourceFilterOptions(requestedScope);
+      } else {
+        syncMacroSourceFilterOptions(requestedScope, CUSTOM_SOURCE_NAME);
       }
       setLoadingState('Applying directional inference...', 'Processing directional splits in responsive batches.', 64);
       await applyDirectionalSplitInferenceToSitesAsync(baseMacroSitesData, { chunkSize: 220 });
@@ -9139,12 +9640,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const mapInfo = document.getElementById('macroMapInfo');
       if (mapInfo) {
-        mapInfo.textContent = requestedScope === 'NSW'
-          ? `${Object.keys(macroSitesData).length} NSW sites loaded. Click a marker to select a site.`
-          : `${Object.keys(macroSitesData).length} Queensland sites loaded. Click a marker to select a site.`;
+        const _scopeName = requestedScope === 'NSW' ? 'NSW' : getStateLongName(requestedScope);
+        mapInfo.textContent = `${Object.keys(macroSitesData).length} ${_scopeName} sites loaded. Click a marker to select a site.`;
       }
       loadedDataScope = requestedScope;
-      updateQuickTiaStateStatus(`Current database: ${requestedScope === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)'}`);
+      updateQuickTiaStateStatus(`Current database: ${getStateDbLabel(requestedScope)}`);
       
       // Hide loading overlay (only if was shown)
       if (loadingOverlay && isAuthenticated) {
@@ -9159,7 +9659,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       console.log('[Data Load] Complete!');
     } catch (error) {
       console.error('[Data Load] Error:', error);
-      const failedScope = String(requestedDataScope || 'QLD').toUpperCase() === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)';
+      const failedScope = getStateDbLabel(requestedDataScope);
       updateQuickTiaStateStatus(`Failed to load ${failedScope} database`, true);
       const loadingText = document.getElementById('loadingText');
       if (loadingText) {
@@ -9252,9 +9752,75 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setSourceBadge(data.source || 'N/A');
     setText('macroDetailRoadName', data.road_name || 'N/A');
     setText('macroDetailDescription', data.description || 'N/A');
-    setText('macroDetailCountYear', data.countYear || data.count_year || 'N/A');
+    (() => {
+      const el = document.getElementById('macroDetailCountYear');
+      if (!el) return;
+      const cy = Number(data.countYear || data.count_year);
+      if (!Number.isFinite(cy) || cy < 1900) {
+        el.textContent = data.countYear || data.count_year || 'N/A';
+        el.style.color = ''; el.title = '';
+        return;
+      }
+      const age = new Date().getFullYear() - cy;
+      el.textContent = String(cy);
+      if (age > 5) {
+        el.style.color = age > 10 ? '#c0392b' : '#e67e22';
+        el.title = `Traffic count is ${age} years old — verify it still represents current conditions; in growth areas seek a recent count.`;
+      } else {
+        el.style.color = '';
+        el.title = `Count year: ${cy}`;
+      }
+    })();
     setText('macroDetailGrowthRate', data.growth_rate ? `${data.growth_rate}% p.a.` : 'N/A');
-    setText('macroDetailHV', hasDbHv ? `${data.hv_percent}%` : 'N/A');
+    (() => {
+      const el = document.getElementById('macroDetailHV');
+      if (!el) return;
+      if (!hasDbHv) { el.textContent = 'N/A'; el.style.color = ''; el.title = ''; return; }
+      const yr = data.hv_year;
+      const currentYear = new Date().getFullYear();
+      const age = yr ? (currentYear - yr) : null;
+      const isProxy = data.hv_source === 'tmr_proximity';
+      let label = `${data.hv_percent}%`;
+      if (yr) label += ` (${yr})`;
+      if (isProxy) {
+        const srcRoad = data.hv_source_road_name || 'nearest TMR station';
+        label += ` <span style="color:#e67e22;font-size:0.9em;font-weight:600;" title="HV% inherited from ${srcRoad} — verify suitability for this road class">⚠ from ${srcRoad}</span>`;
+      }
+      el.innerHTML = label;
+      if (age !== null && age > 5) {
+        el.style.color = age > 10 ? '#c0392b' : '#e67e22';
+        el.title = `Survey data is ${age} years old — treat with caution`;
+      } else if (isProxy) {
+        el.style.color = '#b9770e';
+        el.title = `HV% from nearest TMR station (${data.hv_source_road_class || 'unknown class'}) — not measured at this site. Verify it's representative.`;
+      } else {
+        el.style.color = '';
+        el.title = yr ? `Survey year: ${yr}` : '';
+      }
+    })();
+    (() => {
+      const labelEl = document.getElementById('macroDetailRTLabel');
+      const valEl = document.getElementById('macroDetailRT');
+      if (!labelEl || !valEl) return;
+      const hasRt = data.rt_pct != null;
+      labelEl.style.display = hasRt ? '' : 'none';
+      valEl.style.display = hasRt ? '' : 'none';
+      if (!hasRt) return;
+      const yr = data.rt_year;
+      const currentYear = new Date().getFullYear();
+      const age = yr ? (currentYear - yr) : null;
+      let label = `${data.rt_pct}%`;
+      if (yr) label += ` (${yr})`;
+      label += ' — subset of HV%';
+      valEl.textContent = label;
+      if (age !== null && age > 5) {
+        valEl.style.color = age > 10 ? '#c0392b' : '#e67e22';
+        valEl.title = `Survey data is ${age} years old — treat with caution`;
+      } else {
+        valEl.style.color = '#666';
+        valEl.title = 'Road trains (2H+2I+2J+2K) — multi-trailer combinations, subset of HV%';
+      }
+    })();
     setQualityBadge();
 
     const d1 = Number(data.d1_vadt) || 0;
@@ -9423,6 +9989,32 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
     
+    // Auto-fill RTP and RTR if DB has road train data
+    const rtpEl = document.getElementById('RTP');
+    const rtpWrapper = rtpEl ? rtpEl.closest('div') : null;
+    const rtpLabel = rtpWrapper ? rtpWrapper.querySelector('label') : null;
+    const hasDbRt = data.rt_pct != null && Number(data.rt_pct) > 0;
+    const rtrEl = document.getElementById('RTR');
+    if (hasDbRt) {
+      rtpEl.value = data.rt_pct;
+      rtpEl.readOnly = true;
+      rtpEl.style.border = '1px solid #81c784';
+      rtpEl.style.backgroundColor = '#f1f8f6';
+      rtpEl.style.color = '#1b5e20';
+      if (rtpWrapper) { rtpWrapper.style.background = '#e8f5e9'; rtpWrapper.style.border = '1px solid #81c784'; }
+      if (rtpLabel) { rtpLabel.style.color = '#2e7d32'; rtpLabel.innerHTML = 'RT (%) (from DB)'; }
+      if (rtrEl) rtrEl.value = 'Yes';
+    } else {
+      rtpEl.value = 0;
+      rtpEl.readOnly = false;
+      rtpEl.style.border = '';
+      rtpEl.style.backgroundColor = '';
+      rtpEl.style.color = '';
+      if (rtpWrapper) { rtpWrapper.style.background = ''; rtpWrapper.style.border = ''; }
+      if (rtpLabel) { rtpLabel.style.color = ''; rtpLabel.innerHTML = 'RT (%)'; }
+      if (rtrEl) rtrEl.value = 'No';
+    }
+
     // Auto-fill lane counts if available in DB
     const d1LanesEl = document.getElementById('D1_Lanes');
     const d2LanesEl = document.getElementById('D2_Lanes');
@@ -10217,14 +10809,56 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function getQuickTiaSelectedState() {
     const stateEl = document.getElementById('quickTiaStateSelect');
     const raw = String((stateEl && stateEl.value) || requestedDataScope || 'QLD').trim().toUpperCase();
-    return raw === 'NSW' ? 'NSW' : 'QLD';
+    return SUPPORTED_STATE_SCOPES.includes(raw) ? raw : 'QLD';
   }
 
   function getQuickTiaStateSearchHints() {
     const stateScope = getQuickTiaSelectedState();
-    return stateScope === 'NSW'
-      ? ['New South Wales, Australia', 'NSW, Australia']
-      : ['Queensland, Australia', 'QLD, Australia'];
+    return [`${getStateLongName(stateScope)}, Australia`, `${stateScope}, Australia`];
+  }
+
+  function getGoogleAddressSearchEndpoint() {
+    const origin = typeof window !== 'undefined' ? String(window.location.origin || '') : '';
+    if (/^https?:\/\//i.test(origin)) {
+      return `${origin}/api/google-address-search`;
+    }
+    return 'https://us-central1-crompton-apps.cloudfunctions.net/googleAddressSearch';
+  }
+
+  async function fetchGoogleAddressCandidate(queryText) {
+    const query = String(queryText || '').trim();
+    if (!query) return null;
+
+    const endpoint = getGoogleAddressSearchEndpoint();
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Language': 'en-AU,en;q=0.9'
+        },
+        body: JSON.stringify({ query, state: getQuickTiaSelectedState() })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      const candidate = data && data.candidate ? data.candidate : null;
+      if (!candidate) return null;
+
+      const lat = numberOrNull(candidate.lat);
+      const lon = numberOrNull(candidate.lon);
+      if (!isValidSearchCoordinatePair(lat, lon)) return null;
+
+      return {
+        lat,
+        lon,
+        displayName: candidate.displayName || query,
+        road: candidate.road || null,
+        houseNumber: candidate.houseNumber || '',
+        provider: candidate.provider || 'Google Geocoding API'
+      };
+    } catch (_err) {
+      return null;
+    }
   }
 
   function updateQuickTiaStateStatus(message, isError = false) {
@@ -10257,9 +10891,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (loadedDataScope === stateScope && Object.keys(baseMacroSitesData || {}).length > 0) {
       return;
     }
+    if (dataLoadingPromise && dataLoadingScope === stateScope) {
+      const loadingOverlay = document.getElementById('appLoadingOverlay');
+      const isAuthenticated = sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
+      if (showOverlay && isAuthenticated && loadingOverlay) {
+        loadingOverlay.classList.remove('hidden');
+        startLoadingHints();
+      }
+      await dataLoadingPromise;
+      return;
+    }
     requestedDataScope = stateScope;
-    updateQuickTiaStateStatus(`Loading ${stateScope === 'NSW' ? 'NSW' : 'Queensland'} database...`);
-    await loadMacroSitesData(showOverlay, stateScope);
+    updateQuickTiaStateStatus(`Loading ${stateScope === 'NSW' ? 'NSW' : getStateLongName(stateScope)} database...`);
+    await beginMacroSitesDataLoad(showOverlay, stateScope);
   }
 
   function getReportAddressForPrint() {
@@ -10367,12 +11011,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ? `${growthSourceText} + Table A.5 DOW (${dowAdjustment.dayLabel} × ${dowAdjustment.factor.toFixed(2)})`
       : growthSourceText;
 
-    set('assumptionDtca', dtcaYes ? 'Directional VADT path' : '50/50 split from total VADT');
+    set('assumptionDtca', dtcaYes ? 'Directional AADT path' : '50/50 split from total AADT');
     set('assumptionHvSource', dhvpaYes ? 'Directional HV% inputs' : (hasDbHv ? 'Database HV% shared' : 'User HV% shared'));
     set('assumptionRtSource', drtpaYes ? 'Directional RT% inputs' : 'Overall RT% shared');
     set('assumptionGrowthSource', growthWithDowText);
     set('assumptionLaneSource', `${hasDbLanes ? 'Database lane counts' : 'User-entered lane counts'}${oneWayMode ? ` + One-way mode (${oneWayDirection})` : ''}`);
-    set('assumptionProfileSource', hasSourceHourly ? 'Source hourly profile' : 'Derived profile from daily VADT');
+    set('assumptionProfileSource', hasSourceHourly ? 'Source hourly profile' : 'Derived profile from daily AADT');
     syncLaneClosureModeUi();
   }
 
@@ -10488,7 +11132,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function formatDirectionalVadtLabel(directionCode, directionLabel, prefix = '') {
-    return `${prefix}${formatDirectionalCodeLabel(directionCode, directionLabel)} VADT:`;
+    return `${prefix}${formatDirectionalCodeLabel(directionCode, directionLabel)} AADT:`;
   }
 
   function getCurrentDirectionalLabelContext() {
@@ -10741,20 +11385,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   if (macroSourceFilterEl) {
     macroSourceFilterEl.addEventListener('change', async (e) => {
       macroSourceFilter = String((e.target && e.target.value) || 'ALL');
-      if (macroSourceFilter === 'NSW') {
-        const stateSelect = document.getElementById('quickTiaStateSelect');
-        if (stateSelect) stateSelect.value = 'NSW';
-        requestedDataScope = 'NSW';
-        if (loadedDataScope !== 'NSW' || Object.keys(baseMacroSitesData || {}).length === 0) {
-          updateQuickTiaStateStatus('Loading NSW database...');
-          try {
-            dataLoadingPromise = loadMacroSitesData(true, 'NSW');
-            await dataLoadingPromise;
-          } catch (err) {
-            updateQuickTiaStateStatus('Failed to load New South Wales (NSW) database', true);
-          }
-        }
-      }
       const searchInput = document.getElementById('macroSiteSearch');
       if (searchInput) searchInput.value = '';
       populateMacroSitesDatalist();
@@ -10805,12 +11435,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       stateSelect.addEventListener('change', async () => {
         updateTripGenerationReferenceSourceUi();
         const stateScope = getQuickTiaSelectedState();
+        syncMacroSourceFilterOptions(stateScope);
         requestedDataScope = stateScope;
-        const label = stateScope === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)';
+        const label = getStateDbLabel(stateScope);
         updateQuickTiaStateStatus(`Switching to ${label} database...`);
         try {
-          dataLoadingPromise = loadMacroSitesData(true, stateScope);
-          await dataLoadingPromise;
+          await beginMacroSitesDataLoad(true, stateScope);
           updateQuickTiaStateStatus(`Current database: ${label}`);
         } catch (err) {
           updateQuickTiaStateStatus(`Failed to load ${label} database`, true);
@@ -10822,8 +11452,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const quickInput = getQuickTiaInputElement();
     if (quickInput) {
       const debouncedQuickSuggestions = debounce((value) => {
-        setQuickTiaTypingStatus(false);
+        // Instant: past-search history (offline). Then merge live ArcGIS predictions.
         renderQuickTiaAddressSuggestions(value || '');
+        updateQuickTiaLiveSuggestions(value || '')
+          .catch(() => {})
+          .finally(() => setQuickTiaTypingStatus(false));
       }, 260);
 
       quickInput.addEventListener('keypress', (e) => {
@@ -10831,7 +11464,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
       quickInput.addEventListener('input', (e) => {
         const value = (e && e.target && e.target.value) || '';
-        if (String(value).trim().length > 0) {
+        if (String(value).trim().length >= 3) {
           setQuickTiaTypingStatus(true, 'Searching suggestions...');
         } else {
           setQuickTiaTypingStatus(false);
@@ -10864,7 +11497,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
     }
 
-    updateQuickTiaStateStatus(`Current database: ${getQuickTiaSelectedState() === 'NSW' ? 'New South Wales (NSW)' : 'Queensland (QLD)'}`);
+    const _curState = getQuickTiaSelectedState();
+    syncMacroSourceFilterOptions(_curState);
+    updateQuickTiaStateStatus(`Current database: ${getStateDbLabel(_curState)}`);
   }
 
   // Load sites on page load
@@ -10884,6 +11519,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       try { ev.preventDefault(); } catch (_) {}
     });
 
+    // Warm the dataset cache immediately — even before login — so the heavy
+    // downloads run while the user is signing in (fixes slow first load).
+    try { prefetchDatasetsForScope().catch(() => {}); } catch (_) {}
+
     // Initialize UI components only after authentication
     if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
       return;
@@ -10901,22 +11540,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }, 120);
       } catch (_) {}
     }
-    
-    // Start data loading if not already started
-    if (!dataLoadingPromise) {
-      dataLoadingPromise = loadMacroSitesData(true);
-    }
-    
-    // Wait for data loading
-    try {
-      await dataLoadingPromise;
-    } catch (error) {
-      console.error('Data loading failed:', error);
-    }
 
-    // Re-apply after async data/layout updates so newly-rendered outputs get formulas immediately.
-    if (typeof applyGlobalFormulaAnnotations === 'function') {
-      try { applyGlobalFormulaAnnotations(); } catch (_) {}
+    scheduleInitialDataWarmup();
+
+    if (dataLoadingPromise) {
+      dataLoadingPromise
+        .then(() => {
+          if (typeof applyGlobalFormulaAnnotations === 'function') {
+            try { applyGlobalFormulaAnnotations(); } catch (_) {}
+          }
+        })
+        .catch((error) => {
+          console.error('Data loading failed:', error);
+        });
     }
 
     if (typeof window.performQuickTIASearch !== 'function') {
@@ -10976,6 +11612,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const geocodeOnline = async (address) => {
           const requestedRoad = extractSearchRoadName(address);
           const requestedHouseNumber = extractSearchHouseNumber(address);
+          const googleCandidate = await fetchGoogleAddressCandidate(address);
+          if (googleCandidate) return googleCandidate;
           const preciseCandidate = await fetchPreciseAddressCandidate(address);
           if (preciseCandidate) return preciseCandidate;
           const stateHints = getQuickTiaStateSearchHints();
@@ -10992,12 +11630,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             for (const pack of responses) {
               const data = pack.data;
               if (!Array.isArray(data) || data.length === 0) continue;
-              const preferredAu = data.filter(item => String(item.display_name || '').toLowerCase().includes('australia'));
-              const pool = preferredAu.length ? preferredAu : data;
+              const stateScoped = data.filter(item => geocodeCandidateMatchesSelectedState(item));
+              const preferredAu = stateScoped.filter(item => String(item.display_name || '').toLowerCase().includes('australia'));
+              const pool = preferredAu.length ? preferredAu : stateScoped;
+              if (!pool.length) continue;
               const ranked = pool
                 .map(item => ({ item, score: scoreGeocodeCandidate(item, requestedRoad, requestedHouseNumber) }))
                 .sort((a, b) => b.score - a.score);
-              const chosen = ranked.length ? ranked[0].item : pool[0];
+              const top = ranked.length ? ranked[0] : null;
+              if (!top || !isGeocodeScoreAcceptable(top.score, requestedRoad, requestedHouseNumber)) continue;
+              const chosen = top.item;
               const location = toLocation({ ...chosen, provider: pack.provider });
               if (location) return location;
             }
@@ -11129,7 +11771,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           handleSearchSuccess(matchResult);
         } catch (err) {
           if (errEl) {
-            errEl.innerHTML = `<strong>❌ Search failed:</strong> ${String(err && err.message ? err.message : err)}`;
+            errEl.innerHTML = `<strong>❌ Search failed:</strong> ${escHtml(err && err.message ? err.message : err)}`;
             errEl.style.display = 'block';
           }
         } finally {
@@ -11154,7 +11796,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   const ids = [
     'RTR','DTCA','DHVPA','DRTPA','VADT','D1_VADT','D2_VADT','HVP','RTP','D1_HVP','D2_HVP','D1_RTP','D2_RTP','D1_Lanes','D2_Lanes',
-    'roadOperationMode','oneWayActiveDirection','laneClosureCount','macroOpeningYear','macroGrowthRate','macroTerrainType','roadCapacityClass'
+    'roadOperationMode','oneWayActiveDirection','macroOpeningYear','macroGrowthRate','macroTerrainType','roadCapacityClass'
   ];
   function txt(id){
     const el = document.getElementById(id);
@@ -11343,73 +11985,49 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     syncDirectionalAllocationControls();
   }
 
+  // NOTE: The "Lane Closure Mode" dropdown was removed — all control modes are now
+  // enumerated directly in the Queue Length table. There is no single "selected" mode,
+  // so these helpers return neutral defaults. The VCR/queue engine still computes the
+  // baseline plus every lane-closure scenario (d1CloseScenarios) as before.
   function getSelectedLaneClosureCount() {
-    const raw = Number(num('laneClosureCount'));
-    return raw === 2 ? 2 : 1;
+    return 1; // representative single closure (used by detour one-way calc)
   }
 
   function isContraflowMode() {
-    const el = document.getElementById('laneClosureCount');
-    return el ? el.value === 'contraflow' : false;
+    return false; // no single selected mode; contraflow is shown as its own queue rows
   }
 
-  function getEffectiveOpenLanes(totalLanes) {
+  function getControlMode() {
+    return 'laneclosure';
+  }
+
+  function isFullHoldMode() { return false; }
+  function isSingleDirectionHoldMode() { return false; }
+  function isHoldMode() { return false; }
+
+  // Open lanes after closing `count` lanes (defaults to a single closure). Used for both
+  // the representative work-VCR line and explicit per-scenario math.
+  function getEffectiveOpenLanes(totalLanes, count) {
     const lanes = Math.max(1, Math.round(Number(totalLanes) || 1));
-    // Contraflow: both directions reduced to 1 lane each
-    if (isContraflowMode()) return 1;
     if (lanes <= 1) return 1;
-    if (lanes === 2) return 1;
-    const closureCount = getSelectedLaneClosureCount();
+    const closureCount = Number.isFinite(Number(count)) ? Math.max(1, Math.round(Number(count))) : 1;
     const closed = Math.min(closureCount, lanes - 1);
     return Math.max(1, lanes - closed);
   }
 
   function getLaneClosureLabel() {
-    if (isContraflowMode()) return 'Contraflow (1 lane each direction)';
-    return getSelectedLaneClosureCount() >= 2 ? 'Two Lane Closure' : 'Single Lane Closure';
+    return 'See Queue table (all modes shown)';
   }
 
+  // The Lane Closure Mode dropdown was removed; all modes are enumerated in the queue
+  // table. This now only toggles the contraflow closed-carriageway sub-choice, which is
+  // relevant whenever both directions have ≥2 lanes (contraflow is one of the modes shown).
   function syncLaneClosureModeUi() {
     const d1 = Math.max(1, num('D1_Lanes'));
     const d2 = Math.max(1, num('D2_Lanes'));
-    const maxLanes = Math.max(d1, d2);
-    const laneSignature = `${d1}|${d2}`;
-    const wrap = document.getElementById('laneClosureModeWrap');
-    const selectEl = document.getElementById('laneClosureCount');
-    if (!wrap || !selectEl) return;
-    const lanesChanged = selectEl.dataset.lastLaneSignature !== laneSignature;
-    selectEl.dataset.lastLaneSignature = laneSignature;
-
     const allowContraflow = d1 >= 2 && d2 >= 2;
-    const show = maxLanes > 1 || allowContraflow;
-    wrap.style.display = show ? '' : 'none';
-
-    const twoLaneOption = selectEl.querySelector('option[value="2"]');
-    const singleLaneOption = selectEl.querySelector('option[value="1"]');
-    const contraflowOption = selectEl.querySelector('option[value="contraflow"]');
-
-    // Keep option order predictable for users: 1 lane, 2 lanes, then contraflow.
-    [singleLaneOption, twoLaneOption, contraflowOption].filter(Boolean).forEach(opt => selectEl.appendChild(opt));
-
-    if (twoLaneOption) {
-      const allowTwo = maxLanes > 1;
-      twoLaneOption.disabled = !allowTwo;
-      twoLaneOption.textContent = allowTwo ? 'Two Lane Closure' : 'Two Lane Closure (requires >=2 lanes)';
-      if (!allowTwo && Number(selectEl.value) === 2) selectEl.value = '1';
-    }
-
-    if (contraflowOption) {
-      contraflowOption.disabled = !allowContraflow;
-      contraflowOption.textContent = allowContraflow
-        ? 'Contraflow (1 lane each direction)'
-        : 'Contraflow (requires ≥2 lanes each direction)';
-      if (!allowContraflow && selectEl.value === 'contraflow') selectEl.value = '1';
-    }
-
-    // After lane-count edits, default back to the safest/common mode.
-    if (lanesChanged && show) {
-      selectEl.value = '1';
-    }
+    const contraWrap = document.getElementById('contraflowClosedWrap');
+    if (contraWrap) contraWrap.style.display = allowContraflow ? '' : 'none';
   }
 
   function getDirectionalPercentage(direction, type) {
@@ -11439,7 +12057,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function isTmrStyleSource(site, directionKey) {
     // Determines whether a site has real measured 24-hour hourly data in the database.
     // If YES  → use the measured data directly (scaled to target daily total).
-    // If NO   → fall back to the Austroads proportional diurnal template.
+    // If NO   → fall back to the TMR-derived directional diurnal template.
     //
     // Decision is DATA-DRIVEN, not source-name driven:
     //   Full measured profile (TMR, NSW, Custom Upload) typically has 20+ non-zero hours.
@@ -11474,7 +12092,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const siteCapDaily = Math.max(0, Number(site && site.design_capacity_daily) || 0);
     if (siteCapDaily > 0) return siteCapDaily;
 
-    // Use the site's measured VADT as the fixed capacity anchor when available.
+    // Use the site's measured AADT as the fixed capacity anchor when available.
     // This ensures VCR capacity denominator stays fixed to measured road conditions
     // while user-adjusted demand changes the VCR numerator appropriately.
     const measuredSiteVadt = Math.max(0, Number(site && site.vadt) || 0);
@@ -11596,7 +12214,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (hasManualPeakData && source === 'CUSTOM UPLOAD') {
       // Use actual peak hour values from trip generation calculator
       // Direction 1 gets half, Direction 2 gets half (daily is already split 50/50)
-      const directionFactor = 0.5; // Since daily VADT is split 50/50
+      const directionFactor = 0.5; // Since daily AADT is split 50/50
       
       // AM Peak: Use directional split (inbound/outbound from scenario)
       const amPeakVol = direction === 1 
@@ -11667,9 +12285,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       evVol = evParts.total; evLv = evParts.lv; evHv = evParts.hv; evRt = evParts.rt;
 
       const buildTmrPeriod = (lv, hv, rt, pctHour) => {
-        const lvPL = numberRoundUp(lv * pctHour * 0.85 / lanes, 0);
-        const hvPL = numberRoundUp(hv * pctHour * 0.85 / lanes, 0);
-        const rtPL = numberRoundUp(rt * pctHour * 0.85 / lanes, 0);
+        // Peak-hour per-lane demand = (period volume x peak-hour fraction) / lanes.
+        // No additional reduction factor: the previous x0.85 had no Austroads basis
+        // and systematically under-stated V/C and queue lengths by ~15%.
+        const lvPL = numberRoundUp(lv * pctHour / lanes, 0);
+        const hvPL = numberRoundUp(hv * pctHour / lanes, 0);
+        const rtPL = numberRoundUp(rt * pctHour / lanes, 0);
         const hourlyPerLane = lvPL + hvPL + rtPL;
 
         const lv5 = numberRoundUp(lvPL * 5 / 60, 0);
@@ -11677,10 +12298,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const rt5 = numberRoundUp(rtPL * 5 / 60, 0);
         const per5 = lv5 + hv5 + rt5;
 
-        let q2 = lv5*2.4 + hv5*8 + rt5*25.2;
-        let q5 = lv5*6 + hv5*20 + rt5*63;
-        let q10 = lv5*12 + hv5*40 + rt5*126;
-        let q15 = lv5*18 + hv5*60 + rt5*189;
+        // Queued-vehicle spacing per Austroads: 7.0 m light vehicle, 20 m heavy,
+        // 63 m road-train. q2/q10/q15 scale the 5-minute count to 2/10/15 min.
+        let q2 = lv5*2.8 + hv5*8 + rt5*25.2;
+        let q5 = lv5*7 + hv5*20 + rt5*63;
+        let q10 = lv5*14 + hv5*40 + rt5*126;
+        let q15 = lv5*21 + hv5*60 + rt5*189;
 
         const factor = isRtr ? 1.5 : 1;
 
@@ -11890,6 +12513,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const cap = parseFloat(laneCapEl.value) || 1;
     const red = parseFloat(redEl.value) || 0;
     const hv = (parseFloat(hvEl.value) || 0) / 100;
+    const speedEl = document.getElementById('postedSpeed');
+    const postedSpeed = speedEl ? (parseFloat(speedEl.value) || 0) : 0;
 
     const vcr = vol / cap;
     vcrEl.textContent = vcr.toFixed(2);
@@ -11905,7 +12530,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     losEl.className = `los-badge ${losClass}`;
     losEl.textContent = losText;
 
-    const dynamicSpacing = (7.0 * (1 - hv)) + (20.0 * hv);
+    const dynamicSpacing = (lvQueueSpacing(postedSpeed) * (1 - hv)) + (20.0 * hv);
     spacingEl.textContent = dynamicSpacing.toFixed(2) + 'm';
 
     const vehPerSec = vol / 3600;
@@ -11915,7 +12540,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function setupIntersectionQueueCapacityCalculator() {
-    const ids = ['arrivalVol', 'laneCap', 'redTime', 'hvPercent'];
+    const ids = ['arrivalVol', 'laneCap', 'redTime', 'hvPercent', 'postedSpeed'];
     const elements = ids.map(id => document.getElementById(id)).filter(Boolean);
     if (!elements.length) return;
 
@@ -12525,7 +13150,23 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
         dashWorstEl.style.color = vcrColor;
       }
-      if (dashLosEl) dashLosEl.textContent = Number.isFinite(worstVcr) ? losLabel(worstVcr) : 'LOS —';
+      if (dashLosEl) {
+        if (Number.isFinite(worstVcr)) {
+          let losLetter = 'f';
+          if (worstVcr <= 0.60) losLetter = 'a';
+          else if (worstVcr <= 0.70) losLetter = 'b';
+          else if (worstVcr <= 0.80) losLetter = 'c';
+          else if (worstVcr <= 0.90) losLetter = 'd';
+          else if (worstVcr <= 1.00) losLetter = 'e';
+          dashLosEl.className = 'los-badge los-' + losLetter;
+          dashLosEl.style.color = ''; // let the badge class set the colour (inline wins otherwise)
+          dashLosEl.textContent = losLabel(worstVcr);
+        } else {
+          dashLosEl.className = '';
+          dashLosEl.style.color = '#64748b';
+          dashLosEl.textContent = 'LOS —';
+        }
+      }
     }
 
     if (hasQueue) {
@@ -12814,16 +13455,117 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return arr.map(v => (Number(v) || 0) / sum);
     };
 
+    const NIGHT_CAP_HOURS = [0, 1, 2, 3, 4];
+    const NIGHT_CAP_MAX_SHARE = 0.025;
+    const applyNightShareCap = (shares, maxSharePerHour = NIGHT_CAP_MAX_SHARE, nightHours = NIGHT_CAP_HOURS) => {
+      const normalized = normalizeToUnit(Array.isArray(shares) ? shares : []);
+      const adjusted = normalized.slice(0, 24);
+      const cap = Math.max(0, Math.min(1, Number(maxSharePerHour) || 0));
+      const nightSet = new Set((Array.isArray(nightHours) ? nightHours : []).filter(h => Number.isInteger(h) && h >= 0 && h < 24));
+      if (!nightSet.size || cap <= 0) return adjusted;
+
+      let excess = 0;
+      nightSet.forEach((hour) => {
+        if (adjusted[hour] > cap) {
+          excess += (adjusted[hour] - cap);
+          adjusted[hour] = cap;
+        }
+      });
+
+      if (!(excess > 0)) return adjusted;
+
+      const targetHours = [];
+      for (let h = 0; h < 24; h += 1) {
+        if (!nightSet.has(h)) targetHours.push(h);
+      }
+      if (!targetHours.length) return normalizeToUnit(adjusted);
+
+      const targetWeight = targetHours.reduce((sum, h) => sum + (adjusted[h] || 0), 0);
+      if (targetWeight > 0) {
+        targetHours.forEach((h) => {
+          adjusted[h] += excess * ((adjusted[h] || 0) / targetWeight);
+        });
+      } else {
+        const evenAdd = excess / targetHours.length;
+        targetHours.forEach((h) => {
+          adjusted[h] += evenAdd;
+        });
+      }
+
+      return normalizeToUnit(adjusted);
+    };
+
     const amNorm = normalizeToUnit(amBiasTemplate);
     const pmNorm = normalizeToUnit(pmBiasTemplate);
 
+    const computeTmrDirectionalTemplates = () => {
+      const sites = (macroSitesData && typeof macroSitesData === 'object') ? Object.values(macroSitesData) : [];
+      if (!sites.length) return { hasTmrData: false, d1: null, d2: null };
+
+      const accumD1 = new Array(24).fill(0);
+      const accumD2 = new Array(24).fill(0);
+      let weightD1 = 0;
+      let weightD2 = 0;
+
+      sites.forEach((site) => {
+        const sourceUpper = String((site && site.source) || '').trim().toUpperCase();
+        if (sourceUpper !== 'TMR') return;
+        const weekday = site && site.directions_weekday;
+        if (!weekday || typeof weekday !== 'object') return;
+
+        const d1 = Array.isArray(weekday['GAZETTAL']) ? weekday['GAZETTAL'].slice(0, 24).map(v => Math.max(0, Number(v) || 0)) : null;
+        const d2 = Array.isArray(weekday['AGAINST GAZETTAL']) ? weekday['AGAINST GAZETTAL'].slice(0, 24).map(v => Math.max(0, Number(v) || 0)) : null;
+        const minMeasuredHours = 6;
+
+        if (d1 && d1.length === 24 && d1.filter(v => v > 0).length >= minMeasuredHours) {
+          const d1Total = d1.reduce((sum, v) => sum + v, 0);
+          if (d1Total > 0) {
+            for (let h = 0; h < 24; h += 1) accumD1[h] += d1[h];
+            weightD1 += d1Total;
+          }
+        }
+
+        if (d2 && d2.length === 24 && d2.filter(v => v > 0).length >= minMeasuredHours) {
+          const d2Total = d2.reduce((sum, v) => sum + v, 0);
+          if (d2Total > 0) {
+            for (let h = 0; h < 24; h += 1) accumD2[h] += d2[h];
+            weightD2 += d2Total;
+          }
+        }
+      });
+
+      const d1Norm = weightD1 > 0 ? normalizeToUnit(accumD1) : null;
+      const d2Norm = weightD2 > 0 ? normalizeToUnit(accumD2) : null;
+      return {
+        hasTmrData: !!(d1Norm && d2Norm),
+        d1: d1Norm,
+        d2: d2Norm
+      };
+    };
+
+    if (!buildSyntheticHourlyFromDaily._tmrTemplateCache || !buildSyntheticHourlyFromDaily._tmrTemplateCache.hasTmrData) {
+      buildSyntheticHourlyFromDaily._tmrTemplateCache = computeTmrDirectionalTemplates();
+    }
+    const tmrTemplates = buildSyntheticHourlyFromDaily._tmrTemplateCache || { hasTmrData: false, d1: null, d2: null };
+
     let profile;
-    if (amPeakDir === 'even') {
+    if (tmrTemplates.hasTmrData && Array.isArray(tmrTemplates.d1) && Array.isArray(tmrTemplates.d2)) {
+      if (amPeakDir === 'even') {
+        profile = tmrTemplates.d1.map((v, i) => (v + tmrTemplates.d2[i]) / 2);
+      } else {
+        const amTemplate = amPeakDir === '2' ? tmrTemplates.d2 : tmrTemplates.d1;
+        const pmTemplate = amPeakDir === '2' ? tmrTemplates.d1 : tmrTemplates.d2;
+        const isAmDominant = (direction.toString() === amPeakDir);
+        profile = isAmDominant ? amTemplate : pmTemplate;
+      }
+    } else if (amPeakDir === 'even') {
       profile = amNorm.map((v, i) => (v + pmNorm[i]) / 2);
     } else {
       const isAmDominant = (direction.toString() === amPeakDir);
       profile = isAmDominant ? amNorm : pmNorm;
     }
+
+    profile = applyNightShareCap(profile);
 
     for (let hour = 0; hour < 24; hour += 1) {
       hourly[hour] = total * profile[hour];
@@ -12986,6 +13728,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (!siteId) return;
       bySite.set(siteId, Math.max(0, Math.min(100, Number(input.value) || 0)));
     });
+
+    const hasRoadLevelSliders = document.querySelectorAll('#quickTiaRoadWeightList .road-weight').length > 1;
+    if (hasRoadLevelSliders) {
+      const normalizedWeights = getCurrentQuickReferenceWeights(safeRefs);
+      return safeRefs.map((ref, index) => {
+        const siteId = String((ref && ref.siteId) || '').trim();
+        const included = siteId ? (includes.has(siteId) ? includes.get(siteId) : true) : false;
+        const percent = Math.max(0, Math.min(100, (Number(normalizedWeights[index]) || 0) * 100));
+        return {
+          siteId,
+          included,
+          percent
+        };
+      });
+    }
 
     return safeRefs.map(ref => {
       const siteId = String((ref && ref.siteId) || '').trim();
@@ -13241,7 +13998,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return sourceHourly.map(vol => Math.max(0, Number(vol) || 0) * compoundGrowthFactor);
     }
 
-    return AUSTROADS_DEFAULT_PROFILE.map(percentage => safeTargetAADT * percentage);
+    const fallbackDirection = String(directionKey || '').toUpperCase() === 'AGAINST GAZETTAL' ? 2 : 1;
+    return buildSyntheticHourlyFromDaily(safeTargetAADT, fallbackDirection);
   }
 
   function buildHourlyDirectionProfile(direction, dailyTotal, hvPct, rtPct, laneCount, rtrYes, metrics, site, profileOptions = {}) {
@@ -13356,10 +14114,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         peakHourlyPerLane: peakPerLane,
         per5: lv5 + hv5 + rt5,
         queue: {
-          q2:  numberRoundUp((lv5 * 2.4  + hv5 * 8  + rt5 * 15.2) * factor, 0),
-          q5:  numberRoundUp((lv5 * 6    + hv5 * 20 + rt5 * 38)   * factor, 0),
-          q10: numberRoundUp((lv5 * 12   + hv5 * 40 + rt5 * 76)   * factor, 0),
-          q15: numberRoundUp((lv5 * 18   + hv5 * 60 + rt5 * 114)  * factor, 0)
+          q2:  numberRoundUp((lv5 * 2.4  + hv5 * 8  + rt5 * 25.2)  * factor, 0),
+          q5:  numberRoundUp((lv5 * 6    + hv5 * 20 + rt5 * 63)   * factor, 0),
+          q10: numberRoundUp((lv5 * 12   + hv5 * 40 + rt5 * 126)  * factor, 0),
+          q15: numberRoundUp((lv5 * 18   + hv5 * 60 + rt5 * 189)  * factor, 0)
         }
       };
     });
@@ -14346,6 +15104,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       else if (sourceUpper === 'LOGAN') profileText = hasMeasuredHourly ? 'Logan (Measured Hourly)' : 'Logan (Austroads Template)';
       else if (sourceUpper === 'TOOWOOMBA') profileText = hasMeasuredHourly ? 'Toowoomba (Measured Hourly)' : 'Toowoomba (Austroads Template)';
       else if (sourceUpper === 'NSW') profileText = 'NSW (Measured Hourly + State Roads Method)';
+      else if (sourceUpper === 'SA') profileText = 'SA (DIT SA Traffic Volume Estimates)';
+      else if (sourceUpper === 'VIC') profileText = 'VIC (DTP Traffic Volume)';
+      else if (sourceUpper === 'WA') profileText = 'WA (Main Roads WA Traffic Counts)';
+      else if (sourceUpper === 'TAS') profileText = 'TAS (NFDH Harmonised Traffic Counts)';
+      else if (sourceUpper === 'QLD CENSUS') profileText = 'QLD Census (TMR Traffic Census AADT)';
       else if (sourceUpper === 'CUSTOM UPLOAD') profileText = hasMeasuredHourly ? 'Custom Upload (Measured Hourly)' : 'Custom Upload (Austroads Template)';
       else if (!sourceUpper && window.selectedTiaData && window.selectedTiaData.type === 'references') profileText = 'Quick Address (Weighted References)';
       kpiModelProfileEl.textContent = `Model Profile: ${profileText}`;
@@ -14418,7 +15181,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       d2Daily = numberRoundUp((Number(d2DailyBase) || 0) * growthFactor, 0);
       projectedTotal = numberRoundUp((Number(totalDailyBase) || 0) * growthFactor, 0);
     }
-    // Keep total projected VADT aligned with directional chart inputs.
+    // Keep total projected AADT aligned with directional chart inputs.
     projectedTotal = Math.max(0, (Number(d1Daily) || 0) + (Number(d2Daily) || 0));
     if (oneWayMode) {
       if (oneWayActiveDirection === 1) d2Daily = 0;
@@ -14455,7 +15218,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     if (predictedVadtInput) predictedVadtInput.value = Number.isFinite(projectedTotal) ? projectedTotal : '';
     if (predictedD1Input) predictedD1Input.value = Number.isFinite(d1Daily) ? d1Daily : '';
     if (predictedD2Input) predictedD2Input.value = Number.isFinite(d2Daily) ? d2Daily : '';
-    setFormulaBelow('predictedVADT', `Predicted VADT = ${Math.round(totalDailyBase).toLocaleString()} * (1 + ${growthRatePct/100})^${effectiveYears} = ${Math.round(projectedTotal).toLocaleString()}`);
+    setFormulaBelow('predictedVADT', `Predicted AADT = ${Math.round(totalDailyBase).toLocaleString()} * (1 + ${growthRatePct/100})^${effectiveYears} = ${Math.round(projectedTotal).toLocaleString()}`);
 
     const predictedD1LabelEl = document.getElementById('predictedD1Label');
     const predictedD2LabelEl = document.getElementById('predictedD2Label');
@@ -14534,15 +15297,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const buildCloseScenarios = (directionLanes) => {
       const lanes = Math.max(1, Number(directionLanes) || 1);
       if (lanes <= 1) return [];
-      const maxClosureCount = 2;
+      const maxClosureCount = Math.max(0, lanes - 1);
       return Array.from({ length: Math.max(0, maxClosureCount) }, (_, i) => {
         const closureCount = i + 1;
         const openLanes = Math.max(1, lanes - closureCount);
         return { closureCount, openLanes, values: {}, formulas: {} };
       });
     };
-    const d1CloseScenarios = buildCloseScenarios(d1Metrics.lanes);
-    const d2CloseScenarios = buildCloseScenarios(d2Metrics.lanes);
+    // Hold modes don't close lanes, so there are no lane-closure scenario columns.
+    const d1CloseScenarios = isHoldMode() ? [] : buildCloseScenarios(d1Metrics.lanes);
+    const d2CloseScenarios = isHoldMode() ? [] : buildCloseScenarios(d2Metrics.lanes);
     const formatClosureScenarioLabel = (closureCount, openLanes, { includeOpen = true } = {}) => {
       const genericLabel = closureCount === 1
         ? `1 Lane Closed${includeOpen ? ` (${openLanes} open)` : ''}`
@@ -14554,13 +15318,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       return genericLabel;
     };
+    const holdActive = isHoldMode();
     const laneClosureAssumptionNoteEl = document.getElementById('laneClosureAssumptionNote');
     if (laneClosureAssumptionNoteEl) {
-      if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
-        laneClosureAssumptionNoteEl.textContent = 'Work VCR assumes: Single Lane Reversible Flow (both directions single-lane)';
-      } else {
-        laneClosureAssumptionNoteEl.textContent = `Work VCR assumes: ${laneClosureLabel} (D1 open lanes: ${d1OpenLanes}, D2 open lanes: ${d2OpenLanes})`;
-      }
+      laneClosureAssumptionNoteEl.textContent = 'All work-zone control modes (lane closures, contraflow / SLRF, and Full / Single-Direction traffic holds) are compared in the Queue Length table below. Hold modes have no work V/C (capacity = 0 during the hold); the queue over the hold time governs.';
     }
 
     setFormulaBelow('kpiDV', `DV = max(DV1, DV2) = max(${Math.round(dv1).toLocaleString()}, ${Math.round(dv2).toLocaleString()}) = ${Math.round(maxDv).toLocaleString()} vph/lane`);
@@ -14575,6 +15336,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       baseD2[p] = TMRCalculator.calculateVCR(m2.hourlyPerLane, dv2);
       baseD1Formula[p] = buildBaseVcrStep(d1HourlyTotal, d1Metrics.lanes, dv1, baseD1[p]);
       baseD2Formula[p] = buildBaseVcrStep(d2HourlyTotal, d2Metrics.lanes, dv2, baseD2[p]);
+
+      // Hold modes (Stop/Go) stop traffic in time rather than closing lanes — capacity
+      // is zero during the hold, so a work-case V/C is undefined. Suppress every work
+      // V/C series; the queue accumulation (computed in the queue engine) governs.
+      if (holdActive) {
+        slcD1[p] = null; slcD1Formula[p] = '';
+        slcD2[p] = null; slcD2Formula[p] = '';
+        slrf[p] = null; slrfFormula[p] = '';
+        d1CloseScenarios.forEach(sc => { sc.values[p] = null; sc.formulas[p] = ''; });
+        d2CloseScenarios.forEach(sc => { sc.values[p] = null; sc.formulas[p] = ''; });
+        return;
+      }
 
       if (d1Metrics.lanes > 1) {
         slcD1[p] = (m1.hourlyPerLane * d1Metrics.lanes / d1OpenLanes) / dv1;
@@ -14796,8 +15569,68 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const queuePeriodD2 = derivePeriodQueueFromHourly(d2HourlyProfile, d2AdjProfile);
 
     // Queue formula for all council profiles (including TMR/council-derived paths).
-    const qFormulaStr = 'Q = (Lv_5min * 2.4) + (Hv_5min * 8) + (Rt_5min * 15.2)';
-    const hourlyQueueFormulaInline = 'Q=(Lv_5min*2.4)+(Hv_5min*8)+(Rt_5min*15.2)';
+    const qFormulaStr = 'Q = (Lv_5min * 2.4) + (Hv_5min * 8) + (Rt_5min * 25.2)';
+    const hourlyQueueFormulaInline = 'Q=(Lv_5min*2.4)+(Hv_5min*8)+(Rt_5min*25.2)';
+
+    // Enumerate every work-zone control mode for a direction (dropdown removed).
+    // Queue is pure arrival-accumulation scaled by a per-mode factor `sf`.
+    const buildQueueModes = (thisLanes) => {
+      const d1L = Math.max(1, d1Metrics.lanes);
+      const d2L = Math.max(1, d2Metrics.lanes);
+      const lanes = Math.max(1, thisLanes);
+      const modes = [
+        { label: 'Full Traffic Hold (Stop/Go)', sf: 1, note: 'Work V/C N/A — queue = arrivals over the hold time' }
+      ];
+      // Lane closure: traffic keeps flowing in the open lane(s); queue from reduced capacity.
+      if (lanes > 1) {
+        for (let c = 1; c <= lanes - 1; c++) {
+          const open = lanes - c;
+          modes.push({ label: c === 1 ? `Single Lane Closure (${open} open)` : `${c} Lane Closure (${open} open)`, sf: lanes / open });
+        }
+      }
+      // Mixed flow modes (some lanes flowing + one hold/release) removed 2026-06-08:
+      // not practicable in real-world traffic control, so they are no longer reported.
+      // SLRF (1+1): both directions share one lane, alternating stop/go → real queue.
+      if (d1L === 1 && d2L === 1) modes.push({ label: 'Single Lane Reversible Flow (1 lane)', sf: 1 });
+      // Contraflow intentionally omitted: both directions flow simultaneously (1 lane each)
+      // with no alternating hold, so there is no stop/go queue — it is a capacity/VCR case.
+      return modes;
+    };
+
+    const renderModeGroupedQueue = (thisLanes, queuePeriod, laneCap, profile) => {
+      const durations = [
+        { key: 'q2', label: 'Per 2 min' },
+        { key: 'q5', label: 'Per 5 min' },
+        { key: 'q10', label: 'Per 10 min' },
+        { key: 'q15', label: 'Per 15 min' }
+      ];
+      const fmt = (val) => {
+        const r = val > 0 ? Math.max(6, Math.ceil(val)) : 0;
+        return r < 30 ? `${r.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : r.toLocaleString();
+      };
+      // Per-mode scale factor (mixed-flow per-period logic removed 2026-06-08).
+      const periodFactor = (mode) => mode.sf;
+      return buildQueueModes(thisLanes).map(mode => {
+        const noteHtml = mode.note ? ` <span style="font-weight:500; color:#607d8b; font-size:0.85em;">— ${mode.note}</span>` : '';
+        const header = `<tr style="background:#e8eef2;"><td colspan="6" style="font-weight:800; color:#1f5e63; padding:6px 8px;">${mode.label}${noteHtml}</td></tr>`;
+        const rows = durations.map(d => {
+          const vals = ['AM','OP','PM','EV'].map(p => (queuePeriod[p][d.key] || 0) * periodFactor(mode, p));
+          const mx = Math.max(...vals);
+          const mxR = mx > 0 ? Math.max(6, Math.ceil(mx)) : 0;
+          const mxOut = mxR < 30 ? `${mxR.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : mxR.toLocaleString();
+          return `
+            <tr>
+              <td class="rowhead">${d.label}</td>
+              <td><div>${fmt(vals[0])}</div><div class="formula-inline">${qFormulaStr}</div></td>
+              <td><div>${fmt(vals[1])}</div><div class="formula-inline">${qFormulaStr}</div></td>
+              <td><div>${fmt(vals[2])}</div><div class="formula-inline">${qFormulaStr}</div></td>
+              <td><div>${fmt(vals[3])}</div><div class="formula-inline">${qFormulaStr}</div></td>
+              <td><strong>${mxOut}</strong><div class="formula-inline">Max = highest period queue</div></td>
+            </tr>`;
+        }).join('');
+        return header + rows;
+      }).join('');
+    };
 
     const queueGroupedBodyD2 = document.getElementById('queueGroupedBodyD2');
     if (queueGroupedBodyD2) {
@@ -14809,49 +15642,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           <tr><td class="rowhead">Per 15 minutes Length (m)</td>${'<td>N/A</td>'.repeat(4)}<td>-</td></tr>
         `;
       } else {
-        // Closure scenario comparison rows: show scaled queue for each closure count and duration.
-        const queueDurations = [
-          { key: 'q2', label: 'Per 2 min' },
-          { key: 'q5', label: 'Per 5 min' },
-          { key: 'q10', label: 'Per 10 min' },
-          { key: 'q15', label: 'Per 15 min' }
-        ];
-        const queueRowsD2 = d2CloseScenarios.length > 0
-          ? queueDurations.flatMap(duration => d2CloseScenarios.map(sc => {
-              const isSel = sc.closureCount === selectedClosureCount;
-              const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
-              const sf = d2Metrics.lanes / sc.openLanes;
-              return {
-                label: isSel ? `★ ${scenLbl} — ${duration.label}` : `${scenLbl} — ${duration.label}`,
-                values: ['AM','OP','PM','EV'].map(p => (queuePeriodD2[p][duration.key] || 0) * sf),
-                highlighted: isSel
-              };
-            }))
-          : queueDurations.map(duration => ({
-              label: `${duration.label} (SLRF — 1 lane)`,
-              values: ['AM','OP','PM','EV'].map(k => queuePeriodD2[k][duration.key] || 0)
-            }));
-
-        queueGroupedBodyD2.innerHTML = queueRowsD2.map(row => {
-          const maxQueue = Math.max(...row.values);
-          const formatQueueValue = (val) => {
-            const rounded = val > 0 ? Math.max(6, Math.ceil(val)) : 0;
-            return rounded < 30 ? `${rounded.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : rounded.toLocaleString();
-          };
-          const formattedMax = maxQueue > 0 ? Math.max(6, Math.ceil(maxQueue)) : 0;
-          const maxDisplay = formattedMax < 30 ? `${formattedMax.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : formattedMax.toLocaleString();
-          const trStyle = row.highlighted ? ' style="outline: 2px solid #1565c0; outline-offset: -2px;"' : '';
-          return `
-            <tr${trStyle}>
-              <td class="rowhead">${row.label}</td>
-              <td><div>${formatQueueValue(row.values[0])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${formatQueueValue(row.values[1])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${formatQueueValue(row.values[2])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${formatQueueValue(row.values[3])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><strong>${maxDisplay}</strong><div class="formula-inline">Max = highest period queue</div></td>
-            </tr>
-          `;
-        }).join('');
+        queueGroupedBodyD2.innerHTML = renderModeGroupedQueue(d2Metrics.lanes, queuePeriodD2, dv2, d2AdjProfile);
       }
     }
 
@@ -14865,49 +15656,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           <tr><td class="rowhead">Per 15 minutes Length (m)</td>${'<td>N/A</td>'.repeat(4)}<td>-</td></tr>
         `;
       } else {
-        // Closure scenario comparison rows: show scaled queue for each closure count and duration.
-        const queueDurations = [
-          { key: 'q2', label: 'Per 2 min' },
-          { key: 'q5', label: 'Per 5 min' },
-          { key: 'q10', label: 'Per 10 min' },
-          { key: 'q15', label: 'Per 15 min' }
-        ];
-        const queueRowsD1 = d1CloseScenarios.length > 0
-          ? queueDurations.flatMap(duration => d1CloseScenarios.map(sc => {
-              const isSel = sc.closureCount === selectedClosureCount;
-              const scenLbl = formatClosureScenarioLabel(sc.closureCount, sc.openLanes);
-              const sf = d1Metrics.lanes / sc.openLanes;
-              return {
-                label: isSel ? `★ ${scenLbl} — ${duration.label}` : `${scenLbl} — ${duration.label}`,
-                values: ['AM','OP','PM','EV'].map(p => (queuePeriodD1[p][duration.key] || 0) * sf),
-                highlighted: isSel
-              };
-            }))
-          : queueDurations.map(duration => ({
-              label: `${duration.label} (SLRF — 1 lane)`,
-              values: ['AM','OP','PM','EV'].map(k => queuePeriodD1[k][duration.key] || 0)
-            }));
-
-        queueGroupedBodyD1.innerHTML = queueRowsD1.map(row => {
-          const maxQueue = Math.max(...row.values);
-          const formatQueueValue = (val) => {
-            const rounded = val > 0 ? Math.max(6, Math.ceil(val)) : 0;
-            return rounded < 30 ? `${rounded.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : rounded.toLocaleString();
-          };
-          const formattedMax = maxQueue > 0 ? Math.max(6, Math.ceil(maxQueue)) : 0;
-          const maxDisplay = formattedMax < 30 ? `${formattedMax.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : formattedMax.toLocaleString();
-          const trStyle = row.highlighted ? ' style="outline: 2px solid #1565c0; outline-offset: -2px;"' : '';
-          return `
-            <tr${trStyle}>
-              <td class="rowhead">${row.label}</td>
-              <td><div>${formatQueueValue(row.values[0])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${formatQueueValue(row.values[1])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${formatQueueValue(row.values[2])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${formatQueueValue(row.values[3])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><strong>${maxDisplay}</strong><div class="formula-inline">Max = highest period queue</div></td>
-            </tr>
-          `;
-        }).join('');
+        queueGroupedBodyD1.innerHTML = renderModeGroupedQueue(d1Metrics.lanes, queuePeriodD1, dv1, d1AdjProfile);
       }
     }
 
@@ -15133,11 +15882,23 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d1BaseVcr = dv1 > 0 ? (d1Hour.perLane / dv1) : 0;
         const d2BaseVcr = dv2 > 0 ? (d2Hour.perLane / dv2) : 0;
         
+        // Hold modes (Stop/Go) keep the full lane layout, so no lane-reduction or
+        // single-lane-reversible-flow capacity adjustment applies. The queue forms
+        // purely from arrivals accumulating over the hold (SWT Red) time with zero
+        // discharge — captured by the SWT path below (W12 × Red / max physical reach).
+        const holdModeActive = isHoldMode();
         let d1WorkVcr = 0, d2WorkVcr = 0;
         if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
         if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
-        if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
+        if (!holdModeActive && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
           d1WorkVcr = d2WorkVcr = sharedDv > 0 ? ((d1Hour.perLane + d2Hour.perLane) / sharedDv) : 0;
+        }
+        if (holdModeActive) {
+          // Holds keep normal lane capacity (post-release discharge is at saturation flow);
+          // the conservative hold queue comes from zero-discharge accumulation over the
+          // hold time, which the SWT path derives from W12 × Red below.
+          d1WorkVcr = d1BaseVcr;
+          d2WorkVcr = d2BaseVcr;
         }
 
         const d1WorkCap = d1WorkVcr > 0 ? (d1Hour.total / d1WorkVcr) : 0;
@@ -15147,8 +15908,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         // d1Hour.total is the hourly volume for this specific hour (from diurnal profile)
         const d1FlowPerLane = d1Metrics.lanes > 0 ? (d1Hour.total / d1Metrics.lanes) : 0;
         const d2FlowPerLane = d2Metrics.lanes > 0 ? (d2Hour.total / d2Metrics.lanes) : 0;
-        const d1CapPerLane = d1Metrics.lanes > 0 ? (d1WorkCap / d1Metrics.lanes) : d1WorkCap;
-        const d2CapPerLane = d2Metrics.lanes > 0 ? (d2WorkCap / d2Metrics.lanes) : d2WorkCap;
+        // For SLRF (single-lane reversible flow), each direction can discharge at the full
+        // shared saturation flow — not a proportional share of it — because the lane is
+        // dedicated to that direction during its green phase.
+        const isSlrfMode = !holdModeActive && d1Metrics.lanes === 1 && d2Metrics.lanes === 1;
+        const d1CapPerLane = isSlrfMode ? sharedDv : (d1Metrics.lanes > 0 ? (d1WorkCap / d1Metrics.lanes) : d1WorkCap);
+        const d2CapPerLane = isSlrfMode ? sharedDv : (d2Metrics.lanes > 0 ? (d2WorkCap / d2Metrics.lanes) : d2WorkCap);
 
         // Calculate Shockwave Theory queue length with residual stacking
         // CORRECT: Use red time PER CYCLE, not total hourly accumulation
@@ -15168,9 +15933,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d2W12Red = normalizeHourlyQueueToVehicleLength((Number(d2SwtResult.w12) || 0) * swtRedTimePerCycle, d2Vol, true);
         const periodKey = getTrafficBucket(hour).key;
         if (Object.prototype.hasOwnProperty.call(swtQueuePeriodD1, periodKey)) {
-          // Use true SWT maximum queue xMax = w12 * w23 * R / (w23 - w12), not w12 * R (queue at end of red).
-          swtQueuePeriodD1[periodKey] = Math.max(swtQueuePeriodD1[periodKey], Number(d1SwtQueue) || 0);
-          swtQueuePeriodD2[periodKey] = Math.max(swtQueuePeriodD2[periodKey], Number(d2SwtQueue) || 0);
+          // For anomaly (oversaturated) hours xMax returns 0 because tQ < 0.
+          // Use W12Red (end-of-red queue) as a meaningful lower-bound estimate instead.
+          const d1PeriodContrib = (d1SwtResult && d1SwtResult.rawInputAnomaly) ? d1W12Red : (Number(d1SwtQueue) || 0);
+          const d2PeriodContrib = (d2SwtResult && d2SwtResult.rawInputAnomaly) ? d2W12Red : (Number(d2SwtQueue) || 0);
+          swtQueuePeriodD1[periodKey] = Math.max(swtQueuePeriodD1[periodKey], d1PeriodContrib);
+          swtQueuePeriodD2[periodKey] = Math.max(swtQueuePeriodD2[periodKey], d2PeriodContrib);
         }
 
         if (networkMax > worstQueueValue) {
@@ -15310,7 +16078,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       if (hourlyVcrBodyD2) hourlyVcrBodyD2.innerHTML = '';
 
       // Update D1/D2 hourly VCR table theads dynamically to show all lane closure scenarios
-      const isSLRFMode = d1Metrics.lanes === 1 && d2Metrics.lanes === 1;
+      // (hold modes have no lane-reduction work column, so SLRF columns are suppressed).
+      const isSLRFMode = !isHoldMode() && d1Metrics.lanes === 1 && d2Metrics.lanes === 1;
       const d1VcrThead = document.querySelector('#hourlyVcrTableD1 thead tr');
       if (d1VcrThead) {
         let d1ThHtml = '<th>Hour</th><th>Base VCR (LOS)</th>';
@@ -15349,13 +16118,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         let d1WorkVcr = null;
         let d2WorkVcr = null;
 
-        if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
-        if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
+        // Hold modes have no work-case V/C (capacity = 0 during the hold); leave null → N/A.
+        if (!isHoldMode()) {
+          if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
+          if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
 
-        if (!oneWayMode && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
-          const slrfHourly = sharedDv > 0 ? ((d1PerLane + d2PerLane) / sharedDv) : null;
-          d1WorkVcr = slrfHourly;
-          d2WorkVcr = slrfHourly;
+          if (!oneWayMode && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
+            const slrfHourly = sharedDv > 0 ? ((d1PerLane + d2PerLane) / sharedDv) : null;
+            d1WorkVcr = slrfHourly;
+            d2WorkVcr = slrfHourly;
+          }
         }
 
         const rowValues = [d1BaseVcr, d1WorkVcr, d2BaseVcr, d2WorkVcr].filter(v => Number.isFinite(v));
@@ -15384,9 +16156,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d1Closed = Math.max(1, d1Metrics.lanes - getEffectiveOpenLanes(d1Metrics.lanes));
         const d2Closed = Math.max(1, d2Metrics.lanes - getEffectiveOpenLanes(d2Metrics.lanes));
         const laneClosureLabel = getLaneClosureLabel();
-        const f1Work = d1Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d1WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d1Metrics.lanes)} open)`, d1Hour.total, getEffectiveOpenLanes(d1Metrics.lanes), dv1, d1WorkVcr);
+        const holdWorkNote = `${laneClosureLabel}: work V/C not applicable (capacity = 0 during the hold). Governing metric is the queue accumulated over the hold (SWT Red) time.`;
+        const f1Work = isHoldMode() ? holdWorkNote : (d1Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d1WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d1Metrics.lanes)} open)`, d1Hour.total, getEffectiveOpenLanes(d1Metrics.lanes), dv1, d1WorkVcr));
         const f2Base = buildBaseVcrStep(d2Hour.total, d2Metrics.lanes, dv2, d2BaseVcr);
-        const f2Work = d2Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d2WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d2Metrics.lanes)} open)`, d2Hour.total, getEffectiveOpenLanes(d2Metrics.lanes), dv2, d2WorkVcr);
+        const f2Work = isHoldMode() ? holdWorkNote : (d2Metrics.lanes === 1 ? buildSlrfVcrStep(d1Hour.total, d2Hour.total, sharedDv, d2WorkVcr) : buildLaneClosureVcrStep(`${laneClosureLabel} (${getEffectiveOpenLanes(d2Metrics.lanes)} open)`, d2Hour.total, getEffectiveOpenLanes(d2Metrics.lanes), dv2, d2WorkVcr));
 
         setHourlyVcrLosCell(vcrCells[0], d1BaseVcr, f1Base);
         setHourlyVcrLosCell(vcrCells[1], d1WorkVcr, f1Work);
@@ -15577,8 +16350,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ['Road Classification (Cap.)', txt('roadCapacityClass') + ` → D1 ${dv1} vph/lane, D2 ${dv2} vph/lane`],
       ['DV Formula Applied', dvFormulaStr],
       ['Peak Distribution Logic', peakVolStr],
-      ['DTCA Path', dtca === 'YES' ? 'Directional VADT (D1_VADT / D2_VADT)' : '50/50 split from VADT'],
-      ['Growth Application', `Projected VADT = ${num('VADT').toLocaleString()} × (1 + ${numberRoundUp(growthRatePct, 3)}% )^${effectiveYears} = ${projectedTotal.toLocaleString()}`],
+      ['DTCA Path', dtca === 'YES' ? 'Directional AADT (D1_VADT / D2_VADT)' : '50/50 split from AADT'],
+      ['Growth Application', `Projected AADT = ${num('VADT').toLocaleString()} × (1 + ${numberRoundUp(growthRatePct, 3)}% )^${effectiveYears} = ${projectedTotal.toLocaleString()}`],
       ['DHVPA Path', dhvpa === 'YES' ? 'Directional HV% (D1_HVP / D2_HVP)' : 'HVP applied per direction'],
       ['DRTPA Path', drtpa === 'YES' ? 'Directional RT% (D1_RTP / D2_RTP)' : 'RTP applied per direction'],
       ['RTR Queue Rule', rtr === 'YES' ? 'Road Train applied: queue ×1.5' : 'Standard length queueing applied'],
@@ -15586,8 +16359,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ['D2 HV% Used', `${numberRoundUp(getHVPercent(2) * 100, 3)}%`],
       ['D1 RT% Used', `${numberRoundUp(getRTPercent(1) * 100, 3)}%`],
       ['D2 RT% Used', `${numberRoundUp(getRTPercent(2) * 100, 3)}%`],
-      ['Lane Closure Applied', `${getLaneClosureLabel()} when lane count > 1 per direction`],
-      ['SLRF Applied', (!oneWayMode && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) ? 'Yes (both directions single lane)' : (oneWayMode ? 'No (one-way mode — SLRF not applicable)' : 'No (requires D1=1 and D2=1 lanes)')]
+      ['Control Modes', 'All modes compared in Queue Length table (lane closures, contraflow/SLRF, Full & Single-Direction holds)'],
+      ['SLRF', (!oneWayMode && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) ? 'Shown (1+1 road)' : (oneWayMode ? 'N/A (one-way mode)' : 'N/A (requires D1=1 and D2=1 lanes)')]
     ];
 
     const traceBody = document.getElementById('traceBody');
@@ -15869,9 +16642,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
    * @param {number} pctRt - Percentage of recreational trailers (decimal: 0-1)
    * @param {number} durationSeconds - Red time PER CYCLE in seconds (NOT hourly total)
    * @param {boolean} isRtrActive - Whether RTR management is active (adds 25% spacing)
+   * @param {number} [satSpeedKmh=25] - Speed at capacity/saturation (km/h). Default 25 km/h aligns
+   *   with Austroads signalised discharge conditions. Replaces the triangular-FD kj/2 assumption.
    * @returns {object} { queueLength: number, w12: number, w23: number, oversaturated: boolean }
    */
-  function calculateShockwaveQueue(demandVph, capacityVph, approachSpeedKmh, pctLv, pctHv, pctRt, durationSeconds, isRtrActive) {
+  function calculateShockwaveQueue(demandVph, capacityVph, approachSpeedKmh, pctLv, pctHv, pctRt, durationSeconds, isRtrActive, satSpeedKmh) {
     const lvSpace = 8;
     const hvSpace = 24;
     const rtSpace = 69;
@@ -15921,7 +16696,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const kjVehKm = Math.max(20, 1000 / Math.max(1, avgSpacingMeters));
     const kj = kjVehKm / 1000;
     const kA = qIn / vf;
-    const kD = kj / 2;
+    // Saturation discharge density: kD = sOut / satSpeed (m/s). Default 25 km/h per Austroads
+    // signalised conditions. Previously used kj/2 (triangular FD), which hardcoded satSpeed ≈ 2s/kj.
+    const satSpeedMs = Math.max(5, Number(satSpeedKmh) || 25) / 3.6;
+    const kD = sOut / satSpeedMs;
 
     const denomBf = kj - kA;
     const denomBr = kD - kj;
@@ -15998,7 +16776,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const storage = Number.isFinite(Number(storageMeters)) ? Number(storageMeters) : null;
 
     const kA = qIn / vf;
-    const kD = kj / 2;
+    // Saturation discharge density consistent with calculateShockwaveQueue (25 km/h default).
+    const kD = sOut / (25 / 3.6);
     const denomBf = kj - kA;
     const denomBr = kD - kj;
     if (Math.abs(denomBf) < 1e-12 || Math.abs(denomBr) < 1e-12) {
@@ -16053,11 +16832,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function getQueue95thPercentileFactor(vcr) {
-    // Calibrated against Akcelik (1994) / SIDRA: factor rises to ~3–5 at VCR≥0.95.
-    // Previous cap of 2.5 significantly underestimated high-VCR stochastic queues.
+    // Calibrated against Akcelik (1994) / SIDRA: factor rises to ~4.5–6 at VCR≥0.97–0.99.
     const ratio = Math.max(0, Number(vcr) || 0);
     if (!Number.isFinite(ratio) || ratio <= 0.85) return 1.0;
-    if (ratio >= 0.999) return 3.5;
+    if (ratio >= 0.999) return 5.0;
 
     const stress = (ratio - 0.85) / 0.15;
     return 1 + (2.5 * ((Math.exp(stress) - 1) / (Math.E - 1)));
@@ -16080,9 +16858,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return Math.round(queue95Meters) + ' m';
   }
 
-  function resolveQueueVehicleSpacing(hvPct, isRtrActive) {
+  function resolveQueueVehicleSpacing(hvPct, isRtrActive, postedSpeedKmh) {
     const hv = Math.max(0, Math.min(1, Number(hvPct) || 0));
-    const spacing = (7.0 * (1 - hv)) + (20.0 * hv);
+    // Speed-aware LV spacing: 6 m city (<=60 km/h) / 7 m highway (>60 km/h); 20 m HV.
+    const spacing = (lvQueueSpacing(postedSpeedKmh) * (1 - hv)) + (20.0 * hv);
     return numberRoundUp(spacing, 2);
   }
 
@@ -16145,7 +16924,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const satFlowVph = Math.round(selectedLanes * perLaneCapacity);
 
     const hvPct = peakDirection === 'D2' ? (Number(d2HvPct) || 0) : (Number(d1HvPct) || 0);
-    const spacing = resolveQueueVehicleSpacing(hvPct, isRtrActive);
+    // Posted/operating speed of the subject road (normal approach speed) drives the
+    // city/highway LV spacing: <=60 km/h -> 6 m/car, >60 km/h -> 7 m/car.
+    const srNormSpeedEl = document.getElementById('srNormSpeed');
+    const postedSpeedKmh = srNormSpeedEl ? (Number(srNormSpeedEl.value) || undefined) : undefined;
+    const spacing = resolveQueueVehicleSpacing(hvPct, isRtrActive, postedSpeedKmh);
 
     const redTime = Math.max(0, Number(redTimeSec) || 0);
 
@@ -16277,14 +17060,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d1BaseVcr = dv1 > 0 ? (d1PerLane / dv1) : 0;
     const d2BaseVcr = dv2 > 0 ? (d2PerLane / dv2) : 0;
 
+    const holdModeActiveSg = isHoldMode();
     let d1WorkVcr = 0;
     let d2WorkVcr = 0;
     if (d1Metrics.lanes > 1) d1WorkVcr = (d1BaseVcr * d1Metrics.lanes) / getEffectiveOpenLanes(d1Metrics.lanes);
     if (d2Metrics.lanes > 1) d2WorkVcr = (d2BaseVcr * d2Metrics.lanes) / getEffectiveOpenLanes(d2Metrics.lanes);
-    if (d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
+    if (!holdModeActiveSg && d1Metrics.lanes === 1 && d2Metrics.lanes === 1) {
       const sharedWorkVcr = sharedDv > 0 ? ((v1 + v2) / sharedDv) : 0;
       d1WorkVcr = sharedWorkVcr;
       d2WorkVcr = sharedWorkVcr;
+    }
+    if (holdModeActiveSg) {
+      // Holds keep normal capacity; queue forms from zero-discharge accumulation over
+      // the hold (red) time via the SWT calc below.
+      d1WorkVcr = d1BaseVcr;
+      d2WorkVcr = d2BaseVcr;
     }
 
     const d1WorkCap = d1WorkVcr > 0 ? (v1 / d1WorkVcr) : 0;
@@ -17012,7 +17802,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     setTiaSnapshotBusy(true, 'Loading saved session...');
 
     try {
-      const stateScope = String(snapshot.dataScope || 'QLD').trim().toUpperCase() === 'NSW' ? 'NSW' : 'QLD';
+      const _snapRaw = String(snapshot.dataScope || 'QLD').trim().toUpperCase();
+      const stateScope = normalizeStateScope(_snapRaw);
       const stateSelect = document.getElementById('quickTiaStateSelect');
       if (stateSelect) stateSelect.value = stateScope;
       requestedDataScope = stateScope;
@@ -17204,6 +17995,75 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     listEl.innerHTML = suggestions
       .slice(0, 12)
+      .map(addr => `<option value="${addr.replace(/"/g, '&quot;')}"></option>`)
+      .join('');
+  }
+
+  // In-flight ArcGIS suggestion request; aborted when the user keeps typing so
+  // only the latest keystroke's predictions are applied (no stale overwrites).
+  let quickTiaSuggestAbort = null;
+
+  // Live address prediction via the Esri ArcGIS World GeocodeServer "suggest"
+  // endpoint (purpose-built for as-you-type; no API key required for display-only
+  // suggestions). Returns an array of suggestion label strings, AU-scoped.
+  async function fetchArcGisAddressSuggestions(text) {
+    const q = String(text || '').trim();
+    if (q.length < 3) return [];
+    try { if (quickTiaSuggestAbort) quickTiaSuggestAbort.abort(); } catch (_) {}
+    const controller = new AbortController();
+    quickTiaSuggestAbort = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/suggest'
+      + `?f=json&countryCode=AUS&maxSuggestions=6&text=${encodeURIComponent(q)}`;
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'Accept-Language': 'en-AU,en;q=0.9' }
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      const suggestions = Array.isArray(data && data.suggestions) ? data.suggestions : [];
+      return suggestions
+        .map(s => String(s && s.text ? s.text : '').trim())
+        .filter(Boolean);
+    } catch (_err) {
+      return []; // network error or aborted (superseded) request -> no predictions
+    } finally {
+      clearTimeout(timeoutId);
+      if (quickTiaSuggestAbort === controller) quickTiaSuggestAbort = null;
+    }
+  }
+
+  // Merge past-search history with live ArcGIS predictions into the datalist that
+  // backs #quickTiaInput. History stays instant (rendered separately); this adds
+  // the live predictions once they arrive, guarded against stale results.
+  async function updateQuickTiaLiveSuggestions(filterText) {
+    const listEl = document.getElementById('quickTiaHistoryList');
+    if (!listEl) return;
+    const filter = String(filterText || '').trim();
+    if (filter.length < 3) return; // too short to predict; history-only render stands
+
+    const predictions = await fetchArcGisAddressSuggestions(filter);
+
+    // Stale guard: only apply if the box still holds the query we fetched for.
+    const inputEl = getQuickTiaInputElement();
+    if (!inputEl || String(inputEl.value || '').trim() !== filter) return;
+    if (!predictions.length) return; // keep the history-only list already shown
+
+    const lowerFilter = filter.toLowerCase();
+    const history = loadQuickTiaAddressHistory().filter(addr => addr.toLowerCase().includes(lowerFilter));
+
+    const seen = new Set();
+    const merged = [];
+    for (const addr of [...history, ...predictions]) {
+      const key = addr.toLowerCase();
+      if (!addr || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(addr);
+      if (merged.length >= 12) break;
+    }
+
+    listEl.innerHTML = merged
       .map(addr => `<option value="${addr.replace(/"/g, '&quot;')}"></option>`)
       .join('');
   }
@@ -17597,7 +18457,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             style="padding: 4px 14px; font-size: 0.76em; border-radius: 12px; border: 2px solid ${vpdMethod === 'datapoints' ? '#6a1b9a' : '#ce93d8'}; background: ${vpdMethod === 'datapoints' ? '#6a1b9a' : '#f9f0ff'}; color: ${vpdMethod === 'datapoints' ? '#fff' : '#6a1b9a'}; cursor: pointer; font-weight: 600;">📡 Nearby Datapoints</button>
           <button type="button" data-detour-method-btn="${safeKeyAttr}" data-detour-method-val="tripgen"
             style="padding: 4px 14px; font-size: 0.76em; border-radius: 12px; border: 2px solid ${vpdMethod === 'tripgen' ? '#2a4045' : '#ce93d8'}; background: ${vpdMethod === 'tripgen' ? '#2a4045' : '#f9f0ff'}; color: ${vpdMethod === 'tripgen' ? '#fff' : '#4a148c'}; cursor: pointer; font-weight: 600;">🚗 Trip Generation</button>
-          <span style="font-size: 0.72em; color: #8e24aa; margin-left: 4px;">${vpdMethod === 'tripgen' ? '— Using calculated VADT as Base VPD' : '— Using nearby reference counters as Base VPD'}</span>
+          <span style="font-size: 0.72em; color: #8e24aa; margin-left: 4px;">${vpdMethod === 'tripgen' ? '— Using calculated AADT as Base VPD' : '— Using nearby reference counters as Base VPD'}</span>
         </div>
         <div>
           <label style="color: #6a1b9a; font-size: 0.75em;">Road</label>
@@ -17695,7 +18555,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <input type="number" min="0" step="0.1" value="${tgPmPct}" data-detour-manual-key="${safeKeyAttr}" data-detour-manual-field="tripGenCalc_pmPct" style="${eslBase}" />
           </div>
         </div>
-        <button type="button" data-detour-calc-key="${safeKeyAttr}" onclick="calculateDetourRoadTripGen(this)" style="width:100%; padding:8px; background:linear-gradient(135deg,#2a4045 0%,#1a2c2f 100%); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.82em; margin-bottom:6px;">📊 Calculate VADT &amp; Peak Hours</button>
+        <button type="button" data-detour-calc-key="${safeKeyAttr}" onclick="calculateDetourRoadTripGen(this)" style="width:100%; padding:8px; background:linear-gradient(135deg,#2a4045 0%,#1a2c2f 100%); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.82em; margin-bottom:6px;">📊 Calculate AADT &amp; Peak Hours</button>
         <div id="detourTripGenCalcResult_${safeKeyId}" style="${lastResult ? '' : 'display:none;'} background:#f0f7f8; border:1px solid #84cad8; border-radius:4px; padding:8px; font-size:0.8em; margin-bottom:6px; color:#1f5e63;">${lastResult}</div>
         <div style="font-size:0.73em; color:#6a1b9a; font-weight:600; margin-bottom:4px;">🧭 Distribution by Direction (auto-filled · editable):</div>
         <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">${dirInputsHtml}</div>
@@ -18556,7 +19416,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       });
 
     } catch (err) {
-      if (suggestEl) suggestEl.innerHTML = `<span style="color:#c62828;">Auto-route failed: ${err && err.message ? err.message : 'network error'}.</span>`;
+      if (suggestEl) suggestEl.innerHTML = `<span style="color:#c62828;">Auto-route failed: ${escHtml(err && err.message ? err.message : 'network error')}.</span>`;
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '🗺️ Auto Route'; }
     }
@@ -19337,7 +20197,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const eastVpd = Math.round(vadt / 2);
     const westVpd = vadt - eastVpd;
     data.tripGenVpd = { EAST: eastVpd, WEST: westVpd, NORTH: 0, SOUTH: 0 };
-    const resultHtml = `<div style="font-weight:700; color:#0d7377; margin-bottom:6px; font-size:0.88em;">📊 Generated VADT: <strong>${vadt.toLocaleString()}</strong> vpd <span style="color:#555; font-weight:normal;">(${qty} × ${rate})</span></div>
+    const resultHtml = `<div style="font-weight:700; color:#0d7377; margin-bottom:6px; font-size:0.88em;">📊 Generated AADT: <strong>${vadt.toLocaleString()}</strong> vpd <span style="color:#555; font-weight:normal;">(${qty} × ${rate})</span></div>
       <table style="width:100%; font-size:0.82em; border-collapse:collapse;">
         <thead><tr style="background:#d5e8e9;"><th style="padding:3px 5px; text-align:left;">Period</th><th style="padding:3px 5px; text-align:right;">Total</th><th style="padding:3px 5px; text-align:right;">Inbound</th><th style="padding:3px 5px; text-align:right;">Outbound</th></tr></thead>
         <tbody>
@@ -19363,6 +20223,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   window.calculateDetourRoadTripGen = calculateDetourRoadTripGen;
 
   function calculateDetourOverlay() {
+    // Clear stale snapshot so multi-route loops never inherit a previous route's data.
+    window._lastDetourCalcSnapshot = null;
     syncPedestrianDetourFromTraffic({ skipRecalc: true });
     updateDetourClosureUi();
     updateRouteDistanceDisplay();
@@ -19696,7 +20558,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const warningText = document.getElementById('detourWarningText');
       if (warningText) {
         if (roadsWithNoEstimate.length) {
-          warningText.innerHTML = `No reference counters found within <strong>5 km</strong> to estimate Base VPD for: <strong>${roadsWithNoEstimate.join(', ')}</strong>. Choose different roads.`;
+          warningText.innerHTML = `No reference counters found within <strong>5 km</strong> to estimate Base VPD for: <strong>${escHtml(roadsWithNoEstimate.join(', '))}</strong>. Choose different roads.`;
           warningText.style.color = '#c62828';
         } else {
           warningText.innerHTML = 'No valid detour model could be created from the selected roads.';
@@ -19981,7 +20843,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const d1DirectionalLabel = alignment === 'anti_parallel' ? 'D1 (Pri D2)' : 'D1 (Pri D1)';
         const d2DirectionalLabel = alignment === 'anti_parallel' ? 'D2 (Pri D1)' : 'D2 (Pri D2)';
         const alignmentBadgeText = alignment === 'anti_parallel' ? 'D1 -> Pri D2' : 'D1 -> Pri D1';
-        const roadLabelHtml = `${roadLabel} <span style="display:inline-block; margin-left:6px; padding:1px 6px; border-radius:10px; background:#f3e5f5; border:1px solid #ce93d8; color:#6a1b9a; font-size:0.74em;">${alignmentBadgeText}</span>`;
+        const roadLabelHtml = `${escHtml(roadLabel)} <span style="display:inline-block; margin-left:6px; padding:1px 6px; border-radius:10px; background:#f3e5f5; border:1px solid #ce93d8; color:#6a1b9a; font-size:0.74em;">${alignmentBadgeText}</span>`;
         const isSingleLane = (roadResult.laneCount || 2) <= 1;
 
         const baseDetailRow = document.createElement('tr');
@@ -20219,7 +21081,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       totalHoursEl.textContent = '0 hrs';
       transitTextEl.textContent = 'No delay from speed reduction.';
       setFormulaBelow('srPerVehicle', 'Delay/vehicle = max(0, L/Vwork - L/Vnormal)');
-      setFormulaBelow('srTotalHours', 'Total delay (h/day) = Delay/vehicle(s) * VADT / 3600');
+      setFormulaBelow('srTotalHours', 'Total delay (h/day) = Delay/vehicle(s) * AADT / 3600');
       calculateEconomicCost();
       return;
     }
@@ -20869,14 +21731,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     el.addEventListener('input', syncDirectionalAllocationControls);
   });
 
-  ['DTCA', 'DHVPA', 'DRTPA', 'HVP', 'D1_HVP', 'D2_HVP', 'RTP', 'D1_RTP', 'D2_RTP', 'D1_Lanes', 'D2_Lanes', 'laneClosureCount', 'macroGrowthRate', 'roadOperationMode', 'oneWayActiveDirection'].forEach(id => {
+  ['DTCA', 'DHVPA', 'DRTPA', 'HVP', 'D1_HVP', 'D2_HVP', 'RTP', 'D1_RTP', 'D2_RTP', 'D1_Lanes', 'D2_Lanes', 'macroGrowthRate', 'roadOperationMode', 'oneWayActiveDirection'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('change', () => updateAssumptionsPanel());
     el.addEventListener('input', () => updateAssumptionsPanel());
   });
 
-  ['D1_Lanes', 'D2_Lanes', 'laneClosureCount'].forEach(id => {
+  ['D1_Lanes', 'D2_Lanes'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('change', syncLaneClosureModeUi);
@@ -21096,7 +21958,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const d2Label = formatDirectionalCodeLabel('D2', rawD2Label);
 
     const isOneWayRoad = txt('roadOperationMode').toUpperCase() === 'ONE-WAY';
-    const isSlrfMode = !isOneWayRoad && d1Lanes === 1 && d2Lanes === 1;
+    // Hold modes don't use single-lane reversible flow, so they fall through to the
+    // per-direction scheduler (which schedules on base demand V/C as a hold-window proxy).
+    const isSlrfMode = !isHoldMode() && !isOneWayRoad && d1Lanes === 1 && d2Lanes === 1;
     const hourlyD1Work = (lastHourlyVcrChartData && Array.isArray(lastHourlyVcrChartData.d1Work) && lastHourlyVcrChartData.d1Work.length === 24)
       ? lastHourlyVcrChartData.d1Work
       : null;
@@ -21338,11 +22202,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     
     if (descMatches.length > 0) {
       return { sites: descMatches, matchType: 'description' };
-    }
-    
-    // Return closest 3 sites as fallback
-    if (sites.length > 0) {
-      return { sites: sites.slice(0, 3), matchType: 'nearby' };
     }
     
     return null;
@@ -21621,6 +22480,31 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return score;
   }
 
+  function geocodeCandidateMatchesSelectedState(item, selectedState = getQuickTiaSelectedState()) {
+    const _gcRaw = String(selectedState || '').trim().toUpperCase();
+    const stateCode = normalizeStateScope(_gcRaw);
+    const stateLong = getStateLongName(stateCode).toLowerCase();
+    const display = String(item && item.display_name ? item.display_name : '').toLowerCase();
+    const address = (item && item.address) || {};
+    const stateFromAddress = String(address.state || address.state_code || '').toLowerCase();
+    const countryFromAddress = String(address.country || address.country_code || '').toLowerCase();
+    const hasAustralia = countryFromAddress === 'australia' || countryFromAddress === 'au' || /\baustralia\b/.test(display);
+
+    if (!hasAustralia) return false;
+    if (stateFromAddress) {
+      return stateFromAddress.includes(stateLong) || stateFromAddress === stateCode.toLowerCase();
+    }
+    return display.includes(stateLong) || new RegExp(`\\b${stateCode.toLowerCase()}\\b`).test(display);
+  }
+
+  function isGeocodeScoreAcceptable(score, requestedRoad, requestedHouseNumber) {
+    const safeScore = Number(score);
+    if (!Number.isFinite(safeScore)) return false;
+    if (requestedHouseNumber) return safeScore >= 20;
+    if (requestedRoad) return safeScore >= 8;
+    return safeScore >= 0;
+  }
+
   function resolvePreferredSearchAddress(typedSearchInput, resolvedAddress, resolvedHouseNumber = '') {
     const typed = String(typedSearchInput || '').trim();
     const resolved = String(resolvedAddress || '').trim();
@@ -21785,6 +22669,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   async function geocodeAddress(address) {
     const requestedRoad = extractSearchRoadName(address);
     const requestedHouseNumber = extractSearchHouseNumber(address);
+    const googleCandidate = await fetchGoogleAddressCandidate(address);
+    if (googleCandidate) return googleCandidate;
     const preciseCandidate = await fetchPreciseAddressCandidate(address);
     if (preciseCandidate) return preciseCandidate;
     const toLocation = (item) => {
@@ -21829,12 +22715,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const data = responsePack.data;
         if (!Array.isArray(data) || data.length === 0) continue;
 
-        const preferredAu = data.filter(item => String(item.display_name || '').toLowerCase().includes('australia'));
-        const pool = preferredAu.length ? preferredAu : data;
+        const stateScoped = data.filter(item => geocodeCandidateMatchesSelectedState(item));
+        const preferredAu = stateScoped.filter(item => String(item.display_name || '').toLowerCase().includes('australia'));
+        const pool = preferredAu.length ? preferredAu : stateScoped;
+        if (!pool.length) continue;
         const ranked = pool
           .map(item => ({ item, score: scoreGeocodeCandidate(item, requestedRoad, requestedHouseNumber) }))
           .sort((a, b) => b.score - a.score);
-        const chosen = ranked.length ? ranked[0].item : pool[0];
+        const top = ranked.length ? ranked[0] : null;
+        if (!top || !isGeocodeScoreAcceptable(top.score, requestedRoad, requestedHouseNumber)) continue;
+        const chosen = top.item;
         const location = toLocation({ ...chosen, provider: responsePack.provider });
         if (location) return location;
       }
@@ -22539,6 +23429,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
 
+    // Expose the raw connectivity signals so the aggregation step can apply the
+    // same-road severance guardrail (a same-name counter reachable only via a
+    // long detour, e.g. Palm Ave split by Ferny Ave). Data only — no exclusion
+    // decision is made here.
+    result.sameAsSearchRoad = sameAsSearchRoad;
+    result.routeConnected = routeIsConnected;
+    result.routeDetourFactor = Number.isFinite(routeDetourFactor) ? routeDetourFactor : 1;
+    result.matchedRoadName = matchedRoadName;
+
     return result;
   }
 
@@ -22592,18 +23491,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   async function filterSmartReferencePoints(searchedRoadName, allReferencePoints, userLat, userLon) {
     const sourceList = Array.isArray(allReferencePoints) ? allReferencePoints : [];
+
+    // Evaluate candidates concurrently. The routing (OSRM) calls then overlap
+    // instead of running one-after-another; the Overpass calls are still
+    // serialized internally by acquireOverpassSlot's 900ms queue, so this does
+    // not risk tripping public-server rate limits. Per-candidate logic and
+    // results are unchanged — only the ordering of network waits differs.
+    const evaluated = await Promise.all(sourceList.map(async (point) => {
+      const { isConnected, access } = await checkRoadConnectivityDetailed(searchedRoadName, point, userLat, userLon);
+      return { point, isConnected, access };
+    }));
+
     const included = [];
     const excluded = [];
-
-    for (const point of sourceList) {
-      const { isConnected, access } = await checkRoadConnectivityDetailed(searchedRoadName, point, userLat, userLon);
+    evaluated.forEach(({ point, isConnected, access }) => {
       if (isConnected) included.push(point);
       else excluded.push({ point, access });
-    }
+    });
 
     return {
       included,
-      excluded
+      excluded,
+      evaluated
     };
   }
 
@@ -22611,7 +23520,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const base = matchResult || {};
     const exact = Array.isArray(base.exactMatches) ? base.exactMatches : [];
     const nearby = Array.isArray(base.nearbyMatches) ? base.nearbyMatches : [];
-    const pool = [...exact, ...nearby].slice(0, 12);
+    // Cap how many candidates get the expensive per-point connectivity check
+    // (each costs Overpass + routing calls, throttled to ~900ms/request). The
+    // list is already distance/relevance-sorted, and only the top 3 exact /
+    // top 5 nearby are ever displayed, so 6 keeps the shown references stable
+    // while roughly halving the network round-trips vs the old cap of 12.
+    const pool = [...exact, ...nearby].slice(0, 6);
 
     if (!pool.length) {
       return {
@@ -22625,15 +23539,60 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const connectivityOutcome = await filterSmartReferencePoints(userRoadName, pool, userLat, userLon);
     const connectedSet = new Set((connectivityOutcome.included || []).map((entry) => String(entry && entry.id ? entry.id : '')));
+    // Preserve the full connectivity classification (incl. routeDetourFactor and
+    // sameAsSearchRoad) for connected entries too, not just excluded ones — the
+    // severance guardrail below needs those signals for the references we keep.
+    const accessByKey = new Map();
+    (connectivityOutcome.evaluated || []).forEach((item) => {
+      const k = String(item && item.point && item.point.id ? item.point.id : '');
+      if (k) accessByKey.set(k, item.access || {});
+    });
     const decisions = pool.map((entry) => {
       const key = String(entry && entry.id ? entry.id : '');
       const excludedHit = (connectivityOutcome.excluded || []).find((item) => String(item && item.point && item.point.id ? item.point.id : '') === key);
+      const fullAccess = accessByKey.get(key);
       return {
         key,
         entry,
-        access: excludedHit ? excludedHit.access : { exclude: !connectedSet.has(key), reason: '' }
+        access: excludedHit ? excludedHit.access : (fullAccess || { exclude: !connectedSet.has(key), reason: '' })
       };
     });
+
+    // Severance guardrail (Level 1): a counter on the SAME road NAME can sit on a
+    // physically disconnected segment when an arterial severs the road (e.g.
+    // "Palm Ave" split by "Ferny Ave"). Such a counter is reachable only via a
+    // long detour. When a counter on a DIFFERENT connected road is about as close
+    // or closer, the address really belongs to that other corridor — so exclude
+    // the severed same-name counter (with a clear reason the assessor can review
+    // and re-enable) and let the connected road become the reference instead.
+    const severanceCheck = (typeof window !== 'undefined' && window.TIACalc
+      && typeof window.TIACalc.isSameRoadReferenceSevered === 'function')
+      ? window.TIACalc.isSameRoadReferenceSevered
+      : null;
+    if (severanceCheck) {
+      const distMetersOf = (entry) => Number(entry && entry.distanceMeters)
+        || Math.round((Number(entry && entry.distanceKm) || 0) * 1000);
+      const connectedDecisions = decisions.filter((d) => d && d.access && !d.access.exclude);
+      const nearestDifferentRoad = connectedDecisions
+        .filter((d) => d.access && d.access.sameAsSearchRoad === false)
+        .map((d) => ({ d, dist: distMetersOf(d.entry) }))
+        .filter((x) => Number.isFinite(x.dist) && x.dist > 0)
+        .sort((a, b) => a.dist - b.dist)[0] || null;
+      if (nearestDifferentRoad) {
+        connectedDecisions.forEach((d) => {
+          if (!d.access || d.access.sameAsSearchRoad !== true) return;
+          const severedDist = distMetersOf(d.entry);
+          if (!severanceCheck(d.access.routeDetourFactor, severedDist, nearestDifferentRoad.dist)) return;
+          const severedRoad = String(d.access.matchedRoadName || 'same-name').trim();
+          const altRoad = String(nearestDifferentRoad.d.access.matchedRoadName || 'a connected road').trim();
+          const factor = Number(d.access.routeDetourFactor) || 0;
+          d.access = Object.assign({}, d.access, {
+            exclude: true,
+            reason: `Same road name but on a severed segment: the drivable route to this "${severedRoad}" counter is ${factor.toFixed(1)}x the direct distance, indicating an arterial (e.g. ${altRoad}) separates it from the address. Using the connected ${altRoad} reference instead — re-enable this point if the development actually fronts/accesses ${severedRoad}.`
+          });
+        });
+      }
+    }
 
     const excludedMap = new Map();
     const excludedRefs = [];
@@ -22763,7 +23722,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const distanceKm = Number(point.distanceFromTarget);
       const item = document.createElement('div');
       item.style.cssText = 'margin-bottom:6px; padding:8px; border:1px solid #cfd8dc; border-radius:6px; background:#fff;';
-      item.innerHTML = `<strong>${index + 1}. ${roadName}</strong> <span style="color:#546e7a;">(${Number.isFinite(distanceKm) ? distanceKm.toFixed(2) : '-'} km)</span><br><span style="font-size:0.86em; color:#37474f;">Traffic Count: ${Number.isFinite(count) ? Math.round(count).toLocaleString() : 'N/A'}</span>`;
+      item.innerHTML = `<strong>${index + 1}. ${escHtml(roadName)}</strong> <span style="color:#546e7a;">(${Number.isFinite(distanceKm) ? distanceKm.toFixed(2) : '-'} km)</span><br><span style="font-size:0.86em; color:#37474f;">Traffic Count: ${Number.isFinite(count) ? Math.round(count).toLocaleString() : 'N/A'}</span>`;
       listEl.appendChild(item);
     });
 
@@ -22881,7 +23840,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     if (!location) {
       const fallbackMatch = findBestMatchSite(searchInput);
-      if (fallbackMatch && fallbackMatch.sites.length) {
+      if (fallbackMatch && fallbackMatch.matchType === 'exact_road' && fallbackMatch.sites.length) {
         const [id, data] = fallbackMatch.sites[0];
         if (Number.isFinite(Number(data.latitude))) {
           location = {
@@ -22889,7 +23848,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             lon: Number(data.longitude),
             displayName: data.road_name,
             road: data.road_name,
-            provider: 'Local Database Fallback'
+            provider: 'Local Database Road Match'
           };
         }
       }
@@ -23059,7 +24018,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     } catch (err) {
       console.error('performQuickTIASearch error', err);
       const errEl = document.getElementById('quickTiaError');
-      if (errEl) { errEl.innerHTML = `<strong>❌ Error:</strong> ${String(err && err.message ? err.message : err)}`; errEl.style.display = 'block'; }
+      if (errEl) { errEl.innerHTML = `<strong>❌ Error:</strong> ${escHtml(err && err.message ? err.message : err)}`; errEl.style.display = 'block'; }
       // try to restore button state if possible
       try { const b = document.getElementById('quickTiaSearchBtn'); if (b) { b.innerHTML = '🔍 Search'; b.disabled = false; } } catch (_) {}
     } finally {
@@ -23343,12 +24302,61 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     });
 
     const roadBucketList = Array.from(roadBuckets.values());
+    roadBucketList.forEach(bucket => {
+      const bucketSites = Array.isArray(bucket.sites) ? bucket.sites : [];
+      const bucketRawWeights = bucketSites.map(site => {
+        const distanceFactor = Math.max(0, Number(site && site.invDist) || 0);
+        const typeFactor = Math.max(0.3, Math.min(1.4, (Number(site && site.typePercent) || 100) / 100));
+        return distanceFactor * typeFactor;
+      });
+      const bucketWeightTotal = bucketRawWeights.reduce((sum, value) => sum + value, 0);
+      const fallbackLocalShare = bucketSites.length > 0 ? (1 / bucketSites.length) : 0;
+
+      const suggestedVadt = bucketSites.reduce((sum, site, idx) => {
+        const localWeight = bucketWeightTotal > 0
+          ? ((bucketRawWeights[idx] || 0) / bucketWeightTotal)
+          : fallbackLocalShare;
+        return sum + ((Number(site && site.vadt) || 0) * localWeight);
+      }, 0);
+
+      bucket.referenceCount = bucketSites.length;
+      bucket.suggestedVadt = Math.max(0, Math.round(suggestedVadt));
+    });
+
+    const suggestedRoadVadtTotal = roadBucketList.reduce((sum, bucket) => sum + (Number(bucket.suggestedVadt) || 0), 0);
+    const roadAutoWeightTotal = roadBucketList.reduce(
+      (sum, bucket) => sum + bucket.sites.reduce((bucketSum, site) => bucketSum + (Number(site.autoWeight) || 0), 0),
+      0
+    );
     const roadInvTotal = roadBucketList.reduce((sum, bucket) => sum + (Number(bucket.invDist) || 0), 0) || 1;
     roadBucketList.forEach(bucket => {
-      bucket.autoWeight = Math.max(0, Math.round(((Number(bucket.invDist) || 0) / roadInvTotal) * 100));
+      const bucketRefWeight = bucket.sites.reduce((sum, site) => sum + (Number(site.autoWeight) || 0), 0);
+      const bucketShare = suggestedRoadVadtTotal > 0
+        ? ((Number(bucket.suggestedVadt) || 0) / suggestedRoadVadtTotal)
+        : (roadAutoWeightTotal > 0
+          ? (bucketRefWeight / roadAutoWeightTotal)
+          : ((Number(bucket.invDist) || 0) / roadInvTotal));
+      bucket.autoWeight = Math.max(0, Math.round(bucketShare * 100));
     });
     const roadWeightFix = 100 - roadBucketList.reduce((sum, bucket) => sum + (Number(bucket.autoWeight) || 0), 0);
     if (roadBucketList.length && roadWeightFix !== 0) roadBucketList[0].autoWeight += roadWeightFix;
+    const showReferenceWeightControls = roadBucketList.length <= 1;
+    const roadShareByRoadStd = new Map();
+    const localShareBySiteId = new Map();
+    roadBucketList.forEach(bucket => {
+      const roadKey = String(bucket && bucket.key ? bucket.key : '').trim();
+      if (roadKey) roadShareByRoadStd.set(roadKey, Math.max(0, Math.min(100, Number(bucket.autoWeight) || 0)));
+      const bucketSites = Array.isArray(bucket && bucket.sites) ? bucket.sites : [];
+      const localTotal = bucketSites.reduce((sum, site) => sum + (Number(site && site.autoWeight) || 0), 0);
+      bucketSites.forEach(site => {
+        const siteId = String(site && site.siteId ? site.siteId : '').trim();
+        if (!siteId) return;
+        const localShare = localTotal > 0
+          ? ((Math.max(0, Number(site && site.autoWeight) || 0) / localTotal) * 100)
+          : (bucketSites.length > 0 ? (100 / bucketSites.length) : 0);
+        localShareBySiteId.set(siteId, Math.max(0, Math.min(100, Math.round(localShare))));
+      });
+    });
 
     if (roadWeightWrap && roadWeightList) {
       roadWeightWrap.style.display = roadBucketList.length > 1 ? 'block' : 'none';
@@ -23357,8 +24365,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           const row = document.createElement('div');
           row.style.cssText = 'padding:8px; border:1px solid #c8e6c9; border-radius:6px; background:#fff;';
           const safeRoad = String(bucket.road || `Road ${idx + 1}`);
+          const suggestedRoadVadt = Math.max(0, Number(bucket.suggestedVadt) || 0);
+          const suggestionLabel = suggestedRoadVadt > 0
+            ? `${suggestedRoadVadt.toLocaleString()} AADT`
+            : 'No AADT suggestion';
+          const referenceLabel = `${Math.max(0, Number(bucket.referenceCount) || 0)} counter${Number(bucket.referenceCount) === 1 ? '' : 's'}`;
           row.innerHTML = `
             <div style="font-size:0.82em; color:#1b5e20; font-weight:700; margin-bottom:4px;">${safeRoad}</div>
+            <div style="font-size:0.76em; color:#33691e; background:#f1f8e9; border:1px solid #dcedc8; border-radius:4px; padding:4px 6px; margin-bottom:6px;">Suggested road volume: <strong>${suggestionLabel}</strong> <span style="color:#558b2f;">(${referenceLabel}, distance-weighted from matched counters)</span></div>
             <div style="display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:8px;">
               <input type="range" class="road-weight-slider" data-roadstd="${bucket.key}" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, bucket.autoWeight))}" style="width:100%;" />
               <input type="number" class="road-weight" data-roadstd="${bucket.key}" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, bucket.autoWeight))}" style="width:62px; padding:2px 4px; border:1px solid #a5d6a7; border-radius:3px; font-size:0.82em;" />
@@ -23407,6 +24421,23 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const matchBadge = isSameRoadMatch
         ? '<span style="margin-left: 6px; padding: 1px 6px; border-radius: 10px; background: #2e7d32; color: #fff; font-size: 0.72em;">Same road</span>'
         : '<span style="margin-left: 6px; padding: 1px 6px; border-radius: 10px; background: #546e7a; color: #fff; font-size: 0.72em;">Nearby</span>';
+      const roadStdKey = String(site.roadStd || `site:${site.siteId}`);
+      const roadShare = Math.max(0, Math.min(100, Number(roadShareByRoadStd.get(roadStdKey)) || 0));
+      const localShare = Math.max(0, Math.min(100, Number(localShareBySiteId.get(String(site.siteId))) || 0));
+      const referenceWeightMarkup = showReferenceWeightControls
+        ? `
+        <div style="margin-top: 6px; display: grid; grid-template-columns: 1fr auto auto auto auto; align-items: center; gap: 8px;">
+          <span style="color: #333; font-size: 0.8em;">Distance Weighting:</span>
+          <input type="range" class="ref-weight-slider" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 100%; cursor: pointer;" />
+          <input type="number" class="ref-weight" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 62px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85em;" />
+          <span style="font-size: 0.8em; color: #666;">%</span>
+          <span style="font-size: 0.75em; color: #1f5e63; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 10px; padding: 1px 6px;">${site.typePercent}%</span>
+        </div>`
+        : `
+        <div style="margin-top: 6px; padding: 6px 8px; border: 1px solid #d0e8f3; border-radius: 6px; background: #f4fbff; font-size: 0.78em; color: #24566f; line-height: 1.4;">
+          Weight is controlled at road level to avoid duplicate sliders.
+          <strong style="color:#0f4f66;"> Road share: ${roadShare}%</strong> • Reference share within road: ${localShare}%
+        </div>`;
       div.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
           <strong>${idx + 1}.</strong> ${site.road} ${matchBadge}
@@ -23417,15 +24448,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <button type="button" class="ref-remove" data-siteid="${site.siteId}" style="width:auto; margin:0; padding:2px 8px; font-size:0.74em; background:#ef5350; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:none;">Remove</button>
           </span>
         </div>
-        <small style="color: #666;">${sourceLabel} • <strong>${distanceText} ${site.direction} of address</strong> • ${site.vadt.toLocaleString()} VADT ${estimatedTag}</small>
+        <small style="color: #666;">${sourceLabel} • <strong>${distanceText} ${site.direction} of address</strong> • ${site.vadt.toLocaleString()} AADT ${estimatedTag}</small>
         ${site.vadt_is_estimated && site.vadt_estimate_note ? `<div style="margin-top:4px; font-size:0.74em; color:#e65100;">${site.vadt_estimate_note}</div>` : ''}
-        <div style="margin-top: 6px; display: grid; grid-template-columns: 1fr auto auto auto auto; align-items: center; gap: 8px;">
-          <span style="color: #333; font-size: 0.8em;">Distance Weighting:</span>
-          <input type="range" class="ref-weight-slider" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 100%; cursor: pointer;" />
-          <input type="number" class="ref-weight" data-siteid="${site.siteId}" min="0" max="100" step="1" value="${suggestedWeight}" style="width: 62px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85em;" />
-          <span style="font-size: 0.8em; color: #666;">%</span>
-          <span style="font-size: 0.75em; color: #1f5e63; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 10px; padding: 1px 6px;">${site.typePercent}%</span>
-        </div>
+        ${referenceWeightMarkup}
       `;
       refList.appendChild(div);
 
@@ -23515,7 +24540,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           ? (distanceMeters < 1000 ? `${Math.round(distanceMeters)}m` : `${(distanceMeters / 1000).toFixed(1)}km`)
           : '-';
         row.style.cssText = 'padding:8px; border:1px solid #ffe0b2; border-radius:4px; background:#fffaf5;';
-        row.innerHTML = `<div style="font-weight:700; color:#6d4c41;">${idx + 1}. ${String((ref && ref.road) || 'Unnamed reference')}</div><div style="font-size:0.8em; color:#795548;">Distance: ${distanceLabel} | ${String((ref && ref.reason) || 'Excluded by accessibility logic.')}</div>`;
+        row.innerHTML = `<div style="font-weight:700; color:#6d4c41;">${idx + 1}. ${escHtml((ref && ref.road) || 'Unnamed reference')}</div><div style="font-size:0.8em; color:#795548;">Distance: ${escHtml(distanceLabel)} | ${escHtml((ref && ref.reason) || 'Excluded by accessibility logic.')}</div>`;
         list.appendChild(row);
       });
       excludedWrap.appendChild(list);
@@ -23641,7 +24666,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     document.getElementById('quickTiaCalcAdjVADT').textContent = finalAvgVADT.toLocaleString();
     document.getElementById('quickTiaCalcD1').textContent = finalAvgD1.toLocaleString();
     document.getElementById('quickTiaCalcD2').textContent = finalAvgD2.toLocaleString();
-    setFormulaBelow('quickTiaCalcAvgVADT', `Weighted Avg VADT = (sum((n_i% * VADT_i))) / sum(n_i%) = ${weightedAvgVADT.toLocaleString()} (N = ${selectedCount})`);
+    setFormulaBelow('quickTiaCalcAvgVADT', `Weighted Avg AADT = (sum((n_i% * VADT_i))) / sum(n_i%) = ${weightedAvgVADT.toLocaleString()} (N = ${selectedCount})`);
     if (isOneWay) {
       setFormulaBelow('quickTiaCalcAdjVADT', `One-way AADT = Weighted Avg * selected one-way % = ${weightedAvgVADT.toLocaleString()} * ${(oneWayPercent / 100).toFixed(2)} = ${finalAvgVADT.toLocaleString()}`);
       setFormulaBelow('quickTiaCalcD1', `Calculated D1 (one-way, selected ${oneWayDirection}) = ${finalAvgD1.toLocaleString()}`);
@@ -23917,7 +24942,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       return;
     }
     
-    // Calculate daily VADT
+    // Calculate daily AADT
     const vadt = Math.round(quantity * rate);
     
     // Calculate peak hour trips
@@ -23942,7 +24967,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const warnings = [];
     if (quantity > 1000) warnings.push('⚠️ Large quantity - verify inputs');
     if (rate > 200) warnings.push('⚠️ High trip rate - confirm accuracy');
-    if (vadt > 50000) warnings.push('⚠️ Very high VADT - may need detailed study');
+    if (vadt > 50000) warnings.push('⚠️ Very high AADT - may need detailed study');
     
     // Update result display
     const resultDiv = document.getElementById('tripGenResult');
@@ -23953,7 +24978,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     let resultHTML = `
       <div style="margin-bottom: 12px;">
         <div style="font-size: 1.3em; font-weight: bold; color: #2a4045; margin-bottom: 8px;">
-          📊 Generated Base VADT: <span style="color: #0d7377;">${vadt.toLocaleString()}</span> vehicles/day
+          📊 Generated Base AADT: <span style="color: #0d7377;">${vadt.toLocaleString()}</span> vehicles/day
         </div>
         <div style="font-size: 0.88em; color: #555; font-style: italic;">
           ${quantity.toLocaleString()} ${scenarioData.unit} × ${rate} trips/unit/day
@@ -24045,7 +25070,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const mainVadtField = document.getElementById('VADT') || document.getElementById('mainVadtInput');
 
     if (generatedVadt <= 0) {
-      alert('⚠️ Please calculate a non-zero VADT before applying to assessment.');
+      alert('⚠️ Please calculate a non-zero AADT before applying to assessment.');
       return;
     }
 
@@ -24059,7 +25084,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const scenarioData = window.tripGenerationScenarios[data.scenario] || window.tripGenerationScenarios.custom;
     const referenceSourceLabel = String(data.referenceSourceLabel || getTripGenerationReferenceSourceDetails().label || '').trim();
     
-    // Apply total VADT
+    // Apply total AADT
     mainVadtField.value = String(generatedVadt);
     
     // Apply directional split (50/50 for daily traffic - directional splits are for peak hours only)
@@ -24108,7 +25133,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ? `\\n\\n📊 Peak Hour Results:\\n• AM Peak: ${data.peakAM} veh/hr (${data.peakAM_In} in / ${data.peakAM_Out} out)\\n• PM Peak: ${data.peakPM} veh/hr (${data.peakPM_In} in / ${data.peakPM_Out} out)`
       : '';
     
-    alert(`✅ Applied to Assessment!\\n\\n📈 Base VADT: ${generatedVadt.toLocaleString()} vehicles/day\\n🗓️ Base & Target Year: ${currentYear}${peakInfo}\\n\\nNote: Daily VADT uses 50/50 directional split. Peak hour directional splits are preserved for detailed analysis.`);
+    alert(`✅ Applied to Assessment!\\n\\n📈 Base AADT: ${generatedVadt.toLocaleString()} vehicles/day\\n🗓️ Base & Target Year: ${currentYear}${peakInfo}\\n\\nNote: Daily AADT uses 50/50 directional split. Peak hour directional splits are preserved for detailed analysis.`);
     if (typeof calculateAll === 'function') calculateAll();
   }
 
@@ -24116,7 +25141,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vadt = Math.max(0, Math.round(Number(totalVadt) || 0));
     const resultDiv = document.getElementById('tripGenResult');
     if (!vadt || !resultDiv) {
-      alert('⚠️ Please calculate a non-zero VADT before applying to assessment.');
+      alert('⚠️ Please calculate a non-zero AADT before applying to assessment.');
       return;
     }
     resultDiv.dataset.calculatedVadt = String(vadt);
@@ -24168,7 +25193,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       adjD2 = window.manualTrafficGenData.d2;
       dataSourceLabel = 'Custom Address (manual traffic generation)';
     } else if (selectedMethod === 'manual') {
-      alert('Please enter Quantity and Daily Trip Rate, then click "Calculate VADT" first.');
+      alert('Please enter Quantity and Daily Trip Rate, then click "Calculate AADT" first.');
       return;
     } else {
       // Use weighted average of references
@@ -24744,7 +25769,7 @@ window.__tiaCalc = {
       CAP_ARTERIAL:             TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['arterial'],
       CAP_LOCAL:                TMRCalculator.PHYSICAL_LANE_CAPACITY_VPH['local'],
       QUEUE_VEHICLE_SPACING:    7.6,
-      PCE_HEAVY_RIGID_FLAT:     1.4000,
+      PCE_HEAVY_RIGID_FLAT:     1.5000,
       PCE_ARTICULATED_FLAT:     2.4000,
       PCE_BDOUBLE_FLAT:         4.1000,
       SWT_PCE_LV:               1.0,
@@ -24754,3 +25779,912 @@ window.__tiaCalc = {
       PEAK_K_FACTOR:            0.10,
     },
   };
+
+/* ============================================================
+   VISUAL VOLUME ADJUSTMENT MODEL
+   ============================================================ */
+const VolumeAdjModel = (() => {
+  'use strict';
+
+  // Chart.js instance for the bar chart
+  let _chart = null;
+
+  // Season presets (factor to apply to the grown volume)
+  const SEASON_PRESETS = { summer: 1.12, shoulder: 1.00, winter: 0.90 };
+  // DOW presets
+  const DOW_PRESETS = { weekday: 1.05, weekend: 0.82 };
+
+  // ── helpers ──────────────────────────────────────────────
+  function _el(id) { return document.getElementById(id); }
+  function _num(id, def = 0) { const v = parseFloat(_el(id)?.value); return Number.isFinite(v) ? v : def; }
+  function _set(id, val) { const el = _el(id); if (el) el.textContent = val; }
+  function _setVal(id, val) { const el = _el(id); if (el) el.value = val; }
+  function _fmt(n) { return Math.round(n).toLocaleString(); }
+
+  // ── open / close ─────────────────────────────────────────
+  function open() {
+    const modal = _el('volumeAdjModal');
+    if (!modal) return;
+
+    // Populate from current assessment fields
+    const d1 = parseFloat(_el('D1_VADT')?.value) || parseFloat(_el('predictedD1VADT')?.value) || 0;
+    const d2 = parseFloat(_el('D2_VADT')?.value) || parseFloat(_el('predictedD2VADT')?.value) || 0;
+    const growthRate = parseFloat(_el('macroGrowthRate')?.value) || 2.5;
+    const baseYear = parseInt(_el('baseYear')?.value) || new Date().getFullYear();
+    const openingYear = parseInt(_el('macroOpeningYear')?.value) || (baseYear + 1);
+    const years = Math.max(0, openingYear - baseYear);
+    const siteName = _el('macroDetailRoadName')?.textContent || _el('macroSiteId')?.value || '—';
+
+    _setVal('vadj_d1Base', d1 || '');
+    _setVal('vadj_d2Base', d2 || '');
+    _setVal('vadj_growthRate', growthRate);
+    _setVal('vadj_growthYears', years);
+    _setVal('vadj_seasonSlider', '1.00');
+    _setVal('vadj_dowSlider', '1.00');
+    _setVal('vadj_d1PctSlider', d1 > 0 && (d1 + d2) > 0 ? Math.round(d1 / (d1 + d2) * 100) : 50);
+    _setVal('vadj_phfSlider', '0.92');
+    _setVal('vadj_constrD1', '0');
+    _setVal('vadj_constrD2', '0');
+    _set('volAdjSiteName', siteName);
+
+    modal.style.display = 'flex';
+    recalc();
+  }
+
+  function close() {
+    const modal = _el('volumeAdjModal');
+    if (modal) modal.style.display = 'none';
+    if (_chart) { _chart.destroy(); _chart = null; }
+  }
+
+  // ── slider syncs ─────────────────────────────────────────
+  function onSlider(type) {
+    if (type === 'season') {
+      _set('vadj_seasonVal', parseFloat(_el('vadj_seasonSlider').value).toFixed(2));
+    } else if (type === 'dow') {
+      _set('vadj_dowVal', parseFloat(_el('vadj_dowSlider').value).toFixed(2));
+    } else if (type === 'phf') {
+      _set('vadj_phfVal', parseFloat(_el('vadj_phfSlider').value).toFixed(2));
+    }
+    recalc();
+  }
+
+  function onSplitSlider() {
+    const d1Pct = parseInt(_el('vadj_d1PctSlider').value);
+    const d2Pct = 100 - d1Pct;
+    _set('vadj_d1PctVal', d1Pct);
+    _set('vadj_splitD1Pct', d1Pct);
+    _set('vadj_splitD2Pct', d2Pct);
+    recalc();
+  }
+
+  function setSeason(key) {
+    const val = SEASON_PRESETS[key] !== undefined ? SEASON_PRESETS[key] : parseFloat(key) || 1.00;
+    _setVal('vadj_seasonSlider', val.toFixed(2));
+    _set('vadj_seasonVal', val.toFixed(2));
+    recalc();
+  }
+
+  function setDow(key) {
+    const val = DOW_PRESETS[key] !== undefined ? DOW_PRESETS[key] : parseFloat(key) || 1.00;
+    _setVal('vadj_dowSlider', val.toFixed(2));
+    _set('vadj_dowVal', val.toFixed(2));
+    recalc();
+  }
+
+  // ── core calculation ──────────────────────────────────────
+  function recalc() {
+    const d1Base = _num('vadj_d1Base');
+    const d2Base = _num('vadj_d2Base');
+    const totalBase = d1Base + d2Base;
+    _set('vadj_totalBase', _fmt(totalBase));
+
+    const growthRate = _num('vadj_growthRate', 2.5);
+    const years = _num('vadj_growthYears', 1);
+    const growthMultiplier = Math.pow(1 + growthRate / 100, years);
+    const d1Grown = d1Base * growthMultiplier;
+    const d2Grown = d2Base * growthMultiplier;
+    const totalGrown = d1Grown + d2Grown;
+
+    const seasonFactor = _num('vadj_seasonSlider', 1.00);
+    const d1Season = d1Grown * seasonFactor;
+    const d2Season = d2Grown * seasonFactor;
+    const totalSeason = d1Season + d2Season;
+
+    const dowFactor = _num('vadj_dowSlider', 1.00);
+    const d1Dow = d1Season * dowFactor;
+    const d2Dow = d2Season * dowFactor;
+    const totalDow = d1Dow + d2Dow;
+
+    // Directional split override
+    const d1PctSlider = _num('vadj_d1PctSlider', 50);
+    const d1Pct = d1PctSlider / 100;
+    const d2Pct = 1 - d1Pct;
+    const d1Split = totalDow * d1Pct;
+    const d2Split = totalDow * d2Pct;
+
+    // Construction traffic additive
+    const constrD1 = _num('vadj_constrD1', 0);
+    const constrD2 = _num('vadj_constrD2', 0);
+    const d1Final = d1Split + constrD1;
+    const d2Final = d2Split + constrD2;
+    const totalFinal = d1Final + d2Final;
+
+    // PHF → peak hour volume (using standard 10% K factor)
+    const phf = _num('vadj_phfSlider', 0.92);
+    const K = 0.10;
+    const peakHrTotal = phf > 0 ? (totalFinal * K) / phf : totalFinal * K;
+    const peakHrD1 = phf > 0 ? (d1Final * K) / phf : d1Final * K;
+    const peakHrD2 = phf > 0 ? (d2Final * K) / phf : d2Final * K;
+
+    // Update badges
+    _set('vadj_growthBadge', `× ${growthMultiplier.toFixed(3)}`);
+    _set('vadj_seasonBadge', `× ${seasonFactor.toFixed(2)}`);
+    _set('vadj_dowBadge', `× ${dowFactor.toFixed(2)}`);
+
+    // Build waterfall steps
+    const steps = [
+      { label: '① Base Volume', d1: d1Base, d2: d2Base, total: totalBase, note: 'From database / DB count data' },
+      { label: '② After Growth', d1: d1Grown, d2: d2Grown, total: totalGrown, note: `+${growthRate}% p.a. × ${years} yr → ×${growthMultiplier.toFixed(3)}` },
+      { label: '③ After Seasonal', d1: d1Season, d2: d2Season, total: totalSeason, note: `Seasonal factor ${seasonFactor.toFixed(2)}` },
+      { label: '④ After DOW', d1: d1Dow, d2: d2Dow, total: totalDow, note: `Day-of-week factor ${dowFactor.toFixed(2)}` },
+      { label: '⑤ After Dir. Split', d1: d1Split, d2: d2Split, total: totalDow, note: `D1 ${d1PctSlider}% / D2 ${100 - d1PctSlider}%` },
+      { label: '⑥ + Constr. Traffic', d1: d1Final, d2: d2Final, total: totalFinal, note: `+D1 ${_fmt(constrD1)} / +D2 ${_fmt(constrD2)} vpd` },
+    ];
+
+    renderWaterfall(steps, totalFinal);
+    renderFinalSummary(d1Final, d2Final, totalFinal, peakHrD1, peakHrD2, peakHrTotal);
+    renderChart(steps);
+  }
+
+  // ── waterfall renderer ────────────────────────────────────
+  function renderWaterfall(steps, maxVal) {
+    const container = _el('volAdjWaterfall');
+    if (!container) return;
+    const peak = maxVal > 0 ? maxVal : 1;
+    const html = steps.map((s, i) => {
+      const pct = Math.max(2, Math.round(s.total / peak * 100));
+      const prev = i > 0 ? steps[i - 1].total : s.total;
+      const delta = s.total - prev;
+      const deltaSign = delta >= 0 ? '+' : '';
+      const arrow = i < steps.length - 1 ? '<div class="vol-adj-wf-arrow">↓</div>' : '';
+      return `
+        <div class="vol-adj-wf-step">
+          <div class="vol-adj-wf-label">${s.label}</div>
+          <div class="vol-adj-wf-bar-row">
+            <div class="vol-adj-wf-bar" style="width:${pct}%; max-width:100%;"></div>
+            <span class="vol-adj-wf-val">${_fmt(s.total)} vpd</span>
+          </div>
+          <div class="vol-adj-wf-sub">D1: ${_fmt(s.d1)} | D2: ${_fmt(s.d2)} ${i > 0 ? `| Δ ${deltaSign}${_fmt(delta)}` : ''} — ${s.note}</div>
+        </div>${arrow}`;
+    }).join('');
+    container.innerHTML = html;
+  }
+
+  // ── final summary cards ───────────────────────────────────
+  function renderFinalSummary(d1, d2, total, phD1, phD2, phTotal) {
+    const container = _el('volAdjFinalSummary');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="vol-adj-wf-title" style="margin-bottom:7px;">Final Adjusted Volumes</div>
+      <div class="vol-adj-result-grid">
+        <div class="vol-adj-result-card">
+          <div class="vol-adj-result-label">D1 AADT</div>
+          <div class="vol-adj-result-value">${_fmt(d1)}</div>
+          <div class="vol-adj-result-unit">vpd</div>
+        </div>
+        <div class="vol-adj-result-card">
+          <div class="vol-adj-result-label">D2 AADT</div>
+          <div class="vol-adj-result-value">${_fmt(d2)}</div>
+          <div class="vol-adj-result-unit">vpd</div>
+        </div>
+        <div class="vol-adj-result-card vol-adj-result-total">
+          <div class="vol-adj-result-label">Total AADT</div>
+          <div class="vol-adj-result-value">${_fmt(total)}</div>
+          <div class="vol-adj-result-unit">vpd</div>
+        </div>
+        <div class="vol-adj-result-card vol-adj-result-peak">
+          <div class="vol-adj-result-label">Peak Hr D1</div>
+          <div class="vol-adj-result-value">${_fmt(phD1)}</div>
+          <div class="vol-adj-result-unit">vph</div>
+        </div>
+        <div class="vol-adj-result-card vol-adj-result-peak">
+          <div class="vol-adj-result-label">Peak Hr Total</div>
+          <div class="vol-adj-result-value">${_fmt(phTotal)}</div>
+          <div class="vol-adj-result-unit">vph</div>
+        </div>
+      </div>`;
+  }
+
+  // ── bar chart ─────────────────────────────────────────────
+  function renderChart(steps) {
+    const canvas = _el('volAdjBarChart');
+    if (!canvas) return;
+    const labels = steps.map(s => s.label.replace(/[①②③④⑤⑥⑦]/, '').trim());
+    const totals = steps.map(s => Math.round(s.total));
+    const d1s = steps.map(s => Math.round(s.d1));
+    const d2s = steps.map(s => Math.round(s.d2));
+
+    if (_chart) { _chart.destroy(); _chart = null; }
+    _chart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'D1 (vpd)',
+            data: d1s,
+            backgroundColor: 'rgba(31, 94, 99, 0.75)',
+            borderColor: '#1f5e63',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'D2 (vpd)',
+            data: d2s,
+            backgroundColor: 'rgba(66, 165, 245, 0.65)',
+            borderColor: '#42a5f5',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              afterBody: (items) => {
+                const idx = items[0].dataIndex;
+                return `Total: ${totals[idx].toLocaleString()} vpd`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { stacked: false, ticks: { font: { size: 10 }, maxRotation: 30 } },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              font: { size: 10 },
+              callback: v => v.toLocaleString(),
+            },
+            title: { display: true, text: 'vpd', font: { size: 10 } },
+          },
+        },
+      },
+    });
+  }
+
+  // ── apply to assessment ───────────────────────────────────
+  function applyToAssessment() {
+    const d1Base = _num('vadj_d1Base');
+    const d2Base = _num('vadj_d2Base');
+    const totalBase = d1Base + d2Base;
+    const growthRate = _num('vadj_growthRate', 2.5);
+    const years = _num('vadj_growthYears', 1);
+    const growthMultiplier = Math.pow(1 + growthRate / 100, years);
+    const seasonFactor = _num('vadj_seasonSlider', 1.00);
+    const dowFactor = _num('vadj_dowSlider', 1.00);
+    const d1PctSlider = _num('vadj_d1PctSlider', 50);
+    const d1Pct = d1PctSlider / 100;
+    const d2Pct = 1 - d1Pct;
+    const constrD1 = _num('vadj_constrD1', 0);
+    const constrD2 = _num('vadj_constrD2', 0);
+
+    const totalAdj = totalBase * growthMultiplier * seasonFactor * dowFactor;
+    const d1Final = Math.round(totalAdj * d1Pct + constrD1);
+    const d2Final = Math.round(totalAdj * d2Pct + constrD2);
+    const totalFinal = d1Final + d2Final;
+
+    // Write into the main assessment fields
+    const d1El = _el('D1_VADT');
+    const d2El = _el('D2_VADT');
+    const vadtEl = _el('VADT');
+    const pd1El = _el('predictedD1VADT');
+    const pd2El = _el('predictedD2VADT');
+    const pvEl = _el('predictedVADT');
+
+    if (d1El) { d1El.removeAttribute('readonly'); d1El.value = d1Final; }
+    if (d2El) { d2El.removeAttribute('readonly'); d2El.value = d2Final; }
+    if (vadtEl) { vadtEl.removeAttribute('readonly'); vadtEl.value = totalFinal; }
+    if (pd1El) { pd1El.removeAttribute('readonly'); pd1El.value = d1Final; }
+    if (pd2El) { pd2El.removeAttribute('readonly'); pd2El.value = d2Final; }
+    if (pvEl) { pvEl.removeAttribute('readonly'); pvEl.value = totalFinal; }
+
+    // Update detail display
+    const d1LabelEl = _el('macroDetailD1');
+    const d2LabelEl = _el('macroDetailD2');
+    const totEl = _el('macroDetailTotal');
+    if (d1LabelEl) d1LabelEl.textContent = d1Final.toLocaleString();
+    if (d2LabelEl) d2LabelEl.textContent = d2Final.toLocaleString();
+    if (totEl) totEl.textContent = totalFinal.toLocaleString();
+
+    // Trigger recalc if available
+    if (typeof calculateAll === 'function') {
+      try { calculateAll(); } catch (_) {}
+    } else if (typeof window.calculateAll === 'function') {
+      try { window.calculateAll(); } catch (_) {}
+    }
+
+    close();
+
+    // Show confirmation toast
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed; bottom: 24px; right: 24px; z-index: 20000;
+      background: linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%);
+      color: #fff; padding: 12px 20px; border-radius: 10px;
+      font-size: 0.87rem; font-weight: 700;
+      box-shadow: 0 8px 24px rgba(15,47,50,0.38);
+      animation: fadeInUp 0.25s ease; pointer-events: none;`;
+    toast.textContent = `✓ Volume applied — D1: ${d1Final.toLocaleString()} | D2: ${d2Final.toLocaleString()} | Total: ${totalFinal.toLocaleString()} vpd`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  // ── reset ─────────────────────────────────────────────────
+  function reset() {
+    _setVal('vadj_seasonSlider', '1.00');
+    _set('vadj_seasonVal', '1.00');
+    _setVal('vadj_dowSlider', '1.00');
+    _set('vadj_dowVal', '1.00');
+    _setVal('vadj_phfSlider', '0.92');
+    _set('vadj_phfVal', '0.92');
+    _setVal('vadj_constrD1', '0');
+    _setVal('vadj_constrD2', '0');
+    // Restore DB directional split
+    const d1 = _num('vadj_d1Base');
+    const d2 = _num('vadj_d2Base');
+    const total = d1 + d2;
+    const d1Pct = total > 0 ? Math.round(d1 / total * 100) : 50;
+    _setVal('vadj_d1PctSlider', d1Pct);
+    _set('vadj_d1PctVal', d1Pct);
+    _set('vadj_splitD1Pct', d1Pct);
+    _set('vadj_splitD2Pct', 100 - d1Pct);
+    recalc();
+  }
+
+  // ── keyboard close ────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && _el('volumeAdjModal')?.style.display === 'flex') close();
+  });
+
+  // Click outside to close
+  document.addEventListener('click', (e) => {
+    const modal = _el('volumeAdjModal');
+    if (modal && e.target === modal) close();
+  });
+
+  return { open, close, recalc, onSlider, onSplitSlider, setSeason, setDow, applyToAssessment, reset };
+})();
+
+/* ============================================================
+   ROAD SCENARIO VOLUME PREDICTOR OVERRIDE
+   ============================================================ */
+(function enhanceVolumeAdjModel() {
+  'use strict';
+
+  if (typeof VolumeAdjModel === 'undefined') return;
+
+  let chart = null;
+  let lastResult = null;
+  let seed = null;
+
+  const THRU_CAP_PER_LANE = 1900;
+  const TURN_CAP_PER_LANE = 1400;
+
+  // Road-type presets — tune operating conditions and geometry per road class
+  const ROAD_PRESETS = {
+    arterial_brisbane: {
+      label: 'Brisbane Arterial',
+      peakK: 10, phf: 0.92, hvPct: 6, greenRatio: 0.52, friction: 1.00,
+      d1Through: 2, d1Left: 1, d1Right: 1,
+      d2Through: 2, d2Left: 1, d2Right: 1,
+      d1LeftPct: 10, d1ThroughPct: 80, d1RightPct: 10,
+      d2LeftPct: 10, d2ThroughPct: 80, d2RightPct: 10,
+      growthRate: 2.0
+    },
+    suburban_arterial: {
+      label: 'Suburban Arterial',
+      peakK: 10.5, phf: 0.90, hvPct: 9, greenRatio: 0.50, friction: 1.00,
+      d1Through: 2, d1Left: 1, d1Right: 1,
+      d2Through: 2, d2Left: 1, d2Right: 1,
+      d1LeftPct: 12, d1ThroughPct: 76, d1RightPct: 12,
+      d2LeftPct: 12, d2ThroughPct: 76, d2RightPct: 12,
+      growthRate: 2.5
+    },
+    major_road: {
+      label: 'Major Road / State Route',
+      peakK: 9, phf: 0.93, hvPct: 10, greenRatio: 0.58, friction: 0.95,
+      d1Through: 3, d1Left: 1, d1Right: 1,
+      d2Through: 3, d2Left: 1, d2Right: 1,
+      d1LeftPct: 8, d1ThroughPct: 84, d1RightPct: 8,
+      d2LeftPct: 8, d2ThroughPct: 84, d2RightPct: 8,
+      growthRate: 2.0
+    },
+    local_collector: {
+      label: 'Local Collector',
+      peakK: 12, phf: 0.88, hvPct: 5, greenRatio: 0.45, friction: 1.05,
+      d1Through: 1, d1Left: 0, d1Right: 0,
+      d2Through: 1, d2Left: 0, d2Right: 0,
+      d1LeftPct: 15, d1ThroughPct: 70, d1RightPct: 15,
+      d2LeftPct: 15, d2ThroughPct: 70, d2RightPct: 15,
+      growthRate: 1.5
+    }
+  };
+
+  // Classify road type from VADT and name heuristics
+  function _classifyRoad(name, vadt) {
+    const n = (name || '').toLowerCase();
+    if (vadt > 50000 || /grey|tribune|ann|brunswick|main|pacific|gateway|m1|m3|gympie|logan|ipswich|gold coast|old cleveland/.test(n)) return 'major_road';
+    if (vadt > 20000 || /street|st |road|rd |avenue|ave |drive|dr |boulevard|blvd/.test(n)) return 'arterial_brisbane';
+    if (vadt > 8000) return 'suburban_arterial';
+    return 'local_collector';
+  }
+
+  function _applyPreset(presetKey, overrideVadt) {
+    const p = ROAD_PRESETS[presetKey];
+    if (!p) return;
+    if (overrideVadt != null) setValue('vadj_baseVadt', overrideVadt);
+    setValue('vadj_growthRate', p.growthRate.toFixed(1));
+    setValue('vadj_peakK', p.peakK);
+    setValue('vadj_phf', p.phf);
+    setValue('vadj_hvPct', p.hvPct);
+    setValue('vadj_greenRatio', p.greenRatio);
+    setValue('vadj_friction', p.friction);
+    setValue('vadj_d1ThroughLanes', p.d1Through);
+    setValue('vadj_d1LeftLanes', p.d1Left);
+    setValue('vadj_d1RightLanes', p.d1Right);
+    setValue('vadj_d2ThroughLanes', p.d2Through);
+    setValue('vadj_d2LeftLanes', p.d2Left);
+    setValue('vadj_d2RightLanes', p.d2Right);
+    setValue('vadj_d1LeftPct', p.d1LeftPct);
+    setValue('vadj_d1ThroughPct', p.d1ThroughPct);
+    setValue('vadj_d1RightPct', p.d1RightPct);
+    setValue('vadj_d2LeftPct', p.d2LeftPct);
+    setValue('vadj_d2ThroughPct', p.d2ThroughPct);
+    setValue('vadj_d2RightPct', p.d2RightPct);
+    recalc();
+  }
+
+  function el(id) { return document.getElementById(id); }
+  function num(id, fallback = 0) {
+    const n = parseFloat(el(id)?.value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  function setText(id, value) {
+    const node = el(id);
+    if (node) node.textContent = value;
+  }
+  function setValue(id, value) {
+    const node = el(id);
+    if (node) node.value = value;
+  }
+  function fmt(n) { return Math.round(n || 0).toLocaleString(); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function safeDiv(a, b) { return b > 0 ? a / b : 0; }
+  function losFromSat(sat) {
+    if (!Number.isFinite(sat)) return 'X';
+    if (sat <= 0.60) return 'A';
+    if (sat <= 0.70) return 'B';
+    if (sat <= 0.80) return 'C';
+    if (sat <= 0.90) return 'D';
+    if (sat <= 1.00) return 'E';
+    return 'F';
+  }
+
+  function ensurePredictorMarkup() {
+    if (el('vadj_baseVadt')) return;
+    const panel = document.querySelector('#volumeAdjModal .vol-adj-panel');
+    if (!panel) return;
+
+    panel.innerHTML = `
+      <div class="vol-adj-header">
+        <h2 id="volAdjTitle">Road Scenario Volume Predictor</h2>
+        <p class="vol-adj-subtitle">Use lane geometry, turning demand and road conditions to predict road volume.</p>
+        <button type="button" class="vol-adj-close" onclick="VolumeAdjModel.close()" aria-label="Close">x</button>
+        <div class="vol-adj-site-info"><span class="vol-adj-site-label">Road:</span><span id="volAdjSiteName">-</span></div>
+      </div>
+      <div class="vol-adj-body">
+        <div class="vol-adj-controls">
+          <div class="vol-adj-section" style="background:#f0f9f9;">
+            <div class="vol-adj-section-title" style="color:#0f6b6b;">Road Class Presets</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+              <button class="vadj-preset-btn" data-preset="arterial_brisbane" type="button" style="padding:4px 9px;font-size:0.72rem;border:1px solid #81c784;border-radius:5px;cursor:pointer;transition:all 0.15s;background:#e8f5e9;color:#2e7d32;font-weight:500;" onclick="VolumeAdjModel.applyPresetByKey('arterial_brisbane')">Brisbane Arterial</button>
+              <button class="vadj-preset-btn" data-preset="suburban_arterial" type="button" style="padding:4px 9px;font-size:0.72rem;border:1px solid #81c784;border-radius:5px;cursor:pointer;transition:all 0.15s;background:#e8f5e9;color:#2e7d32;font-weight:500;" onclick="VolumeAdjModel.applyPresetByKey('suburban_arterial')">Suburban Arterial</button>
+              <button class="vadj-preset-btn" data-preset="major_road" type="button" style="padding:4px 9px;font-size:0.72rem;border:1px solid #81c784;border-radius:5px;cursor:pointer;transition:all 0.15s;background:#e8f5e9;color:#2e7d32;font-weight:500;" onclick="VolumeAdjModel.applyPresetByKey('major_road')">Major Road</button>
+              <button class="vadj-preset-btn" data-preset="local_collector" type="button" style="padding:4px 9px;font-size:0.72rem;border:1px solid #81c784;border-radius:5px;cursor:pointer;transition:all 0.15s;background:#e8f5e9;color:#2e7d32;font-weight:500;" onclick="VolumeAdjModel.applyPresetByKey('local_collector')">Local Collector</button>
+            </div>
+            <div class="vol-adj-note" style="margin-top:5px;">Auto-selected from road name and AADT. Click to override.</div>
+          </div>
+
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">1. Base and Projection</div>
+            <div class="vol-adj-row"><label>Base AADT (vpd)</label><input type="number" id="vadj_baseVadt" min="0" step="1" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-row"><label>Growth Rate (% p.a.)</label><input type="number" id="vadj_growthRate" min="0" max="20" step="0.1" value="2.5" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-row"><label>Years to Opening</label><input type="number" id="vadj_growthYears" min="0" max="40" step="1" value="1" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-row"><label>D1 Direction Share (%)</label><input type="number" id="vadj_d1Share" min="0" max="100" step="1" value="50" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-total-row">Projected AADT: <strong id="vadj_projectedVadt">0</strong> vpd</div>
+          </div>
+
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">2. Road Conditions</div>
+            <div class="vol-adj-row"><label>Peak Hour K (%)</label><input type="number" id="vadj_peakK" min="5" max="20" step="0.5" value="10" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-row"><label>PHF</label><input type="number" id="vadj_phf" min="0.80" max="1.00" step="0.01" value="0.92" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-row"><label>Heavy Vehicles (%)</label><input type="number" id="vadj_hvPct" min="0" max="40" step="0.5" value="8" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-row"><label>Green Ratio (0-1)</label><input type="number" id="vadj_greenRatio" min="0.20" max="1.00" step="0.01" value="0.55" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-row"><label>Road Friction Factor</label><input type="number" id="vadj_friction" min="0.70" max="1.20" step="0.01" value="1.00" oninput="VolumeAdjModel.recalc()" /></div>
+            <div class="vol-adj-note">Higher friction means less effective capacity.</div>
+          </div>
+
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">3. Lane Geometry (each direction)</div>
+            <div class="vol-adj-row"><label>D1 Through / Left / Right</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;"><input type="number" id="vadj_d1ThroughLanes" min="0" step="1" value="2" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d1LeftLanes" min="0" step="1" value="1" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d1RightLanes" min="0" step="1" value="1" oninput="VolumeAdjModel.recalc()" /></div></div>
+            <div class="vol-adj-row"><label>D2 Through / Left / Right</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;"><input type="number" id="vadj_d2ThroughLanes" min="0" step="1" value="2" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d2LeftLanes" min="0" step="1" value="1" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d2RightLanes" min="0" step="1" value="1" oninput="VolumeAdjModel.recalc()" /></div></div>
+          </div>
+
+          <div class="vol-adj-section">
+            <div class="vol-adj-section-title">4. Turning Demand Split (%)</div>
+            <div class="vol-adj-row"><label>D1 Left / Through / Right</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;"><input type="number" id="vadj_d1LeftPct" min="0" max="100" step="1" value="10" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d1ThroughPct" min="0" max="100" step="1" value="80" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d1RightPct" min="0" max="100" step="1" value="10" oninput="VolumeAdjModel.recalc()" /></div></div>
+            <div class="vol-adj-row"><label>D2 Left / Through / Right</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;"><input type="number" id="vadj_d2LeftPct" min="0" max="100" step="1" value="10" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d2ThroughPct" min="0" max="100" step="1" value="80" oninput="VolumeAdjModel.recalc()" /><input type="number" id="vadj_d2RightPct" min="0" max="100" step="1" value="10" oninput="VolumeAdjModel.recalc()" /></div></div>
+          </div>
+        </div>
+
+        <div class="vol-adj-visual">
+          <div class="vol-adj-wf-title">Scenario Waterfall</div>
+          <div class="vol-adj-waterfall" id="volAdjWaterfall"></div>
+          <div class="vol-adj-final-summary" id="volAdjFinalSummary"></div>
+          <div class="vol-adj-chart-wrap">
+            <div class="vol-adj-chart-title">Lane Demand vs Capacity</div>
+            <div id="volAdjMovementTable"></div>
+          </div>
+          <div class="vol-adj-chart-wrap">
+            <div class="vol-adj-chart-title">Volume Prediction Chart</div>
+            <canvas id="volAdjBarChart" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="vol-adj-footer">
+        <button type="button" class="vol-adj-reset-btn" onclick="VolumeAdjModel.reset()">Reset to DB Values</button>
+        <button type="button" class="vol-adj-apply-btn" onclick="VolumeAdjModel.applyToAssessment()">Apply Predicted Volume to Assessment</button>
+      </div>`;
+  }
+
+  function normalizeTriple(prefix) {
+    const leftId = `${prefix}LeftPct`;
+    const throughId = `${prefix}ThroughPct`;
+    const rightId = `${prefix}RightPct`;
+    const l = Math.max(0, num(leftId));
+    const t = Math.max(0, num(throughId));
+    const r = Math.max(0, num(rightId));
+    const sum = l + t + r;
+    if (sum <= 0) {
+      setValue(leftId, 10);
+      setValue(throughId, 80);
+      setValue(rightId, 10);
+      return { left: 0.10, through: 0.80, right: 0.10 };
+    }
+    const nl = l / sum;
+    const nt = t / sum;
+    const nr = r / sum;
+    setValue(leftId, Math.round(nl * 100));
+    setValue(throughId, Math.round(nt * 100));
+    setValue(rightId, Math.round(nr * 100));
+    return { left: nl, through: nt, right: nr };
+  }
+
+  function renderWaterfall(steps) {
+    const wrap = el('volAdjWaterfall');
+    if (!wrap) return;
+    const peak = Math.max(...steps.map(s => s.value), 1);
+    wrap.innerHTML = steps.map((s, i) => {
+      const w = Math.max(4, Math.round((s.value / peak) * 100));
+      const prev = i > 0 ? steps[i - 1].value : s.value;
+      const delta = s.value - prev;
+      const sign = delta >= 0 ? '+' : '';
+      return `<div class="vol-adj-wf-step"><div class="vol-adj-wf-label">${s.label}</div><div class="vol-adj-wf-bar-row"><div class="vol-adj-wf-bar" style="width:${w}%;"></div><span class="vol-adj-wf-val">${fmt(s.value)} vpd</span></div><div class="vol-adj-wf-sub">${s.note}${i > 0 ? ` | d ${sign}${fmt(delta)}` : ''}</div></div>${i < steps.length - 1 ? '<div class="vol-adj-wf-arrow">v</div>' : ''}`;
+    }).join('');
+  }
+
+  function renderSummary(res) {
+    const box = el('volAdjFinalSummary');
+    if (!box) return;
+    box.innerHTML = `
+      <div class="vol-adj-wf-title" style="margin-bottom:7px;">Prediction Summary</div>
+      <div class="vol-adj-result-grid" style="grid-template-columns:repeat(6,1fr);">
+        <div class="vol-adj-result-card"><div class="vol-adj-result-label">D1 AADT</div><div class="vol-adj-result-value">${fmt(res.d1Vadt)}</div><div class="vol-adj-result-unit">vpd</div></div>
+        <div class="vol-adj-result-card"><div class="vol-adj-result-label">D2 AADT</div><div class="vol-adj-result-value">${fmt(res.d2Vadt)}</div><div class="vol-adj-result-unit">vpd</div></div>
+        <div class="vol-adj-result-card vol-adj-result-total"><div class="vol-adj-result-label">Predicted AADT</div><div class="vol-adj-result-value">${fmt(res.predictedVadt)}</div><div class="vol-adj-result-unit">vpd</div></div>
+        <div class="vol-adj-result-card vol-adj-result-peak"><div class="vol-adj-result-label">2-way Peak</div><div class="vol-adj-result-value">${fmt(res.peak2way)}</div><div class="vol-adj-result-unit">vph</div></div>
+        <div class="vol-adj-result-card vol-adj-result-peak"><div class="vol-adj-result-label">Max Sat</div><div class="vol-adj-result-value">${res.maxSat.toFixed(2)}</div><div class="vol-adj-result-unit">v/c</div></div>
+        <div class="vol-adj-result-card ${res.maxSat <= 1 ? 'vol-adj-result-total' : 'vol-adj-result-peak'}"><div class="vol-adj-result-label">LOS</div><div class="vol-adj-result-value">${res.los}</div><div class="vol-adj-result-unit">capacity</div></div>
+      </div>`;
+  }
+
+  function renderMovementTable(rows) {
+    const node = el('volAdjMovementTable');
+    if (!node) return;
+    const tr = rows.map(r => `<tr><td>${r.name}</td><td style="text-align:right;">${fmt(r.demand)}</td><td style="text-align:right;">${fmt(r.capacity)}</td><td style="text-align:right;">${r.sat.toFixed(2)}</td><td style="text-align:center;font-weight:700;">${losFromSat(r.sat)}</td></tr>`).join('');
+    node.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="text-align:left;">Movement</th><th style="text-align:right;">Demand vph</th><th style="text-align:right;">Capacity vph</th><th style="text-align:right;">v/c</th><th style="text-align:center;">LOS</th></tr></thead><tbody>${tr}</tbody></table>`;
+  }
+
+  function renderChart(baseVadt, projectedVadt, adjustedVadt, predictedVadt) {
+    const canvas = el('volAdjBarChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (chart) { chart.destroy(); chart = null; }
+    chart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: ['Base', 'Growth', 'Scenario Adj', 'Capacity Pred'],
+        datasets: [{
+          label: 'VADT',
+          data: [Math.round(baseVadt), Math.round(projectedVadt), Math.round(adjustedVadt), Math.round(predictedVadt)],
+          backgroundColor: ['rgba(66,165,245,0.75)', 'rgba(30,136,229,0.75)', 'rgba(46,125,50,0.75)', 'rgba(15,47,50,0.80)'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { callback: (v) => Number(v).toLocaleString() } } }
+      }
+    });
+  }
+
+  function recalc() {
+    ensurePredictorMarkup();
+
+    const baseVadt = Math.max(0, num('vadj_baseVadt'));
+    const growthRate = clamp(num('vadj_growthRate', 2.5), 0, 20);
+    const years = clamp(num('vadj_growthYears', 1), 0, 40);
+    const d1Share = clamp(num('vadj_d1Share', 50), 0, 100) / 100;
+    const d2Share = 1 - d1Share;
+
+    const kPct = clamp(num('vadj_peakK', 10), 5, 20);
+    const phf = clamp(num('vadj_phf', 0.92), 0.80, 1.00);
+    const hvPct = clamp(num('vadj_hvPct', 8), 0, 40);
+    const green = clamp(num('vadj_greenRatio', 0.55), 0.20, 1.00);
+    const friction = clamp(num('vadj_friction', 1.00), 0.70, 1.20);
+
+    const d1Lanes = {
+      through: Math.max(0, Math.round(num('vadj_d1ThroughLanes', 2))),
+      left: Math.max(0, Math.round(num('vadj_d1LeftLanes', 1))),
+      right: Math.max(0, Math.round(num('vadj_d1RightLanes', 1)))
+    };
+    const d2Lanes = {
+      through: Math.max(0, Math.round(num('vadj_d2ThroughLanes', 2))),
+      left: Math.max(0, Math.round(num('vadj_d2LeftLanes', 1))),
+      right: Math.max(0, Math.round(num('vadj_d2RightLanes', 1)))
+    };
+
+    const d1Split = normalizeTriple('vadj_d1');
+    const d2Split = normalizeTriple('vadj_d2');
+
+    const growthMult = Math.pow(1 + growthRate / 100, years);
+    const projectedVadt = baseVadt * growthMult;
+
+    const hvAdj = 1 - (hvPct * 0.004);
+    const signalAdj = 0.60 + (green * 0.80);
+    const scenarioFactor = clamp(hvAdj * signalAdj * friction, 0.55, 1.25);
+    const adjustedVadt = projectedVadt * scenarioFactor;
+
+    const peak2way = (adjustedVadt * (kPct / 100)) / Math.max(phf, 0.01);
+    const d1Peak = peak2way * d1Share;
+    const d2Peak = peak2way * d2Share;
+
+    const thruCapLane = THRU_CAP_PER_LANE * friction * green * (1 - hvPct * 0.0025);
+    const turnCapLane = TURN_CAP_PER_LANE * friction * green * (1 - hvPct * 0.0025);
+
+    const rows = [];
+    function addDirRows(dirLabel, peak, split, lanes) {
+      const demands = {
+        left: peak * split.left,
+        through: peak * split.through,
+        right: peak * split.right
+      };
+      const caps = {
+        left: lanes.left * turnCapLane,
+        through: lanes.through * thruCapLane,
+        right: lanes.right * turnCapLane
+      };
+      ['left', 'through', 'right'].forEach((mv) => {
+        const sat = caps[mv] > 0 ? (demands[mv] / caps[mv]) : (demands[mv] > 0 ? 99 : 0);
+        rows.push({
+          name: `${dirLabel} ${mv}`,
+          demand: demands[mv],
+          capacity: caps[mv],
+          sat
+        });
+      });
+    }
+
+    addDirRows('D1', d1Peak, d1Split, d1Lanes);
+    addDirRows('D2', d2Peak, d2Split, d2Lanes);
+
+    const maxSat = rows.reduce((m, r) => Math.max(m, r.sat), 0);
+    const capAdjustedPeak = maxSat > 1 ? (peak2way / maxSat) : peak2way;
+    const predictedVadt = (capAdjustedPeak * phf) / (kPct / 100);
+    const d1Vadt = predictedVadt * d1Share;
+    const d2Vadt = predictedVadt * d2Share;
+
+    setText('vadj_projectedVadt', fmt(projectedVadt));
+
+    lastResult = {
+      predictedVadt,
+      d1Vadt,
+      d2Vadt,
+      peak2way: capAdjustedPeak,
+      maxSat,
+      los: losFromSat(maxSat),
+      rows,
+      steps: [
+        { label: 'Base AADT', value: baseVadt, note: 'Current measured/base traffic volume' },
+        { label: 'After Growth', value: projectedVadt, note: `Growth ${growthRate.toFixed(1)}% for ${Math.round(years)} years` },
+        { label: 'After Scenario', value: adjustedVadt, note: `Road condition factor ${scenarioFactor.toFixed(2)}` },
+        { label: 'Capacity Predicted', value: predictedVadt, note: `Lane-constrained with max saturation ${maxSat.toFixed(2)}` }
+      ]
+    };
+
+    renderWaterfall(lastResult.steps);
+    renderSummary(lastResult);
+    renderMovementTable(rows);
+    renderChart(baseVadt, projectedVadt, adjustedVadt, predictedVadt);
+  }
+
+  function open() {
+    ensurePredictorMarkup();
+
+    const modal = el('volumeAdjModal');
+    if (!modal) return;
+
+    const d1 = parseFloat(el('predictedD1VADT')?.value) || parseFloat(el('D1_VADT')?.value) || 0;
+    const d2 = parseFloat(el('predictedD2VADT')?.value) || parseFloat(el('D2_VADT')?.value) || 0;
+    const total = parseFloat(el('predictedVADT')?.value) || parseFloat(el('VADT')?.value) || (d1 + d2);
+
+    const growthRate = parseFloat(el('macroGrowthRate')?.value) || 2.5;
+    const baseYear = parseInt(el('baseYear')?.value, 10) || new Date().getFullYear();
+    const openingYear = parseInt(el('macroOpeningYear')?.value, 10) || (baseYear + 1);
+    const years = Math.max(0, openingYear - baseYear);
+    const d1Share = total > 0 ? (d1 / total) * 100 : 50;
+    const siteName = el('macroDetailRoadName')?.textContent || el('macroSiteId')?.value || 'Selected road';
+
+    const presetKey = _classifyRoad(siteName, total);
+    const preset = ROAD_PRESETS[presetKey];
+
+    seed = {
+      baseVadt: Math.round(total),
+      growthRate: preset ? preset.growthRate : growthRate,
+      years,
+      d1Share: Math.round(d1Share),
+      presetKey
+    };
+
+    setValue('vadj_baseVadt', seed.baseVadt);
+    setValue('vadj_growthRate', seed.growthRate.toFixed(1));
+    setValue('vadj_growthYears', seed.years);
+    setValue('vadj_d1Share', seed.d1Share);
+    setText('volAdjSiteName', siteName);
+
+    // Apply geometry/operating condition preset
+    _applyPreset(presetKey);
+
+    // Mark active preset button
+    document.querySelectorAll('.vadj-preset-btn').forEach((b) => {
+      b.style.fontWeight = b.dataset.preset === presetKey ? '800' : '500';
+      b.style.background = b.dataset.preset === presetKey ? '#1f5e63' : '#e8f5e9';
+      b.style.color = b.dataset.preset === presetKey ? '#fff' : '#2e7d32';
+    });
+
+    modal.style.display = 'flex';
+    recalc();
+  }
+
+  function close() {
+    const modal = el('volumeAdjModal');
+    if (modal) modal.style.display = 'none';
+    if (chart) { chart.destroy(); chart = null; }
+  }
+
+  function applyPresetByKey(key) {
+    _applyPreset(key);
+    document.querySelectorAll('.vadj-preset-btn').forEach((b) => {
+      b.style.fontWeight = b.dataset.preset === key ? '800' : '500';
+      b.style.background = b.dataset.preset === key ? '#1f5e63' : '#e8f5e9';
+      b.style.color = b.dataset.preset === key ? '#fff' : '#2e7d32';
+    });
+  }
+
+  function reset() {
+    if (!seed) return;
+    setValue('vadj_baseVadt', seed.baseVadt);
+    setValue('vadj_growthRate', Number(seed.growthRate).toFixed(1));
+    setValue('vadj_growthYears', seed.years);
+    setValue('vadj_d1Share', seed.d1Share);
+    if (seed.presetKey) {
+      _applyPreset(seed.presetKey);
+      return;
+    }
+
+    setValue('vadj_peakK', 10);
+    setValue('vadj_phf', 0.92);
+    setValue('vadj_hvPct', 8);
+    setValue('vadj_greenRatio', 0.55);
+    setValue('vadj_friction', 1.00);
+
+    setValue('vadj_d1ThroughLanes', 2);
+    setValue('vadj_d1LeftLanes', 1);
+    setValue('vadj_d1RightLanes', 1);
+    setValue('vadj_d2ThroughLanes', 2);
+    setValue('vadj_d2LeftLanes', 1);
+    setValue('vadj_d2RightLanes', 1);
+
+    setValue('vadj_d1LeftPct', 10);
+    setValue('vadj_d1ThroughPct', 80);
+    setValue('vadj_d1RightPct', 10);
+    setValue('vadj_d2LeftPct', 10);
+    setValue('vadj_d2ThroughPct', 80);
+    setValue('vadj_d2RightPct', 10);
+
+    recalc();
+  }
+
+  function applyToAssessment() {
+    if (!lastResult) return;
+
+    const d1Final = Math.round(lastResult.d1Vadt);
+    const d2Final = Math.round(lastResult.d2Vadt);
+    const totalFinal = Math.round(lastResult.predictedVadt);
+
+    const d1El = el('D1_VADT');
+    const d2El = el('D2_VADT');
+    const vadtEl = el('VADT');
+    const pd1El = el('predictedD1VADT');
+    const pd2El = el('predictedD2VADT');
+    const pvEl = el('predictedVADT');
+
+    if (d1El) { d1El.removeAttribute('readonly'); d1El.value = d1Final; }
+    if (d2El) { d2El.removeAttribute('readonly'); d2El.value = d2Final; }
+    if (vadtEl) { vadtEl.removeAttribute('readonly'); vadtEl.value = totalFinal; }
+    if (pd1El) { pd1El.removeAttribute('readonly'); pd1El.value = d1Final; }
+    if (pd2El) { pd2El.removeAttribute('readonly'); pd2El.value = d2Final; }
+    if (pvEl) { pvEl.removeAttribute('readonly'); pvEl.value = totalFinal; }
+
+    const d1LabelEl = el('macroDetailD1');
+    const d2LabelEl = el('macroDetailD2');
+    const totEl = el('macroDetailTotal');
+    if (d1LabelEl) d1LabelEl.textContent = d1Final.toLocaleString();
+    if (d2LabelEl) d2LabelEl.textContent = d2Final.toLocaleString();
+    if (totEl) totEl.textContent = totalFinal.toLocaleString();
+
+    if (typeof calculateAll === 'function') {
+      try { calculateAll(); } catch (_) {}
+    } else if (typeof window.calculateAll === 'function') {
+      try { window.calculateAll(); } catch (_) {}
+    }
+
+    close();
+
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:20000;background:linear-gradient(135deg,#1f5e63 0%,#0f2f32 100%);color:#fff;padding:12px 20px;border-radius:10px;font-size:0.87rem;font-weight:700;box-shadow:0 8px 24px rgba(15,47,50,0.38);pointer-events:none;';
+    toast.textContent = `Predicted volume applied | D1 ${d1Final.toLocaleString()} | D2 ${d2Final.toLocaleString()} | Total ${totalFinal.toLocaleString()} vpd`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4200);
+  }
+
+  Object.assign(VolumeAdjModel, {
+    open,
+    close,
+    recalc,
+    applyToAssessment,
+    reset,
+    applyPresetByKey,
+    onSlider: recalc,
+    onSplitSlider: recalc,
+    setSeason: recalc,
+    setDow: recalc
+  });
+})();

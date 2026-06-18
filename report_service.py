@@ -5,9 +5,10 @@ import uuid
 import base64
 import re
 import os
+import threading
 import urllib.error
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -28,7 +29,7 @@ if _env_path.exists():
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
 
@@ -61,8 +62,9 @@ app.add_middleware(
   allow_origins=ALLOWED_ORIGINS,
   allow_origin_regex=ALLOWED_ORIGIN_REGEX,
   allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["Retry-After", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
 )
 
 
@@ -120,25 +122,89 @@ class DraftRequest(BaseModel):
 
 DRAFTS: dict[str, dict[str, Any]] = {}
 
+# ── Lightweight in-process rate limiter ──────────────────────────────────────
+# Protects credit-spending endpoints (e.g. /verify-formulas, which calls the
+# Anthropic API) from being hammered by an unauthenticated caller. Keyed by
+# client IP. Self-contained — no external dependency. Per-instance only; for
+# multi-instance deployments back this with a shared store (Redis/Firestore).
+_RATE_BUCKETS: dict[str, list[float]] = {}
+_RATE_LOCK = threading.Lock()
+VERIFY_RATE_MAX = max(1, int(os.environ.get("REPORT_VERIFY_RATE_MAX", "20")))
+VERIFY_RATE_WINDOW_S = max(1, int(os.environ.get("REPORT_VERIFY_RATE_WINDOW_S", "600")))
+
+
+def _utcnow() -> datetime:
+  return datetime.now(timezone.utc)
+
+
+def _parse_datetime_utc(value: str, fallback: datetime) -> datetime:
+  text = str(value or "").strip()
+  if not text:
+    return fallback
+  try:
+    parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+  except ValueError:
+    return fallback
+  if parsed.tzinfo is None:
+    return parsed.replace(tzinfo=timezone.utc)
+  return parsed.astimezone(timezone.utc)
+
+
+def _client_ip(request: Request) -> str:
+  fwd = request.headers.get("x-forwarded-for", "")
+  if fwd:
+    return fwd.split(",")[0].strip()
+  return request.client.host if request.client else "unknown"
+
+
+def _check_rate_limit(request: Request, max_hits: int, window_s: int) -> dict[str, int]:
+  """Raise HTTP 429 when the caller exceeds max_hits within window_s seconds."""
+  ip = _client_ip(request)
+  now = _utcnow().timestamp()
+  cutoff = now - window_s
+  with _RATE_LOCK:
+    hits = [t for t in _RATE_BUCKETS.get(ip, []) if t >= cutoff]
+    if len(hits) >= max_hits:
+      retry_after = max(1, int(window_s - (now - min(hits))))
+      raise HTTPException(
+        status_code=429,
+        detail="Rate limit exceeded. Try again later.",
+        headers={
+          "Retry-After": str(retry_after),
+          "X-RateLimit-Limit": str(max_hits),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": str(int(min(hits) + window_s)),
+        },
+      )
+    hits.append(now)
+    _RATE_BUCKETS[ip] = hits
+
+    # Opportunistic cleanup so the dict does not grow without bound.
+    if len(_RATE_BUCKETS) > 5000:
+      for k in [k for k, v in list(_RATE_BUCKETS.items()) if not any(t >= cutoff for t in v)]:
+        _RATE_BUCKETS.pop(k, None)
+
+  return {
+    "limit": max_hits,
+    "remaining": max(0, max_hits - len(hits)),
+    "reset_epoch": int(min(hits) + window_s),
+  }
+
 
 def _prune_drafts(now: datetime | None = None) -> None:
   if not DRAFTS:
     return
 
-  now_dt = now or datetime.utcnow()
+  now_dt = now or _utcnow()
   cutoff = now_dt - timedelta(hours=DRAFT_TTL_HOURS)
   stale_ids: list[str] = []
 
   for draft_id, item in list(DRAFTS.items()):
     created_epoch = item.get("created_epoch")
     if isinstance(created_epoch, (int, float)):
-      created_at = datetime.utcfromtimestamp(created_epoch)
+      created_at = datetime.fromtimestamp(created_epoch, timezone.utc)
     else:
-      created_at_text = str(item.get("created_at") or "").replace("Z", "")
-      try:
-        created_at = datetime.fromisoformat(created_at_text)
-      except ValueError:
-        created_at = now_dt
+      created_at = _parse_datetime_utc(str(item.get("created_at") or ""), now_dt)
     if created_at < cutoff:
       stale_ids.append(draft_id)
 
@@ -213,7 +279,7 @@ def _format_number(value: Any, decimals: int = 0, fallback: str = "-") -> str:
 def _format_au_date(value: Any, fallback: str | None = None) -> str:
   text = _safe_text(value, "")
   if not text:
-    return fallback or datetime.now().strftime("%d/%m/%Y")
+    return fallback or _utcnow().strftime("%d/%m/%Y")
 
   parse_candidates = [text]
   if "T" in text:
@@ -226,7 +292,8 @@ def _format_au_date(value: Any, fallback: str | None = None) -> str:
       except ValueError:
         continue
     try:
-      return datetime.fromisoformat(candidate).strftime("%d/%m/%Y")
+      parsed = _parse_datetime_utc(candidate, _utcnow())
+      return parsed.strftime("%d/%m/%Y")
     except ValueError:
       continue
 
@@ -1347,16 +1414,16 @@ def _infer_result_context(key: str, value: str) -> str:
           return "Over capacity (LOS F) — mitigation required"
         if v >= 0.9:
           return "Near or at capacity (LOS E) — mitigation likely required"
-        if v >= 0.75:
+        if v >= 0.8:
           return "Approaching capacity (LOS D) — monitor closely"
-        return "Within acceptable capacity threshold (LOS A–C)"
+        return "Within acceptable capacity threshold (LOS A–C, V/C < 0.80)"
     except Exception:
       pass
     return "Volume-to-Capacity Ratio — compare against LOS thresholds"
   if "los" in key_lc or "level of service" in key_lc:
     return "Level of Service — A=free-flow, F=breakdown"
   if "queue" in key_lc:
-    return "Maximum queue length based on a standard 2-minute hold and release cycle"
+    return "Maximum queue length (2/5/10/15-minute hold scenarios; shockwave model where applicable)"
   if "delay" in key_lc:
     return "Average per-vehicle delay at the intersection"
   if "growth" in key_lc:
@@ -1438,8 +1505,7 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
   Detailed: Detour Route Information / VPD Calculation / Detour Road Capacity Summary /
             Estimated Detour Delay Calculation / Detour Road Summary /
             Road Status After Diversion / Pedestrian Detour Impact
-  Short:    Detour Route Information / Estimated Detour Delay Calculation /
-            Pedestrian Detour Impact
+  Short:    Detour Route Information / Estimated Detour Delay - Vehicles / Pedestrian Detour Impact
   """
   if chart_items is None:
     chart_items = []
@@ -1562,13 +1628,11 @@ def _render_short_detour_route_block(route_label: str, route_tables: list[dict],
 
   if is_short:
     # Short report:
-    # 1. Detour Route Information / 2. Detour Road Summary / 3. Estimated Detour Delay Calculation /
-    # 4. Pedestrian Detour Impact
+    # 1. Detour Route Information / 2. Estimated Detour Delay - Vehicles / 3. Pedestrian Detour Impact
     return (
       base_html
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. DETOUR ROAD SUMMARY</h4>" + _render_group(detour_summary_tables + dir_capacity_tables, fallback_detour_summary) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. ESTIMATED DETOUR DELAY CALCULATION</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
-      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">4. PEDESTRIAN DETOUR IMPACT</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">2. ESTIMATED DETOUR DELAY - VEHICLES</h4>" + _render_group(delay_tables, fallback_delay) + "</div>"
+      + "<div class=\"detour-sub-block avoid-break\"><h4 class=\"editable-text\" contenteditable=\"true\">3. PEDESTRIAN DETOUR IMPACT</h4>" + _render_group(pedestrian_tables, fallback_pedestrian) + "</div>"
       + "</div>"
     )
   else:
@@ -2042,12 +2106,12 @@ def create_draft(req: DraftRequest) -> dict[str, str]:
         ),
       )
 
-    now = datetime.utcnow()
+    now = _utcnow()
     draft_id = uuid.uuid4().hex
     DRAFTS[draft_id] = {
         "title": safe_title,
         "payload": req.payload,
-        "created_at": now.isoformat(timespec="seconds") + "Z",
+        "created_at": now.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "created_epoch": now.timestamp(),
     }
     return {"editor_url": f"/report/editor/{draft_id}"}
@@ -2115,7 +2179,7 @@ def editor_page(draft_id: str) -> str:
     ctx = _build_report_context(payload)
     project_name = _escape(project.get("name", title))
     location = _escape(project.get("location", "Location Not Specified"))
-    report_date = _escape(ctx.get("report_date"), datetime.now().strftime("%d/%m/%Y"))
+    report_date = _escape(ctx.get("report_date"), _utcnow().strftime("%d/%m/%Y"))
     prepared_by = _escape(ctx.get("prepared_by"), "Planner's Name")
     cc_number = _escape(ctx.get("cc_number"), "CC0000")
     selected_site_details = ctx.get("selected_site_details", {}) if isinstance(ctx.get("selected_site_details"), dict) else {}
@@ -2289,9 +2353,12 @@ def editor_page(draft_id: str) -> str:
       if any(_normalize_title_key(pat) in tkey for pat in _DEDICATED_TABLE_PATTERNS): continue
 
       table_id = _safe_text(table.get("table_id", ""), "")
+      # Use compound key (table_id + title) so that the same DOM table_id scraped once
+      # per detour route scenario is NOT collapsed — each route has a unique title suffix.
       if table_id:
-        if table_id in _seen_table_ids: continue
-        _seen_table_ids.add(table_id)
+        compound_key = f"{table_id}|{tkey}"
+        if compound_key in _seen_table_ids: continue
+        _seen_table_ids.add(compound_key)
       elif tkey:
         if tkey in _seen_title_keys: continue
         _seen_title_keys.add(tkey)
@@ -3579,20 +3646,38 @@ Keep your response concise and structured."""
 
 
 @app.post("/verify-formulas")
-async def verify_formulas(req: FormulaVerifyRequest):
+async def verify_formulas(req: FormulaVerifyRequest, request: Request):
     """
     Accepts formula failures from the in-browser Formula Verification Agent,
     forwards them to Claude for expert analysis, and returns a structured report.
+
+    Rate-limited per client IP because it spends the server's ANTHROPIC_API_KEY.
     """
+    rate_meta = _check_rate_limit(request, VERIFY_RATE_MAX, VERIFY_RATE_WINDOW_S)
+
     if not req.failures:
-        return {"status": "ok", "analysis": "No failures to analyse."}
+      return JSONResponse(
+        {"status": "ok", "analysis": "No failures to analyse."},
+        headers={
+          "X-RateLimit-Limit": str(rate_meta["limit"]),
+          "X-RateLimit-Remaining": str(rate_meta["remaining"]),
+          "X-RateLimit-Reset": str(rate_meta["reset_epoch"]),
+        },
+      )
 
     analysis = _call_claude_verify(req.failures)
-    return {
+    return JSONResponse(
+      {
         "status": "failures_analysed",
         "failure_count": len(req.failures),
         "analysis": analysis,
-    }
+      },
+      headers={
+        "X-RateLimit-Limit": str(rate_meta["limit"]),
+        "X-RateLimit-Remaining": str(rate_meta["remaining"]),
+        "X-RateLimit-Reset": str(rate_meta["reset_epoch"]),
+      },
+    )
 
 
 if __name__ == "__main__":

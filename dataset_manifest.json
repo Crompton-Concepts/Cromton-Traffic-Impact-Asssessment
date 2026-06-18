@@ -1,77 +1,133 @@
 {
-  "generated_at": "2026-05-22T00:00:00Z",
+  "generated_at": "2026-06-18T01:15:25Z",
   "datasets": {
     "tmr": {
-      "version": "2026-04-28",
-      "sha256": "639d547a63540b61d3b4c91adc62a2d38eca78369bb047b6f9a0f9981b37044f",
+      "version": "2026-06-09",
+      "sha256": "be839bb2242d77c47c1fc3e1f3890ff22a8751a94dcc64071aa2d3627dd39dec",
       "feature_count": 67368,
-      "source_url": "https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tmr.geojson",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Ftmr.geojson?alt=media",
       "local_file": "tmr.geojson",
-      "updated_at": "2026-04-28T18:38:35Z"
+      "updated_at": "2026-06-09T01:53:40Z"
     },
     "goldcoast": {
-      "version": "2026-05-22",
-      "sha256": "a66a4ae82c7adf4db7c9b8a86076b687c09bf181689051bd803891dde8c06121",
+      "version": "2026-06-18",
+      "sha256": "bf2be62e7da3cd1bb0f0ed1c20f259ea76a8a290d307b00f9a9eb1d499ee4ed0",
       "feature_count": 249792,
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2Fgoldcoast.geojson?alt=media",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fgoldcoast.geojson?alt=media",
       "local_file": "goldcoast.geojson",
-      "updated_at": "2026-05-22T00:00:00Z"
+      "updated_at": "2026-06-18T01:00:12Z"
     },
     "brisbane": {
-      "version": "2026-05-22",
-      "sha256": "6f231ad820e55bbfbca9aa5651bde8fbafcb8562be30f95b11f616ddf5a8fdac",
+      "version": "2026-06-17",
+      "sha256": "822ede820b10baaf3cb33ff43cb81c32e58fd9dd9e158b51529c883115a43bfb",
       "feature_count": 48528,
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FBrisbane.geojson?alt=media",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fbrisbane.geojson?alt=media",
       "local_file": "Brisbane.geojson",
-      "updated_at": "2026-05-22T00:00:00Z"
+      "updated_at": "2026-06-17T00:03:06Z"
     },
     "ipswich": {
-      "version": "2026-05-22",
-      "sha256": "22dd2470583a4760e639ddb585c4670c9a0fd3edad0b3f361a83f5bc1a1d2314",
+      "version": "2026-06-18",
+      "sha256": "c01affe6370c2c347027bb6a440230bf4c2d5fd1ceb679acb28da787ff1369f5",
       "feature_count": 80880,
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FIpswich.geojson?alt=media",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fipswich.geojson?alt=media",
       "local_file": "Ipswich.geojson",
-      "updated_at": "2026-05-22T00:00:00Z"
+      "updated_at": "2026-06-18T01:00:12Z"
     },
     "logan": {
-      "version": "2026-05-22",
-      "sha256": "776672835861e0ec365a609b7a83943f980bd32d9777aeb87d5acd9b31e64ea8",
+      "version": "2026-06-18",
+      "sha256": "401eab9177721afb190ee2283ff4a4aef0e17e859645bc66ca6b50cb3cf84113",
       "feature_count": 134448,
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2Flogan.geojson?alt=media",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Flogan.geojson?alt=media",
       "local_file": "logan.geojson",
-      "updated_at": "2026-05-22T00:00:00Z"
+      "updated_at": "2026-06-18T01:00:12Z"
     },
     "toowoomba": {
-      "version": "2026-05-22",
-      "sha256": "48bb556cddf20a5aaf44aaa9bc8743faa72f518d2dbb0464ca4169ab4f94f644",
+      "version": "2026-06-18",
+      "sha256": "b59e5c0d4200c897d00e4015cad3721bdec3e9b71842bcc7b3dd02eb9d127cb1",
       "feature_count": 48000,
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2Ftoowoomba.geojson?alt=media",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Ftoowoomba.geojson?alt=media",
       "local_file": "toowoomba.geojson",
-      "updated_at": "2026-05-22T00:00:00Z"
+      "updated_at": "2026-06-18T01:00:12Z"
     },
     "tewantin": {
-      "version": "2026-04-28",
-      "sha256": "0eeab2640e4259f3b571cb9c9f1ad294431c5a05a3b72af9fdfa367f9aa0f14a",
+      "version": "2026-06-17",
+      "sha256": "f77c3977c03bcf0044ca9040aab3e348b7fa345944702e20cc87b6aae92590a4",
       "feature_count": 1,
-      "source_url": "https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/tewantin.geojson",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Ftewantin.geojson?alt=media",
       "local_file": "tewantin.geojson",
-      "updated_at": "2026-04-28T18:38:37Z"
+      "updated_at": "2026-06-17T00:03:06Z"
     },
     "nsw_2026": {
-      "version": "2026-04-28",
-      "sha256": "75fcd0ad9319051412d7f87a83d52fd823a60d561ae13a5bd9cc923e4e2ea492",
-      "feature_count": 7629,
-      "source_url": "https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/nsw_2026.geojson",
+      "version": "2026-06-17",
+      "sha256": "31520bc9c777137624f6e1df3cf747da5f876129f8fcb9aee966fbd6ae16e452",
+      "feature_count": 31041,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FNSW%2Fnsw_2026.geojson?alt=media",
       "local_file": "nsw_2026.geojson",
-      "updated_at": "2026-04-28T18:38:37Z"
+      "updated_at": "2026-06-17T00:03:06Z"
     },
     "tnsw": {
-      "version": "2026-04-28",
-      "sha256": "957d6ba728271ca1e189389ccef3a6dda5c2e93b1aa99339729e70950602fead",
+      "version": "2026-06-17",
+      "sha256": "eb0baebbf7fe9e05fa860744f608bfc496bd35e501fe74ce9a27e533c9bd8350",
       "feature_count": 1783,
-      "source_url": "https://media.githubusercontent.com/media/cromptonconcepts/Cromton-Traffic-Impact-Asssessment/main/TNSW.geojson",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FNSW%2Ftnsw.geojson?alt=media",
       "local_file": "tnsw.geojson",
-      "updated_at": "2026-04-28T18:38:38Z"
+      "updated_at": "2026-06-17T00:03:06Z"
+    },
+    "sa": {
+      "version": "2026-06-18",
+      "sha256": "60e7656fd5ccb01c54ccd991da55d2a26ee8d0bb5099ec46a7f43625f90d5840",
+      "feature_count": 2720,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FSA%2Fsa.geojson?alt=media",
+      "local_file": "sa.geojson",
+      "updated_at": "2026-06-18T01:00:12Z"
+    },
+    "qld_census": {
+      "version": "2026-06-18",
+      "sha256": "5a1df6b13d0cbdfb6fd5182cafa216ff027f897d19a1661a7ff2b6b6960076b3",
+      "feature_count": 2411,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fqld_census.geojson?alt=media",
+      "local_file": "datasets/QLD/qld_census.geojson",
+      "updated_at": "2026-06-18T01:15:25Z"
+    },
+    "vic": {
+      "version": "2026-06-18",
+      "sha256": "63f2cb76e6981e4e3bfa455e995927ffdb92fabfac2187755eff520aa2d7e1b1",
+      "feature_count": 72990,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FVIC%2Fvic.geojson?alt=media",
+      "local_file": "datasets/VIC/vic.geojson",
+      "updated_at": "2026-06-18T00:49:57Z"
+    },
+    "wa": {
+      "version": "2026-06-18",
+      "sha256": "ba8cc449d1e4302fb141d30ff8abe9c6d62037b93c4cc5d5a2c13840fc008acf",
+      "feature_count": 2936,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FWA%2Fwa.geojson?alt=media",
+      "local_file": "datasets/WA/wa.geojson",
+      "updated_at": "2026-06-18T00:49:57Z"
+    },
+    "tas": {
+      "version": "2026-06-17",
+      "sha256": "188f1ef658fc0c40814f9eabd01941fc958f1907c94c6f53ad35f2e287630f26",
+      "feature_count": 523,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FTAS%2Ftas.geojson?alt=media",
+      "local_file": "datasets/TAS/tas.geojson",
+      "updated_at": "2026-06-17T00:03:06Z"
+    },
+    "tnsw_base": {
+      "local_file": "nsw.geojson",
+      "sha256": "35c28dc9b5875faa90cfb004eff2f2d6dc8d4abe7ec5c3014cbfc55cc0e3ad80",
+      "feature_count": 1783,
+      "version": "2026-06-17",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FNSW%2Fnsw.geojson?alt=media",
+      "updated_at": "2026-06-17T00:03:06Z"
+    },
+    "nt": {
+      "version": "2026-06-17",
+      "sha256": "13baef4282d2562b1dcb00442a79c6d3f9fd9fcdd2e8533caf1369455a356212",
+      "feature_count": 256,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FNT%2Fnt.geojson?alt=media",
+      "local_file": "datasets/NT/nt.geojson",
+      "updated_at": "2026-06-17T00:03:06Z"
     }
   }
 }

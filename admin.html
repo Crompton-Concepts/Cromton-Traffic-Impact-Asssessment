@@ -196,6 +196,7 @@
       <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
       <button class="btn" id="migrateAuthBtn" style="background:#fff7ed;color:#9a3412;border:1px solid #fdba74;" onclick="migrateAllUsersToFirebaseAuth()">Migrate Users to Auth + Reset</button>
       <button class="btn" id="stripHashBtn" style="background:#fdf4ff;color:#6b21a8;border:1px solid #d8b4fe;" onclick="stripPasswordHashes()">Strip Legacy Password Hashes</button>
+      <button class="btn" id="reconcileBtn" style="background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;" onclick="reconcileFromAuth()">Recover Missing Users from Auth</button>
       <button class="btn" id="syncBtn" style="background:#e0f2f1;color:#1f5e63;border:1px solid #b2dfdb;" onclick="manualSync()">&#8635; Sync from Cloud</button>
       <button class="btn" style="background:#f3f4f6;color:#374151;" onclick="exportCSV()">Export CSV</button>
     </div>
@@ -368,7 +369,23 @@
   }
 
   function initAdminAuthWatch() {
-    // Session is managed via sessionStorage — no Firebase Auth required.
+    // Restoring the admin view requires BOTH the session flag AND a live
+    // Firebase Auth session. This prevents the previous bypass where setting
+    // sessionStorage[ADMIN_SESSION]='true' from the console revealed the
+    // admin UI without any credential. Only fall back to the flag alone when
+    // Firebase Auth is genuinely unavailable.
+    const auth = getFirebaseAuth();
+    if (auth) {
+      auth.onAuthStateChanged((user) => {
+        if (user && sessionStorage.getItem(ADMIN_SESSION) === 'true') {
+          showApp();
+        } else if (!user) {
+          // No verified Firebase session — ignore any stale session flag.
+          sessionStorage.removeItem(ADMIN_SESSION);
+        }
+      });
+      return;
+    }
     if (sessionStorage.getItem(ADMIN_SESSION) === 'true') {
       showApp();
     }
@@ -397,12 +414,10 @@
     const found = Object.values(db).find(u =>
       u.username.toLowerCase() === identifier || (u.email && u.email.toLowerCase() === identifier)
     );
-    const email = found ? found.email : (identifier.includes('@') ? identifier : null);
-
-    if (!email) {
-      errEl.textContent = 'No email found for that account.';
-      return;
-    }
+    // Only act on a known account. Never fabricate an email from arbitrary
+    // input, and never create a Firebase Auth account here — doing so let
+    // anyone provision accounts for any address.
+    const email = found && found.email ? found.email : null;
 
     const auth = getFirebaseAuth();
     if (!auth) {
@@ -410,19 +425,14 @@
       return;
     }
 
-    try {
-      // Ensure the user exists in Firebase Auth before sending reset email
-      const tempPw = 'Temp!' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-      await auth.createUserWithEmailAndPassword(email, tempPw);
-      await auth.signOut();
-    } catch (_) {}
-
-    try {
-      await auth.sendPasswordResetEmail(email);
-      msgEl.textContent = 'Reset link sent to ' + email + '. Please check inbox/spam.';
-    } catch (error) {
-      errEl.textContent = 'Could not send reset link: ' + error.message;
+    // Neutral confirmation regardless of whether the account exists, to avoid
+    // leaking which usernames/emails are registered (account enumeration).
+    if (email) {
+      try {
+        await auth.sendPasswordResetEmail(email);
+      } catch (_) {}
     }
+    msgEl.textContent = 'If that account exists, a reset link has been sent. Please check inbox/spam.';
   }
 
   async function migrateAllUsersToFirebaseAuth() {
@@ -676,6 +686,69 @@
       renderTable();
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Strip Legacy Password Hashes'; }
+    }
+  }
+
+  // Reconcile tia_users against Firebase Auth: scan every Auth user via the
+  // reconcileAuthUsers cloud function and write a stub for anyone missing
+  // from RTDB. Use after the old pushAll-clobber bug to recover lost signups.
+  async function reconcileFromAuth() {
+    const proceed = confirm(
+      'Scan Firebase Authentication and recreate any tia_users records that ' +
+      'are missing?\n\n' +
+      'This is idempotent — accounts already in the admin list are left alone. ' +
+      'New stubs are created with tier "free" and tagged provisionedFromAuth.'
+    );
+    if (!proceed) return;
+
+    const btn = document.getElementById('reconcileBtn');
+    const originalLabel = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Reconciling…'; }
+
+    try {
+      if (!window.firebase || !firebase.apps.length) {
+        throw new Error('Firebase not ready. Refresh and try again.');
+      }
+      const currentUser = firebase.auth().currentUser;
+      if (!currentUser) {
+        throw new Error('Sign in to Firebase Auth first (admin login).');
+      }
+      const idToken = await currentUser.getIdToken(true);
+      const resp = await fetch('/api/reconcile-auth-users', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + idToken,
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error((data && data.error) || ('HTTP ' + resp.status));
+      }
+      const scanned = (data && data.scanned)   || 0;
+      const created = (data && data.created)   || [];
+      const skipped = (data && data.skipped)   || [];
+
+      if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
+        try { await TIASync.pullAll(); } catch (_) {}
+      }
+      renderStats();
+      renderTable();
+
+      const summary = `Reconcile complete — scanned ${scanned} Auth user${scanned === 1 ? '' : 's'}, ` +
+        `recovered ${created.length}` +
+        (skipped.length ? `, skipped ${skipped.length} (no email)` : '') + '.';
+      showToast(summary);
+      if (created.length) {
+        console.info('[Admin] Reconciled users:', created);
+      }
+    } catch (err) {
+      console.error('[Admin] reconcileFromAuth failed:', err);
+      const msg = (err && err.message) ? err.message : 'Unknown error';
+      showToast('Reconcile failed: ' + msg);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = originalLabel || 'Recover Missing Users from Auth'; }
     }
   }
 

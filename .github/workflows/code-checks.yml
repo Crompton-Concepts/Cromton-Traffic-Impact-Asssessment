@@ -1,0 +1,62 @@
+name: Code Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: JavaScript syntax check
+        run: |
+          node --check app.js
+          node --check functions/index.js
+          node --check user-sync.js
+          node --check tia-shared-sync.js
+          node --check formula-agent.js
+
+      - name: Python syntax check
+        run: |
+          python -m py_compile report_service.py
+          python -m py_compile $(git ls-files 'scripts/*.py')
+          python -m py_compile enrich_nsw_hv.py enrich_qld_hv.py enrich_sa_roadnames.py upload_to_firebase.py upload_enriched.py
+
+      - name: Calculation library tests
+        run: node --test calc/tia-calc.test.js
+
+      - name: Firebase rules JSON valid
+        run: python -c "import json; json.load(open('database.rules.json'))"
+
+      - name: HTML variants in sync with index.html
+        run: |
+          python scripts/build_html_variants.py
+          if ! git diff --quiet -- index_developer.html index_formulas.html; then
+            echo "::error::index_developer.html / index_formulas.html are out of sync with index.html."
+            echo "Edit index.html only, then run: python scripts/build_html_variants.py"
+            git --no-pager diff --stat -- index_developer.html index_formulas.html
+            exit 1
+          fi
+          echo "HTML variants are in sync."
+
+      - name: npm audit (functions, high+)
+        working-directory: functions
+        run: npm audit --audit-level=high || true

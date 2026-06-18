@@ -1,0 +1,99 @@
+{
+  "generated_at": "2026-06-17T04:41:33Z",
+  "sources": {
+    "nsw_2026": {
+      "signal": {
+        "last_modified": "2026-06-16",
+        "package_modified": "2026-06-16",
+        "count": 6
+      },
+      "last_checked": "2026-06-17T04:41:23Z"
+    },
+    "goldcoast": {
+      "signal": {
+        "count": 5331,
+        "last_edit": "2026-06-14"
+      },
+      "last_checked": "2026-06-17T04:41:24Z"
+    },
+    "logan": {
+      "signal": {
+        "count": 2801,
+        "last_edit": "2025-05-15"
+      },
+      "last_checked": "2026-06-17T04:41:25Z"
+    },
+    "ipswich": {
+      "signal": {
+        "count": 1640
+      },
+      "last_checked": "2026-06-17T04:41:25Z"
+    },
+    "toowoomba": {
+      "signal": {
+        "count": 10313
+      },
+      "last_checked": "2026-06-17T04:41:25Z"
+    },
+    "tmr": {
+      "signal": {
+        "last_modified": "2026-06-03",
+        "package_modified": "2026-06-02",
+        "count": 17
+      },
+      "last_checked": "2026-06-17T04:41:25Z"
+    },
+    "qld_census": {
+      "signal": {
+        "last_modified": "2026-06-03",
+        "package_modified": "2026-06-02",
+        "count": 20
+      },
+      "last_checked": "2026-06-17T04:41:26Z"
+    },
+    "sa": {
+      "signal": {
+        "last_modified": "Sat, 06 Jun 2026 21:35:16 GMT",
+        "size": "5128040"
+      },
+      "last_checked": "2026-06-17T04:41:26Z"
+    },
+    "act": {
+      "signal": {
+        "last_modified": "2023-12-20",
+        "count": 20
+      },
+      "last_checked": "2026-06-17T04:41:33Z"
+    },
+    "vic": {
+      "signal": {
+        "count": 74711,
+        "last_edit": "2026-01-09"
+      },
+      "last_checked": "2026-06-17T04:41:26Z"
+    },
+    "wa": {
+      "signal": {
+        "last_modified": "2026-03-06",
+        "package_modified": "2026-03-06",
+        "count": 8
+      },
+      "last_checked": "2026-06-17T04:41:27Z"
+    },
+    "nt": {
+      "signal": {
+        "last_modified": "2024-08-25",
+        "package_modified": "2024-08-27",
+        "count": 19
+      },
+      "last_checked": "2026-06-17T04:41:29Z"
+    },
+    "tas": {
+      "signal": {
+        "count": 15012,
+        "last_edit": "2026-06-16"
+      },
+      "last_checked": "2026-06-17T04:41:31Z"
+    }
+  }
+}

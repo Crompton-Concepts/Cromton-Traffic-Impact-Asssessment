@@ -66,3 +66,16 @@ Thumbs.db
 
 [Dd]esktop.ini
 **/[Dd]esktop.ini
+
+# --- Large datasets & build artifacts (canonical copies live in Firebase Storage) ---
+# The 382 MB of dataset geojsons are served from Firebase Storage (source of
+# truth) and rebuilt via scripts/update_all_data.py; keeping them out of git
+# keeps the repo lean and always-pushable. dataset_manifest.json IS tracked.
+datasets/**/*.geojson
+datasets/**/2024_update/
+datasets/**/2025_update/
+datasets/**/council_counts/
+*.bak
+*.zip
+Syncing/
+outputs/

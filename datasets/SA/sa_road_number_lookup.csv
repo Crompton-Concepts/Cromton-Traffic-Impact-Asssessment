@@ -1,0 +1,797 @@
+road_number,road_name,hierarchy,route_num,distinct_names
+01000,"Stuart Highway",Highway,A87,1
+01100,"The Outback Highway",Sub-arterial,B83,2
+01503,"Olympic Dam Highway",Arterial,B97,1
+01506,"Andamooka Road",Sub-arterial,,2
+02000,"Eyre Highway",Highway,A1,6
+02011,"Mckenzie Street",Sub-arterial,,1
+02200,"Flinders Highway",Arterial,B100,4
+02203,"Streaky Bay Road",Sub-arterial,,1
+02206,"Elliston Stock Route",Sub-arterial,,3
+02400,"Tod Highway",Arterial,B90,4
+02406,"Birdseye Highway",Arterial,B91,2
+02409,"Birdseye Highway",Arterial,B91,4
+02412,"Bratten Way",Sub-arterial,,2
+02413,"Bratten Road",Sub-arterial,,2
+02415,"Western Approach Road",Arterial,B100,4
+02418,"New West Road",Sub-arterial,,2
+02421,"Tasman Terrace",Sub-arterial,,2
+02427,"London Street",Sub-arterial,,1
+02430,"Mortlock Terrace",Sub-arterial,,2
+02600,"Lincoln Highway",Arterial,B100,6
+02603,"Arno Bay Road",Sub-arterial,,2
+02606,"Cleve Road",Sub-arterial,,2
+02609,"Cowell-kimba Road",Sub-arterial,,3
+02800,"Cowell-kimba Road",Sub-arterial,,2
+02803,"Iron Knob Road",Sub-arterial,,4
+02806,"Norrie Avenue",Sub-arterial,,2
+02809,"Nicolson Avenue",Sub-arterial,,2
+02812,"Jenkins Avenue",Sub-arterial,,1
+02815,"Mcbryde Terrace",Sub-arterial,,1
+02818,"Whitehead Street",Sub-arterial,,1
+02821,"Darling Terrace",Sub-arterial,,1
+02824,"Broadbent Terrace",Sub-arterial,,1
+03000,"R M Williams Way",Arterial,B80,3
+03003,"Horrocks Highway",Arterial,B82,2
+03006,"Flinders Ranges Way",Arterial,B83,4
+03160,"Horrocks Highway",Arterial,B82,12
+03163,"Willowie Road",Arterial,B56,6
+03320,"Germein Gorge Road",Sub-arterial,,1
+03323,"Price Maurice Road",Sub-arterial,,5
+03326,"Appila Road",Sub-arterial,,3
+03329,"R M Williams Way",Arterial,B80,6
+03332,"Beniah Road",Arterial,B79,4
+03335,"Cleary Road",Sub-arterial,,3
+03400,"Barrier Highway",Highway,A32,16
+03480,"Spencer Highway",Arterial,B89,2
+03483,"Warnertown Road",Arterial,B89,1
+03486,"Spencer Highway",Arterial,B89,2
+03492,"Wilkins Highway",Arterial,B79,4
+03497,"Goyder Highway",Arterial,B64,5
+03498,"Goyder Highway",Arterial,B64,2
+03500,"Augusta Highway",Highway,A1,5
+03501,"Clements Road",Arterial,,1
+03510,"Port Wakefield Ramp To Kadina",Arterial,B85,1
+03580,"Wilkins Highway",Arterial,B78,3
+03583,"Goyder Highway",Arterial,B64,2
+03680,"Spencer Highway",Arterial,B89,7
+03683,"Upper Yorke Road",Sub-arterial,,2
+03685,"Main Road",Sub-arterial,,9
+03686,"Rail Corridor Road",Sub-arterial,,2
+03689,"Stone Cutter Road",Sub-arterial,,2
+03692,"Goyder Highway",Arterial,B64,2
+03840,"Bute Road",Sub-arterial,,3
+03843,"Upper Yorke Road",Sub-arterial,,1
+03846,"Barunga Gap Road",Sub-arterial,,1
+03849,"Condowie Plain Road",Sub-arterial,,2
+03855,"Blyth Road",Sub-arterial,,2
+03858,"Blyth Plains Road",Sub-arterial,,1
+03861,"Farrell Flat Road",Sub-arterial,,1
+03864,"Saddleworth Road",Arterial,B84,3
+03867,"Curio Highway",Arterial,B84,6
+03870,"Worlds End Highway",Sub-arterial,,4
+03873,"Thiele Highway",Arterial,B81,6
+03876,"Eudunda Road",Sub-arterial,,1
+04000,"Yorke Highway",Arterial,B86,2
+04002,"Marion Bay Road",Sub-arterial,,1
+04003,"St Vincent Highway",Sub-arterial,B88,7
+04004,"St Vincent Highway",Arterial,B88,4
+04006,"St Vincent Highway",Arterial,B88,4
+04009,"St Vincent Highway",Arterial,B86,4
+04012,"Yorke Highway",Arterial,B86,3
+04015,"Spencer Highway",Sub-arterial,B86,8
+04016,"Upper Yorke Road",Sub-arterial,B89,6
+04018,"Minlaton Road",Sub-arterial,,2
+04021,"Port Vincent Road",Sub-arterial,,5
+04025,"Wauraltee Road",Sub-arterial,,2
+04027,"Yorke Highway",Arterial,B86,2
+04120,"Port Victoria Road",Sub-arterial,,1
+04123,"Maitland Road",Sub-arterial,,4
+04126,"Mines Road",Sub-arterial,B89,3
+04127,"Spencer Highway",Sub-arterial,B89,4
+04138,"Spencer Highway",Sub-arterial,B89,2
+04141,"Copper Coast Highway",Arterial,B85,8
+04144,"East Terrace",Sub-arterial,,1
+04156,"Hughes Street",Arterial,B85-B89,2
+04159,"Spencer Highway",Arterial,B89,3
+04238,"Owen Road",Sub-arterial,,3
+04240,"Traeger Road",Sub-arterial,,5
+04243,"Balaklava Road",Arterial,B84,3
+04249,"Marrabel Road",Sub-arterial,,2
+04252,"Tarlee Road",Sub-arterial,,3
+04360,"Thiele Highway",Arterial,B81,3
+04363,"Truro Road",Sub-arterial,,1
+04366,"Greenock Road",Sub-arterial,,3
+04372,"Hanson Street",Sub-arterial,,3
+04373,"Daveyston Road",Sub-arterial,,1
+04375,"Mudla Wirra Road",Sub-arterial,,1
+04378,"Mallala Road",Sub-arterial,B77,2
+04381,"Redbanks Road",Sub-arterial,,1
+04384,"Barossa Valley Way",Arterial,B19,4
+04387,"Angaston Road",Arterial,B10,3
+04390,"Two Wells Road",Sub-arterial,B77,2
+04391,"Ryde Street",Sub-arterial,B77,1
+04392,"Gawler North Ramp To Nuriootpa",Highway,,1
+04393,"Gawler North Ramp From Nuriootpa",Highway,,1
+04394,"Gawler North Ramp To Adelaide",Highway,,1
+04395,"Gawler North Ramp From Adelaide",Highway,,1
+04396,"Main North Road",Sub-arterial,,1
+04399,"Murray Street",Arterial,B19,1
+04400,"Redbanks Ramp Road",Sub-arterial,,1
+04401,"Willaston Ramp From Adelaide",Sub-arterial,,1
+04402,"Twelfth Street",Sub-arterial,B77,1
+04403,"Weyland Road",Sub-arterial,,1
+04404,"Weyland Road",Sub-arterial,,1
+04405,"Adelaide Road",Arterial,B19,3
+04408,"Fifteenth Street",Sub-arterial,B77,2
+04411,"Gawler West Ramp From Nuriootpa",Sub-arterial,,1
+04418,"Gawler South Ramp From Adelaide",Arterial,B19,1
+04419,"Gawler South Ramp To Adelaide",Arterial,B19,1
+04423,"Williamstown Road",Sub-arterial,,1
+04480,"Eden Valley Road",Arterial,B10,6
+04483,"South Para Road",Arterial,B31,5
+04486,"Warren Road",Arterial,B34,2
+04487,"Cricks Mill Road",Arterial,B35,2
+04489,"North East Road",Arterial,B10,9
+04490,"Terlinga Road",Sub-arterial,,1
+04492,"Tippett Road",Arterial,B31,1
+04495,"Onkaparinga Valley Road",Arterial,B34,3
+04496,"Kenton Valley Road",Sub-arterial,,3
+04498,"Cudlee Creek Road",Sub-arterial,,2
+04500,"South Eastern Freeway",Highway,M1,2
+04504,"Verdun Ramp To Adelaide",Arterial,,1
+04505,"Verdun Ramp From Adelaide",Arterial,,1
+04507,"Woodside Road",Sub-arterial,,1
+04510,"Nairne Road",Sub-arterial,,1
+04513,"Nairne Road",Sub-arterial,,2
+04514,"Mount Osmond Interchange Road",Sub-arterial,,1
+04515,"Old Princes Highway",Sub-arterial,B34,2
+04516,"Echunga Road",Arterial,B34,2
+04521,"Crafers Ramp From Adelaide",Sub-arterial,,1
+04522,"Crafers Ramp To Swanport",Sub-arterial,,1
+04523,"Crafers Ramp From Swanport",Sub-arterial,,1
+04524,"Crafers Ramp To Adelaide",Sub-arterial,,1
+04531,"Stirling Ramp From Adelaide",Arterial,,1
+04532,"Stirling Ramp To Swanport",Arterial,B33,1
+04533,"Stirling Ramp From Swanport",Arterial,,1
+04534,"Stirling Ramp To Adelaide",Arterial,,1
+04541,"Bridgewater Ramp From Adelaide",Sub-arterial,,1
+04542,"Bridgewater Ramp To Swanport",Sub-arterial,,1
+04543,"Bridgewater Ramp From Swanport",Sub-arterial,,1
+04544,"Bridgewater Ramp To Adelaide",Sub-arterial,,1
+04551,"Mount Barker Ramp From Adelaide",Arterial,,1
+04552,"Mount Barker Ramp To Swanport",Arterial,,1
+04553,"Mount Barker Ramp From Swanport",Arterial,,1
+04554,"Mount Barker Ramp To Adelaide",Arterial,,1
+04561,"Callington Ramp From Adelaide",Sub-arterial,,1
+04562,"Callington Ramp To Swanport",Sub-arterial,,1
+04563,"Callington Ramp From Swanport",Sub-arterial,,1
+04564,"Callington Ramp To Adelaide",Sub-arterial,,1
+04571,"Adelaide Road",Arterial,,1
+04572,"Adelaide Road",Arterial,,1
+04581,"Swanport Ramp From Adelaide",Arterial,,1
+04582,"Swanport Ramp To Tailem Bend",Arterial,,1
+04585,"Mount Osmond Ramp From Adelaide",Sub-arterial,,1
+04586,"Mount Osmond Ramp To Swanport",Sub-arterial,,1
+04587,"Mount Osmond Ramp From Swanport",Sub-arterial,,1
+04588,"Mount Osmond Ramp To Adelaide",Sub-arterial,,1
+04589,"Mount Barker Road",Sub-arterial,,1
+04590,"Mount Barker Road",Sub-arterial,,1
+04591,"Measdays Ramp To Swanport",Sub-arterial,,1
+04592,"Measdays Ramp From Swanport",Sub-arterial,,1
+04600,"Black Road",Sub-arterial,,1
+04601,"Flagstaff Road",Sub-arterial,A14,2
+04603,"Happy Valley Drive",Sub-arterial,,1
+04604,"Manning Road",Sub-arterial,,1
+04606,"Chandlers Hill Road",Sub-arterial,,1
+04607,"Sugarloaf Road",Sub-arterial,,1
+04609,"Kenihans Road",Sub-arterial,,1
+04615,"Grants Gully Road",Sub-arterial,,1
+04621,"Mclaren Flat Road",Sub-arterial,,3
+04640,"Bull Creek Road",Sub-arterial,B29,10
+04643,"Strathalbyn Road",Arterial,B33,6
+04646,"Adelaide Road",Arterial,B37,3
+04649,"East Terrace",Arterial,B37,1
+04652,"Callington Road",Sub-arterial,B37,5
+04655,"Battunga Road",Arterial,B34,1
+04658,"Kondoparinga Road",Sub-arterial,,1
+04661,"Macclesfield Road",Sub-arterial,,2
+04664,"Brookman Road",Arterial,B34,1
+04665,"Woodgate Hill Road",Arterial,B34,1
+04667,"Wickham Hill Road",Sub-arterial,,1
+04670,"Ashbourne Road",Sub-arterial,,1
+04673,"Paris Creek Road",Sub-arterial,,3
+04679,"Milang Road",Sub-arterial,,2
+04682,"Langhorne Creek Road",Arterial,B45,3
+04685,"Goolwa Road",Sub-arterial,,1
+04688,"Port Elliot Road",Arterial,B37,4
+04691,"Airport Road",Sub-arterial,,2
+04760,"Victor Harbor Road",Highway,A13,4
+04763,"Main South Road",Arterial,B23,3
+04766,"Main Road",Sub-arterial,,1
+04769,"Tatachilla Road",Sub-arterial,A15,2
+04778,"Port Road",Sub-arterial,,1
+04781,"Aldinga Road",Sub-arterial,,1
+04782,"Willunga Ramp From Adelaide",Sub-arterial,,1
+04783,"Willunga Ramp To Victor Harbor",Sub-arterial,,1
+04784,"Aldinga Beach Road",Sub-arterial,,1
+04785,"Willunga Ramp To Adelaide",Sub-arterial,,1
+04786,"Willunga Ramp To Willunga",Sub-arterial,,1
+04787,"Pages Flat Road",Arterial,B34,1
+04790,"Hindmarsh Tiers Road",Sub-arterial,,1
+04793,"Inman Valley Road",Sub-arterial,B37,4
+04879,"Playford Highway",Sub-arterial,,1
+04880,"Playford Highway",Sub-arterial,B23,3
+04881,"West End Highway",Sub-arterial,,1
+04882,"South Coast Road",Sub-arterial,,3
+04883,"Hog Bay Road",Arterial,B23,3
+04884,"Middle Terrace",Arterial,,1
+04886,"American River Road",Sub-arterial,,3
+05000,"Angle Vale Road",Sub-arterial,,2
+05003,"Gawler Road",Sub-arterial,,1
+05006,"Heaslip Road",Sub-arterial,,1
+05009,"Andrews Road",Sub-arterial,,1
+05010,"Curtis Road",Sub-arterial,,1
+05012,"Dalkeith Road",Sub-arterial,,1
+05015,"Gawler-one Tree Hill Road",Sub-arterial,,4
+05018,"Womma Road",Sub-arterial,,2
+05021,"Penfield Road",Sub-arterial,,1
+05027,"Peachey Road",Sub-arterial,,3
+05030,"Elizabeth Way",Sub-arterial,,2
+05033,"Midway Road",Sub-arterial,,1
+05036,"Yorktown Road",Sub-arterial,,3
+05039,"Black Top Road",Sub-arterial,,1
+05042,"One Tree Hill Road",Sub-arterial,,1
+05045,"Philip Highway",Sub-arterial,,1
+05048,"John Rice Avenue",Arterial,A9,1
+05051,"Gawler Street",Sub-arterial,,1
+05054,"Commercial Road",Sub-arterial,,1
+05057,"Commercial Road",Sub-arterial,,1
+05060,"Bagster Road",Sub-arterial,,1
+05063,"Waterloo Corner Road",Sub-arterial,,3
+05066,"Bolivar Road",Sub-arterial,A18,1
+05200,"Golden Grove Road",Sub-arterial,,1
+05201,"The Grove Way",Sub-arterial,A11,2
+05202,"The Golden Way",Sub-arterial,,1
+05204,"Grenfell Road",Sub-arterial,,1
+05206,"Hancock Road",Sub-arterial,A11,1
+05209,"Range Road South",Sub-arterial,,1
+05212,"Reservoir Road",Sub-arterial,,1
+05215,"Smart Road",Sub-arterial,,1
+05218,"Grand Junction Road",Arterial,A16,1
+05221,"Lower North East Road",Arterial,A11,3
+05224,"Torrens Hill Road",Sub-arterial,,1
+05227,"Awoonga Road",Sub-arterial,,1
+05230,"Lyons Road",Sub-arterial,,1
+05232,"Lower North East Road",Arterial,A16,1
+05300,"Northern Expressway",Highway,M2,2
+05320,"Port Wakefield Road Ramp From Nuriootpa Ramp",,,1
+05330,"Northern Expressway",,M2,1
+05340,"Northern Expressway",,M2,1
+05400,"Bridge Road",Sub-arterial,,2
+05402,"Elder Smith Road",Sub-arterial,,1
+05403,"Kings Road",Arterial,A18,1
+05404,"Nelson Road",Sub-arterial,,1
+05405,"Mcintyre Road",Arterial,A18,1
+05406,"Salisbury Highway",Arterial,A9,1
+05407,"Dry Creek Ramp From Wingfield",Highway,A9,1
+05408,"Dry Creek Ramp To Salisbury",Highway,,1
+05409,"Montague Road",Sub-arterial,,1
+05410,"Dry Creek Ramp From Salisbury",Highway,,1
+05411,"Dry Creek Ramp To Wingfield",Highway,A9,1
+05412,"Walkleys Road",Sub-arterial,,1
+05415,"Diagonal Road",Sub-arterial,,1
+05417,"Churchill Road North",Sub-arterial,,1
+05418,"Cavan Road",Arterial,A22,1
+05419,"Cormack Road",Sub-arterial,,1
+05420,"Kapara Road",Sub-arterial,,2
+05421,"Eastern Parade",Sub-arterial,,1
+05422,"Francis Street",Sub-arterial,,1
+05423,"Gillman Ramp To Salisbury",Sub-arterial,,1
+05424,"Port River Expressway",,A9,2
+05425,"Gillman Ramp From Salisbury",Sub-arterial,,1
+05426,"Francis Street",Sub-arterial,,1
+05427,"Ocean Steamers Road",Sub-arterial,,1
+05430,"St Vincent Street",Sub-arterial,,2
+05432,"Perkins Drive",Sub-arterial,,1
+05440,"Wingfield Ramp From Salisbury",Highway,,1
+05441,"Wingfield Ramp To Port Adelaide",Arterial,,1
+05600,"Fosters Road",Sub-arterial,,1
+05603,"Hampstead Road",Arterial,A17,1
+05606,"Muller Road",Sub-arterial,,1
+05609,"O G Road",Sub-arterial,,1
+05610,"Main North Road",Sub-arterial,A1,5
+05612,"Regency Road",Sub-arterial,,1
+05615,"Northcote Terrace",Arterial,A10,1
+05616,"Melbourne Street",Sub-arterial,,3
+05618,"Nottage Terrace",Sub-arterial,,1
+05624,"Park Terrace",Arterial,R1,2
+05627,"Prospect Road",Sub-arterial,,1
+05630,"Morphett Street",Sub-arterial,,7
+05631,"Morphett Street Access To North Terrace",Sub-arterial,,1
+05632,"Morphett Street Access From North Terrace",Sub-arterial,,1
+05633,"Churchill Road",Arterial,A22,1
+05636,"Days Road",Sub-arterial,,1
+05639,"Torrens Road",Sub-arterial,A22,1
+05642,"David Terrace",Sub-arterial,,2
+05644,"Hanson Road",Sub-arterial,,1
+05645,"Hanson Road",Sub-arterial,,1
+05648,"Port Road",Arterial,A7,2
+05651,"Woodville Road",Sub-arterial,,1
+05654,"Addison Road",Sub-arterial,,4
+05674,"Hanson Ramp From Salisbury",Sub-arterial,,1
+05675,"Hanson Ramp To Port Adelaide",Sub-arterial,,1
+05800,"Victoria Road",Arterial,A16,2
+05803,"Lady Gowrie Drive",Sub-arterial,,2
+05806,"Strathfield Terrace",Sub-arterial,,1
+05809,"Fletcher Road",Sub-arterial,,1
+05812,"Woolnough Road",Sub-arterial,,1
+05815,"Semaphore Road",Arterial,A16,1
+05818,"Causeway Road",Arterial,A16,1
+05821,"Hart Street",Sub-arterial,,2
+05824,"Old Port Road",Sub-arterial,A16,2
+05827,"Military Road",Sub-arterial,,1
+05830,"Frederick Road",Sub-arterial,,1
+05833,"Tapleys Hill Road",Arterial,A15,1
+05836,"West Lakes Boulevard",Sub-arterial,,1
+05842,"Trimmer Parade",Sub-arterial,,1
+05845,"Findon Road",Sub-arterial,,2
+05848,"Crittenden Road",Sub-arterial,,1
+05851,"Grange Road",Sub-arterial,A14,2
+05854,"East Avenue",Arterial,A14,1
+05857,"Adam Street",Sub-arterial,R1,1
+05860,"Holbrooks Road",Arterial,A14,1
+05863,"Seaview Road",Sub-arterial,,1
+05865,"Nelson Street",Sub-arterial,A16,1
+06000,"Gorge Road",Arterial,B31,1
+06002,"Corkscrew Road",Sub-arterial,,1
+06003,"Marble Hill Road",Sub-arterial,,1
+06006,"Stradbroke Road",Sub-arterial,,1
+06009,"Montacute Road",Sub-arterial,,1
+06012,"Darley Road",Sub-arterial,,5
+06015,"Glynburn Road",Sub-arterial,,1
+06018,"Magill Road",Sub-arterial,B27,1
+06021,"Lobethal Road",Sub-arterial,B27,5
+06024,"Kensington Road",Sub-arterial,,1
+06027,"The Parade",Sub-arterial,,1
+06030,"Hallett Road",Sub-arterial,,1
+06033,"Portrush Road",Arterial,A17,4
+06039,"Greenhill Road",Sub-arterial,B26,1
+06122,"Waymouth Street",Sub-arterial,,1
+06140,"Stephen Terrace",Sub-arterial,,3
+06143,"Hackney Road",Arterial,R1,6
+06146,"Fullarton Road",Arterial,R1,1
+06149,"Rundle Road",Sub-arterial,,2
+06150,"East Terrace",Sub-arterial,,3
+06152,"Frome Road",Sub-arterial,,2
+06155,"North Terrace",Sub-arterial,,2
+06158,"Grenfell Street",Sub-arterial,,2
+06161,"Grote Street",Sub-arterial,,5
+06164,"Hutt Street",Sub-arterial,,2
+06170,"Pulteney Street",Sub-arterial,,1
+06176,"West Terrace",Arterial,,1
+06180,"Glen Osmond Road",Arterial,A1,1
+06182,"South Terrace",Sub-arterial,,1
+06185,"Greenhill Road",Sub-arterial,B26,1
+06188,"George Street",Sub-arterial,,2
+06189,"Maud Street",Sub-arterial,,1
+06190,"Duthy Street",Sub-arterial,,1
+06191,"Unley Road",Sub-arterial,B29,2
+06194,"King William Road",Sub-arterial,,2
+06195,"Northgate Street",Sub-arterial,,1
+06196,"Victoria Avenue",Sub-arterial,,1
+06197,"Leader Street",Sub-arterial,,1
+06200,"Richmond Road",Sub-arterial,R1,1
+06202,"South Road",Highway,A2,1
+06203,"South Road",Highway,M2,3
+06204,"South Road",Highway,A2,2
+06205,"South Road",Highway,A2,2
+06206,"James Congdon Drive",Sub-arterial,R1,2
+06209,"Railway Terrace",Sub-arterial,,1
+06212,"Anzac Highway",Arterial,A5,2
+06213,"Jetty Road",Sub-arterial,,1
+06215,"Cross Road",Arterial,A3,1
+06221,"South Road",Highway,,1
+06222,"South Road",Highway,,1
+06223,"South Road",Highway,,1
+06224,"South Road",Highway,,1
+06231,"Gallipoli Ramp From North",Highway,,1
+06232,"Gallipoli Ramp To South",Highway,,1
+06233,"Gallipoli Ramp From South",Highway,,1
+06234,"Gallipoli Ramp To North",Highway,,1
+06300,"Carey Gully Road",Sub-arterial,,2
+06303,"Mount Lofty Summit Road",Sub-arterial,B28,2
+06306,"Longwood Road",Sub-arterial,,3
+06440,"Blythewood Road",Sub-arterial,,1
+06441,"Mclaren Street",Sub-arterial,,1
+06443,"Old Belair Road",Sub-arterial,B28,3
+06444,"Russell Street",Sub-arterial,,1
+06445,"James Road",Sub-arterial,B28,1
+06446,"Belair Road",Sub-arterial,B29,2
+06449,"Upper Sturt Road",Sub-arterial,B28,3
+06452,"Main Road",Sub-arterial,B29,1
+06455,"Hawthorndene Drive",Sub-arterial,,1
+06458,"Springbank Road",Sub-arterial,,1
+06460,"Southern Expressway Off Ramp To Ayliffes Road Ramp",Arterial,,1
+06461,"Goodwood Road",Sub-arterial,,3
+06464,"Daws Road",Sub-arterial,,2
+06467,"Shepherds Hill Road",Sub-arterial,,1
+06578,"Henley Beach Ramp From Adelaide Ramp",Sub-arterial,,1
+06580,"Henley Beach Road",Sub-arterial,A14,2
+06583,"Airport Road",Sub-arterial,,2
+06586,"Sir Donald Bradman Drive",Arterial,A6,2
+06589,"West Beach Road",Sub-arterial,,2
+06592,"Morphett Road",Sub-arterial,,1
+06598,"Mooringe Avenue",Sub-arterial,,1
+06601,"Marion Road",Arterial,A14,1
+06602,"Raglan Avenue",Sub-arterial,,2
+06604,"Brighton Road",Arterial,A15,4
+06607,"Diagonal Road",Sub-arterial,,1
+06608,"Diagonal Road",Sub-arterial,,1
+06610,"Sturt Road",Sub-arterial,,1
+06611,"Sturt Road",Sub-arterial,,1
+06613,"Seacombe Road",Sub-arterial,,1
+06720,"Majors Road",Sub-arterial,,1
+06723,"Sherriffs Road",Sub-arterial,,2
+06726,"Panalatinga Road",Highway,,1
+06729,"O'sullivan Beach Road",Sub-arterial,,1
+06732,"Flaxmill Road",Sub-arterial,,2
+06733,"Goldsmith Drive",Sub-arterial,,1
+06735,"Beach Road",Sub-arterial,,2
+06771,"Majors Road Ramp From Adeliade",Highway,,1
+06772,"Majors Road Ramp To Old Noarlunga",Highway,,1
+06773,"Majors Road Ramp From Old Noarlunga",Highway,,1
+06774,"Majors Road Ramp To Adelaide",Highway,,1
+06780,"Southern Expressway",,M2,1
+06781,"Marion Rd Ramp From Adelaide",Sub-arterial,,1
+06782,"Panalatinga Rd Ramp From Adelaide",Highway,,1
+06783,"Brodie Road",Sub-arterial,,2
+06784,"Brodie Road",Sub-arterial,,2
+06786,"Beach Rd Ramp To Adelaide",Sub-arterial,,1
+06787,"Beach Rd Ramp From Old Noarlunga",Sub-arterial,,1
+06791,"Marion Rd Ramp To Adelaide",Sub-arterial,,1
+06792,"Panalatinga Ramp To Adelaide",Highway,,1
+06793,"Sherriffs Rd Ramp From Adelaide",Sub-arterial,,1
+06794,"Sherriffs Rd Ramp From Old Noarlunga",Sub-arterial,,1
+06796,"Beach Rd Ramp From Adelaide",Sub-arterial,,1
+06797,"Beach Rd Ramp To Old Noarlunga",Sub-arterial,,1
+06860,"Murray Road",Arterial,A15,3
+06863,"River Road",Sub-arterial,,2
+06864,"River Rd Access Noarlunga",Sub-arterial,,1
+06866,"Commercial Road",Sub-arterial,A15,2
+06869,"Seaford Road",Sub-arterial,,1
+07000,"Ral Ral Avenue",Sub-arterial,,2
+07003,"Stanitzki Road",Sub-arterial,,1
+07009,"Morgan Road",Sub-arterial,,1
+07015,"Kingston Road",Sub-arterial,B55,4
+07018,"Bookpurnong Road",Arterial,B55,3
+07100,"Goyder Highway",Arterial,B64,2
+07149,"Cadell Valley Road",Sub-arterial,,5
+07152,"Lawrie Terrace",Sub-arterial,,3
+07158,"Ian Oliver Drive",Sub-arterial,,1
+07161,"Taylorville Road",Sub-arterial,,2
+07167,"Murbko Road",Sub-arterial,,1
+07173,"High Street",Sub-arterial,,2
+07200,"Sturt Highway",Highway,A20,7
+07202,"Short Road East",Highway,A20,1
+07263,"Stott Highway",Sub-arterial,,6
+07266,"Hunter Road",Sub-arterial,,1
+07380,"Angas Valley Road",Sub-arterial,,1
+07382,"Halfway House Road",Sub-arterial,,1
+07383,"Murraylands Road",Sub-arterial,,1
+07384,"Hunter Road",Sub-arterial,,1
+07385,"Mallee Road",Sub-arterial,,2
+07386,"Ridley Road",Sub-arterial,,2
+07387,"Ridley Road",Sub-arterial,,1
+07388,"Murraylands Road",Sub-arterial,,1
+07395,"Cameron Highway",Arterial,,1
+07398,"Browns Well Highway",Arterial,B57,6
+07401,"Burdett Road",Sub-arterial,,2
+07404,"Hunter Road",Sub-arterial,,1
+07500,"Karoonda Highway",Arterial,B55,4
+07503,"Bowhill Road",Sub-arterial,,4
+07506,"Jervois Road",Sub-arterial,B35,3
+07509,"Kulkami Road",Sub-arterial,,1
+07512,"Kulkawurra Road",Arterial,,1
+07515,"Old Princes Highway",Sub-arterial,B55,2
+07518,"Jervois Ferry Road",Sub-arterial,,2
+07522,"Old Dukes Highway",Sub-arterial,,1
+07620,"Mannum Road",Arterial,B36,1
+07623,"Adelaide Road",Arterial,B55,1
+07700,"Mallee Highway",Arterial,B12,5
+07760,"Tynan Road",Sub-arterial,,1
+07766,"Ngarkat Highway",Arterial,B57,1
+07800,"Dukes Highway",Highway,A8,3
+07801,"North Terrace",Arterial,B57,1
+07880,"Mcintosh Way",Sub-arterial,,2
+07883,"Woods Well Road",Sub-arterial,,3
+08000,"Riddoch Highway",Highway,A66,6
+08160,"Naracoorte Road",Arterial,B57,3
+08163,"Frances Road",Sub-arterial,,1
+08166,"Rowney Road",Sub-arterial,,2
+08320,"Rowney Road",Sub-arterial,,1
+08323,"Gap Road",Sub-arterial,,1
+08326,"Southern Ports Highway",Arterial,B101,2
+08329,"Avenue Range Road",Sub-arterial,,2
+08331,"Konetta Road",Sub-arterial,,1
+08332,"Lucindale Road",Sub-arterial,,2
+08335,"Arthur Street",Sub-arterial,,3
+08347,"Smith Street",Arterial,C240,1
+08400,"Jubilee Highway East",Highway,A1,6
+08480,"Callendale Road",Sub-arterial,,3
+08486,"Southern Ports Highway",Sub-arterial,B101,5
+08487,"Clay Wells Road",Sub-arterial,,1
+08489,"Julian Street",Arterial,C198,2
+08492,"Southern Ports Highway",Arterial,B101,1
+08640,"Mount Burr Road",Sub-arterial,,3
+08646,"Southern Ports Highway",Arterial,B101,4
+08649,"Mount Mcintyre Road",Sub-arterial,,1
+08650,"Kalangadoo Corner Bypass",Sub-arterial,,1
+08652,"Nangwarry Road",Sub-arterial,,2
+08655,"Kangaroo Flat Road",Sub-arterial,,2
+08658,"Mile Hill Road",Sub-arterial,,3
+08661,"Ridge Terrace",Sub-arterial,B101,1
+08664,"Williams Road",Sub-arterial,,1
+08823,"Carpenter Rocks Road",Sub-arterial,,4
+08826,"Commercial Street East",Sub-arterial,,2
+08829,"Pick Avenue",Arterial,C192,1
+08832,"Riddoch Highway",Arterial,B66,4
+10008,"Tieyon Road",Sub-arterial,,1
+10033,"Painted Desert Road",Sub-arterial,,1
+10039,"Kempe Road",Sub-arterial,,3
+11000,"Birdsville Track",Sub-arterial,B83,1
+12000,"Strzelecki Track",Sub-arterial,,1
+12003,"Gidgealpa Road",Sub-arterial,,1
+12009,"Adventure Way",Sub-arterial,,1
+12012,"Riecks Road",Sub-arterial,,1
+13000,"Oodnadatta Track",Sub-arterial,,4
+13009,"William Creek Road",Sub-arterial,,1
+13011,"Borefield Road",Sub-arterial,,1
+14024,"Tarcoola Road",Sub-arterial,,2
+15021,"Mount Gunson Mine Access",Sub-arterial,,1
+15024,"Mahanewo Road",Sub-arterial,,1
+15027,"Yalymboo Road",Sub-arterial,,1
+15030,"Pernatty Road",Sub-arterial,,1
+15033,"South Gap Road",Sub-arterial,,1
+15036,"Beda Homestead Access",Sub-arterial,,1
+15037,"Kootaberra Road",Sub-arterial,,1
+15039,"Hesso School Access",Sub-arterial,,1
+15042,"Warrakimbo Road",Sub-arterial,,3
+15045,"Yadlamulka Cattle Yard Access",Sub-arterial,,1
+15051,"Wilkatana Road",Sub-arterial,,1
+15052,"Narcoona Road",Sub-arterial,,1
+15054,"Mullina Woolshed Access",Sub-arterial,,2
+15057,"Yudnapinna Road",Sub-arterial,,1
+15059,"Corraberra Workmens Residence Access",Sub-arterial,,1
+15060,"Yorkeys Crossing",Sub-arterial,,1
+15066,"Low Hill Outstation Access",Sub-arterial,,1
+15069,"Radio Tower Road",Sub-arterial,,1
+15070,"Flying Doctor Radio Road",Sub-arterial,,1
+15072,"Carriewerloo Road",Sub-arterial,,1
+15078,"Myall Creek Road",Sub-arterial,,1
+15080,"Horse Paddock Road",Sub-arterial,,1
+15081,"Corraberra Road",Sub-arterial,,1
+15083,"Dynamite Drive",Sub-arterial,,1
+15086,"Jim Shaw Drive",Sub-arterial,,1
+16000,"Mount Hopeless Road",Sub-arterial,,1
+16009,"Arkaroola Road",Sub-arterial,,1
+16012,"Umberatana Road",Sub-arterial,,1
+16021,"Gammon Ranges Road",Sub-arterial,,1
+17000,"North Flinders Road",Sub-arterial,,1
+17033,"Parachilna Gorge Road",Sub-arterial,,1
+17042,"Flinders Ranges Way",Sub-arterial,B83,3
+17057,"Wirrealpa Road",Sub-arterial,,1
+17078,"Wilpena Pound Road",Sub-arterial,,1
+17111,"Natabra Well Road",Sub-arterial,,3
+17125,"High Street",Sub-arterial,,1
+17127,"West Terrace",Sub-arterial,,1
+18000,"Tea Tree Road",Sub-arterial,,1
+18003,"Erudina Road",Sub-arterial,,1
+22000,"Skull Camp Tanks Road",Sub-arterial,,1
+22003,"Gawler Ranges Road",Sub-arterial,,2
+22010,"Port Kenny Road",Sub-arterial,,2
+22011,"Barns Road",Sub-arterial,,2
+22018,"Buckleboo Road",Sub-arterial,,2
+22021,"Thevenard Road",Sub-arterial,,3
+22030,"Mckenzie Street",Sub-arterial,,1
+22033,"Museum Terrace",Sub-arterial,,1
+22041,"Gawler Ranges Road",Sub-arterial,,1
+22044,"Bay Road",Arterial,,2
+24009,"Esplanade",Sub-arterial,,2
+24021,"Proper Bay Road",Sub-arterial,,2
+24100,"Glover Road",Sub-arterial,,1
+26014,"Mangalo Road",Sub-arterial,,1
+26030,"Railway Terrace",Arterial,,2
+28000,"Railway Terrace",Sub-arterial,,1
+28009,"Iron Baron Road",Sub-arterial,,2
+28015,"Point Lowly Road",Sub-arterial,,1
+28016,"Point Lowly Road",Sub-arterial,,1
+28018,"Nonning Road",Sub-arterial,,2
+28091,"Mcdouall Stuart Avenue",Sub-arterial,,1
+30024,"Silo Road",Arterial,B83,1
+31612,"Hammond Road",Sub-arterial,,1
+31615,"Booleroo Road",Sub-arterial,,1
+33215,"Price Maurice Road",Sub-arterial,,3
+33218,"Appila-laura Road",Sub-arterial,,2
+33226,"Appila-laura Road",Sub-arterial,,1
+33259,"Price Maurice Road",Sub-arterial,,2
+33272,"Appila-tarcowie Road",Sub-arterial,,1
+34827,"Gladstone Street",Sub-arterial,,3
+34830,"Cross Street",Sub-arterial,,1
+36839,"Ludgvan Street",Arterial,B64,2
+38407,"Jolly Way",Sub-arterial,,1
+38612,"Farrell Flat Road",Sub-arterial,,2
+40018,"Brentwood Road",Sub-arterial,,2
+40024,"Lime Kiln Road",Sub-arterial,,2
+40027,"Port Vincent Road",Sub-arterial,,1
+40163,"Ardrossan Road",Sub-arterial,,2
+40180,"Adelaide Road",Sub-arterial,,3
+41200,"Main Street",Sub-arterial,,1
+41203,"Silo Road",Sub-arterial,,1
+41206,"Bowman Road",Sub-arterial,,3
+41209,"Fairway Drive",Sub-arterial,,1
+41215,"Minnie Terrace",Sub-arterial,,3
+41218,"Coast Road",Sub-arterial,,1
+41221,"Bay Road",Sub-arterial,,1
+41222,"Arthurton Road",Sub-arterial,,3
+41230,"Kadina-cunliffe Road",Sub-arterial,,3
+41268,"Thrington Road",Sub-arterial,,1
+41270,"Thrington Road",Sub-arterial,,1
+41388,"Moonta-wallaroo Road",Sub-arterial,,2
+42404,"Wallace Street",Sub-arterial,,1
+43612,"Sir Condor Laucke Way",Sub-arterial,,4
+43613,"Greenock Ramp From Adelaide",Sub-arterial,,1
+43618,"Gomersal Road",Sub-arterial,,1
+43624,"Trotting Track Rd Gawler",Sub-arterial,,1
+43630,"Gray Street",Sub-arterial,,2
+43701,"Brooks Road",Sub-arterial,,1
+43703,"Old Port Wakefield Road",Sub-arterial,B77,1
+43705,"Old Port Wakefield Road",Sub-arterial,,1
+44800,"Forreston Road",Sub-arterial,,2
+44803,"Tungkillo Road",Arterial,B35,1
+44806,"Reedy Creek Road",Arterial,B35,1
+44809,"Junction Road",Sub-arterial,,1
+44815,"Pyrites Road",Sub-arterial,,1
+44816,"Alexandrina Road",Sub-arterial,,1
+44818,"Bald Hills Road",Sub-arterial,,1
+44821,"Flaxley Road",Sub-arterial,,1
+44824,"Church Hill Road",Sub-arterial,,1
+44825,"Meadows Road",Sub-arterial,,1
+44827,"Wellington Road",Sub-arterial,,1
+44830,"River Road",Sub-arterial,,1
+44836,"West Terrace",Sub-arterial,,1
+44873,"Seal Bay Road",Sub-arterial,,1
+46400,"Rankine Street",Sub-arterial,,1
+46412,"Finniss-milang Road",Sub-arterial,,3
+46424,"Randell Road",Sub-arterial,,5
+46430,"Meechi Road",Sub-arterial,,1
+46431,"Lake Road",Sub-arterial,,3
+46432,"Clayton-milang Road",Sub-arterial,,2
+46515,"Brinkley Road",Sub-arterial,,1
+46850,"Nangkita Road",Sub-arterial,,1
+47606,"Parawa Road",Sub-arterial,,2
+47609,"Finniss Vale Drive",Sub-arterial,,1
+47613,"Bay Road",Arterial,B37,1
+47615,"Range Road",Arterial,B37,4
+47619,"Mill Road",Sub-arterial,,1
+47621,"Seaview Road",Sub-arterial,,2
+47660,"Old Willunga Hill Road",Sub-arterial,,2
+47661,"Mclaren Vale Ramp From Adelaide",Sub-arterial,,1
+47662,"Mclaren Vale Ramp From Willunga",Sub-arterial,,1
+47665,"Mclaren Vale Ramp To Adelaide",Sub-arterial,,1
+47666,"Mclaren Vale Ramp From Victor Harbor",Sub-arterial,,1
+48800,"Commercial Street",Arterial,,1
+50000,"Anderson Walk",Sub-arterial,,1
+50018,"Womma West Road",Sub-arterial,,1
+50630,"Saints Road",Sub-arterial,,1
+50631,"Fenden Road",Sub-arterial,,1
+50632,"Cross Keys Road",Sub-arterial,,1
+50633,"Winzor Street",Sub-arterial,,2
+50654,"Taylors Road",Sub-arterial,,1
+50698,"Gawler River Road",Sub-arterial,,1
+50699,"Riverlea Boulevard",Sub-arterial,,1
+52000,"Paracombe Road",Sub-arterial,,1
+52021,"Target Hill Road",Sub-arterial,,1
+52025,"Kelly Road",Sub-arterial,,1
+52026,"Tolley Road",Sub-arterial,,1
+52027,"Valley Road",Sub-arterial,,1
+52040,"Grenfell Road",Sub-arterial,,1
+53000,"Haydown Road",Sub-arterial,,1
+53002,"Fairfield Road",Sub-arterial,,1
+53003,"Swan Crescent",Sub-arterial,,1
+53005,"Uley Road",Sub-arterial,,1
+53006,"Hogarth Road",Sub-arterial,,2
+53008,"Adams Road",Sub-arterial,,1
+53012,"Coventry Road",Sub-arterial,,1
+53019,"Green Valley Drive",Sub-arterial,,1
+53023,"Crittenden Road",Sub-arterial,,1
+53024,"Ifould Road",Sub-arterial,,1
+53027,"Adams Road",Sub-arterial,,1
+53030,"Craigmore Road",Sub-arterial,,1
+53306,"Waterloo Corner Road",Sub-arterial,,1
+54000,"Wright Road",Sub-arterial,,1
+54003,"South Terrace",Sub-arterial,,1
+54009,"Bedford Street",Sub-arterial,,1
+54012,"Crozier Street",Sub-arterial,,1
+54031,"Louisa Road",Arterial,,1
+54033,"Grand Trunkway",Sub-arterial,,1
+54040,"Milne Road",Sub-arterial,,1
+54041,"Milne Road",Sub-arterial,,1
+54123,"Maxwell Road",Sub-arterial,,1
+54277,"Wauwa Street",Sub-arterial,,1
+56001,"Walkerville Terrace",Arterial,,1
+56036,"South Road",Sub-arterial,A2,1
+56441,"Hanson Road",Sub-arterial,,1
+58006,"Jetty Road",Sub-arterial,,1
+58017,"Pelican Point Road",Sub-arterial,,1
+58271,"Military Road",Sub-arterial,,1
+60000,"Moules Road",Sub-arterial,,1
+60003,"Glen Stuart Road",Sub-arterial,,1
+60006,"Morialta Road",Sub-arterial,,1
+60007,"Maryvale Road",Sub-arterial,,1
+60009,"Old Norton Summit Road",Sub-arterial,B27,2
+60012,"Marble Hill Road",Sub-arterial,,1
+61461,"Fullarton Road",Arterial,,1
+62041,"North South Mwy Northbound Off Ramp To Regency Rd",Highway,,1
+62042,"North South Mwy Southbound On Ramp From Regency Rd",Highway,,1
+63000,"Piccadilly Road",Sub-arterial,,2
+63005,"Mount Barker Road",Sub-arterial,,1
+63030,"Mount Lofty Summit Access Road",Sub-arterial,,1
+64611,"Southern Expressway On Ramp From Ayliffes Rd Ramp",Arterial,,1
+64612,"South Road Off Ramp To Ayliffes Road Ramp",Arterial,,1
+64671,"Shepherds Hill Road Ramp To South Road Ramp",Sub-arterial,,1
+65800,"Jetty Road",Sub-arterial,,1
+65900,"Africaine Road",Sub-arterial,,1
+65920,"James Melrose Road",Sub-arterial,,2
+66040,"The Cove Road",Sub-arterial,,1
+66041,"Lander Road",Sub-arterial,,1
+66080,"Miller Street",Sub-arterial,,1
+67100,"Southbound Avenue",Sub-arterial,,1
+67101,"Sandpiper Crescent",Sub-arterial,,1
+67102,"Hub Drive",Sub-arterial,,1
+67104,"Grant Road",Sub-arterial,,1
+67108,"Penneys Hill Road",Sub-arterial,,1
+67109,"States Road",Sub-arterial,,1
+67110,"Bains Road",Sub-arterial,,1
+67111,"Windebanks Road",Sub-arterial,,1
+67112,"Taylors Road West",Sub-arterial,,1
+67171,"Reynell Road",Sub-arterial,,1
+67172,"Byards Road",Sub-arterial,,1
+67200,"Old South Road",Sub-arterial,,1
+67261,"Brodie Road",Sub-arterial,,1
+67262,"Honeypot Road",Sub-arterial,,1
+67801,"Southern Expressway Off Ramp To Tonsley Blvd Ramp",,,1
+67802,"Southern Expressway On Ramp From Flinders Dri Ramp",Arterial,,1
+67804,"Southern Expressway On Ramp From Main South Ramp",Arterial,A13,1
+67805,"Southern Expressway Off Ramp To Flinders Driv Ramp",Arterial,,1
+67806,"Southern Expressway Off Ramp At Bedford Park Ramp",Arterial,,1
+68600,"Griffiths Drive",Sub-arterial,,1
+68603,"Patapinda Road",Sub-arterial,,1
+70000,"Murtho Road",Sub-arterial,,1
+70001,"Lindsay Point Road",Sub-arterial,,1
+70031,"Strangman Road",Sub-arterial,,1
+70050,"Kokoda Terrace",Arterial,,1
+72000,"Old Sturt Highway",Arterial,B201,3
+72600,"Murraylands Road",Sub-arterial,,1
+72603,"Nildottie Road",Sub-arterial,,2
+72608,"Murraylands Road",Sub-arterial,,2
+73895,"Purnong Road",Sub-arterial,,1
+75101,"Kulde Road",Sub-arterial,,2
+76200,"Ferries Mcdonald Road",Sub-arterial,,1
+76201,"Hindmarsh Road",Sub-arterial,,1
+78303,"Narrung Road",Sub-arterial,,1
+80000,"Emu Flat Road",Sub-arterial,,1
+80003,"Naracoorte Road",Sub-arterial,,2
+81602,"Cannawigara Road",Sub-arterial,,1
+81603,"Cannawigara Road",Sub-arterial,,1
+81609,"Six Mile Well Road",Arterial,,1
+81612,"Padthaway Road",Sub-arterial,,2
+81613,"Meatworks Road",Sub-arterial,,1
+84809,"Cameron Street",Sub-arterial,,1
+84812,"Gordon Street",Sub-arterial,,1
+84815,"Dergholm Road",Sub-arterial,,1
+84870,"Robe Road",Sub-arterial,C198,1
+86410,"Riddoch Street",Sub-arterial,,1
+86418,"Glencoe West Road",Sub-arterial,,1
+86424,"Wandilo Forest Road",Sub-arterial,,1
+88206,"Eight Mile Creek Road",Sub-arterial,,2

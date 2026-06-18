@@ -37,16 +37,16 @@ REM --- File count ---
 set /a HTML=0
 set /a JS=0
 set /a GEO=0
-for %%f in (*.html)    do set /a HTML+=1
-for %%f in (*.js)      do set /a JS+=1
-for %%f in (*.geojson) do set /a GEO+=1
-echo   OK    HTML: %HTML%  JS: %JS%  GeoJSON: %GEO%
+for %%f in (*.html)       do set /a HTML+=1
+for %%f in (*.js)         do set /a JS+=1
+for /r %%f in (*.geojson) do set /a GEO+=1
+echo   OK    HTML: %HTML%  JS: %JS%  GeoJSON: %GEO% (incl. datasets/)
 
 REM --- Deploy ---
 echo.
-echo >> Deploying to Firebase Hosting...
+echo >> Syncing report service URL and deploying to Firebase Hosting...
 echo.
-call firebase deploy --only hosting
+call powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0deploy.ps1" %*
 if errorlevel 1 (
     echo.
     echo   FAIL  Deploy failed.

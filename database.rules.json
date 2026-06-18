@@ -2,6 +2,15 @@
   "rules": {
     "tia_users": {
       ".read": "auth != null",
+      ".write": "auth != null",
+      "$username": {
+        "isAdmin": {
+          ".validate": "!newData.exists() || newData.val() === data.val() || data.val() === true"
+        }
+      }
+    },
+    "tia_deleted_users": {
+      ".read": "auth != null",
       ".write": "auth != null"
     }
   }

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node 'G:\\Shared drives\\Crompton Apps\\Crompton Labs\\APPS\\Cromton-Traffic-Impact-Asssessment\\.codex\\hooks\\check-formulas.cjs'"
+          }
+        ]
+      }
+    ]
+  }
+}

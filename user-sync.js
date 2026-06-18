@@ -218,16 +218,19 @@
   }
 
   /**
-   * Push the full admin-side users+deleted DBs to Firebase.
-   * Used by admin portal after bulk changes.
+   * Push the admin-side users+deleted DBs to Firebase using merge semantics.
+   * Previously this REPLACED the entire tia_users subtree with the caller's
+   * copy, which wiped users that were freshly provisioned by the cloud
+   * function or by another tab. Per-key deletions must go through
+   * deleteUser/purgeUser, which null the key explicitly.
    */
   async function pushAll(usersDb, deletedDb) {
     if (!_syncEnabled || !_db) return false;
     try {
-      const updates = {};
-      if (usersDb)   updates[USERS_PATH]   = usersDb;
-      if (deletedDb) updates[DELETED_PATH] = deletedDb;
-      await _db.ref().update(updates);
+      const tasks = [];
+      if (usersDb   && Object.keys(usersDb).length)   tasks.push(_db.ref(USERS_PATH).update(usersDb));
+      if (deletedDb && Object.keys(deletedDb).length) tasks.push(_db.ref(DELETED_PATH).update(deletedDb));
+      if (tasks.length) await Promise.all(tasks);
       return true;
     } catch (err) {
       console.warn('[TIASync] pushAll failed:', err.message);

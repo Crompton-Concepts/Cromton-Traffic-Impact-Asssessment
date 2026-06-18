@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-06-08T05:05:23Z",
+  "datasets": {
+    "qld_census": {
+      "version": "2026-06-08",
+      "sha256": "5cccd052d2c47eb7b0b48fc7e57ef022b4a8abdb8ff166e72c0c342591caf98b",
+      "feature_count": 2411,
+      "source_url": "https://www.data.qld.gov.au/dataset/5d74e022-a302-4f40-a594-f1840c92f671/resource/b856deab-ab20-48f1-85c6-2715e3a1d42c/download/aadt_2015_2025.xlsx",
+      "local_file": "datasets/QLD/qld_census.geojson",
+      "updated_at": "2026-06-08T05:05:23Z"
+    }
+  }
+}

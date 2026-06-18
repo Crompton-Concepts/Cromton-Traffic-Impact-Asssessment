@@ -1,0 +1,49 @@
+name: State Dataset Build
+
+on:
+  schedule:
+    # Source data is annual/quarterly — weekly rebuild is plenty.
+    # (Change detection for the committed files still runs every 6 hours
+    # via the existing Dataset Update Check workflow.)
+    - cron: "0 16 * * 0"
+  workflow_dispatch:
+    inputs:
+      states:
+        description: "Space-separated subset (vic wa nt tas act qld_census); empty = all"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build-state-datasets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build state datasets
+        run: python scripts/build_all_states.py ${{ github.event.inputs.states }}
+
+      - name: Commit and push to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add datasets dataset_manifest.json
+
+          if git diff --cached --quiet; then
+            echo "No state dataset changes detected."
+          else
+            git commit -m "chore(data): rebuild state traffic datasets (VIC/WA/NT/TAS/ACT/QLD census)"
+            git push origin HEAD:main
+          fi

@@ -1,7 +1,8 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /datasets/{file} {
+    // {path=**} matches nested folders (datasets/QLD/..., datasets/VIC/..., etc.)
+    match /datasets/{path=**} {
       allow read: if true;
       allow write: if request.auth != null;
     }
