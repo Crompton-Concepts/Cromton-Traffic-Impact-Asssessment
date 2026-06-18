@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-18T01:15:25Z",
+  "generated_at": "2026-06-18T10:23:02Z",
   "datasets": {
     "tmr": {
       "version": "2026-06-09",
@@ -81,14 +81,6 @@
       "local_file": "sa.geojson",
       "updated_at": "2026-06-18T01:00:12Z"
     },
-    "qld_census": {
-      "version": "2026-06-18",
-      "sha256": "5a1df6b13d0cbdfb6fd5182cafa216ff027f897d19a1661a7ff2b6b6960076b3",
-      "feature_count": 2411,
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fqld_census.geojson?alt=media",
-      "local_file": "datasets/QLD/qld_census.geojson",
-      "updated_at": "2026-06-18T01:15:25Z"
-    },
     "vic": {
       "version": "2026-06-18",
       "sha256": "63f2cb76e6981e4e3bfa455e995927ffdb92fabfac2187755eff520aa2d7e1b1",
@@ -105,6 +97,14 @@
       "local_file": "datasets/WA/wa.geojson",
       "updated_at": "2026-06-18T00:49:57Z"
     },
+    "nt": {
+      "version": "2026-06-17",
+      "sha256": "13baef4282d2562b1dcb00442a79c6d3f9fd9fcdd2e8533caf1369455a356212",
+      "feature_count": 256,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FNT%2Fnt.geojson?alt=media",
+      "local_file": "datasets/NT/nt.geojson",
+      "updated_at": "2026-06-17T00:03:06Z"
+    },
     "tas": {
       "version": "2026-06-17",
       "sha256": "188f1ef658fc0c40814f9eabd01941fc958f1907c94c6f53ad35f2e287630f26",
@@ -113,21 +113,13 @@
       "local_file": "datasets/TAS/tas.geojson",
       "updated_at": "2026-06-17T00:03:06Z"
     },
-    "tnsw_base": {
-      "local_file": "nsw.geojson",
-      "sha256": "35c28dc9b5875faa90cfb004eff2f2d6dc8d4abe7ec5c3014cbfc55cc0e3ad80",
-      "feature_count": 1783,
-      "version": "2026-06-17",
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FNSW%2Fnsw.geojson?alt=media",
-      "updated_at": "2026-06-17T00:03:06Z"
-    },
-    "nt": {
-      "version": "2026-06-17",
-      "sha256": "13baef4282d2562b1dcb00442a79c6d3f9fd9fcdd2e8533caf1369455a356212",
-      "feature_count": 256,
-      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FNT%2Fnt.geojson?alt=media",
-      "local_file": "datasets/NT/nt.geojson",
-      "updated_at": "2026-06-17T00:03:06Z"
+    "qld_census": {
+      "version": "2026-06-18",
+      "sha256": "5a1df6b13d0cbdfb6fd5182cafa216ff027f897d19a1661a7ff2b6b6960076b3",
+      "feature_count": 2411,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fqld_census.geojson?alt=media",
+      "local_file": "datasets/QLD/qld_census.geojson",
+      "updated_at": "2026-06-18T01:15:25Z"
     }
   }
 }
