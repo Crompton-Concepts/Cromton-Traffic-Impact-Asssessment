@@ -1,0 +1,3 @@
+## 2025-02-28 - Optimize spatial calculation math operations
+**Learning:** Mathematical operations like trigonometric functions (`Math.sin`, `Math.cos`) and divisions are relatively expensive inside tight loops. Pre-calculating repetitive constant multipliers and caching trigonometric results can provide significant speedup. Replacing division by 2 with multiplication by 0.5 also offers marginal gains in tight loops.
+**Action:** When working on spatial datasets like mapping applications that run spatial distance algorithms inside loops, optimize the mathematical calculations by extracting constants, caching variables, and replacing division with multiplication.
