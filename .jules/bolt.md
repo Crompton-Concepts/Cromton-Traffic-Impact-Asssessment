@@ -1,0 +1,3 @@
+## 2024-06-19 - Precalculating Math.PI / 180 and Trig Functions in Haversine
+**Learning:** The `haversineDistance` function is heavily utilized in JavaScript loops for spatial calculations. Recomputing constants like `Math.PI / 180` and calling `Math.sin` multiple times with the same arguments introduces unnecessary GC overhead and CPU cycles. Multiplying by `0.5` instead of dividing by `2` also reduces CPU cycles in critical paths.
+**Action:** Extract repeating constant calculations (like `TO_RAD = Math.PI / 180`) and cache results of trigonometric functions inside loops to avoid redundant operations. Replace divisions by integers with multiplication by reciprocals (e.g., `* 0.5`) in performance-critical areas.
