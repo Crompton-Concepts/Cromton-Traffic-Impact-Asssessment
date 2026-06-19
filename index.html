@@ -23,7 +23,7 @@
 </head>
 <body class="app-locked input-color-mode">
   <button id="exitPreviewBtn" onclick="exitPrintPreview()" title="Exit print preview (Esc)">
-    <i class="fa-solid fa-xmark"></i> Exit Print Preview
+    <i class="fa-solid fa-xmark" aria-hidden="true"></i> Exit Print Preview
   </button>
 
   <!-- Floating Action Bar for Editable Report View -->
@@ -62,7 +62,7 @@
       <div class="vol-adj-header">
         <h2 id="volAdjTitle"><i class="fa-solid fa-ruler-combined" style="margin-right:8px;"></i>Visual Volume Adjustment Model</h2>
         <p class="vol-adj-subtitle">Apply step-by-step adjustment factors to the road's base volume and project to the opening year.</p>
-        <button type="button" class="vol-adj-close" onclick="VolumeAdjModel.close()" aria-label="Close">×</button>
+        <button type="button" class="vol-adj-close" onclick="VolumeAdjModel.close()" aria-label="Close model">×</button>
         <div class="vol-adj-site-info"><span class="vol-adj-site-label">Road:</span><span id="volAdjSiteName">—</span></div>
       </div>
       <div class="vol-adj-body">
@@ -279,7 +279,7 @@
             <div class="login-input-wrapper">
               <i class="fa-solid fa-lock input-icon"></i>
               <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
@@ -319,7 +319,7 @@
             <div class="login-input-wrapper">
               <i class="fa-solid fa-key input-icon"></i>
               <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
@@ -327,7 +327,7 @@
             <div class="login-input-wrapper">
               <i class="fa-solid fa-key input-icon"></i>
               <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
