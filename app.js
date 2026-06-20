@@ -11647,13 +11647,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           return null;
         };
 
+        // Optimized: Pre-calculate Math.PI/180, use 0.5 multiplication, cache Math.sin
         const haversine = (lat1, lon1, lat2, lon2) => {
           const R = 6371000;
-          const p1 = lat1 * Math.PI / 180;
-          const p2 = lat2 * Math.PI / 180;
-          const dP = (lat2 - lat1) * Math.PI / 180;
-          const dL = (lon2 - lon1) * Math.PI / 180;
-          const a = Math.sin(dP / 2) * Math.sin(dP / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dL / 2) * Math.sin(dL / 2);
+          const TO_RAD = Math.PI / 180;
+          const p1 = lat1 * TO_RAD;
+          const p2 = lat2 * TO_RAD;
+          const dP = (lat2 - lat1) * TO_RAD;
+          const dL = (lon2 - lon1) * TO_RAD;
+          const sinDP = Math.sin(dP * 0.5);
+          const sinDL = Math.sin(dL * 0.5);
+          const a = sinDP * sinDP + Math.cos(p1) * Math.cos(p2) * sinDL * sinDL;
           return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
         };
 
@@ -22108,15 +22112,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   
   // Haversine distance calculation (meters)
+  // Optimized: Pre-calculate Math.PI/180, use 0.5 multiplication, cache Math.sin
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    const TO_RAD = Math.PI / 180;
+    const phi1 = lat1 * TO_RAD;
+    const phi2 = lat2 * TO_RAD;
+    const deltaPhi = (lat2 - lat1) * TO_RAD;
+    const deltaLambda = (lon2 - lon1) * TO_RAD;
+    const sinHalfDeltaPhi = Math.sin(deltaPhi * 0.5);
+    const sinHalfDeltaLambda = Math.sin(deltaLambda * 0.5);
+    const a = sinHalfDeltaPhi * sinHalfDeltaPhi +
               Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+              sinHalfDeltaLambda * sinHalfDeltaLambda;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -23027,14 +23035,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   // Distance in kilometers.
+  // Optimized: Pre-calculate Math.PI/180, use 0.5 multiplication, cache Math.sin
   function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const TO_RAD = Math.PI / 180;
+    const dLat = (lat2 - lat1) * TO_RAD;
+    const dLon = (lon2 - lon1) * TO_RAD;
+    const sinHalfDLat = Math.sin(dLat * 0.5);
+    const sinHalfDLon = Math.sin(dLon * 0.5);
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      sinHalfDLat * sinHalfDLat +
+      Math.cos(lat1 * TO_RAD) * Math.cos(lat2 * TO_RAD) *
+      sinHalfDLon * sinHalfDLon;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
