@@ -20273,14 +20273,39 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     const localCounterMatchRadiusMeters = getDetourCounterMatchRadiusMeters();
 
-    const candidateSites = Object.entries(macroSitesData || {}).map(([id, site]) => ({
-      id,
-      site,
-      roadName: String((site && (site.road_name || site.description)) || '').trim(),
-      roadStd: standardizeRoadName((site && (site.road_name || site.description)) || ''),
-      lat: Number(site && site.latitude),
-      lon: Number(site && site.longitude)
-    })).filter(item => item.roadStd && Number.isFinite(item.lat) && Number.isFinite(item.lon) && haversineDistance(pLat, pLon, item.lat, item.lon) <= localCounterMatchRadiusMeters);
+    const paddedRadiusDegrees = (localCounterMatchRadiusMeters * 1.01) / 111320;
+    const cosLat = Math.max(Math.abs(Math.cos(pLat * TO_RAD)), 0.0001);
+    const lonRadiusDegrees = paddedRadiusDegrees / cosLat;
+
+    const candidateSites = Object.entries(macroSitesData || {}).reduce((acc, [id, site]) => {
+      const lat = Number(site && site.latitude);
+      const lon = Number(site && site.longitude);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return acc;
+
+      // Fast spatial bounding box pre-filter
+      if (Math.abs(lat - pLat) > paddedRadiusDegrees) return acc;
+
+      let lonDiff = Math.abs(lon - pLon);
+      // Handle antimeridian wrapping
+      if (lonDiff > 180) lonDiff = 360 - lonDiff;
+      if (lonDiff > lonRadiusDegrees) return acc;
+
+      const roadStd = standardizeRoadName((site && (site.road_name || site.description)) || '');
+      if (!roadStd) return acc;
+
+      if (haversineDistance(pLat, pLon, lat, lon) <= localCounterMatchRadiusMeters) {
+        acc.push({
+          id,
+          site,
+          roadName: String((site && (site.road_name || site.description)) || '').trim(),
+          roadStd,
+          lat,
+          lon
+        });
+      }
+      return acc;
+    }, []);
 
     const usedSiteIds = new Set();
     const roadMatchedSites = [];
@@ -22107,16 +22132,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   
+  const TO_RAD = Math.PI / 180;
+  const TO_DEG = 180 / Math.PI;
+
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const deltaPhi = (lat2 - lat1) * TO_RAD;
+    const deltaLambda = (lon2 - lon1) * TO_RAD;
+    const sinHalfDeltaPhi = Math.sin(deltaPhi / 2);
+    const sinHalfDeltaLambda = Math.sin(deltaLambda / 2);
+    const a = sinHalfDeltaPhi * sinHalfDeltaPhi +
+              Math.cos(lat1 * TO_RAD) * Math.cos(lat2 * TO_RAD) *
+              sinHalfDeltaLambda * sinHalfDeltaLambda;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -22581,12 +22609,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function getBearingDirection(lat1, lon1, lat2, lon2) {
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const l1 = lat1 * Math.PI / 180;
-    const l2 = lat2 * Math.PI / 180;
+    const dLon = (lon2 - lon1) * TO_RAD;
+    const l1 = lat1 * TO_RAD;
+    const l2 = lat2 * TO_RAD;
     const y = Math.sin(dLon) * Math.cos(l2);
     const x = Math.cos(l1) * Math.sin(l2) - Math.sin(l1) * Math.cos(l2) * Math.cos(dLon);
-    let brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    let brng = (Math.atan2(y, x) * TO_DEG + 360) % 360;
     const dirs = ["North", "Northeast", "East", "Southeast", "South", "Southwest", "West", "Northwest"];
     return dirs[Math.round(brng / 45) % 8];
   }
