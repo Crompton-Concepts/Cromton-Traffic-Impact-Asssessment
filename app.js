@@ -179,7 +179,7 @@
   }
 
   function pickRandomHintExcludingCurrent(hints, currentHint = '') {
-    const source = (Array.isArray(hints) ? hints : []).map(h => String(h || '').trim()).filter(Boolean);
+    const source = (Array.isArray(hints) ? hints : []).reduce((acc, h) => { const s = String(h || '').trim(); if (s) acc.push(s); return acc; }, []);
     if (!source.length) return '';
     const filtered = currentHint ? source.filter(h => h !== currentHint) : source;
     const pool = filtered.length ? filtered : source;
@@ -743,7 +743,7 @@
     const tables = Array.from(card.querySelectorAll('table'));
     if (!tables.length) {
       const numericMatches = String(card.textContent || '').match(/-?\d+(?:\.\d+)?/g) || [];
-      const numericVals = numericMatches.map(v => Number(v)).filter(v => Number.isFinite(v));
+      const numericVals = numericMatches.reduce((acc, v) => { const n = Number(v); if (Number.isFinite(n)) acc.push(n); return acc; }, []);
       if (!numericVals.length) {
         if (chartCount > 0) {
           return shortMode
@@ -1223,7 +1223,7 @@
   }
 
   function maxFinite(values) {
-    const nums = (Array.isArray(values) ? values : []).filter((v) => Number.isFinite(Number(v))).map((v) => Number(v));
+    const nums = (Array.isArray(values) ? values : []).filter((v) => Number.isFinite(Number(v))).map(v => Number(v));
     return nums.length ? Math.max(...nums) : null;
   }
 
@@ -6236,7 +6236,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function parseCsvTextToRows(csvText) {
-    const lines = String(csvText || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const lines = String(csvText || '').split(/\r?\n/).reduce((acc, l) => { const s = l.trim(); if (s) acc.push(s); return acc; }, []);
     if (lines.length < 2) return [];
     const headers = parseCsvLine(lines[0]);
     const rows = [];
@@ -6267,7 +6267,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   }
 
   function parseHourlyReportTextToSites(rawText, sourceName = CUSTOM_SOURCE_NAME) {
-    const lines = String(rawText || '').split(/\r?\n/).map(line => String(line || '').trim()).filter(Boolean);
+    const lines = String(rawText || '').split(/\r?\n/).reduce((acc, line) => { const s = String(line || '').trim(); if (s) acc.push(s); return acc; }, []);
     const hourly = new Array(24).fill(0);
     let foundHourlyRows = 0;
 
@@ -12541,7 +12541,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function setupIntersectionQueueCapacityCalculator() {
     const ids = ['arrivalVol', 'laneCap', 'redTime', 'hvPercent', 'postedSpeed'];
-    const elements = ids.map(id => document.getElementById(id)).filter(Boolean);
+    const elements = ids.reduce((acc, id) => { const el = document.getElementById(id); if (el) acc.push(el); return acc; }, []);
     if (!elements.length) return;
 
     elements.forEach((el) => {
@@ -17411,7 +17411,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     scenarios.forEach((scenario, index) => {
       const selectedRoads = Array.isArray(scenario && scenario.selectedTrafficDetourRoadNames)
-        ? scenario.selectedTrafficDetourRoadNames.map((value) => String(value || '').trim()).filter(Boolean)
+        ? scenario.selectedTrafficDetourRoadNames.reduce((acc, value) => { const s = String(value || '').trim(); if (s) acc.push(s); return acc; }, [])
         : [];
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -18162,7 +18162,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function getCurrentTrafficDetourRoadName() {
     const selectedPath = Array.isArray(window.selectedTrafficDetourRoadNames)
-      ? window.selectedTrafficDetourRoadNames.map(v => String(v || '').trim()).filter(Boolean)
+      ? window.selectedTrafficDetourRoadNames.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
       : [];
     if (selectedPath.length) return selectedPath.join(' >> ');
     if (Array.isArray(window.selectedDetourSiteIds) && window.selectedDetourSiteIds.length && macroSitesData[window.selectedDetourSiteIds[0]]) {
@@ -18174,7 +18174,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function getCurrentPedDetourRoadName() {
     const selectedPath = Array.isArray(window.selectedPedDetourRoadNames)
-      ? window.selectedPedDetourRoadNames.map(v => String(v || '').trim()).filter(Boolean)
+      ? window.selectedPedDetourRoadNames.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
       : [];
     if (selectedPath.length) return selectedPath.join(' >> ');
     const selectedName = String(window.selectedPedDetourRoadName || '').trim();
@@ -18197,7 +18197,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   function updateTrafficSelectedRoadsSummary() {
     const summaryEl = document.getElementById('detourSelectedRoadsSummary');
     const selectedPath = Array.isArray(window.selectedTrafficDetourRoadNames)
-      ? window.selectedTrafficDetourRoadNames.map(v => String(v || '').trim()).filter(Boolean)
+      ? window.selectedTrafficDetourRoadNames.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
       : [];
     const routeName = selectedPath.length ? selectedPath.join(' >> ') : '';
     const activeStreet = selectedPath.length ? selectedPath[selectedPath.length - 1] : '';
@@ -18402,7 +18402,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const bodyEl = document.getElementById('detourManualVpdRows');
     if (!panelEl || !bodyEl) return;
 
-    const cleanRoads = Array.from(new Set((Array.isArray(roads) ? roads : []).map(r => String(r || '').trim()).filter(Boolean)));
+    const cleanRoads = Array.from(new Set((Array.isArray(roads) ? roads : []).reduce((acc, r) => { const s = String(r || '').trim(); if (s) acc.push(s); return acc; }, [])));
     window.detourManualPanelRoads = cleanRoads;
     if (!cleanRoads.length) {
       panelEl.style.display = 'none';
@@ -18937,7 +18937,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     window.detourManualRoadInputs[key] = existing;
 
     const roads = Array.isArray(window.detourManualPanelRoads)
-      ? window.detourManualPanelRoads.map(v => String(v || '').trim()).filter(Boolean)
+      ? window.detourManualPanelRoads.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
       : [];
     renderDetourManualVpdPanel(roads);
     calculateDetourOverlay();
@@ -18957,7 +18957,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function recalculateDetourManualBaseVpd() {
     const roads = Array.isArray(window.detourManualPanelRoads)
-      ? window.detourManualPanelRoads.map(v => String(v || '').trim()).filter(Boolean)
+      ? window.detourManualPanelRoads.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
       : [];
     if (!roads.length) {
       showDetourToast('No roads available to recalculate.', 'warning');
@@ -19530,7 +19530,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       const activePreviewLayer = detourRoadPreviewLayer || detourMapLayer;
       const selectedPath = Array.isArray(window.selectedTrafficDetourRoadNames)
-        ? window.selectedTrafficDetourRoadNames.map(v => String(v || '').trim()).filter(Boolean)
+        ? window.selectedTrafficDetourRoadNames.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
         : [];
       const activeStreetName = selectedPath.length ? selectedPath[selectedPath.length - 1] : '';
       const selectedIds = new Set(Array.isArray(window.selectedDetourSiteIds) ? window.selectedDetourSiteIds : []);
@@ -19677,7 +19677,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       listEl.innerHTML = '';
       const hasAny = groups.some(g => g.items.length > 0);
       const selectedPath = Array.isArray(window.selectedTrafficDetourRoadNames)
-        ? window.selectedTrafficDetourRoadNames.map(v => String(v || '').trim()).filter(Boolean)
+        ? window.selectedTrafficDetourRoadNames.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
         : [];
       const selectedIds = new Set(Array.isArray(window.selectedDetourSiteIds) ? window.selectedDetourSiteIds : []);
       if (!hasAny) {
@@ -20240,7 +20240,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     }
     const selectedRoadPath = Array.isArray(window.selectedTrafficDetourRoadNames)
-      ? window.selectedTrafficDetourRoadNames.map(v => String(v || '').trim()).filter(Boolean)
+      ? window.selectedTrafficDetourRoadNames.reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
       : [];
 
     const closureType = String((document.getElementById('detourClosureType') && document.getElementById('detourClosureType').value) || 'oneway').toLowerCase();
@@ -20323,7 +20323,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     window.selectedDetourSiteId = detourSiteIdsFinal[0] || null;
 
     const detourSites = roadMatchedSites.length
-      ? roadMatchedSites.map(v => v.site).filter(Boolean)
+      ? roadMatchedSites.reduce((acc, v) => { if (v.site) acc.push(v.site); return acc; }, [])
       : [];
 
     const matchedRoadsByKey = new Map();
@@ -20376,7 +20376,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     if (resultsPanel) resultsPanel.style.display = 'block';
     const selectedName = getCurrentTrafficDetourRoadName();
-    const fallbackName = detourSites.map(s => String(s.road_name || s.description || '').trim()).filter(Boolean).join(' >> ');
+    const fallbackName = detourSites.reduce((acc, s) => { const str = String(s.road_name || s.description || '').trim(); if (str) acc.push(str); return acc; }, []).join(' >> ');
     const displayRoadName = selectedName || fallbackName || '-';
     document.getElementById('detourRouteName').textContent = `Evaluating Detour: ${displayRoadName}`;
     updateTrafficSelectedRoadsSummary();
@@ -21594,7 +21594,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       pedRouteInput.style.opacity = '0.7';
       window.selectedPedDetourRoadName = routeName;
       window.selectedPedDetourRoadNames = trafficRouteName
-        ? trafficRouteName.split('>>').map(v => String(v || '').trim()).filter(Boolean)
+        ? trafficRouteName.split('>>').reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
         : [];
     }
 
@@ -21697,7 +21697,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const typed = String(pedDetourRouteNameEl.value || '').trim();
       window.selectedPedDetourRoadName = typed;
       window.selectedPedDetourRoadNames = typed
-        ? typed.split('>>').map(v => String(v || '').trim()).filter(Boolean)
+        ? typed.split('>>').reduce((acc, v) => { const s = String(v || '').trim(); if (s) acc.push(s); return acc; }, [])
         : [];
       updatePedestrianDetourDelayTitle();
       calculatePedestrianDelay();
@@ -22108,17 +22108,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   
   // Haversine distance calculation (meters)
+  const CONST_PI_180 = Math.PI / 180;
   function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+    const phi1 = lat1 * CONST_PI_180;
+    const phi2 = lat2 * CONST_PI_180;
+    const deltaPhi2 = (lat2 - lat1) * CONST_PI_180 * 0.5;
+    const deltaLambda2 = (lon2 - lon1) * CONST_PI_180 * 0.5;
+    const sinDP = Math.sin(deltaPhi2);
+    const sinDL = Math.sin(deltaLambda2);
+    const a = sinDP * sinDP + Math.cos(phi1) * Math.cos(phi2) * sinDL * sinDL;
+    return 12742000 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   // Automatic detour length calculation based on coordinates
@@ -22434,7 +22433,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const displayName = String(item.display_name || item.displayName || '').trim();
     if (!displayName) return '';
 
-    const parts = displayName.split(',').map(part => String(part || '').trim()).filter(Boolean);
+    const parts = displayName.split(',').reduce((acc, part) => { const s = String(part || '').trim(); if (s) acc.push(s); return acc; }, []);
     for (const part of parts.slice(0, 3)) {
       const match = part.match(/^(\d+[a-zA-Z]?)$/);
       if (match) return normalizeHouseNumber(match[1]);
