@@ -23,28 +23,28 @@
 </head>
 <body class="app-locked input-color-mode formula-mode">
   <button id="exitPreviewBtn" onclick="exitPrintPreview()" title="Exit print preview (Esc)">
-    <i class="fa-solid fa-xmark"></i> Exit Print Preview
+    <i class="fa-solid fa-xmark" aria-hidden="true"></i> Exit Print Preview
   </button>
 
   <!-- Floating Action Bar for Editable Report View -->
   <div id="reportModeBar" class="hide-print" style="display:none; position:fixed; top:0; left:0; width:100%; background:linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%); color:white; padding:8px 14px; z-index:9999; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
     <div class="report-mode-intro" style="display:flex; align-items:center; gap: 15px; flex-wrap:wrap;">
-      <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i>Back to Calculation</button>
-      <div style="font-weight:bold; font-size:1.15em; letter-spacing: 0.5px;"><i class="fa-solid fa-pen-to-square" style="margin-right:8px;"></i>Editable Report View</div>
+      <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-left" style="margin-right:6px;" aria-hidden="true"></i>Back to Calculation</button>
+      <div style="font-weight:bold; font-size:1.15em; letter-spacing: 0.5px;"><i class="fa-solid fa-pen-to-square" style="margin-right:8px;" aria-hidden="true"></i>Editable Report View</div>
       <div style="font-size:0.85em; color:#a2d5d8; border-left:1px solid #4a868a; padding-left:15px;">Click inside any commentary box to edit text before printing.</div>
     </div>
     <div class="report-mode-actions">
-      <button class="report-mode-btn" onclick="restoreReportRemovals()" style="background:#1e88e5; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-rotate-left" style="margin-right:6px;"></i>Restore Removed Sections</button>
+      <button class="report-mode-btn" onclick="restoreReportRemovals()" style="background:#1e88e5; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-rotate-left" style="margin-right:6px;" aria-hidden="true"></i>Restore Removed Sections</button>
     </div>
   </div>
   <div id="reportModeBottomBar" class="hide-print">
-    <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i>Back to Calculation</button>
+    <button class="report-mode-btn" onclick="backToCalculationPage()" style="background:#fb8c00; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-arrow-left" style="margin-right:6px;" aria-hidden="true"></i>Back to Calculation</button>
     <div class="report-mode-actions">
-      <button class="report-mode-btn" onclick="openAISummaryGenerator()" style="background:#ff6b6b; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-robot" style="margin-right:6px;"></i>AI Summary</button>
-      <button id="printPreviewToggleBtn" class="report-mode-btn" onclick="togglePrintPreview()" style="background:#5e35b1; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-eye" style="margin-right:6px;"></i>Print Preview</button>
-      <button class="report-mode-btn" onclick="printFinalReport()" style="background:#4caf50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-print" style="margin-right:6px;"></i>Print / Save PDF</button>
+      <button class="report-mode-btn" onclick="openAISummaryGenerator()" style="background:#ff6b6b; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-robot" style="margin-right:6px;" aria-hidden="true"></i>AI Summary</button>
+      <button id="printPreviewToggleBtn" class="report-mode-btn" onclick="togglePrintPreview()" style="background:#5e35b1; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-eye" style="margin-right:6px;" aria-hidden="true"></i>Print Preview</button>
+      <button class="report-mode-btn" onclick="printFinalReport()" style="background:#4caf50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-print" style="margin-right:6px;" aria-hidden="true"></i>Print / Save PDF</button>
       <div id="reportShareWrap" class="report-share-wrap">
-        <button class="report-mode-btn" onclick="toggleReportShareMenu()" style="background:#6d4c41; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-share-nodes" style="margin-right:6px;"></i>Share Report</button>
+        <button class="report-mode-btn" onclick="toggleReportShareMenu()" style="background:#6d4c41; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.1s;"><i class="fa-solid fa-share-nodes" style="margin-right:6px;" aria-hidden="true"></i>Share Report</button>
         <div id="reportShareMenu" class="report-share-menu hide-print">
           <div class="report-share-title">Share Final Report</div>
           <button class="report-mode-btn report-share-item" onclick="shareFinalReport('email')">Email Link</button>
@@ -60,7 +60,7 @@
   <div id="volumeAdjModal" class="vol-adj-backdrop hide-print" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="volAdjTitle">
     <div class="vol-adj-panel">
       <div class="vol-adj-header">
-        <h2 id="volAdjTitle"><i class="fa-solid fa-ruler-combined" style="margin-right:8px;"></i>Visual Volume Adjustment Model</h2>
+        <h2 id="volAdjTitle"><i class="fa-solid fa-ruler-combined" style="margin-right:8px;" aria-hidden="true"></i>Visual Volume Adjustment Model</h2>
         <p class="vol-adj-subtitle">Apply step-by-step adjustment factors to the road's base volume and project to the opening year.</p>
         <button type="button" class="vol-adj-close" onclick="VolumeAdjModel.close()" aria-label="Close">×</button>
         <div class="vol-adj-site-info"><span class="vol-adj-site-label">Road:</span><span id="volAdjSiteName">—</span></div>
@@ -181,12 +181,12 @@
   <div id="aiSummaryModal" class="ai-summary-modal hide-print">
     <div class="ai-summary-content">
       <div class="ai-summary-header">
-        <div class="ai-summary-title"><i class="fa-solid fa-robot" style="margin-right:8px;"></i>AI Report Summary Generator</div>
+        <div class="ai-summary-title"><i class="fa-solid fa-robot" style="margin-right:8px;" aria-hidden="true"></i>AI Report Summary Generator</div>
         <button class="ai-summary-close" onclick="closeAISummaryModal()" aria-label="Close">×</button>
       </div>
       <div class="ai-summary-body">
         <div class="ai-summary-section">
-          <div class="ai-summary-section-title"><i class="fa-solid fa-list-check" style="margin-right:8px;"></i>Select Summary Type:</div>
+          <div class="ai-summary-section-title"><i class="fa-solid fa-list-check" style="margin-right:8px;" aria-hidden="true"></i>Select Summary Type:</div>
           <div style="margin: 10px 0;">
             <select id="aiSummaryType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
               <option value="executive">Executive Summary</option>
@@ -202,13 +202,13 @@
           <div>Generating summary...</div>
         </div>
         <div class="ai-summary-section">
-          <div class="ai-summary-section-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:8px;"></i>Generated Summary:</div>
+          <div class="ai-summary-section-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:8px;" aria-hidden="true"></i>Generated Summary:</div>
           <div id="aiSummaryOutput" class="ai-summary-output" contenteditable="true">Click "Generate Summary" to create an AI-powered summary based on your traffic impact assessment data.</div>
         </div>
         <div class="ai-summary-actions">
-          <button class="ai-summary-btn primary" onclick="generateAISummary()"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:6px;"></i>Generate Summary</button>
-          <button class="ai-summary-btn secondary" onclick="copyAISummaryToClipboard()"><i class="fa-solid fa-clipboard" style="margin-right:6px;"></i>Copy to Clipboard</button>
-          <button class="ai-summary-btn secondary" onclick="insertAISummaryToReport()"><i class="fa-solid fa-file-import" style="margin-right:6px;"></i>Insert into Report</button>
+          <button class="ai-summary-btn primary" onclick="generateAISummary()"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:6px;" aria-hidden="true"></i>Generate Summary</button>
+          <button class="ai-summary-btn secondary" onclick="copyAISummaryToClipboard()"><i class="fa-solid fa-clipboard" style="margin-right:6px;" aria-hidden="true"></i>Copy to Clipboard</button>
+          <button class="ai-summary-btn secondary" onclick="insertAISummaryToReport()"><i class="fa-solid fa-file-import" style="margin-right:6px;" aria-hidden="true"></i>Insert into Report</button>
         </div>
         <div style="margin-top: 16px; padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px; font-size: 0.9em;">
           <strong>💡 Tip:</strong> The summary is editable. Click inside the text area to customize it before copying or inserting.
@@ -243,10 +243,10 @@
           <p class="login-brand-tagline">Professional traffic engineering tools for Queensland &amp; NSW</p>
         </div>
         <ul class="login-brand-features">
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-map-location-dot"></i></span> Live traffic count data</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-calculator"></i></span> Austroads / TMR calculations</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-file-pdf"></i></span> Professional PDF reports</li>
-          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-chart-line"></i></span> Growth rate &amp; LOS analysis</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i></span> Live traffic count data</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-calculator" aria-hidden="true"></i></span> Austroads / TMR calculations</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></span> Professional PDF reports</li>
+          <li><span class="login-brand-feat-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span> Growth rate &amp; LOS analysis</li>
         </ul>
         <p class="login-brand-footer">&copy; 2025 Crompton Concepts</p>
       </div>
@@ -267,7 +267,7 @@
           <div class="login-field-group">
             <label for="loginUser">Username or Email</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
+              <i class="fa-solid fa-user" aria-hidden="true"></i>
               <input id="loginUser" name="loginUser" type="text" placeholder="Enter username or email" autocomplete="username" required />
             </div>
           </div>
@@ -277,13 +277,13 @@
               <a href="#" id="forgotPasswordLink" class="forgot-pw-link">Forgot password?</a>
             </div>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-lock input-icon"></i>
+              <i class="fa-solid fa-lock input-icon" aria-hidden="true"></i>
               <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Sign In</span>
           </button>
           <div id="loginError" class="login-error" aria-live="polite"></div>
@@ -296,38 +296,38 @@
           <div class="login-field-group">
             <label for="newFullName">Full Name</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-id-card"></i>
+              <i class="fa-solid fa-id-card" aria-hidden="true"></i>
               <input id="newFullName" name="newFullName" type="text" placeholder="Your full name" autocomplete="name" />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newUsername">Username</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-user"></i>
+              <i class="fa-solid fa-user" aria-hidden="true"></i>
               <input id="newUsername" name="newUsername" type="text" placeholder="Choose a username" autocomplete="off" required />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newEmail">Email</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-envelope"></i>
+              <i class="fa-solid fa-envelope" aria-hidden="true"></i>
               <input id="newEmail" name="newEmail" type="email" placeholder="your@email.com" autocomplete="email" required />
             </div>
           </div>
           <div class="login-field-group">
             <label for="newPassword">Password <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(min. 8 characters)</span></label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-key input-icon"></i>
+              <i class="fa-solid fa-key input-icon" aria-hidden="true"></i>
               <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
             <label for="newPasswordConfirm">Confirm Password</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-key input-icon"></i>
+              <i class="fa-solid fa-key input-icon" aria-hidden="true"></i>
               <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
@@ -357,7 +357,7 @@
             <input type="hidden" id="selectedTierInput" value="free" />
           </div>
           <button type="submit" class="login-submit-btn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Create Account</span>
           </button>
           <div id="createError" class="login-error" aria-live="polite"></div>
@@ -372,12 +372,12 @@
           <div class="login-field-group">
             <label for="resetEmail">Email Address</label>
             <div class="login-input-wrapper">
-              <i class="fa-solid fa-envelope"></i>
+              <i class="fa-solid fa-envelope" aria-hidden="true"></i>
               <input id="resetEmail" name="resetEmail" type="email" placeholder="your@email.com" required />
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="resetSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Send Reset Link</span>
           </button>
           <button type="button" id="backToSignInBtn" class="login-back-link">Back to Sign In</button>
@@ -415,14 +415,14 @@
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayName">Cardholder Name</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-id-card"></i>
+            <i class="fa-solid fa-id-card" aria-hidden="true"></i>
             <input id="demoPayName" type="text" placeholder="Name on card" autocomplete="off" />
           </div>
         </div>
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayEmail">Billing Email</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-envelope"></i>
+            <i class="fa-solid fa-envelope" aria-hidden="true"></i>
             <input id="demoPayEmail" type="email" placeholder="billing@email.com" autocomplete="off" />
           </div>
         </div>
@@ -431,14 +431,14 @@
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayCard">Card Number (Demo)</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-credit-card"></i>
+            <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
             <input id="demoPayCard" type="text" placeholder="4242 4242 4242 4242" autocomplete="off" />
           </div>
         </div>
         <div class="login-field-group" style="margin-bottom:0;">
           <label for="demoPayExpiry">Expiry</label>
           <div class="login-input-wrapper">
-            <i class="fa-solid fa-calendar"></i>
+            <i class="fa-solid fa-calendar" aria-hidden="true"></i>
             <input id="demoPayExpiry" type="text" placeholder="MM/YY" autocomplete="off" />
           </div>
         </div>
@@ -488,12 +488,12 @@
         <span class="sites-loaded-badge">
           <strong>Sites Loaded:</strong> <span id="sitesLoadedCount">0</span>
         </span>
-        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal"><i class="fa-solid fa-book" style="margin-right:6px;"></i><span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
-        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View"><i class="fa-solid fa-square-root-variable" style="margin-right:6px;"></i><span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
-        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View"><i class="fa-solid fa-flask" style="margin-right:6px;"></i><span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
+        <button id="userManualBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="userManualModal"><i class="fa-solid fa-book" style="margin-right:6px;" aria-hidden="true"></i><span class="nav-label-full">User Manual</span><span class="nav-label-short">Manual</span></button>
+        <a id="formulaViewLink" class="contact-dev-button" href="index_formulas.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Formula View"><i class="fa-solid fa-square-root-variable" style="margin-right:6px;" aria-hidden="true"></i><span class="nav-label-full">Formula View</span><span class="nav-label-short">Formula</span></a>
+        <a id="developerViewLink" class="contact-dev-button" href="index_developer.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;" title="Open Developer View"><i class="fa-solid fa-flask" style="margin-right:6px;" aria-hidden="true"></i><span class="nav-label-full">Developer View</span><span class="nav-label-short">Dev</span></a>
         <a id="adminPortalLink" class="contact-dev-button" href="admin.html" target="_blank" rel="noopener noreferrer" style="display:none; text-decoration: none;" title="Open Admin Portal"><span class="nav-label-full">Admin Portal</span><span class="nav-label-short">Admin</span></a>
         <div class="contact-dev-wrap">
-          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel"><i class="fa-solid fa-comment-dots" style="margin-right:6px;"></i><span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
+          <button id="contactDevBtn" type="button" class="contact-dev-button" aria-expanded="false" aria-controls="contactDevPanel"><i class="fa-solid fa-comment-dots" style="margin-right:6px;" aria-hidden="true"></i><span class="nav-label-full">Contact Developer</span><span class="nav-label-short">Contact</span></button>
           <div id="contactDevPanel" class="contact-dev-panel hidden" role="dialog" aria-label="Developer contact details">
             <p class="contact-dev-title">Feedback or issue report</p>
             <p class="contact-dev-note">Share any bug details, screenshots, and steps to reproduce.</p>
@@ -628,7 +628,7 @@
     <div class="card" id="quickSearchCard" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #1976d2;">
       <div class="snapshot-toolbar">
         <div class="snapshot-toolbar-copy">
-          <h2 style="color: #1565c0; margin: 0;"><i class="fa-solid fa-magnifying-glass-location" style="margin-right:8px;"></i>Search Address</h2>
+          <h2 style="color: #1565c0; margin: 0;"><i class="fa-solid fa-magnifying-glass-location" style="margin-right:8px;" aria-hidden="true"></i>Search Address</h2>
           <p>
             Enter an address or road and use Search to find matching counters. Exact road matches are prioritized; otherwise nearest reference counters are used.
           </p>
@@ -665,7 +665,7 @@
              <p id="quickTiaTypingStatus" style="display:none; margin: 4px 0 0 0; font-size: 0.82em; color: #1565c0;">Searching suggestions...</p>
         </div>
         <button id="quickTiaSearchBtn" type="button" style="background: #1976d2; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95em;">
-          <i class="fa-solid fa-magnifying-glass" style="margin-right:6px;"></i>Search
+          <i class="fa-solid fa-magnifying-glass" style="margin-right:6px;" aria-hidden="true"></i>Search
         </button>
       </div>
       
@@ -703,7 +703,7 @@
       </div>
       
       <div id="quickTiaPanel" style="display: none; background: white; border: 1px solid #1976d2; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-        <h3 style="margin: 0 0 10px 0; color: #1565c0; border-bottom: 2px solid #1976d2; padding-bottom: 8px;"><i class="fa-solid fa-location-dot" style="margin-right:8px;"></i>Analysis Results</h3>
+        <h3 style="margin: 0 0 10px 0; color: #1565c0; border-bottom: 2px solid #1976d2; padding-bottom: 8px;"><i class="fa-solid fa-location-dot" style="margin-right:8px;" aria-hidden="true"></i>Analysis Results</h3>
         
         <div id="quickTiaMatchInfo" style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px; margin-bottom: 10px; border-radius: 3px;">
           <strong style="color: #1565c0;">Match Type:</strong> <span id="quickTiaMatchType">-</span><br>
@@ -713,7 +713,7 @@
         </div>
 
         <div id="quickTiaNearbyRoads" style="display: none; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-          <h4 style="margin: 0 0 8px 0; color: #6a1b9a;"><i class="fa-solid fa-road" style="margin-right:8px;"></i>All Nearby Roads</h4>
+          <h4 style="margin: 0 0 8px 0; color: #6a1b9a;"><i class="fa-solid fa-road" style="margin-right:8px;" aria-hidden="true"></i>All Nearby Roads</h4>
           <p style="font-size: 0.8em; color: #8e24aa; margin: 0 0 8px 0;">Streets within <span id="quickTiaNearbyRoadsRadiusValue">0.2</span> km of the searched address:</p>
           <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 10px 0;">
             <span style="font-size: 0.78em; color: #6a1b9a; min-width: 34px;">0.2 km</span>
@@ -728,7 +728,7 @@
         <!-- For Exact Match -->
         <div id="quickTiaExactMatch" style="display: none;">
           <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-            <h4 style="margin: 0 0 8px 0; color: #2e7d32;"><i class="fa-solid fa-circle-check" style="margin-right:8px;"></i>Exact Data Found</h4>
+            <h4 style="margin: 0 0 8px 0; color: #2e7d32;"><i class="fa-solid fa-circle-check" style="margin-right:8px;" aria-hidden="true"></i>Exact Data Found</h4>
             <div style="font-size: 0.9em; line-height: 1.6;">
               <div><strong>AADT:</strong> <span id="quickTiaExactVADT">-</span> vehicles/day</div>
               <div><strong id="quickTiaExactD1Label">D1 AADT:</strong> <span id="quickTiaExactD1">-</span></div>
@@ -742,7 +742,7 @@
 
         <!-- For Multiple References -->
         <div id="quickTiaMultipleRefs" style="display: none;">
-          <h4 style="margin: 0 0 10px 0; color: #d32f2f;"><i class="fa-solid fa-location-crosshairs" style="margin-right:8px;"></i>Using 3+ Reference Points (within 5km)</h4>
+          <h4 style="margin: 0 0 10px 0; color: #d32f2f;"><i class="fa-solid fa-location-crosshairs" style="margin-right:8px;" aria-hidden="true"></i>Using 3+ Reference Points (within 5km)</h4>
           <div id="quickTiaRefList" style="background: white; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px;"></div>
           <div id="quickTiaRoadWeightWrap" style="display:none; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; padding:8px; margin-bottom:10px;">
               <div style="font-size:0.8em; color:#1b5e20; font-weight:700; margin-bottom:6px;">Road-level weighting with suggested road volume</div>
@@ -754,7 +754,7 @@
 
           <!-- Calculation Method Selector -->
           <div style="background: #fff3e0; border: 2px solid #f57c00; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-            <h5 style="margin: 0 0 10px 0; color: #e65100;"><i class="fa-solid fa-calculator" style="margin-right:8px;"></i>Choose Calculation Method</h5>
+            <h5 style="margin: 0 0 10px 0; color: #e65100;"><i class="fa-solid fa-calculator" style="margin-right:8px;" aria-hidden="true"></i>Choose Calculation Method</h5>
             <div style="display: flex; gap: 16px; flex-wrap: wrap;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
                 <input type="radio" name="trafficCalcMethod" value="weighted" checked onchange="toggleTrafficCalcMethod()">
@@ -773,8 +773,8 @@
 
             <!-- Mode toggle -->
             <div style="display: flex; gap: 0; margin-bottom: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #c9d8da;">
-              <button id="manualGenModeTrip" onclick="setManualGenMode('trip')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #2a4045; color: #fff; transition: background 0.2s;"><i class="fa-solid fa-chart-column" style="margin-right:6px;"></i>Trip Generation</button>
-              <button id="manualGenModeDirect" onclick="setManualGenMode('direct')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #e8f0f1; color: #2a4045; transition: background 0.2s;"><i class="fa-solid fa-hashtag" style="margin-right:6px;"></i>Direct AADT Entry</button>
+              <button id="manualGenModeTrip" onclick="setManualGenMode('trip')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #2a4045; color: #fff; transition: background 0.2s;"><i class="fa-solid fa-chart-column" style="margin-right:6px;" aria-hidden="true"></i>Trip Generation</button>
+              <button id="manualGenModeDirect" onclick="setManualGenMode('direct')" style="flex: 1; padding: 8px 10px; font-size: 0.85em; font-weight: 600; border: none; cursor: pointer; background: #e8f0f1; color: #2a4045; transition: background 0.2s;"><i class="fa-solid fa-hashtag" style="margin-right:6px;" aria-hidden="true"></i>Direct AADT Entry</button>
             </div>
 
             <!-- Trip Generation Calculator section -->
@@ -836,7 +836,7 @@
             </div>
 
             <button onclick="calculateTripGeneration()" style="margin-top: 15px; padding: 10px 15px; background: linear-gradient(135deg, #2a4045 0%, #1a2c2f 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(42, 64, 69, 0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
-              <i class="fa-solid fa-chart-column" style="margin-right:6px;"></i>Calculate AADT &amp; Peak Hours
+              <i class="fa-solid fa-chart-column" style="margin-right:6px;" aria-hidden="true"></i>Calculate AADT &amp; Peak Hours
             </button>
 
             <div style="margin-top: 10px; background: #e8f4f8; border: 1px solid #84cad8; border-radius: 6px; padding: 10px; font-size: 0.82em; line-height: 1.5;">
@@ -886,7 +886,7 @@
               </div>
 
               <button onclick="applyDirectAadtEntry()" style="padding: 10px 15px; background: linear-gradient(135deg, #14746f 0%, #0a3f3c 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(20,116,111,0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
-                <i class="fa-solid fa-check" style="margin-right:6px;"></i>Apply AADT to Assessment
+                <i class="fa-solid fa-check" style="margin-right:6px;" aria-hidden="true"></i>Apply AADT to Assessment
               </button>
             </div><!-- end manualGenDirectSection -->
 
@@ -904,13 +904,13 @@
           </div>
 
           <button id="quickTiaUseCalculatedBtn" onclick="useCalculatedTIAData()" style="background: linear-gradient(135deg, #1f5e63 0%, #0f2f32 100%); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; box-shadow: 0 4px 12px rgba(15, 47, 50, 0.25);">
-            <i class="fa-solid fa-check" style="margin-right:6px;"></i>Use Calculated Data
+            <i class="fa-solid fa-check" style="margin-right:6px;" aria-hidden="true"></i>Use Calculated Data
           </button>
         </div>
       </div>
 
       <div id="quickTiaError" style="display: none; background: #ffebee; border: 1px solid #ef5350; border-radius: 6px; padding: 10px; color: #c30000;">
-        <strong><i class="fa-solid fa-circle-exclamation" style="margin-right:6px;"></i>No matches found</strong><br>
+        <strong><i class="fa-solid fa-circle-exclamation" style="margin-right:6px;" aria-hidden="true"></i>No matches found</strong><br>
         <span style="font-size: 0.9em;">Try searching by different road name or manually select from database below.</span>
       </div>
     </div>
@@ -959,7 +959,7 @@
       </div>
 
       <div id="macroSiteDetailsPanel" style="display:none; background:#e8f5e9; border:1px solid #81c784; border-radius:6px; padding:12px; margin-bottom:12px;">
-        <h3 style="margin:0 0 8px 0; color:#2e7d32;"><i class="fa-solid fa-location-dot" style="margin-right:8px;"></i>Selected Site Details</h3>
+        <h3 style="margin:0 0 8px 0; color:#2e7d32;"><i class="fa-solid fa-location-dot" style="margin-right:8px;" aria-hidden="true"></i>Selected Site Details</h3>
         <div style="display:grid; grid-template-columns:160px 1fr; gap:6px; font-size:0.9em;">
           <div style="font-weight:700;">Site ID:</div><div id="macroDetailSiteId">-</div>
           <div style="font-weight:700;">Source:</div><div id="macroDetailSource">-</div>
