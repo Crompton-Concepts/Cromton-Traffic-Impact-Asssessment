@@ -1,0 +1,3 @@
+## 2024-06-25 - Haversine Distance Calculation Optimization
+**Learning:** In performance-critical spatial calculations iterating over large geographical datasets, redundant trigonometric operations (`Math.sin()`) and divisions by 2 can cause noticeable CPU overhead in inner loops.
+**Action:** When working with math-heavy loops, pre-calculate repeated constants (`Math.PI / 180`, `2 * 6371000 = 12742000`), convert division to multiplication by reciprocal (e.g. `* 0.5` instead of `/ 2`), and cache intermediate results (like `Math.sin(halfDeltaPhi)`) to save CPU cycles without altering functionality.
