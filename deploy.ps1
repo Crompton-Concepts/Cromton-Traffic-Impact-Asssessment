@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Deploy Crompton TIA App to Firebase Hosting.
 .PARAMETER Functions
@@ -124,7 +124,7 @@ if ($pythonCmd) {
 Write-Step "File count"
 $html = (Get-ChildItem -Filter "*.html"    | Measure-Object).Count
 $js   = (Get-ChildItem -Filter "*.js"      | Measure-Object).Count
-$geo  = ((Get-ChildItem -Filter "*.geojson") + (Get-ChildItem -Path 'datasets' -Recurse -Filter "*.geojson" -ErrorAction SilentlyContinue) | Measure-Object).Count
+$geo  = (@(Get-ChildItem -Filter "*.geojson") + @(Get-ChildItem -Path 'datasets' -Recurse -Filter "*.geojson" -ErrorAction SilentlyContinue) | Measure-Object).Count
 Write-Ok "HTML: $html  JS: $js  GeoJSON: $geo (incl. datasets/)"
 
 # Dataset files the app expects on hosting (used as Firebase Storage fallback)

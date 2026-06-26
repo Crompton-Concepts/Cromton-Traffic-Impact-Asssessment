@@ -1,0 +1,87 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+#
+# Install pre-commit hooks:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run all hooks manually:
+#   pre-commit run --all-files
+#
+# The hooks below cover the most common hygiene issues for this repo.
+# Skip heavy formatting (Black/ESLint) for now to keep the barrier low.
+
+repos:
+  # ── Built-in generic checks ──────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # ── Python: syntax check (fast, no heavy formatter) ─────────────────────
+  - repo: local
+    hooks:
+      - id: python-syntax-check
+        name: Python syntax check
+        entry: python -m py_compile
+        language: system
+        files: \.py$
+        pass_filenames: true
+
+      - id: js-syntax-check
+        name: JavaScript syntax check
+        entry: node --check
+        language: system
+        files: \.(js|ts)$
+        pass_filenames: true
+
+      - id: ts-type-check
+        name: TypeScript type check
+        entry: npm run typecheck
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/.*\.ts$
+
+  # ── JSON validation for Firebase rules ──────────────────────────────────
+  - repo: local
+    hooks:
+      - id: firebase-rules-json-valid
+        name: Firebase rules JSON valid
+        entry: python -c "import json, sys; json.load(open(sys.argv[1]))"
+        language: system
+        files: (database\.rules\.json|storage\.rules|cors\.json)$
+        pass_filenames: true
+
+  # ── Ensure HTML variants stay in sync ─────────────────────────────────
+  - repo: local
+    hooks:
+      - id: html-variants-sync
+        name: HTML variants in sync
+        entry: python scripts/build_html_variants.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  # ── Run the canonical calculation tests ──────────────────────────────────
+  - repo: local
+    hooks:
+      - id: calc-tests
+        name: Calculation library tests
+        entry: node --test calc/tia-calc.test.js
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        # Allow the hook to pass if Node isn't installed (graceful degradation)
+        # In practice this should always be available since JS is the primary language.

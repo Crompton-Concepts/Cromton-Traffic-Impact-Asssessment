@@ -4518,3 +4518,214 @@
   .vol-adj-controls { max-height: 48vh; border-right: none; border-bottom: 1px solid #e1ded8; }
   .vol-adj-result-grid { grid-template-columns: repeat(3, 1fr); }
 }
+/* ── Mobile Responsive Enhancements ─────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Base typography */
+  html { font-size: 15px; }
+
+  /* Loading overlay compact */
+  .loading-shell {
+    width: 98vw;
+    height: auto;
+    max-height: 96vh;
+    grid-template-rows: auto auto auto;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  /* App shell */
+  .app-shell {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  /* Header / nav */
+  .app-header {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+  .app-header h1 {
+    font-size: 1rem;
+    width: 100%;
+    margin-bottom: 4px;
+  }
+
+  /* Main grid -> single column */
+  .main-grid,
+  .app-grid,
+  .two-column,
+  .three-column,
+  .form-row,
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  /* Cards */
+  .card {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .card-title {
+    font-size: 1rem;
+  }
+
+  /* Inputs */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px; /* prevent iOS zoom */
+    padding: 10px 12px;
+    min-height: 44px; /* touch target */
+  }
+
+  /* Buttons */
+  button,
+  .btn,
+  .report-mode-btn {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+
+  /* Tables: horizontal scroll wrapper */
+  .table-wrap,
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    min-width: 600px;
+    font-size: 0.8rem;
+  }
+  th, td {
+    padding: 6px 8px;
+  }
+
+  /* Map */
+  #map,
+  .map-container,
+  .leaflet-container {
+    height: 50vh !important;
+    min-height: 280px;
+  }
+
+  /* Report mode bars */
+  #reportModeBar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+  .report-mode-intro {
+    width: 100%;
+    gap: 8px;
+  }
+  .report-mode-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  #reportModeBottomBar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  /* Modals / panels */
+  .modal-panel,
+  .vol-adj-panel {
+    width: 96vw;
+    max-height: 92vh;
+    border-radius: 12px;
+  }
+  .vol-adj-body {
+    grid-template-columns: 1fr;
+  }
+  .vol-adj-controls {
+    max-height: 45vh;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .vol-adj-result-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Footer */
+  .copyright-footer {
+    font-size: 0.7rem;
+    padding: 6px 10px;
+  }
+
+  /* Hide non-essential elements in compact mode */
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  html { font-size: 14px; }
+
+  .loading-shell {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .vol-adj-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-mode-btn {
+    font-size: 0.8rem;
+    padding: 8px 10px;
+  }
+
+  #reportModeBar .report-mode-intro > div:nth-child(3) {
+    display: none; /* hide helper text on very small screens */
+  }
+}
+
+/* Touch-friendly improvements (regardless of viewport size) */
+@media (hover: none) and (pointer: coarse) {
+  button, .btn, .report-mode-btn, input, select, textarea, a {
+    min-height: 44px;
+  }
+
+  /* Larger tap targets for map controls */
+  .leaflet-control-zoom a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles (keep existing, ensure nothing breaks) */
+@media print {
+  .hide-print,
+  #reportModeBar,
+  #reportModeBottomBar,
+  .report-mode-actions,
+  .report-share-wrap,
+  #exitPreviewBtn {
+    display: none !important;
+  }
+}

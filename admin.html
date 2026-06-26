@@ -399,25 +399,11 @@
     errEl.textContent = '';
     msgEl.textContent = '';
 
-    // Pull latest users first so username->email lookup is current.
-    if (window.TIASync && TIASync.isEnabled && TIASync.isEnabled()) {
-      try { await TIASync.pullAll(); } catch (_) {}
-    }
-
-    const identifier = String(document.getElementById('alUser').value || '').trim().toLowerCase();
-    if (!identifier) {
+    const identifierRaw = String(document.getElementById('alUser').value || '').trim();
+    if (!identifierRaw) {
       errEl.textContent = 'Enter username or email first, then click Forgot password.';
       return;
     }
-
-    const db = getDB();
-    const found = Object.values(db).find(u =>
-      u.username.toLowerCase() === identifier || (u.email && u.email.toLowerCase() === identifier)
-    );
-    // Only act on a known account. Never fabricate an email from arbitrary
-    // input, and never create a Firebase Auth account here — doing so let
-    // anyone provision accounts for any address.
-    const email = found && found.email ? found.email : null;
 
     const auth = getFirebaseAuth();
     if (!auth) {
@@ -425,13 +411,38 @@
       return;
     }
 
+    // The Cloud Function does everything: resolves identifier, ensures Auth
+    // account exists, generates the reset link, sends the email via SendGrid.
+    try {
+      if (typeof firebase.functions !== 'function') {
+        errEl.textContent = 'Password reset is temporarily unavailable. Please refresh and try again.';
+        return;
+      }
+
+      try {
+        const fn = firebase.functions().httpsCallable('requestPasswordReset');
+        await fn({ identifier: identifierRaw });
+      } catch (callErr) {
+        const code = String((callErr && callErr.code) || '');
+        if (code === 'functions/resource-exhausted' || code === 'functions/invalid-argument') {
+          errEl.textContent = (callErr && callErr.message) || 'Could not process reset request.';
+          return;
+        }
+        if (code === 'functions/failed-precondition') {
+          errEl.textContent = 'Password reset is misconfigured. Please contact support.';
+          return;
+        }
+        console.warn('[adminForgotPassword] callable failed:', code, callErr && callErr.message);
+        errEl.textContent = 'Could not process reset request. Please try again later.';
+        return;
+      }
+    } catch (err) {
+      console.error('[adminForgotPassword] network error:', err);
+      errEl.textContent = 'Network error. Please check your connection and try again.';
+      return;
+    }
     // Neutral confirmation regardless of whether the account exists, to avoid
     // leaking which usernames/emails are registered (account enumeration).
-    if (email) {
-      try {
-        await auth.sendPasswordResetEmail(email);
-      } catch (_) {}
-    }
     msgEl.textContent = 'If that account exists, a reset link has been sent. Please check inbox/spam.';
   }
 

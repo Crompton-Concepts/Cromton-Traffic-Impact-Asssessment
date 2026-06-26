@@ -1,0 +1,934 @@
+/* ═══════════════════════════════════════════════════════════════════
+   TIA UI Enhancement Layer — Professional Design System
+   ═══════════════════════════════════════════════════════════════════
+   
+   This file adds a refined design system on top of the existing styles.
+   It uses CSS custom properties and carefully scoped selectors to enhance
+   visual quality without breaking existing functionality.
+   
+   Load order: styles.css → styles-enhanced.css (this file)
+   
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   1. ENHANCED DESIGN TOKENS
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-tokens {
+  :root {
+    /* Refined Color Palette */
+    --enh-bg: #f8fafc;
+    --enh-bg-elevated: #ffffff;
+    --enh-bg-surface: rgba(255, 255, 255, 0.72);
+    --enh-ink: #0f172a;
+    --enh-ink-secondary: #475569;
+    --enh-ink-muted: #64748b;
+    --enh-ink-tertiary: #94a3b8;
+    
+    /* Brand Colors — refined from existing teal */
+    --enh-brand: #0d7377;
+    --enh-brand-light: #14a3a8;
+    --enh-brand-dark: #095a5e;
+    --enh-brand-soft: rgba(13, 115, 119, 0.08);
+    --enh-brand-medium: rgba(13, 115, 119, 0.16);
+    --enh-brand-focus: rgba(13, 115, 119, 0.18);
+    --enh-brand-glow: rgba(13, 115, 119, 0.24);
+    
+    /* Accent Colors */
+    --enh-accent-amber: #f59e0b;
+    --enh-accent-coral: #f97316;
+    --enh-accent-rose: #e11d48;
+    --enh-accent-indigo: #6366f1;
+    --enh-accent-emerald: #10b981;
+    --enh-accent-sky: #0ea5e9;
+    
+    /* Semantic Colors */
+    --enh-success: #10b981;
+    --enh-success-soft: rgba(16, 185, 129, 0.12);
+    --enh-warning: #f59e0b;
+    --enh-warning-soft: rgba(245, 158, 11, 0.12);
+    --enh-danger: #ef4444;
+    --enh-danger-soft: rgba(239, 68, 68, 0.12);
+    --enh-info: #3b82f6;
+    --enh-info-soft: rgba(59, 130, 246, 0.12);
+    
+    /* Border & Divider */
+    --enh-border: #e2e8f0;
+    --enh-border-light: #f1f5f9;
+    --enh-border-hover: #cbd5e1;
+    --enh-border-focus: #0d7377;
+    
+    /* Shadow System — refined elevation */
+    --enh-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --enh-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --enh-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+    --enh-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    --enh-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+    --enh-shadow-2xl: 0 25px 50px -12px rgba(15, 23, 42, 0.18);
+    --enh-shadow-inner: inset 0 2px 4px rgba(15, 23, 42, 0.04);
+    --enh-shadow-brand: 0 4px 14px rgba(13, 115, 119, 0.25);
+    --enh-shadow-brand-lg: 0 8px 24px rgba(13, 115, 119, 0.30);
+    
+    /* Border Radius System */
+    --enh-radius-sm: 6px;
+    --enh-radius-md: 10px;
+    --enh-radius-lg: 14px;
+    --enh-radius-xl: 18px;
+    --enh-radius-2xl: 22px;
+    --enh-radius-pill: 9999px;
+    
+    /* Spacing Scale */
+    --enh-space-1: 4px;
+    --enh-space-2: 8px;
+    --enh-space-3: 12px;
+    --enh-space-4: 16px;
+    --enh-space-5: 20px;
+    --enh-space-6: 24px;
+    --enh-space-8: 32px;
+    --enh-space-10: 40px;
+    --enh-space-12: 48px;
+    
+    /* Typography Scale */
+    --enh-text-xs: 0.75rem;
+    --enh-text-sm: 0.875rem;
+    --enh-text-base: 0.95rem;
+    --enh-text-lg: 1.0625rem;
+    --enh-text-xl: 1.25rem;
+    --enh-text-2xl: 1.5rem;
+    --enh-text-3xl: 1.875rem;
+    --enh-text-4xl: 2.25rem;
+    
+    /* Transition Timing */
+    --enh-transition-fast: 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+    --enh-transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --enh-transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --enh-transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    
+    /* Glass Effect */
+    --enh-glass-bg: rgba(255, 255, 255, 0.72);
+    --enh-glass-border: rgba(255, 255, 255, 0.24);
+    --enh-glass-backdrop: blur(20px) saturate(1.8);
+    --enh-glass-backdrop-strong: blur(40px) saturate(2);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   2. GLOBAL BASE ENHANCEMENTS
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom Scrollbar — refined for WebKit */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--enh-ink-tertiary);
+    border-radius: var(--enh-radius-pill);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--enh-ink-muted);
+  }
+  
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--enh-ink-tertiary) transparent;
+  }
+  
+  /* Selection color */
+  ::selection {
+    background: var(--enh-brand-soft);
+    color: var(--enh-brand-dark);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   3. LOADING OVERLAY — Refined & Glassmorphism
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-loading {
+  .loading-overlay {
+    background: 
+      radial-gradient(circle at 15% 8%, rgba(13, 115, 119, 0.10) 0%, transparent 40%),
+      radial-gradient(circle at 85% 92%, rgba(9, 90, 94, 0.08) 0%, transparent 48%),
+      linear-gradient(180deg, rgba(248, 250, 252, 0.96) 0%, rgba(241, 245, 249, 0.96) 100%);
+    backdrop-filter: blur(12px);
+  }
+  
+  .loading-shell {
+    border: 1px solid rgba(13, 115, 119, 0.12);
+    background: linear-gradient(
+      180deg, 
+      rgba(255, 255, 255, 0.88) 0%, 
+      rgba(245, 250, 251, 0.90) 100%
+    );
+    box-shadow: 
+      0 32px 64px rgba(9, 30, 32, 0.16),
+      0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    border-radius: var(--enh-radius-2xl);
+  }
+  
+  .loading-card {
+    border: 1px solid rgba(13, 115, 119, 0.10);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbfc 100%);
+    box-shadow: var(--enh-shadow-lg);
+    border-radius: var(--enh-radius-xl);
+    transition: transform var(--enh-transition-base), box-shadow var(--enh-transition-base);
+  }
+  .loading-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--enh-shadow-xl);
+  }
+  
+  .loading-spinner-ring {
+    border: 4px solid var(--enh-border-light);
+    border-top-color: var(--enh-brand);
+    box-shadow: 0 0 12px rgba(13, 115, 119, 0.15);
+  }
+  
+  .loading-progress-fill {
+    background: linear-gradient(90deg, var(--enh-brand) 0%, var(--enh-brand-light) 50%, var(--enh-brand) 100%);
+    background-size: 200% 100%;
+    box-shadow: 0 0 8px rgba(13, 115, 119, 0.3);
+  }
+  
+  .loading-text {
+    background: linear-gradient(135deg, var(--enh-brand) 0%, var(--enh-brand-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  
+  .loading-detail-text {
+    color: var(--enh-ink-muted);
+  }
+  
+  .loading-fact-card {
+    border: 1px solid rgba(13, 115, 119, 0.08);
+    background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(245,250,251,0.9) 100%);
+    border-radius: var(--enh-radius-lg);
+    box-shadow: var(--enh-shadow-sm);
+    transition: all var(--enh-transition-base);
+  }
+  .loading-fact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--enh-shadow-md);
+    border-color: rgba(13, 115, 119, 0.16);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   4. NAVBAR — Glassmorphism & Refined
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-navbar {
+  .navbar {
+    background: linear-gradient(135deg, 
+      rgba(2, 13, 15, 0.92) 0%, 
+      rgba(7, 28, 32, 0.94) 55%, 
+      rgba(4, 20, 24, 0.92) 100%
+    );
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--enh-radius-xl);
+    box-shadow: 
+      0 8px 32px rgba(2, 10, 12, 0.50), 
+      0 1px 0 rgba(255, 255, 255, 0.06) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+  
+  .navbar::after {
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.08) 50%, 
+      transparent 100%
+    );
+  }
+  
+  .navbar-brand {
+    border-right: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  
+  .navbar-brand img {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: transform var(--enh-transition-fast);
+  }
+  .navbar-brand img:hover {
+    transform: scale(1.04);
+  }
+  
+  .navbar h1 {
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: -0.01em;
+  }
+  
+  .navbar-user-greeting {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+  }
+  
+  .navbar .tier-badge {
+    background: linear-gradient(135deg, var(--enh-brand) 0%, var(--enh-brand-dark) 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px rgba(13, 115, 119, 0.3);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  
+  /* Nav buttons — glass effect */
+  .home-button,
+  .contact-dev-button,
+  .logout-button {
+    transition: all var(--enh-transition-base);
+    border-radius: var(--enh-radius-md);
+  }
+  
+  .home-button,
+  .contact-dev-button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .home-button:hover,
+  .contact-dev-button:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .logout-button {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: rgba(255, 200, 200, 0.95);
+  }
+  .logout-button:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   5. MAIN CONTAINER — Refined Cards & Depth
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-container {
+  .container {
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    border: 1px solid var(--enh-border);
+    border-radius: var(--enh-radius-2xl);
+    box-shadow: var(--enh-shadow-lg);
+    transition: box-shadow var(--enh-transition-slow);
+  }
+  .container:hover {
+    box-shadow: var(--enh-shadow-xl);
+  }
+  
+  .container::before {
+    background: linear-gradient(180deg, 
+      rgba(13, 115, 119, 0.03) 0%, 
+      transparent 100%
+    );
+  }
+  
+  .app-shell {
+    gap: var(--enh-space-4);
+  }
+  
+  .app-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid var(--enh-border-light);
+    border-radius: var(--enh-radius-lg);
+    box-shadow: var(--enh-shadow-sm);
+  }
+  
+  .app-footer {
+    border-top: 1px solid var(--enh-border-light);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   6. CARDS — Professional Elevation & Interactions
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-cards {
+  .card {
+    background: var(--enh-bg-elevated);
+    border: 1px solid var(--enh-border);
+    border-radius: var(--enh-radius-lg);
+    box-shadow: var(--enh-shadow-sm);
+    transition: all var(--enh-transition-base);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--enh-brand) 0%, var(--enh-brand-light) 100%);
+    opacity: 0;
+    transition: opacity var(--enh-transition-base);
+  }
+  
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--enh-shadow-lg);
+    border-color: var(--enh-border-hover);
+  }
+  .card:hover::before {
+    opacity: 1;
+  }
+  
+  .card h2 {
+    color: var(--enh-brand-dark);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    border-bottom: 2px solid var(--enh-border-light);
+    padding-bottom: var(--enh-space-2);
+  }
+  
+  .card h3 {
+    color: var(--enh-ink-secondary);
+    font-weight: 600;
+  }
+  
+  .detour-card {
+    border: 1px solid var(--enh-border);
+    border-radius: var(--enh-radius-lg);
+    box-shadow: var(--enh-shadow-sm);
+    transition: all var(--enh-transition-base);
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  }
+  .detour-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--enh-shadow-lg);
+    border-color: var(--enh-brand);
+  }
+  
+  .kpi-tile {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid var(--enh-border);
+    border-radius: var(--enh-radius-md);
+    box-shadow: var(--enh-shadow-xs);
+    transition: all var(--enh-transition-base);
+  }
+  .kpi-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--enh-shadow-md);
+    border-color: var(--enh-border-hover);
+  }
+  
+  .grid > div,
+  .grid-2 > div {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid var(--enh-border);
+    border-radius: var(--enh-radius-md);
+    box-shadow: var(--enh-shadow-xs);
+    transition: all var(--enh-transition-base);
+  }
+  .grid > div:hover,
+  .grid-2 > div:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--enh-shadow-sm);
+    border-color: var(--enh-border-hover);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   7. FORMS & INPUTS — Refined Aesthetics
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-forms {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    border: 1px solid var(--enh-border);
+    border-radius: var(--enh-radius-md);
+    background: linear-gradient(180deg, #ffffff 0%, #fdfefe 100%);
+    box-shadow: var(--enh-shadow-inner);
+    transition: all var(--enh-transition-base);
+    color: var(--enh-ink);
+  }
+  
+  input[type="text"]:hover,
+  input[type="number"]:hover,
+  input[type="email"]:hover,
+  input[type="password"]:hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--enh-border-hover);
+    box-shadow: var(--enh-shadow-sm), var(--enh-shadow-inner);
+  }
+  
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--enh-brand);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px var(--enh-brand-focus), 0 4px 12px var(--enh-brand-glow);
+    outline: none;
+  }
+  
+  input[type="text"]:read-only,
+  input[type="number"]:read-only,
+  select:disabled,
+  textarea:read-only {
+    background: #f8fafc;
+    border-color: var(--enh-border-light);
+    color: var(--enh-ink-muted);
+  }
+  
+  .unit-tag {
+    color: var(--enh-ink-tertiary);
+    font-weight: 600;
+    font-size: var(--enh-text-sm);
+  }
+  
+  /* Color-coded input states */
+  .input-group-user-input:focus-within input {
+    border-left: 3px solid var(--enh-brand) !important;
+  }
+  .input-group-auto-input:focus-within input {
+    border-left: 3px solid var(--enh-danger) !important;
+  }
+  
+  /* Range slider */
+  input[type="range"] {
+    accent-color: var(--enh-brand);
+  }
+  
+  /* Checkbox / Radio */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--enh-brand);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   8. BUTTONS — Refined Interactions & Depth
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-buttons {
+  button,
+  .btn {
+    background: linear-gradient(135deg, var(--enh-brand) 0%, var(--enh-brand-dark) 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--enh-radius-md);
+    box-shadow: 
+      0 4px 12px rgba(13, 115, 119, 0.25), 
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: all var(--enh-transition-fast);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  button::after,
+  .btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s ease;
+  }
+  
+  button:hover,
+  .btn:hover {
+    filter: brightness(1.05);
+    transform: translateY(-2px);
+    box-shadow: var(--enh-shadow-brand-lg);
+  }
+  button:hover::after,
+  .btn:hover::after {
+    left: 100%;
+  }
+  
+  button:active,
+  .btn:active {
+    transform: translateY(0);
+    filter: brightness(0.97);
+    box-shadow: var(--enh-shadow-brand);
+  }
+  
+  button:disabled,
+  .btn:disabled {
+    opacity: 0.6;
+    filter: grayscale(0.2);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* Snapshot buttons */
+  .snapshot-btn {
+    border-radius: var(--enh-radius-pill);
+    box-shadow: var(--enh-shadow-md);
+    transition: all var(--enh-transition-base);
+  }
+  .snapshot-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--enh-shadow-lg);
+  }
+  .snapshot-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+  
+  /* Report mode buttons */
+  .report-mode-btn {
+    border-radius: var(--enh-radius-md);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all var(--enh-transition-fast);
+    font-weight: 700;
+  }
+  .report-mode-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    filter: brightness(1.06);
+  }
+  .report-mode-btn:active {
+    transform: translateY(0);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   9. REPORT MODE BARS — Refined Glassmorphism
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-report-mode {
+  #reportModeBar {
+    background: linear-gradient(135deg, 
+      rgba(13, 115, 119, 0.95) 0%, 
+      rgba(9, 90, 94, 0.97) 100%
+    );
+    backdrop-filter: blur(16px) saturate(1.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  }
+  
+  #reportModeBottomBar {
+    background: linear-gradient(135deg, 
+      rgba(9, 90, 94, 0.95) 0%, 
+      rgba(13, 115, 119, 0.97) 100%
+    );
+    backdrop-filter: blur(16px) saturate(1.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  }
+  
+  .report-mode-intro-text {
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  .report-mode-close-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    transition: all var(--enh-transition-fast);
+  }
+  .report-mode-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   10. MAP — Refined Leaflet Styling
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-map {
+  #macroMap,
+  #detourMap {
+    border: 2px solid var(--enh-brand);
+    border-radius: var(--enh-radius-md);
+    box-shadow: var(--enh-shadow-md);
+    transition: box-shadow var(--enh-transition-base);
+  }
+  #macroMap:hover,
+  #detourMap:hover {
+    box-shadow: var(--enh-shadow-lg);
+  }
+  
+  .leaflet-control-zoom a {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(8px);
+    border-radius: var(--enh-radius-sm) !important;
+    box-shadow: var(--enh-shadow-sm) !important;
+    transition: all var(--enh-transition-fast);
+  }
+  .leaflet-control-zoom a:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    box-shadow: var(--enh-shadow-md) !important;
+  }
+  
+  .leaflet-control-map-fullscreen {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(8px);
+    border-radius: var(--enh-radius-sm) !important;
+    box-shadow: var(--enh-shadow-sm) !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   11. DETAILS / ACCORDION — Refined
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-details {
+  details.card > summary {
+    background: linear-gradient(180deg, #ffffff 0%, #f7faf9 100%);
+    border: 1px solid var(--enh-border);
+    border-radius: var(--enh-radius-md);
+    transition: all var(--enh-transition-base);
+  }
+  details.card > summary:hover {
+    background: linear-gradient(180deg, #f3f9fa 0%, #eaf4f5 100%);
+    border-color: var(--enh-brand);
+  }
+  details.card > summary::after {
+    transition: transform var(--enh-transition-slow);
+  }
+  details[open].card > summary::after {
+    transform: rotate(135deg);
+  }
+  details.card > summary + div {
+    animation: slideDown 0.3s ease-out;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   12. TABLES — Refined
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-tables {
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--enh-radius-md);
+    overflow: hidden;
+    box-shadow: var(--enh-shadow-sm);
+  }
+  
+  th {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    color: var(--enh-ink-secondary);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: var(--enh-text-xs);
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--enh-border);
+  }
+  
+  td {
+    border-bottom: 1px solid var(--enh-border-light);
+    transition: background var(--enh-transition-fast);
+  }
+  tr:hover td {
+    background: rgba(13, 115, 119, 0.03);
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   13. COPYRIGHT / FOOTER — Refined
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-footer {
+  .copyright-footer {
+    color: var(--enh-ink-muted);
+    font-size: var(--enh-text-sm);
+    letter-spacing: 0.02em;
+    padding: var(--enh-space-4) 0 var(--enh-space-5);
+  }
+  .copyright-footer a {
+    color: var(--enh-brand);
+    text-decoration: none;
+    transition: color var(--enh-transition-fast);
+  }
+  .copyright-footer a:hover {
+    color: var(--enh-brand-light);
+    text-decoration: underline;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   14. LOADING ANIMATION — Enhanced Spinner
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-animations {
+  .loading-spinner-ring {
+    width: 52px;
+    height: 52px;
+    border: 4px solid var(--enh-border-light);
+    border-top-color: var(--enh-brand);
+    border-right-color: var(--enh-brand-light);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    box-shadow: 0 0 16px rgba(13, 115, 119, 0.2);
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .loading-progress-bar {
+    background: var(--enh-border-light);
+    border-radius: var(--enh-radius-pill);
+    overflow: hidden;
+    box-shadow: var(--enh-shadow-inner);
+  }
+  .loading-progress-fill {
+    background: linear-gradient(90deg, var(--enh-brand) 0%, var(--enh-brand-light) 100%);
+    border-radius: var(--enh-radius-pill);
+    box-shadow: 0 0 12px rgba(13, 115, 119, 0.4);
+    transition: width 0.3s ease;
+  }
+  
+  /* Fade-in for loaded content */
+  .fade-in-loaded {
+    animation: fadeInLoaded 0.5s ease-out;
+  }
+  @keyframes fadeInLoaded {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* Subtle pulse for attention elements */
+  .pulse-attention {
+    animation: pulseAttention 2s ease-in-out infinite;
+  }
+  @keyframes pulseAttention {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(13, 115, 119, 0.2); }
+    50% { box-shadow: 0 0 0 8px rgba(13, 115, 119, 0); }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   15. ACCESSIBILITY & FOCUS — Enhanced
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-a11y {
+  *:focus-visible {
+    outline: 2px solid var(--enh-brand);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--enh-brand-focus);
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  @media (prefers-contrast: more) {
+    .card,
+    .detour-card,
+    .kpi-tile {
+      border-width: 2px;
+    }
+    input,
+    select,
+    textarea,
+    button {
+      border-width: 2px;
+    }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   16. MOBILE RESPONSIVE — Enhanced Touch
+   ──────────────────────────────────────────────────────────────── */
+
+@layer enhanced-mobile {
+  @media (max-width: 768px) {
+    .card {
+      border-radius: var(--enh-radius-md);
+      padding: var(--enh-space-4);
+    }
+    
+    .navbar {
+      border-radius: var(--enh-radius-lg);
+    }
+    
+    .container {
+      border-radius: var(--enh-radius-lg);
+      padding: var(--enh-space-4);
+    }
+    
+    button,
+    .btn,
+    .report-mode-btn {
+      min-height: 48px;
+      padding: 12px 16px;
+    }
+    
+    input,
+    select,
+    textarea {
+      font-size: 16px; /* Prevent iOS zoom */
+      padding: 12px 14px;
+      min-height: 48px;
+    }
+  }
+  
+  @media (hover: none) and (pointer: coarse) {
+    .card:hover,
+    .detour-card:hover,
+    .kpi-tile:hover {
+      transform: none; /* Disable hover lift on touch devices */
+    }
+    .card:active,
+    .detour-card:active,
+    .kpi-tile:active {
+      transform: scale(0.98);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   END OF TIA UI ENHANCEMENT LAYER
+   ═══════════════════════════════════════════════════════════════════ */

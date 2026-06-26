@@ -1,15 +1,47 @@
 {
   "rules": {
+    "tia_admins": {
+      "$email": {
+        ".read": "auth != null && auth.token.email.replace('.', ',') === $email",
+        ".write": "false"
+      }
+    },
     "tia_users": {
       ".read": "auth != null",
       ".write": "auth != null",
       "$username": {
+        ".validate": "newData.hasChildren(['email', 'tier', 'createdAt']) || !newData.exists()",
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[^@]+@[^@]+$/)"
+        },
+        "tier": {
+          ".validate": "newData.isString() && newData.val().matches(/^(free|basic|pro|pro\\+|enterprise|standard|deleted)$/i)"
+        },
+        "createdAt": {
+          ".validate": "newData.isString()"
+        },
         "isAdmin": {
           ".validate": "!newData.exists() || newData.val() === data.val() || data.val() === true"
+        },
+        "passwordHash": {
+          ".validate": "false"
+        },
+        "provisionedFromAuth": {
+          ".validate": "newData.isBoolean()"
+        },
+        "reconciled": {
+          ".validate": "newData.isBoolean()"
+        },
+        "$other": {
+          ".validate": "newData.isString() || newData.isNumber() || newData.isBoolean()"
         }
       }
     },
     "tia_deleted_users": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "tia_audit_log": {
       ".read": "auth != null",
       ".write": "auth != null"
     }

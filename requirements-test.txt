@@ -1,0 +1,6 @@
+# Test dependencies for the TIA Report Service.
+# Install with:  pip install -r requirements-test.txt
+# (or alongside requirements.txt:  pip install -r requirements.txt -r requirements-test.txt)
+
+pytest>=7.4
+httpx>=0.25

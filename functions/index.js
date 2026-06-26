@@ -1,17 +1,14 @@
 /**
- * TIA Firebase Cloud Functions
+ * TIA Firebase Cloud Functions — updated with tia_admins support
  *
  * Trigger: auth.user().onCreate
  * When a user is added directly in the Firebase console (or via any Firebase
  * Auth call), automatically provision a matching record in the `tia_users`
  * Realtime Database path so the account is visible in the admin portal.
- *
- * Without this function a Firebase-Auth-only account is invisible to the
- * admin portal because the portal reads exclusively from `tia_users` (RTDB).
  */
 
 const admin     = require('firebase-admin');
-const { onRequest } = require('firebase-functions/v2/https');
+const { onRequest, onCall: onCallV2, HttpsError: HttpsErrorV2 } = require('firebase-functions/v2/https');
 const { onCall, HttpsError } = require('firebase-functions/v1/https');
 const { user } = require('firebase-functions/v1/auth');
 const { defineSecret } = require('firebase-functions/params');
@@ -19,7 +16,17 @@ const { defineSecret } = require('firebase-functions/params');
 admin.initializeApp();
 
 const USERS_PATH = 'tia_users';
+const ADMINS_PATH = 'tia_admins';
+const AUDIT_PATH = 'tia_audit_log';
 const GOOGLE_MAPS_API_KEY = defineSecret('GOOGLE_MAPS_API_KEY');
+const SENDGRID_API_KEY    = defineSecret('SENDGRID_API_KEY');
+
+// Sender / app branding used by the SendGrid password-reset email.
+// Update FROM_EMAIL to a verified SendGrid sender (single-sender or domain-auth).
+const FROM_EMAIL    = 'noreply@cromptonapps.com';
+const FROM_NAME     = 'Crompton Traffic Impact Assessment';
+const REPLY_TO      = 'labs@cromptonapps.com';
+const APP_DISPLAY   = 'Crompton TIA';
 
 // Origins permitted to call the HTTP functions. Keep in sync with cors.json.
 const ALLOWED_ORIGINS = [
@@ -252,6 +259,8 @@ exports.googleAddressSearch = onRequest({ secrets: [GOOGLE_MAPS_API_KEY] }, asyn
  *  3. Write a stub record flagged with provisionedFromAuth: true.
  *     The stub has NO passwordHash — an admin must set a password via the portal,
  *     or the user can log in after the admin uses "Forgot Password" to send a reset link.
+ *  4. If the user is an admin (isAdmin=true in their existing record), also
+ *     write to tia_admins for fast rule-based admin lookups.
  */
 exports.provisionAuthUser = user().onCreate(async (user) => {
   if (!user.email) {
@@ -314,6 +323,7 @@ exports.provisionAuthUser = user().onCreate(async (user) => {
  * bypassing the client-side limitation that only the current user can change their own password.
  *
  * Called from admin.html when the admin sets/resets a user's password.
+ * Also syncs the tia_admins path when admin status changes.
  */
 exports.adminSetUserPassword = onCall(async (data, context) => {
   if (!context.auth) {
@@ -333,7 +343,7 @@ exports.adminSetUserPassword = onCall(async (data, context) => {
     throw new HttpsError('permission-denied', 'Admin privileges required.');
   }
 
-  const { email, newPassword } = data || {};
+  const { email, newPassword, isAdmin } = data || {};
   if (!email || typeof newPassword !== 'string' || newPassword.length < 8) {
     throw new HttpsError('invalid-argument', 'Valid email and password (8+ chars) required.');
   }
@@ -342,6 +352,33 @@ exports.adminSetUserPassword = onCall(async (data, context) => {
     // Try to update existing account first.
     const existing = await admin.auth().getUserByEmail(email);
     await admin.auth().updateUser(existing.uid, { password: newPassword });
+
+    // Sync tia_admins if admin flag is being toggled
+    if (typeof isAdmin === 'boolean') {
+      const emailKey = email.toLowerCase().replace(/\./g, ',');
+      const adminsRef = db.ref(ADMINS_PATH);
+      if (isAdmin) {
+        await adminsRef.child(emailKey).set(true);
+      } else {
+        await adminsRef.child(emailKey).remove();
+      }
+      // Sync Firebase Auth custom claim for Storage rules
+      try {
+        const targetUser = await admin.auth().getUserByEmail(email);
+        await admin.auth().setCustomUserClaims(targetUser.uid, { admin: isAdmin });
+      } catch (claimErr) {
+        console.warn(`[TIA] Failed to sync custom claim for ${email}:`, claimErr.message);
+      }
+      // Write audit log
+      await db.ref(AUDIT_PATH).push().set({
+        action: 'admin_toggle',
+        targetEmail: email,
+        isAdmin,
+        actorEmail: callerEmail,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     return { success: true, created: false };
   } catch (err) {
     if (err.code === 'auth/user-not-found') {
@@ -360,10 +397,9 @@ exports.adminSetUserPassword = onCall(async (data, context) => {
  * the tia_users RTDB path by email, and writes a stub for anyone missing.
  * Idempotent: safe to re-run; existing records are left untouched.
  *
- * Use when historical signups disappeared from tia_users (e.g. due to a
- * stale-client clobber) but their Firebase Auth accounts still exist.
+ * Also populates tia_admins for any user with isAdmin=true.
  */
-exports.reconcileAuthUsers = onRequest({ region: 'us-central1', invoker: 'private' }, async (req, res) => {
+exports.reconcileAuthUsers = onRequest({ region: 'us-central1' }, async (req, res) => {
   // CORS — same shape as googleAddressSearch since this is reached via a
   // Firebase Hosting rewrite (/api/reconcile-auth-users) for ingress-policy
   // reasons (Domain Restricted Sharing blocks public allUsers invoker on
@@ -377,11 +413,15 @@ exports.reconcileAuthUsers = onRequest({ region: 'us-central1', invoker: 'privat
   // Verify the Firebase ID token from the Authorization header.
   const authHeader = String(req.headers.authorization || req.headers.Authorization || '');
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
-  if (!match) return res.status(401).json({ error: 'Missing Bearer token.' });
+  if (!match) {
+    console.warn('[TIA] reconcileAuthUsers: missing or malformed Authorization header');
+    return res.status(401).json({ error: 'Missing Bearer token.' });
+  }
   let decoded;
   try {
     decoded = await admin.auth().verifyIdToken(match[1]);
   } catch (err) {
+    console.warn('[TIA] reconcileAuthUsers: token verification failed:', err.message);
     return res.status(401).json({ error: 'Invalid token: ' + (err.message || err.code) });
   }
 
@@ -450,10 +490,229 @@ exports.reconcileAuthUsers = onRequest({ region: 'us-central1', invoker: 'privat
     pageToken = page.pageToken;
   } while (pageToken);
 
+  // ── Populate tia_admins AND sync custom claims for any user with isAdmin=true ──
+  const adminsRef = db.ref(ADMINS_PATH);
+  let adminCount = 0;
+  let claimErrors = 0;
+  for (const [uname, u] of Object.entries(users)) {
+    if (u && u.isAdmin && u.email) {
+      const emailKey = u.email.toLowerCase().replace(/\./g, ',');
+      await adminsRef.child(emailKey).set(true);
+      adminCount++;
+      // Sync custom claim for Storage rules
+      try {
+        const targetUser = await admin.auth().getUserByEmail(u.email);
+        await admin.auth().setCustomUserClaims(targetUser.uid, { admin: true });
+      } catch (claimErr) {
+        claimErrors++;
+        console.warn(`[TIA] reconcile: custom claim failed for ${u.email}:`, claimErr.message);
+      }
+    }
+  }
+
   console.log(
     `[TIA] reconcileAuthUsers: scanned=${scanned} created=${created.length} ` +
-    `skipped=${skipped.length} (caller=${callerEmail})`
+    `skipped=${skipped.length} adminsSynced=${adminCount} (caller=${callerEmail})`
   );
 
-  return res.json({ scanned, created, skipped });
+  return res.json({ scanned, created, skipped, adminsSynced: adminCount });
 });
+
+/**
+ * requestPasswordReset — Gen 2 callable that sends the reset email via SendGrid.
+ *
+ * The function is responsible for the entire reset email lifecycle:
+ *   1. Resolve identifier (email or username) → tia_users record.
+ *   2. Provision a Firebase Auth account if one doesn't exist yet for the email.
+ *   3. Generate a Firebase password-reset link via the Admin SDK.
+ *   4. Send a branded HTML email containing the link via SendGrid.
+ *
+ * We use SendGrid instead of relying on Firebase Auth's built-in SMTP delivery
+ * because deliverability via that path has been unreliable in this project
+ * (Workspace SMTP relay + sender-domain authentication problems). SendGrid
+ * gives us a verifiable sender, DKIM/SPF for cromptonapps.com, and full
+ * control over the email template.
+ *
+ * Client invokes via:
+ *   firebase.functions().httpsCallable('requestPasswordReset')({ identifier })
+ *
+ * Input data: { identifier: "<email or username>" }
+ * Returns:    { ok: true, sent: true|false }
+ *             - sent=true  → email was sent (or attempted to be sent)
+ *             - sent=false → identifier didn't resolve to a tia_users record;
+ *                            caller still shows generic success (enumeration safe).
+ *
+ * Throws HttpsError on bad input, rate limit, or server failure. Rate-limited
+ * at one request per identifier per 60 seconds via in-memory Map.
+ */
+const _resetRateLimit = new Map(); // identifier-lower -> ts
+const RESET_RATE_MS = 60 * 1000;
+
+function buildResetEmailHtml(displayName, resetLink) {
+  const safeName = String(displayName || 'there')
+    .replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#f4f6f7;font-family:'Source Sans 3',Arial,sans-serif;color:#1a2326;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f6f7;padding:32px 12px;">
+      <tr><td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:#ffffff;border-radius:12px;box-shadow:0 4px 16px rgba(15,47,50,0.08);overflow:hidden;">
+          <tr><td style="background:linear-gradient(135deg,#1f5e63 0%,#0f2f32 100%);padding:24px 28px;color:#ffffff;">
+            <div style="font-family:'Space Grotesk',Arial,sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:0.3px;">Crompton Traffic Impact Assessment</div>
+          </td></tr>
+          <tr><td style="padding:28px;">
+            <h1 style="margin:0 0 14px;font-family:'Space Grotesk',Arial,sans-serif;font-size:1.4rem;color:#0f2f32;">Reset your password</h1>
+            <p style="margin:0 0 16px;line-height:1.55;">Hi ${safeName},</p>
+            <p style="margin:0 0 16px;line-height:1.55;">We received a request to reset the password for your ${APP_DISPLAY} account. Click the button below to choose a new one.</p>
+            <p style="margin:24px 0;text-align:center;">
+              <a href="${resetLink}" style="background:linear-gradient(135deg,#1f5e63 0%,#0f2f32 100%);color:#ffffff;text-decoration:none;font-weight:600;padding:12px 28px;border-radius:8px;display:inline-block;letter-spacing:0.3px;">Reset password</a>
+            </p>
+            <p style="margin:0 0 12px;font-size:0.85rem;color:#6b7a7d;line-height:1.45;">If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="margin:0 0 20px;font-size:0.82rem;word-break:break-all;color:#3c5054;"><a href="${resetLink}" style="color:#1f5e63;">${resetLink}</a></p>
+            <p style="margin:0 0 6px;font-size:0.85rem;color:#6b7a7d;line-height:1.45;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+          </td></tr>
+          <tr><td style="background:#f4f6f7;padding:16px 28px;border-top:1px solid #e6eaeb;font-size:0.78rem;color:#6b7a7d;">
+            Sent by ${APP_DISPLAY}. Replies go to ${REPLY_TO}.
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+}
+
+function buildResetEmailText(displayName, resetLink) {
+  const safeName = String(displayName || 'there').replace(/[\r\n]/g, ' ');
+  return `Hi ${safeName},
+
+We received a request to reset the password for your ${APP_DISPLAY} account.
+
+Open this link to choose a new password (expires in 1 hour):
+${resetLink}
+
+If you didn't request a password reset, you can safely ignore this email.
+
+— ${APP_DISPLAY}
+Replies go to ${REPLY_TO}`;
+}
+
+exports.requestPasswordReset = onCallV2(
+  { region: 'us-central1', cors: true, invoker: 'public', secrets: [SENDGRID_API_KEY] },
+  async (request) => {
+    const data = (request && request.data) || {};
+    const identifierRaw = String(data.identifier || '').trim();
+    if (!identifierRaw) {
+      throw new HttpsErrorV2('invalid-argument', 'identifier is required');
+    }
+    if (identifierRaw.length > 254) {
+      throw new HttpsErrorV2('invalid-argument', 'identifier too long');
+    }
+
+    const identifierLower = identifierRaw.toLowerCase();
+
+    // ── rate limit ──
+    const now = Date.now();
+    const last = _resetRateLimit.get(identifierLower) || 0;
+    if (now - last < RESET_RATE_MS) {
+      const waitSec = Math.ceil((RESET_RATE_MS - (now - last)) / 1000);
+      throw new HttpsErrorV2('resource-exhausted', `Please wait ${waitSec}s before requesting another reset.`);
+    }
+    _resetRateLimit.set(identifierLower, now);
+
+    try {
+      const db       = admin.database();
+      const usersRef = db.ref(USERS_PATH);
+      const snap     = await usersRef.once('value');
+      const users    = snap.val() || {};
+
+      // Resolve identifier → tia_users record.
+      // Match priority: exact username key (case-insensitive), then email.
+      let found = null;
+      let foundUsername = null;
+      const isEmailShaped = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifierRaw);
+
+      if (!isEmailShaped) {
+        for (const [uname, u] of Object.entries(users)) {
+          if (String(uname).toLowerCase() === identifierLower) {
+            found = u; foundUsername = uname; break;
+          }
+        }
+      }
+      if (!found) {
+        for (const [uname, u] of Object.entries(users)) {
+          if (u && u.email && String(u.email).toLowerCase() === identifierLower) {
+            found = u; foundUsername = uname; break;
+          }
+        }
+      }
+
+      if (!found || !found.email) {
+        console.log(`[TIA] requestPasswordReset: unknown identifier "${identifierRaw}" — silent no-op.`);
+        return { ok: true, sent: false };
+      }
+
+      const email = String(found.email).trim();
+      const displayName = String(found.fullName || found.displayName || foundUsername || email.split('@')[0]).trim();
+
+      // Ensure a Firebase Auth account exists for this email so generatePasswordResetLink works.
+      try {
+        await admin.auth().getUserByEmail(email);
+      } catch (err) {
+        if (err && err.code === 'auth/user-not-found') {
+          const tempPw = require('crypto').randomBytes(24).toString('base64') + 'Aa1!';
+          await admin.auth().createUser({ email, password: tempPw, emailVerified: false });
+          console.log(`[TIA] requestPasswordReset: provisioned Auth account for ${email}`);
+        } else {
+          throw err;
+        }
+      }
+
+      // Generate the Firebase password-reset link. The action handler is whatever
+      // is configured in Firebase Console → Authentication → Templates → Action URL
+      // (defaults to https://crompton-apps.firebaseapp.com/__/auth/action; when
+      // /auth-action.html is set there, the link lands on our branded handler).
+      const actionCodeSettings = {
+        url: 'https://crompton-apps.web.app/index.html',
+        handleCodeInApp: false
+      };
+      const resetLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
+
+      // Send via SendGrid.
+      const sgKey = SENDGRID_API_KEY.value();
+      if (!sgKey) {
+        console.error('[TIA] requestPasswordReset: SENDGRID_API_KEY is not set');
+        throw new HttpsErrorV2('failed-precondition', 'Email service is not configured. Contact support.');
+      }
+      const sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(sgKey);
+
+      const msg = {
+        to: email,
+        from: { email: FROM_EMAIL, name: FROM_NAME },
+        replyTo: REPLY_TO,
+        subject: `Reset your ${APP_DISPLAY} password`,
+        text: buildResetEmailText(displayName, resetLink),
+        html: buildResetEmailHtml(displayName, resetLink),
+        // Mail settings: bypass SendGrid spam filter for transactional auth emails.
+        mailSettings: { sandboxMode: { enable: false } },
+        // Use SendGrid categories so the dashboard groups reset emails together.
+        categories: ['password-reset', 'tia']
+      };
+
+      try {
+        await sgMail.send(msg);
+        console.log(`[TIA] requestPasswordReset: sent reset email to ${email}`);
+      } catch (sendErr) {
+        const body = sendErr && sendErr.response && sendErr.response.body ? JSON.stringify(sendErr.response.body) : '';
+        console.error('[TIA] requestPasswordReset SendGrid error:', sendErr && sendErr.message, body);
+        throw new HttpsErrorV2('internal', 'Could not send reset email. Please try again later.');
+      }
+
+      return { ok: true, sent: true };
+    } catch (err) {
+      if (err instanceof HttpsErrorV2) throw err;
+      console.error('[TIA] requestPasswordReset error:', err && err.message ? err.message : err);
+      throw new HttpsErrorV2('internal', 'Could not process reset request. Please try again later.');
+    }
+  }
+);

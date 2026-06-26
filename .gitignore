@@ -71,7 +71,9 @@ Thumbs.db
 # The 382 MB of dataset geojsons are served from Firebase Storage (source of
 # truth) and rebuilt via scripts/update_all_data.py; keeping them out of git
 # keeps the repo lean and always-pushable. dataset_manifest.json IS tracked.
+/*.geojson
 datasets/**/*.geojson
+datasets/**/corrected/
 datasets/**/2024_update/
 datasets/**/2025_update/
 datasets/**/council_counts/

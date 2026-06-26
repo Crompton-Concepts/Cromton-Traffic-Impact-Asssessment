@@ -32,6 +32,59 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
+# ── Persistence & structured logging ────────────────────────────────────────
+from report_service_persistence import create_draft_store, create_rate_limiter, DraftStore, RateLimiter
+import logging
+
+
+class _JSONFormatter(logging.Formatter):
+    """Structured JSON logging for production observability."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        import json
+        obj = {
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "func": record.funcName,
+            "line": record.lineno,
+        }
+        if record.exc_info:
+            obj["exception"] = self.formatException(record.exc_info)
+        return json.dumps(obj, default=str)
+
+
+# Set up root logger for the service
+_root_logger = logging.getLogger("tia_report_service")
+_root_logger.setLevel(logging.INFO)
+if not _root_logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(_JSONFormatter())
+    _root_logger.addHandler(_handler)
+
+logger = _root_logger
+
+
+# ── Service start time (for uptime in health checks) ───────────────────────
+_SERVICE_START_TIME = datetime.now(timezone.utc)
+
+
+# ── Pluggable backends ─────────────────────────────────────────────────────
+# Replace in-memory dicts with configurable backends (memory/redis/firestore).
+# Falls back to in-memory if no external store is configured.
+draft_store: DraftStore = create_draft_store()
+rate_limiter: RateLimiter = create_rate_limiter()
+
+logger.info(
+    "Persistence backends initialised",
+    extra={
+        "draft_store": draft_store.health(),
+        "rate_limiter": rate_limiter.health(),
+    },
+)
+
 
 app = FastAPI(title="TIA Python Report Service", version="1.0.0")
 
@@ -77,16 +130,21 @@ async def add_private_network_access_headers(request: Request, call_next):
       if content_length_value > MAX_REQUEST_BODY_BYTES:
         max_mb = MAX_REQUEST_BODY_BYTES / (1024 * 1024)
         actual_mb = content_length_value / (1024 * 1024)
-        raise HTTPException(
+        return JSONResponse(
           status_code=413,
-          detail=(
-            f"Request body too large ({actual_mb:.2f} MB). "
-            f"Server limit is {max_mb:.2f} MB. "
-            "Set REPORT_MAX_REQUEST_BYTES to increase the limit if needed."
-          ),
+          content={
+            "detail": (
+              f"Request body too large ({actual_mb:.2f} MB). "
+              f"Server limit is {max_mb:.2f} MB. "
+              "Set REPORT_MAX_REQUEST_BYTES to increase the limit if needed."
+            )
+          },
         )
     except ValueError:
-      raise HTTPException(status_code=400, detail="Invalid Content-Length header")
+      return JSONResponse(
+        status_code=400,
+        content={"detail": "Invalid Content-Length header"},
+      )
 
   response = await call_next(request)
   # Required for browser Private Network Access preflight when calling localhost
@@ -120,14 +178,10 @@ class DraftRequest(BaseModel):
     payload: dict[str, Any]
 
 
-DRAFTS: dict[str, dict[str, Any]] = {}
-
-# ── Lightweight in-process rate limiter ──────────────────────────────────────
-# Protects credit-spending endpoints (e.g. /verify-formulas, which calls the
-# Anthropic API) from being hammered by an unauthenticated caller. Keyed by
-# client IP. Self-contained — no external dependency. Per-instance only; for
-# multi-instance deployments back this with a shared store (Redis/Firestore).
-_RATE_BUCKETS: dict[str, list[float]] = {}
+# Legacy in-memory globals are replaced by pluggable backends (see imports above).
+# Kept as aliases for backward compatibility in tests that import them.
+DRAFTS: dict[str, dict[str, Any]] = {}  # populated lazily; do not use directly
+_RATE_BUCKETS: dict[str, list[float]] = {}  # populated lazily; do not use directly
 _RATE_LOCK = threading.Lock()
 VERIFY_RATE_MAX = max(1, int(os.environ.get("REPORT_VERIFY_RATE_MAX", "20")))
 VERIFY_RATE_WINDOW_S = max(1, int(os.environ.get("REPORT_VERIFY_RATE_WINDOW_S", "600")))
@@ -158,67 +212,35 @@ def _client_ip(request: Request) -> str:
 
 
 def _check_rate_limit(request: Request, max_hits: int, window_s: int) -> dict[str, int]:
-  """Raise HTTP 429 when the caller exceeds max_hits within window_s seconds."""
+  """Delegate to the configured rate limiter backend."""
   ip = _client_ip(request)
-  now = _utcnow().timestamp()
-  cutoff = now - window_s
-  with _RATE_LOCK:
-    hits = [t for t in _RATE_BUCKETS.get(ip, []) if t >= cutoff]
-    if len(hits) >= max_hits:
-      retry_after = max(1, int(window_s - (now - min(hits))))
-      raise HTTPException(
-        status_code=429,
-        detail="Rate limit exceeded. Try again later.",
-        headers={
-          "Retry-After": str(retry_after),
-          "X-RateLimit-Limit": str(max_hits),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": str(int(min(hits) + window_s)),
-        },
-      )
-    hits.append(now)
-    _RATE_BUCKETS[ip] = hits
-
-    # Opportunistic cleanup so the dict does not grow without bound.
-    if len(_RATE_BUCKETS) > 5000:
-      for k in [k for k, v in list(_RATE_BUCKETS.items()) if not any(t >= cutoff for t in v)]:
-        _RATE_BUCKETS.pop(k, None)
-
+  meta = rate_limiter.check(ip, max_hits, window_s)
+  if meta.get("exceeded"):
+    raise HTTPException(
+      status_code=429,
+      detail="Rate limit exceeded. Try again later.",
+      headers={
+        "Retry-After": str(meta["retry_after"]),
+        "X-RateLimit-Limit": str(meta["limit"]),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": str(meta["reset_epoch"]),
+      },
+    )
   return {
-    "limit": max_hits,
-    "remaining": max(0, max_hits - len(hits)),
-    "reset_epoch": int(min(hits) + window_s),
+    "limit": meta["limit"],
+    "remaining": meta["remaining"],
+    "reset_epoch": meta["reset_epoch"],
   }
 
 
-def _prune_drafts(now: datetime | None = None) -> None:
-  if not DRAFTS:
-    return
-
-  now_dt = now or _utcnow()
-  cutoff = now_dt - timedelta(hours=DRAFT_TTL_HOURS)
-  stale_ids: list[str] = []
-
-  for draft_id, item in list(DRAFTS.items()):
-    created_epoch = item.get("created_epoch")
-    if isinstance(created_epoch, (int, float)):
-      created_at = datetime.fromtimestamp(created_epoch, timezone.utc)
-    else:
-      created_at = _parse_datetime_utc(str(item.get("created_at") or ""), now_dt)
-    if created_at < cutoff:
-      stale_ids.append(draft_id)
-
-  for stale_id in stale_ids:
-    DRAFTS.pop(stale_id, None)
-
-  if len(DRAFTS) > MAX_DRAFTS:
-    oldest_first = sorted(
-      DRAFTS.items(),
-      key=lambda kv: float(kv[1].get("created_epoch") or 0),
-    )
-    to_drop = len(DRAFTS) - MAX_DRAFTS
-    for draft_id, _ in oldest_first[:to_drop]:
-      DRAFTS.pop(draft_id, None)
+def _prune_drafts(now: datetime | None = None) -> int:
+  """Delegate to the configured draft store backend. Returns number removed."""
+  removed = draft_store.prune(DRAFT_TTL_HOURS, MAX_DRAFTS)
+  # Also sync the legacy DRAFTS dict for tests that inspect it directly.
+  if hasattr(draft_store, "_data"):
+    DRAFTS.clear()
+    DRAFTS.update(draft_store._data)
+  return removed
 
 
 def _load_logo_data_url() -> str:
@@ -2076,8 +2098,15 @@ def _render_commentary_block(paragraphs: list[str], conclusion_points: list[str]
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, Any]:
+  uptime_seconds = int((_utcnow() - _SERVICE_START_TIME).total_seconds())
+  return {
+    "status": "ok",
+    "version": "1.0.0",
+    "uptime_seconds": uptime_seconds,
+    "draft_store": draft_store.health(),
+    "rate_limiter": rate_limiter.health(),
+  }
 
 
 @app.post("/report/draft")
@@ -2108,12 +2137,17 @@ def create_draft(req: DraftRequest) -> dict[str, str]:
 
     now = _utcnow()
     draft_id = uuid.uuid4().hex
-    DRAFTS[draft_id] = {
+    draft_data = {
         "title": safe_title,
         "payload": req.payload,
         "created_at": now.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "created_epoch": now.timestamp(),
     }
+    draft_store.set(draft_id, draft_data)
+    # Sync to legacy dict for backward compatibility in tests
+    DRAFTS[draft_id] = draft_data
+    logger.info("Draft created", extra={"draft_id": draft_id, "title": safe_title})
+    _prune_drafts()
     return {"editor_url": f"/report/editor/{draft_id}"}
 
 
@@ -2124,7 +2158,7 @@ def editor_page(draft_id: str) -> str:
     if not re.fullmatch(r"[a-f0-9]{32}", str(draft_id or "")):
       raise HTTPException(status_code=400, detail="Invalid draft id")
 
-    draft = DRAFTS.get(draft_id)
+    draft = draft_store.get(draft_id)
     if not draft:
         raise HTTPException(status_code=404, detail="Draft not found")
 

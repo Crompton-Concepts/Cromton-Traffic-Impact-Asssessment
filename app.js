@@ -5145,7 +5145,21 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
     });
 
-    // Forgot Password Logic (Firebase Auth)
+    // ============================================================
+    // Forgot Password — fresh flow (2026-06-23)
+    //
+    // Two-step reset:
+    //   1) POST identifier (email OR username) to /api/request-password-reset.
+    //      The function ensures a Firebase Auth account exists for the email
+    //      so step 2 actually delivers an email (fixes "sendPasswordResetEmail
+    //      silently no-ops for RTDB-only users" bug).
+    //   2) Call firebase.auth().sendPasswordResetEmail(email, ActionCodeSettings).
+    //      Firebase delivers the email; user clicks link → auth-action.html
+    //      (Action URL configured in Firebase Console once).
+    //
+    // For enumeration safety, success UI is shown regardless of whether the
+    // identifier matched a real account.
+    // ============================================================
     const forgotPasswordLink = document.getElementById('forgotPasswordLink');
     const backToSignInBtn = document.getElementById('backToSignInBtn');
     const paneSignIn = document.getElementById('paneSignIn');
@@ -5204,26 +5218,91 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     if (resetPasswordForm) {
+      let resetLastSent = 0;
+      const RESET_COOLDOWN_MS = 60000; // 60 seconds between reset attempts (mirrors server rate limit)
+
       resetPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const rEmail = document.getElementById('resetEmail').value.trim();
+        const rInputEl = document.getElementById('resetEmail');
+        const rIdentifier = String((rInputEl && rInputEl.value) || '').trim();
         const rError = document.getElementById('resetError');
         const rSuccess = document.getElementById('resetSuccess');
+        const rBtn = document.getElementById('resetSubmitBtn');
 
         rError.textContent = '';
-        rSuccess.textContent = 'Sending reset link...';
+        rSuccess.textContent = '';
+
+        if (!rIdentifier) {
+          rError.textContent = 'Please enter your username or email address.';
+          return;
+        }
+        if (rIdentifier.length > 254) {
+          rError.textContent = 'Input too long.';
+          return;
+        }
+
+        // Client-side rate limit (mirrors server).
+        const now = Date.now();
+        if (now - resetLastSent < RESET_COOLDOWN_MS) {
+          const waitSec = Math.ceil((RESET_COOLDOWN_MS - (now - resetLastSent)) / 1000);
+          rError.textContent = `Please wait ${waitSec}s before requesting another reset link.`;
+          return;
+        }
+
+        if (rBtn) { rBtn.disabled = true; rBtn.textContent = 'Sending…'; }
+        rSuccess.textContent = 'Sending reset link…';
+
+        // Generic success copy — same regardless of whether the account exists,
+        // to prevent email/username enumeration.
+        const GENERIC_SUCCESS = 'If an account matches that username or email, we\'ve sent a password reset link. Please check your inbox (including spam/junk).';
 
         try {
-          await firebase.auth().sendPasswordResetEmail(rEmail);
-          rSuccess.textContent = 'Reset link sent! Please check your email (including spam).';
+          // The Cloud Function does everything server-side now: resolves the
+          // identifier, ensures the Auth account exists, generates a Firebase
+          // password-reset link, and sends it via SendGrid. The client only
+          // needs to fire the callable and show success.
+          if (!window.firebase || !firebase.apps.length || typeof firebase.functions !== 'function') {
+            rSuccess.textContent = '';
+            rError.textContent = 'Password reset is temporarily unavailable. Please refresh and try again.';
+            return;
+          }
+
+          try {
+            const fn = firebase.functions().httpsCallable('requestPasswordReset');
+            await fn({ identifier: rIdentifier });
+          } catch (callErr) {
+            console.warn('[Reset] callable failed:', callErr && callErr.code, callErr && callErr.message);
+            rSuccess.textContent = '';
+            // Firebase callable errors expose .code as 'functions/<httpsErrorCode>'.
+            const code = String((callErr && callErr.code) || '');
+            if (code === 'functions/resource-exhausted') {
+              rError.textContent = (callErr && callErr.message) || 'Please wait a moment before requesting another reset link.';
+              return;
+            }
+            if (code === 'functions/invalid-argument') {
+              rError.textContent = (callErr && callErr.message) || 'Invalid input.';
+              return;
+            }
+            if (code === 'functions/failed-precondition') {
+              rError.textContent = 'Password reset is misconfigured. Please contact support.';
+              return;
+            }
+            rError.textContent = 'Could not process reset request. Please try again later.';
+            return;
+          }
+
+          resetLastSent = Date.now();
+          rSuccess.textContent = GENERIC_SUCCESS;
           setTimeout(() => {
             resetPasswordForm.reset();
-            backToSignInBtn.click();
-          }, 4000);
+            if (backToSignInBtn) backToSignInBtn.click();
+          }, 5000);
         } catch (error) {
-          console.error('[Reset] Firebase error:', error);
+          console.error('[Reset] unexpected error:', error);
           rSuccess.textContent = '';
-          rError.textContent = 'Error: ' + error.message;
+          rError.textContent = 'Network error. Please check your connection and try again.';
+        } finally {
+          if (rBtn) { rBtn.disabled = false; rBtn.textContent = 'Send Reset Link'; }
         }
       });
     }

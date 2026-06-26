@@ -11,14 +11,14 @@
 // ============================================================
 
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyA8_CBlh3dCbjxn6A3jO_6MxgRr78o4oWo",
-  authDomain:        "crompton-apps.firebaseapp.com",
+  apiKey:            "AIzaSyAEbQ2AOmSvJof0fTwNd0TnHNcXsUK-3fI",
+  authDomain:        "ctmp-3409c.firebaseapp.com",
   // NOTE: Enable Realtime Database in the Firebase console, then verify this URL.
   // Default RTDB URL format: https://<project-id>-default-rtdb.firebaseio.com
-  databaseURL:       "https://crompton-apps-default-rtdb.firebaseio.com",
-  projectId:         "crompton-apps",
-  storageBucket:     "crompton-apps.firebasestorage.app",
-  messagingSenderId: "896651039604",
-  appId:             "1:896651039604:web:87d8321762c1b7acd11221",
-  measurementId:     "G-DGNYLXYL3L"
+  databaseURL:       "https://ctmp-3409c-default-rtdb.firebaseio.com",
+  projectId:         "ctmp-3409c",
+  storageBucket:     "ctmp-3409c.firebasestorage.app",
+  messagingSenderId: "538974499838",
+  appId:             "1:538974499838:web:f7cf339b0204cf453186af",
+  measurementId:     "G-J64F7S536J"
 };

@@ -22,7 +22,7 @@
       "sha256": "822ede820b10baaf3cb33ff43cb81c32e58fd9dd9e158b51529c883115a43bfb",
       "feature_count": 48528,
       "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fbrisbane.geojson?alt=media",
-      "local_file": "Brisbane.geojson",
+      "local_file": "brisbane.geojson",
       "updated_at": "2026-06-17T00:03:06Z"
     },
     "ipswich": {
@@ -30,7 +30,7 @@
       "sha256": "c01affe6370c2c347027bb6a440230bf4c2d5fd1ceb679acb28da787ff1369f5",
       "feature_count": 80880,
       "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FQLD%2Fipswich.geojson?alt=media",
-      "local_file": "Ipswich.geojson",
+      "local_file": "ipswich.geojson",
       "updated_at": "2026-06-18T01:00:12Z"
     },
     "logan": {

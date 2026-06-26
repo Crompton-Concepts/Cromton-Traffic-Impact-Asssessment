@@ -24,25 +24,37 @@
       {
         "source": "**/*.geojson",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400, stale-while-revalidate=604800"
+          }
         ]
       },
       {
         "source": "dataset_manifest.json",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, stale-while-revalidate=86400"
+          }
         ]
       },
       {
         "source": "**/*.js",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=86400" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
         ]
       },
       {
         "source": "**/*.css",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=86400" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
         ]
       }
     ],
@@ -55,6 +67,21 @@
       "deploy.bat",
       "deploy.sh",
       "*.bat",
+      "*.cmd",
+      "*.ps1",
+      "*.exe",
+      "*.dll",
+      "*.msi",
+      "*.com",
+      "*.scr",
+      "**/*.bat",
+      "**/*.cmd",
+      "**/*.ps1",
+      "**/*.exe",
+      "**/*.dll",
+      "**/*.msi",
+      "**/*.com",
+      "**/*.scr",
       "*.py",
       "**/.*",
       "**/.*/**",

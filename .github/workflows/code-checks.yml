@@ -60,3 +60,68 @@ jobs:
       - name: npm audit (functions, high+)
         working-directory: functions
         run: npm audit --audit-level=high || true
+
+  # ── NEW: Python backend tests ───────────────────────────────────────────
+  backend-tests:
+    runs-on: ubuntu-latest
+    name: Backend Tests (pytest)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+
+      - name: Run pytest
+        run: pytest tests/ -v --tb=short
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: |
+            pytest-report.xml
+          if-no-files-found: ignore
+
+  # ── NEW: TypeScript build & type-check ────────────────────────────────
+  ts-build:
+    runs-on: ubuntu-latest
+    name: TypeScript Build & Type Check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Build production bundle
+        run: npm run build:prod
+
+      - name: Build inline CSP bundle
+        run: npm run build:inline
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tia-build
+          path: |
+            dist/tia-bundle.*.js
+            dist/index-inline.html
+          if-no-files-found: warn
