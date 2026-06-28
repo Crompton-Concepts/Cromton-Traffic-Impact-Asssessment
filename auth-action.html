@@ -254,9 +254,9 @@
           <div class="field">
             <label for="newPassword">New password</label>
             <div class="input-wrap">
-              <i class="fa-solid fa-lock lead-icon"></i>
+              <i class="fa-solid fa-lock lead-icon" aria-hidden="true"></i>
               <input id="newPassword" type="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password" />
-              <button type="button" class="toggle-pw" aria-label="Show/hide password" onclick="togglePw('newPassword', this)"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw" aria-label="Show/hide password" onclick="togglePw('newPassword', this)"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
             <div class="pw-strength"><div id="pwStrengthBar" class="pw-strength-bar"></div></div>
             <div class="pw-hint">Use 8+ characters with a mix of letters, numbers, and symbols.</div>
@@ -264,9 +264,9 @@
           <div class="field">
             <label for="newPasswordConfirm">Confirm new password</label>
             <div class="input-wrap">
-              <i class="fa-solid fa-lock lead-icon"></i>
+              <i class="fa-solid fa-lock lead-icon" aria-hidden="true"></i>
               <input id="newPasswordConfirm" type="password" placeholder="Repeat new password" required minlength="8" autocomplete="new-password" />
-              <button type="button" class="toggle-pw" aria-label="Show/hide password" onclick="togglePw('newPasswordConfirm', this)"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw" aria-label="Show/hide password" onclick="togglePw('newPasswordConfirm', this)"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <button type="submit" class="primary" id="resetSubmit">Set new password</button>
@@ -276,7 +276,7 @@
 
       <!-- Success state -->
       <div id="stateSuccess" class="hidden">
-        <i class="fa-solid fa-circle-check check-icon"></i>
+        <i class="fa-solid fa-circle-check check-icon" aria-hidden="true"></i>
         <h1 style="text-align:center;">Password updated</h1>
         <p class="lead" style="text-align:center;">Your password has been changed. You can now sign in with your new password.</p>
         <button type="button" class="primary" onclick="goToLogin()">Go to Sign In</button>
@@ -285,7 +285,7 @@
 
       <!-- Error state (invalid/expired link, etc.) -->
       <div id="stateError" class="hidden">
-        <i class="fa-solid fa-circle-exclamation error-icon"></i>
+        <i class="fa-solid fa-circle-exclamation error-icon" aria-hidden="true"></i>
         <h1 style="text-align:center;">Link not valid</h1>
         <p class="lead" style="text-align:center;" id="errorDetail">This reset link is invalid or has expired.</p>
         <button type="button" class="primary" onclick="goToLogin()">Back to Sign In</button>
@@ -293,14 +293,14 @@
 
       <!-- Verify email state (future-proof — Firebase verifyEmail mode) -->
       <div id="stateVerify" class="hidden">
-        <i class="fa-solid fa-envelope-circle-check check-icon"></i>
+        <i class="fa-solid fa-envelope-circle-check check-icon" aria-hidden="true"></i>
         <h1 style="text-align:center;">Email verified</h1>
         <p class="lead" style="text-align:center;">Your email address has been verified. You can now sign in.</p>
         <button type="button" class="primary" onclick="goToLogin()">Go to Sign In</button>
       </div>
 
       <div class="footer-links">
-        <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to app</a>
+        <a href="index.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to app</a>
       </div>
     </div>
   </div>
