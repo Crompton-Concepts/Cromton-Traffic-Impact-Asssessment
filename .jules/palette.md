@@ -1,3 +1,0 @@
-## 2024-05-15 - [Keyboard Navigation in Password Toggles]
-**Learning:** Developers often apply `tabindex="-1"` to small icon-only buttons (like password visibility toggles) to skip them in tab order, mistakenly believing this cleans up navigation. However, this completely breaks keyboard accessibility, as screen reader and keyboard-only users can no longer focus or activate the control.
-**Action:** Always verify that interactive custom UI elements (especially those wrapping `<button>` or `<a>`) do not have `tabindex="-1"` unless they are part of a roving tabindex implementation (e.g., composite widgets like menubars or grids).
