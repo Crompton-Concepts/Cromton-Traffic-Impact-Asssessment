@@ -1,0 +1,3 @@
+## 2024-05-19 - JavaScript Haversine distance optimizations
+**Learning:** For performance-critical spatial calculations in JavaScript loops, replacing the standard `2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))` implementation with `Math.asin(Math.sqrt(Math.min(1, a)))` (multiplied by the full diameter instead of radius) is mathematically equivalent and computationally faster. Using `Math.min(1, a)` is crucial to prevent NaN errors from floating-point inaccuracies. Pre-calculating repeating multipliers (like `Math.PI / 180`) and replacing division with multiplication by a reciprocal (e.g., `value * 0.5` instead of `value / 2`) further reduces CPU cycles.
+**Action:** Apply this pattern when implementing or optimizing spatial calculations.

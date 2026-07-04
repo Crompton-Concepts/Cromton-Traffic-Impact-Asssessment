@@ -11727,13 +11727,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         };
 
         const haversine = (lat1, lon1, lat2, lon2) => {
-          const R = 6371000;
-          const p1 = lat1 * Math.PI / 180;
-          const p2 = lat2 * Math.PI / 180;
-          const dP = (lat2 - lat1) * Math.PI / 180;
-          const dL = (lon2 - lon1) * Math.PI / 180;
-          const a = Math.sin(dP / 2) * Math.sin(dP / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dL / 2) * Math.sin(dL / 2);
-          return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+          const p = Math.PI / 180;
+          const dP = (lat2 - lat1) * p * 0.5;
+          const dL = (lon2 - lon1) * p * 0.5;
+          const a = Math.sin(dP) * Math.sin(dP) + Math.cos(lat1 * p) * Math.cos(lat2 * p) * Math.sin(dL) * Math.sin(dL);
+          return 12742000 * Math.asin(Math.sqrt(Math.min(1, a)));
         };
 
         const sameRoad = (a, b) => {
@@ -22188,16 +22186,15 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+    // Optimized Haversine implementation: avoids division, pre-calculates constants, and uses asin for faster execution.
+    const p = Math.PI / 180;
+    const dP = (lat2 - lat1) * p * 0.5;
+    const dL = (lon2 - lon1) * p * 0.5;
+    const a = Math.sin(dP) * Math.sin(dP) +
+              Math.cos(lat1 * p) * Math.cos(lat2 * p) *
+              Math.sin(dL) * Math.sin(dL);
+    // 12742000 is 2 * R (6371000). Math.min(1, a) prevents NaN errors from floating point inaccuracies.
+    return 12742000 * Math.asin(Math.sqrt(Math.min(1, a)));
   }
 
   // Automatic detour length calculation based on coordinates
