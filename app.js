@@ -22187,17 +22187,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   
   // Haversine distance calculation (meters)
+  // Optimized: Pre-calculates Math.PI / 180, caches halving/sine values,
+  // and substitutes the standard atan2 calculation with a computationally
+  // lighter Math.asin equivalent using pre-multiplied Earth diameter.
   function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+    const P = 0.017453292519943295; // Math.PI / 180
+    const dLatHalf = (lat2 - lat1) * P * 0.5;
+    const dLonHalf = (lon2 - lon1) * P * 0.5;
+
+    const sinDLat = Math.sin(dLatHalf);
+    const sinDLon = Math.sin(dLonHalf);
+
+    const a = sinDLat * sinDLat +
+              Math.cos(lat1 * P) * Math.cos(lat2 * P) *
+              sinDLon * sinDLon;
+
+    return 12742000 * Math.asin(Math.sqrt(Math.min(1, a)));
   }
 
   // Automatic detour length calculation based on coordinates
