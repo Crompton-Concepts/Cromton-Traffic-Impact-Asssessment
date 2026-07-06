@@ -22188,16 +22188,24 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   
   // Haversine distance calculation (meters)
   function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Earth radius in meters
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    // ⚡ Bolt: Optimized math operations to reduce overhead in tight loops
+    const TO_RAD = 0.017453292519943295; // Math.PI / 180
+    const DIAMETER = 12742000; // Earth radius (6371000) * 2
+
+    const phi1 = lat1 * TO_RAD;
+    const phi2 = lat2 * TO_RAD;
+    const deltaPhiHalf = (lat2 - lat1) * TO_RAD * 0.5;
+    const deltaLambdaHalf = (lon2 - lon1) * TO_RAD * 0.5;
+
+    const sinDeltaPhiHalf = Math.sin(deltaPhiHalf);
+    const sinDeltaLambdaHalf = Math.sin(deltaLambdaHalf);
+
+    const a = sinDeltaPhiHalf * sinDeltaPhiHalf +
               Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+              sinDeltaLambdaHalf * sinDeltaLambdaHalf;
+
+    // Math.asin(Math.sqrt(x)) is computationally faster than atan2
+    return DIAMETER * Math.asin(Math.sqrt(Math.min(1, a)));
   }
 
   // Automatic detour length calculation based on coordinates
