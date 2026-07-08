@@ -93,7 +93,9 @@
     var b = document.createElement('button');
     b.id = 'ctmpSendBtn'; b.textContent = '📤 Send to CTMP'; b.className = 'no-print';
     b.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:99999;background:#0b6;color:#fff;border:none;border-radius:8px;padding:10px 14px;font:600 13px sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;';
-    b.onclick = send; document.body.appendChild(b);
+    b.onclick = send;
+    b.style.setProperty('width','auto','important'); b.style.setProperty('left','auto','important'); b.style.setProperty('min-width','0','important');
+    document.body.appendChild(b);
     var c = ctx();
     if (c.project_id || c.tgs) {
       var bar = document.createElement('div'); bar.className = 'no-print';

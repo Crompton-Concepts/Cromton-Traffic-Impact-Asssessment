@@ -3973,6 +3973,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         <div style="font-size:11px; border:1px solid #d84315; margin-bottom:4px; background:#f57c00; color:#ffffff; padding:4px 8px; font-weight:800;">LOS E (0.90 &lt; VCR &lt;= 1.00)</div>
         <div style="font-size:11px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:4px 8px; font-weight:800;">LOS F (VCR &gt; 1.00)</div>`;
 
+    const notesGuidanceHtml = `
+    <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; padding-bottom:4px; border-bottom:2px solid #334155;">Notes &amp; Application Guidance</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px 10px;">
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Use Of Output</div><div style="color:#111827; font-size:11px; line-height:1.45;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Worst Capacity Condition</div><div style="color:#111827; font-size:11px; line-height:1.45;">Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Queue Interpretation</div><div style="color:#111827; font-size:11px; line-height:1.45;">Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.${escapeHtml(closureAssumptionExtra)}</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Assessment Periods</div><div style="color:#111827; font-size:11px; line-height:1.45;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Design Check</div><div style="color:#111827; font-size:11px; line-height:1.45;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
+    </div>`;
+
     const subHeading = (label) => `<div style="font-size:11.5px; font-weight:900; margin-bottom:5px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">${label}</div>`;
     const dirBadge = (label, accent) => `<div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#ffffff; background:${accent}; padding:6px 10px; border-radius:4px; letter-spacing:0.01em;">${label}</div>`;
     const D2_ACCENT = '#b91c1c';
@@ -3991,13 +4002,16 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
       ${subHeading('Assessment Periods')}
       ${periodTableHtml}
+      <div style="margin-top:12px;">
+        ${legendHtml}
+      </div>
     </div>
     <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
       ${subHeading('Site Parameters')}
       ${paramsTableHtml}
     </div>
     <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
-      ${legendHtml}
+      ${subHeading('Notes')}
     </div>
   </div>
 
@@ -4034,15 +4048,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   </div>
 
   <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
-    <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; padding-bottom:4px; border-bottom:2px solid #334155;">Notes &amp; Application Guidance</div>
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px 10px;">
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Use Of Output</div><div style="color:#111827; font-size:11px; line-height:1.45;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Worst Capacity Condition</div><div style="color:#111827; font-size:11px; line-height:1.45;">Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Queue Interpretation</div><div style="color:#111827; font-size:11px; line-height:1.45;">Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.${escapeHtml(closureAssumptionExtra)}</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Assessment Periods</div><div style="color:#111827; font-size:11px; line-height:1.45;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Design Check</div><div style="color:#111827; font-size:11px; line-height:1.45;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
-    </div>
+    ${notesGuidanceHtml}
   </div>
 </div>`;
     const detourOnlyMode = !!(options && options.detourOnly);
@@ -9947,6 +9953,55 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return macroSitesPostProcessPromise;
   }
 
+  // Estimate a directional lane count from measured volumes when the database
+  // has no lane data. Defaulting to 1 lane on a high-volume arterial loads the
+  // full directional demand onto a single lane, roughly doubling per-lane
+  // 5-minute flow and inflating every queue output (user-reported at
+  // 306 Finucane Rd, Alexandra Hills: ~1,550 vph peak direction => ~310 m q2
+  // at 1 lane vs ~156 m at the road's actual 2 lanes/direction).
+  // Thresholds: a single mid-block lane rarely carries more than ~1,000 vph
+  // sustained (within Austroads practical urban lane throughput) or ~12,000 vpd.
+  // Capped at 4 lanes/direction; the field stays editable for user override.
+  function estimateDirectionalLanesFromVolume(peakHourlyDirectional, dailyDirectional) {
+    const peak = Math.max(0, Number(peakHourlyDirectional) || 0);
+    const daily = Math.max(0, Number(dailyDirectional) || 0);
+    const byPeak = peak > 0 ? Math.ceil(peak / 1000) : 1;
+    const byDaily = daily > 0 ? Math.ceil(daily / 12000) : 1;
+    return Math.max(1, Math.min(4, Math.max(byPeak, byDaily)));
+  }
+
+  // Peak single-hour and daily directional volume for a site's gazettal key,
+  // falling back to a supplied daily figure when no hourly profile exists.
+  function directionalVolumeStats(data, gazettalKey, fallbackDaily) {
+    const arr = data && data.directions_weekday && Array.isArray(data.directions_weekday[gazettalKey])
+      ? data.directions_weekday[gazettalKey]
+      : null;
+    const peak = arr ? arr.reduce((m, v) => Math.max(m, Number(v) || 0), 0) : 0;
+    const daily = arr && arr.length
+      ? arr.reduce((s, v) => s + (Number(v) || 0), 0)
+      : Math.max(0, Number(fallbackDaily) || 0);
+    return { peak, daily };
+  }
+
+  // Apply volume-estimated lane defaults to the D1/D2 lane inputs when the
+  // fields are user-editable and still at the generic default (<= 1 lane).
+  // Never overrides DB-locked (readOnly) or user-adjusted (> 1) values.
+  function applyEstimatedLaneDefaults(d1Daily, d2Daily, d1PeakHourly, d2PeakHourly) {
+    const apply = (id, peak, daily, labelText) => {
+      const el = document.getElementById(id);
+      if (!el || el.readOnly) return;
+      if (Math.max(0, Number(el.value) || 0) > 1) return;
+      const est = estimateDirectionalLanesFromVolume(peak, daily);
+      if (est <= 1) return;
+      el.value = est;
+      const wrapper = el.closest('div');
+      const labelEl = wrapper ? wrapper.querySelector('label') : null;
+      if (labelEl) labelEl.innerHTML = `${labelText} (est. from volume — verify) *`;
+    };
+    apply('D1_Lanes', d1PeakHourly, d1Daily, 'D1 Lanes');
+    apply('D2_Lanes', d2PeakHourly, d2Daily, 'D2 Lanes');
+  }
+
   function selectMacroSite(siteId) {
     const data = macroSitesData[siteId];
     if (!data) return;
@@ -10299,7 +10354,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         d1LanesLabel.innerHTML = 'D1 Lanes (from DB)';
       }
     } else {
-      d1LanesEl.value = 1;
+      const d1Stats = directionalVolumeStats(data, 'GAZETTAL', Number(data.d1_vadt) || (Number(data.vadt) || 0) / 2);
+      const d1EstLanes = estimateDirectionalLanesFromVolume(d1Stats.peak, d1Stats.daily);
+      d1LanesEl.value = d1EstLanes;
       d1LanesEl.readOnly = false;
       d1LanesEl.style.border = '1px solid #e57373';
       d1LanesEl.style.backgroundColor = '#fff5f5';
@@ -10310,7 +10367,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       if (d1LanesLabel) {
         d1LanesLabel.style.color = '#c30000';
-        d1LanesLabel.innerHTML = 'D1 Lanes *';
+        d1LanesLabel.innerHTML = d1EstLanes > 1 ? 'D1 Lanes (est. from volume — verify) *' : 'D1 Lanes *';
       }
     }
     
@@ -10329,7 +10386,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         d2LanesLabel.innerHTML = 'D2 Lanes (from DB)';
       }
     } else {
-      d2LanesEl.value = 1;
+      const d2Stats = directionalVolumeStats(data, 'AGAINST GAZETTAL', Number(data.d2_vadt) || (Number(data.vadt) || 0) / 2);
+      const d2EstLanes = estimateDirectionalLanesFromVolume(d2Stats.peak, d2Stats.daily);
+      d2LanesEl.value = d2EstLanes;
       d2LanesEl.readOnly = false;
       d2LanesEl.style.border = '1px solid #e57373';
       d2LanesEl.style.backgroundColor = '#fff5f5';
@@ -10340,7 +10399,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       if (d2LanesLabel) {
         d2LanesLabel.style.color = '#c30000';
-        d2LanesLabel.innerHTML = 'D2 Lanes *';
+        d2LanesLabel.innerHTML = d2EstLanes > 1 ? 'D2 Lanes (est. from volume — verify) *' : 'D2 Lanes *';
       }
     }
 
@@ -24957,6 +25016,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     document.getElementById('D1_VADT').value = window.selectedTiaData.d1_vadt;
     document.getElementById('D2_VADT').value = window.selectedTiaData.d2_vadt;
     document.getElementById('VADT').value = window.selectedTiaData.vadt;
+    applyEstimatedLaneDefaults(
+      Number(window.selectedTiaData.d1_vadt) || 0,
+      Number(window.selectedTiaData.d2_vadt) || 0,
+      0,
+      0
+    );
     applyManualEntryVisuals();
     setDirectionalInputLabels(window.selectedTiaData.d1_direction_label, window.selectedTiaData.d2_direction_label, ' (from custom address)');
     autoSelectAmPeakDirection(window.selectedTiaData);
@@ -25475,6 +25540,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     document.getElementById('D1_VADT').value = adjD1;
     document.getElementById('D2_VADT').value = adjD2;
     document.getElementById('VADT').value = adjVADT;
+    applyEstimatedLaneDefaults(adjD1, adjD2, 0, 0);
 
     const isOneWayApplied = !!window.selectedTiaData.isOneWay;
     const oneWayDirection = String(window.selectedTiaData.oneWayDirection || 'D1').toUpperCase() === 'D2' ? 'D2' : 'D1';
