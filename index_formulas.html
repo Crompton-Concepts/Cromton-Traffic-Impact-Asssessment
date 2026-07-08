@@ -266,7 +266,7 @@
       <div class="login-tab-pane active" id="paneSignIn" role="tabpanel" aria-labelledby="tabSignIn">
         <form id="loginForm" autocomplete="on">
           <div class="login-field-group">
-            <label for="loginUser">Username or Email</label>
+            <label for="loginUser">Username or Email <span class="text-red-500" style="color: red;">*</span></label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-user"></i>
               <input id="loginUser" name="loginUser" type="text" placeholder="Enter username or email" autocomplete="username" required />
@@ -274,7 +274,7 @@
           </div>
           <div class="login-field-group">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <label for="loginPassword">Password</label>
+              <label for="loginPassword">Password <span class="text-red-500" style="color: red;">*</span></label>
               <a href="#" id="forgotPasswordLink" class="forgot-pw-link">Forgot password?</a>
             </div>
             <div class="login-input-wrapper">
@@ -302,21 +302,21 @@
             </div>
           </div>
           <div class="login-field-group">
-            <label for="newUsername">Username</label>
+            <label for="newUsername">Username <span class="text-red-500" style="color: red;">*</span></label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-user"></i>
               <input id="newUsername" name="newUsername" type="text" placeholder="Choose a username" autocomplete="off" required />
             </div>
           </div>
           <div class="login-field-group">
-            <label for="newEmail">Email</label>
+            <label for="newEmail">Email <span class="text-red-500" style="color: red;">*</span></label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-envelope"></i>
               <input id="newEmail" name="newEmail" type="email" placeholder="your@email.com" autocomplete="email" required />
             </div>
           </div>
           <div class="login-field-group">
-            <label for="newPassword">Password <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(min. 8 characters)</span></label>
+            <label for="newPassword">Password <span class="text-red-500" style="color: red;">*</span> <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(min. 8 characters)</span></label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-key input-icon"></i>
               <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
@@ -324,7 +324,7 @@
             </div>
           </div>
           <div class="login-field-group">
-            <label for="newPasswordConfirm">Confirm Password</label>
+            <label for="newPasswordConfirm">Confirm Password <span class="text-red-500" style="color: red;">*</span></label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-key input-icon"></i>
               <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
@@ -371,7 +371,7 @@
         <form id="resetPasswordForm" autocomplete="off">
           <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Enter your username or the email address on your account. We'll send a password reset link to the email on file.</p>
           <div class="login-field-group">
-            <label for="resetEmail">Username or Email</label>
+            <label for="resetEmail">Username or Email <span class="text-red-500" style="color: red;">*</span></label>
             <div class="login-input-wrapper">
               <i class="fa-solid fa-user"></i>
               <input id="resetEmail" name="resetEmail" type="text" placeholder="username or your@email.com" autocomplete="username" required maxlength="254" />
@@ -2555,6 +2555,7 @@
 <script defer src="user-sync.js"></script>
 <script defer src="tia-shared-sync.js"></script>
 <script defer src="formula-agent.js"></script>
+<script defer src="ctmp-integration.js"></script>
 </body>
 </html>
 
