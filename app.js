@@ -3935,15 +3935,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vcrRiskText = getValue('vcrRiskBadge') || '-';
     const queueRiskText = getValue('queueRiskBadge') || '-';
 
-    const baseHtml = `
-<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #334155; padding:14px; background:#eef1f6; width:1480px; min-width:1480px; max-width:none; box-sizing:border-box;">
-  <div style="font-size:11px; color:#1e293b; font-weight:700; text-align:right; margin-bottom:8px;">Generated ${escapeHtml(generatedAt)}</div>
-
-  <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:10px; margin-bottom:10px;">
+    const periodTableHtml = `
     <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;">
-      <tr>
-        <th colspan="5" style="text-align:left; background:#ffffff; color:#000000; border:1.5px solid #64748b; border-bottom:2px solid #000000; padding:10px 12px; font-size:13px; font-weight:900; letter-spacing:0.01em;">Count Location: ${escapeHtml(title)} - Site ${escapeHtml(siteId)}</th>
-      </tr>
       <tr>
         <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Period</th>
         <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">From</th>
@@ -3955,9 +3948,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">OP</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">7</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Off-peak day</td></tr>
       <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">PM</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Evening peak</td></tr>
       <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">EV</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">13</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Night/off-peak</td></tr>
-    </table>
+    </table>`;
 
-    <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;"><colgroup><col style="width:65%"><col style="width:35%"></colgroup>
+    const paramsTableHtml = `
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;"><colgroup><col style="width:62%"><col style="width:38%"></colgroup>
       <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; border-bottom:2px solid #000000; padding:8px 10px; font-weight:900;">Year of Traffic Count</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(baseYear)}</td></tr>
       <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Current Year</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(targetYear)}</td></tr>
       <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Number of Years</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(yearDelta)}</td></tr>
@@ -3968,52 +3962,86 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Worst VCR / LOS</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</td></tr>
       <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Peak Queue</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(queuePeakText)}</td></tr>
       <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Work VCR Assumption</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(laneClosureMode)}</td></tr>
-    </table>
-  </div>
+    </table>`;
 
-  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
-    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
-      <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; letter-spacing:0.01em;">Direction 2, Against Gazettal</div>
-      <div style="font-size:11.5px; font-weight:900; margin-bottom:5px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Grouped Directional Summary</div>
-      ${groupedD2Html}
-      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Queue Length Estimation</div>
-      ${queueD2Html}
-      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">VCR / LOS</div>
-      ${vcrD2Html}
-    </div>
-
-    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
-      <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; letter-spacing:0.01em;">Direction 1, Gazettal</div>
-      <div style="font-size:11.5px; font-weight:900; margin-bottom:5px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Grouped Directional Summary</div>
-      ${groupedD1Html}
-      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">Queue Length Estimation</div>
-      ${queueD1Html}
-      <div style="font-size:11.5px; font-weight:900; margin:8px 0 5px 0; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">VCR / LOS</div>
-      ${vcrD1Html}
-    </div>
-  </div>
-
-  <div style="display:grid; grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); gap:12px; margin-bottom:8px; align-items:stretch;">
-    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
-      <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; padding-bottom:4px; border-bottom:2px solid #334155;">Notes &amp; Application Guidance</div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px 10px;">
-        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Use Of Output</div><div style="color:#111827; font-size:11px; line-height:1.45;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
-        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Worst Capacity Condition</div><div style="color:#111827; font-size:11px; line-height:1.45;">Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
-        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Queue Interpretation</div><div style="color:#111827; font-size:11px; line-height:1.45;">Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
-        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.${escapeHtml(closureAssumptionExtra)}</div></div>
-        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Assessment Periods</div><div style="color:#111827; font-size:11px; line-height:1.45;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
-        <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Design Check</div><div style="color:#111827; font-size:11px; line-height:1.45;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
-      </div>
-    </div>
-
-    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff; align-self:start;">
+    const legendHtml = `
         <div style="font-weight:900; font-size:12px; margin-bottom:6px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #334155;">LOS Legend</div>
         <div style="font-size:11px; border:1px solid #1b5e20; margin-bottom:4px; background:#2e7d32; color:#ffffff; padding:4px 8px; font-weight:800;">LOS A (VCR &lt;= 0.60)</div>
         <div style="font-size:11px; border:1px solid #689f38; margin-bottom:4px; background:#8bc34a; color:#111827; padding:4px 8px; font-weight:800;">LOS B (0.60 &lt; VCR &lt;= 0.70)</div>
         <div style="font-size:11px; border:1px solid #f9a825; margin-bottom:4px; background:#ffeb3b; color:#111827; padding:4px 8px; font-weight:800;">LOS C (0.70 &lt; VCR &lt;= 0.80)</div>
         <div style="font-size:11px; border:1px solid #ef6c00; margin-bottom:4px; background:#ffb300; color:#111827; padding:4px 8px; font-weight:800;">LOS D (0.80 &lt; VCR &lt;= 0.90)</div>
         <div style="font-size:11px; border:1px solid #d84315; margin-bottom:4px; background:#f57c00; color:#ffffff; padding:4px 8px; font-weight:800;">LOS E (0.90 &lt; VCR &lt;= 1.00)</div>
-        <div style="font-size:11px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:4px 8px; font-weight:800;">LOS F (VCR &gt; 1.00)</div>
+        <div style="font-size:11px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:4px 8px; font-weight:800;">LOS F (VCR &gt; 1.00)</div>`;
+
+    const subHeading = (label) => `<div style="font-size:11.5px; font-weight:900; margin-bottom:5px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">${label}</div>`;
+    const dirBadge = (label, accent) => `<div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#ffffff; background:${accent}; padding:6px 10px; border-radius:4px; letter-spacing:0.01em;">${label}</div>`;
+    const D2_ACCENT = '#b91c1c';
+    const D1_ACCENT = '#15803d';
+
+    // Landscape layout: content flows in wide horizontal bands so the sheet is
+    // natively wider than tall (fits a landscape TGS/TMP layout sheet).
+    const baseHtml = `
+<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #334155; padding:16px; background:#eef1f6; width:1980px; min-width:1980px; max-width:none; box-sizing:border-box;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px; gap:16px;">
+    <div style="font-size:16px; font-weight:900; color:#0f172a; letter-spacing:0.01em; border-left:5px solid #1e293b; padding-left:10px;">Count Location: ${escapeHtml(title)} &mdash; Site ${escapeHtml(siteId)}</div>
+    <div style="font-size:11px; color:#1e293b; font-weight:700; text-align:right; white-space:nowrap;">Generated ${escapeHtml(generatedAt)}</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1.15fr 1fr 0.85fr; gap:12px; margin-bottom:12px; align-items:start;">
+    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+      ${subHeading('Assessment Periods')}
+      ${periodTableHtml}
+    </div>
+    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+      ${subHeading('Site Parameters')}
+      ${paramsTableHtml}
+    </div>
+    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+      ${legendHtml}
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px; align-items:start;">
+    <div style="border:1.5px solid #475569; border-top:4px solid ${D2_ACCENT}; padding:10px; background:#ffffff;">
+      ${dirBadge('Direction 2, Against Gazettal', D2_ACCENT)}
+      ${subHeading('Grouped Directional Summary')}
+      ${groupedD2Html}
+    </div>
+    <div style="border:1.5px solid #475569; border-top:4px solid ${D1_ACCENT}; padding:10px; background:#ffffff;">
+      ${dirBadge('Direction 1, Gazettal', D1_ACCENT)}
+      ${subHeading('Grouped Directional Summary')}
+      ${groupedD1Html}
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:12px; align-items:start;">
+    <div style="border:1.5px solid #475569; border-top:4px solid ${D2_ACCENT}; padding:10px; background:#ffffff;">
+      ${subHeading('D2 Queue Length')}
+      ${queueD2Html}
+    </div>
+    <div style="border:1.5px solid #475569; border-top:4px solid ${D2_ACCENT}; padding:10px; background:#ffffff;">
+      ${subHeading('D2 VCR / LOS')}
+      ${vcrD2Html}
+    </div>
+    <div style="border:1.5px solid #475569; border-top:4px solid ${D1_ACCENT}; padding:10px; background:#ffffff;">
+      ${subHeading('D1 Queue Length')}
+      ${queueD1Html}
+    </div>
+    <div style="border:1.5px solid #475569; border-top:4px solid ${D1_ACCENT}; padding:10px; background:#ffffff;">
+      ${subHeading('D1 VCR / LOS')}
+      ${vcrD1Html}
+    </div>
+  </div>
+
+  <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+    <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; padding-bottom:4px; border-bottom:2px solid #334155;">Notes &amp; Application Guidance</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px 10px;">
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Use Of Output</div><div style="color:#111827; font-size:11px; line-height:1.45;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Worst Capacity Condition</div><div style="color:#111827; font-size:11px; line-height:1.45;">Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Queue Interpretation</div><div style="color:#111827; font-size:11px; line-height:1.45;">Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.${escapeHtml(closureAssumptionExtra)}</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Assessment Periods</div><div style="color:#111827; font-size:11px; line-height:1.45;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
+      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Design Check</div><div style="color:#111827; font-size:11px; line-height:1.45;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
     </div>
   </div>
 </div>`;
@@ -4307,6 +4335,50 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }, 'image/png');
     });
 
+    // Composite the captured content onto a landscape canvas (A4 landscape
+    // aspect ratio). The content is centered at native resolution on a white
+    // background so the downloaded image always reads as landscape.
+    const finalizeCanvas = (sourceCanvas) => {
+      if (!options.forceLandscape || !sourceCanvas || !sourceCanvas.width || !sourceCanvas.height) {
+        return blobFromCanvas(sourceCanvas);
+      }
+
+      const targetAspect = 297 / 210; // A4 landscape (~1.414)
+      const sw = sourceCanvas.width;
+      const sh = sourceCanvas.height;
+
+      let outW = Math.max(sw, Math.ceil(sh * targetAspect));
+      let outH = Math.max(sh, Math.ceil(sw / targetAspect));
+
+      // Keep the output within a sane pixel budget to avoid memory spikes.
+      const outMaxPixels = 26_000_000;
+      const outArea = outW * outH;
+      if (outArea > outMaxPixels) {
+        const shrink = Math.sqrt(outMaxPixels / outArea);
+        outW = Math.max(1, Math.floor(outW * shrink));
+        outH = Math.max(1, Math.floor(outH * shrink));
+      }
+
+      const landscapeCanvas = document.createElement('canvas');
+      landscapeCanvas.width = outW;
+      landscapeCanvas.height = outH;
+      const ctx = landscapeCanvas.getContext('2d');
+      if (!ctx) return blobFromCanvas(sourceCanvas);
+
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, outW, outH);
+
+      // Scale the content down only if it would overflow the landscape canvas.
+      const drawScale = Math.min(1, outW / sw, outH / sh);
+      const drawW = Math.round(sw * drawScale);
+      const drawH = Math.round(sh * drawScale);
+      const offsetX = Math.round((outW - drawW) / 2);
+      const offsetY = Math.round((outH - drawH) / 2);
+      ctx.drawImage(sourceCanvas, offsetX, offsetY, drawW, drawH);
+
+      return blobFromCanvas(landscapeCanvas);
+    };
+
     const maxPixels = 24_000_000;
     const area = Math.max(1, width * height);
     const areaScaleCap = Math.max(0.45, Math.min(1, Math.sqrt(maxPixels / area)));
@@ -4352,7 +4424,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
               scrollY: window.scrollY || window.pageYOffset || 0
             });
 
-            return await blobFromCanvas(canvas);
+            return await finalizeCanvas(canvas);
           } catch (error) {
             html2CanvasError = error;
           }
@@ -4400,7 +4472,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
         ctx.drawImage(imageEl, 0, 0, width, height);
 
-        return await blobFromCanvas(canvas);
+        return await finalizeCanvas(canvas);
       } finally {
         URL.revokeObjectURL(svgUrl);
       }
@@ -4434,7 +4506,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     try {
-      const blob = await renderPreviewNodeToPngBlob(previewNode, { backgroundColor: '#ffffff' });
+      const blob = await renderPreviewNodeToPngBlob(previewNode, { backgroundColor: '#ffffff', forceLandscape: true });
       const scenario = document.getElementById('scenarioNameInput');
       const scenarioSegment = sanitizeExportFileNameSegment(scenario && scenario.value, 'tia');
       const fileName = `tgs_tia_sheet_${scenarioSegment}.png`;
@@ -5824,6 +5896,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     { value: 'ALL', label: 'All Sources (QLD)' },
     { value: 'TMR', label: 'TMR Only' },
     { value: 'Gold Coast', label: 'Gold Coast Only' },
+    { value: 'Brisbane', label: 'Brisbane Only' },
     { value: 'Ipswich', label: 'Ipswich Only' },
     { value: 'Logan', label: 'Logan Only' },
     { value: 'Toowoomba', label: 'Toowoomba Only' },
@@ -5833,6 +5906,14 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   const macroMarkersById = {};
   const DIRECTION_INFERENCE_RADIUS_METERS = 5000;
   const DIRECTION_INFERENCE_NEIGHBORS = 3;
+  // Performance guards — QLD loads ~580k sites; rendering all markers or datalist
+  // options freezes the browser for minutes.
+  const MACRO_DATALIST_MAX_OPTIONS = 2500;
+  const MACRO_MAP_MAX_VIEWPORT_MARKERS = 6000;
+  const MACRO_MAP_VIEWPORT_BUFFER_RATIO = 0.2;
+  let macroMapViewportRenderTimer = null;
+  let macroMapMoveEndHandlerAttached = false;
+  let macroSitesPostProcessPromise = null;
   const OVERPASS_ENDPOINTS = [
     'https://overpass-api.de/api/interpreter',
     'https://lz4.overpass-api.de/api/interpreter',
@@ -7740,7 +7821,38 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     addMapFullscreenControl(macroMapInstance, 'macroMap');
     addBaseLayerToMap(macroMapInstance);
     macroSiteLayer = L.layerGroup().addTo(macroMapInstance);
+    attachMacroMapViewportHandler();
     console.log('[Map Init] Macro map initialized');
+  }
+
+  function attachMacroMapViewportHandler() {
+    if (!macroMapInstance || macroMapMoveEndHandlerAttached) return;
+    macroMapMoveEndHandlerAttached = true;
+    macroMapInstance.on('moveend zoomend', () => {
+      if (macroMapViewportRenderTimer) clearTimeout(macroMapViewportRenderTimer);
+      macroMapViewportRenderTimer = setTimeout(() => {
+        macroMapViewportRenderTimer = null;
+        renderMacroMapSites({ viewportOnly: true });
+      }, 120);
+    });
+  }
+
+  function getMacroMapViewportBounds(bufferRatio = MACRO_MAP_VIEWPORT_BUFFER_RATIO) {
+    if (!macroMapInstance || typeof L === 'undefined') return null;
+    const bounds = macroMapInstance.getBounds();
+    const latSpan = bounds.getNorth() - bounds.getSouth();
+    const lonSpan = bounds.getEast() - bounds.getWest();
+    return L.latLngBounds(
+      [bounds.getSouth() - latSpan * bufferRatio, bounds.getWest() - lonSpan * bufferRatio],
+      [bounds.getNorth() + latSpan * bufferRatio, bounds.getEast() + lonSpan * bufferRatio]
+    );
+  }
+
+  function macroSiteWithinBounds(site, bounds) {
+    const lat = Number(site && site.latitude);
+    const lon = Number(site && site.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !bounds) return false;
+    return bounds.contains([lat, lon]);
   }
 
   function initDetourMap() {
@@ -7766,15 +7878,28 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     console.log('[Map Init] Detour map initialized');
   }
 
-  function renderMacroMapSites() {
+  function renderMacroMapSites(options = {}) {
     if (!macroMapInstance || !macroSiteLayer || typeof L === 'undefined') return;
+    const totalSites = Object.keys(macroSitesData || {}).length;
+    const viewportOnly = options.viewportOnly !== false && totalSites > MACRO_MAP_MAX_VIEWPORT_MARKERS;
+    const viewportBounds = viewportOnly ? getMacroMapViewportBounds() : null;
+
     macroSiteLayer.clearLayers();
     selectedMacroMarker = null;
     Object.keys(macroMarkersById).forEach(key => delete macroMarkersById[key]);
 
     const points = [];
-    const filteredEntries = getFilteredMacroSiteEntries();
-    filteredEntries.forEach(([siteId, site]) => {
+    let renderedCount = 0;
+    const sourceFilterActive = macroSourceFilter !== 'ALL';
+    const siteEntries = viewportOnly ? null : getFilteredMacroSiteEntries();
+
+    const considerSite = (siteId, site) => {
+      if (sourceFilterActive && (!site || site.source !== macroSourceFilter)) return;
+      if (viewportOnly) {
+        if (!macroSiteWithinBounds(site, viewportBounds)) return;
+        if (renderedCount >= MACRO_MAP_MAX_VIEWPORT_MARKERS) return;
+      }
+
       const lat = Number(site.latitude);
       const lon = Number(site.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
@@ -7794,21 +7919,36 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       marker.on('click', () => selectMacroSite(siteId));
       macroMarkersById[siteId] = marker;
       points.push([lat, lon]);
-    });
+      renderedCount += 1;
+    };
 
-    if (points.length) {
-      macroMapInstance.fitBounds(points, { padding: [24, 24] });
-      const info = document.getElementById('macroMapInfo');
-      if (info) {
-        const label = macroSourceFilter === 'ALL' ? 'All Sources' : macroSourceFilter;
-        info.textContent = `${points.length} sites loaded for ${label}. Click a marker to select a site.`;
+    if (viewportOnly) {
+      for (const [siteId, site] of Object.entries(macroSitesData || {})) {
+        if (renderedCount >= MACRO_MAP_MAX_VIEWPORT_MARKERS) break;
+        considerSite(siteId, site);
       }
     } else {
-      const info = document.getElementById('macroMapInfo');
-      if (info) {
-        const label = macroSourceFilter === 'ALL' ? 'All Sources' : macroSourceFilter;
-        info.textContent = `No mappable sites found for ${label}.`;
+      siteEntries.forEach(([siteId, site]) => considerSite(siteId, site));
+    }
+
+    const info = document.getElementById('macroMapInfo');
+    const label = macroSourceFilter === 'ALL' ? 'All Sources' : macroSourceFilter;
+    if (info) {
+      if (!points.length) {
+        info.textContent = viewportOnly
+          ? `No sites in the current map view for ${label}. Pan or zoom to explore.`
+          : `No mappable sites found for ${label}.`;
+      } else if (viewportOnly) {
+        const capNote = renderedCount >= MACRO_MAP_MAX_VIEWPORT_MARKERS ? ` (capped at ${MACRO_MAP_MAX_VIEWPORT_MARKERS})` : '';
+        info.textContent = `${renderedCount.toLocaleString()} markers in view for ${label}${capNote}. ${totalSites.toLocaleString()} total sites loaded — pan/zoom to explore.`;
+      } else {
+        info.textContent = `${points.length.toLocaleString()} sites loaded for ${label}. Click a marker to select a site.`;
       }
+    }
+
+    // Only auto-fit when the dataset is small enough to render entirely.
+    if (!viewportOnly && points.length) {
+      macroMapInstance.fitBounds(points, { padding: [24, 24] });
     }
   }
 
@@ -8295,6 +8435,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return [
       [FIREBASE_TMR_URL, GITHUB_TMR_URL, ['./datasets/QLD/tmr.geojson'], 'TMR'],
       [FIREBASE_GOLDCOAST_URL, GITHUB_GOLDCOAST_URL, ['./datasets/QLD/goldcoast.geojson'], 'Gold Coast'],
+      [FIREBASE_BRISBANE_URL, GITHUB_BRISBANE_URL, ['./datasets/QLD/brisbane.geojson'], 'Brisbane'],
       [FIREBASE_IPSWICH_URL, GITHUB_IPSWICH_URL, ['./datasets/QLD/ipswich.geojson'], 'Ipswich'],
       [FIREBASE_LOGAN_URL, GITHUB_LOGAN_URL, ['./datasets/QLD/logan.geojson'], 'Logan'],
       [FIREBASE_TOOWOOMBA_URL, GITHUB_TOOWOOMBA_URL, ['./datasets/QLD/toowoomba.geojson'], 'Toowoomba'],
@@ -9638,11 +9779,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         setLoadingState('Downloading live records...', 'Fetched Northern Territory traffic feed.', 68);
       } else {
         setLoadingState('Downloading live records...', 'Fetching Queensland traffic feeds.', 42);
-        // Brisbane removed: its only open data is intersection volumes (not road
-        // AADT) and the upstream feed is defunct — see scripts/audit_datasets.py notes.
-        [tmrData, goldCoastData, ipswichData, loganData, toowoombaData, tewantinData, qldCensusData] = await Promise.all([
+        // Brisbane: cached Firebase copy (upstream BCC ArcGIS feed is defunct).
+        [tmrData, goldCoastData, brisbaneData, ipswichData, loganData, toowoombaData, tewantinData, qldCensusData] = await Promise.all([
           fetchDatasetWithFallback(FIREBASE_TMR_URL, GITHUB_TMR_URL, ['./datasets/QLD/tmr.geojson'], 'TMR'),
           fetchDatasetWithFallback(FIREBASE_GOLDCOAST_URL, GITHUB_GOLDCOAST_URL, ['./datasets/QLD/goldcoast.geojson'], 'Gold Coast'),
+          fetchDatasetWithFallback(FIREBASE_BRISBANE_URL, GITHUB_BRISBANE_URL, ['./datasets/QLD/brisbane.geojson'], 'Brisbane'),
           fetchDatasetWithFallback(FIREBASE_IPSWICH_URL, GITHUB_IPSWICH_URL, ['./datasets/QLD/ipswich.geojson'], 'Ipswich'),
           fetchDatasetWithFallback(FIREBASE_LOGAN_URL, GITHUB_LOGAN_URL, ['./datasets/QLD/logan.geojson'], 'Logan'),
           fetchDatasetWithFallback(FIREBASE_TOOWOOMBA_URL, GITHUB_TOOWOOMBA_URL, ['./datasets/QLD/toowoomba.geojson'], 'Toowoomba'),
@@ -9653,22 +9794,29 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }
       console.log('[Data Load] GitHub data fetched');
 
-      const tmrSites = tmrData ? parseMacroTrafficData(tmrData, 'TMR') : {};
-      const goldCoastSites = goldCoastData ? parseMacroTrafficData(goldCoastData, 'Gold Coast') : {};
-      const brisbaneSites = brisbaneData ? parseMacroTrafficData(brisbaneData, 'Brisbane') : {};
-      const ipswichSites = ipswichData ? parseMacroTrafficData(ipswichData, 'Ipswich') : (console.warn('[Data Load] Ipswich dataset unavailable; continuing with remaining sources.'), {});
-      const loganSites = loganData ? parseMacroTrafficData(loganData, 'Logan') : {};
-      const toowoomSites = toowoombaData ? parseMacroTrafficData(toowoombaData, 'Toowoomba') : {};
-      const tewantinSites = tewantinData ? parseMacroTrafficData(tewantinData, 'Tewantin') : {};
-      const nswSites2026 = nswData2026 ? parseMacroTrafficData(nswData2026, 'NSW') : {};
-      const nswSitesLegacy = nswDataLegacy ? parseMacroTrafficData(nswDataLegacy, 'NSW') : {};
+      const parseWithYield = async (jsonData, sourceName) => {
+        await yieldToBrowser();
+        return jsonData ? parseMacroTrafficData(jsonData, sourceName) : {};
+      };
+
+      const tmrSites = await parseWithYield(tmrData, 'TMR');
+      const goldCoastSites = await parseWithYield(goldCoastData, 'Gold Coast');
+      const brisbaneSites = await parseWithYield(brisbaneData, 'Brisbane');
+      const ipswichSites = ipswichData
+        ? await parseWithYield(ipswichData, 'Ipswich')
+        : (console.warn('[Data Load] Ipswich dataset unavailable; continuing with remaining sources.'), {});
+      const loganSites = await parseWithYield(loganData, 'Logan');
+      const toowoomSites = await parseWithYield(toowoombaData, 'Toowoomba');
+      const tewantinSites = await parseWithYield(tewantinData, 'Tewantin');
+      const nswSites2026 = await parseWithYield(nswData2026, 'NSW');
+      const nswSitesLegacy = await parseWithYield(nswDataLegacy, 'NSW');
       const nswSites = mergeNswSites(nswSites2026, nswSitesLegacy);
-      const saSites = saData ? parseMacroTrafficData(saData, 'SA') : {};
-      const vicSites = vicData ? parseMacroTrafficData(vicData, 'VIC') : {};
-      const waSites = waData ? parseMacroTrafficData(waData, 'WA') : {};
-      const tasSites = tasData ? parseMacroTrafficData(tasData, 'TAS') : {};
-      const ntSites = ntData ? parseMacroTrafficData(ntData, 'NT') : {};
-      const qldCensusSites = qldCensusData ? parseMacroTrafficData(qldCensusData, 'QLD Census') : {};
+      const saSites = await parseWithYield(saData, 'SA');
+      const vicSites = await parseWithYield(vicData, 'VIC');
+      const waSites = await parseWithYield(waData, 'WA');
+      const tasSites = await parseWithYield(tasData, 'TAS');
+      const ntSites = await parseWithYield(ntData, 'NT');
+      const qldCensusSites = await parseWithYield(qldCensusData, 'QLD Census');
       setLoadingState('Processing records...', 'Normalizing dataset schema and deriving direction labels.', 58);
       console.log('[Data Load] Parsed site data');
 
@@ -9693,48 +9841,53 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       } else {
         syncMacroSourceFilterOptions(requestedScope, CUSTOM_SOURCE_NAME);
       }
-      setLoadingState('Applying directional inference...', 'Processing directional splits in responsive batches.', 64);
-      await applyDirectionalSplitInferenceToSitesAsync(baseMacroSitesData, { chunkSize: 220 });
-      await applyDirectionalSplitInferenceToSitesAsync(macroSitesData, { chunkSize: 220 });
+
+      const siteCount = Object.keys(macroSitesData).length;
       setLoadingState('Building site index...', 'Compiling searchable records and map references.', 70);
-      console.log('[Data Load] Merged and processed', Object.keys(macroSitesData).length, 'sites');
+      console.log('[Data Load] Merged and processed', siteCount, 'sites');
       if (brisbaneFallbackCount > 0) {
         console.log('[Data Load] Inferred Brisbane road labels for', brisbaneFallbackCount, 'sites using nearby named counters');
       }
 
-      document.getElementById('sitesLoadedCount').textContent = Object.keys(macroSitesData).length;
-      populateMacroSitesDatalist();
-      console.log('[Data Load] Populated datalist');
-      
-      initMacroMap();
-      setLoadingState('Rendering map layers...', 'Drawing map tiles and location markers.', 80);
-      console.log('[Data Load] Initialized macro map');
-      
-      initDetourMap();
-      console.log('[Data Load] Initialized detour map');
-      
-      renderMacroMapSites();
-      setLoadingState('Final checks...', 'Finalizing controls and preparing interactions.', 94);
-      console.log('[Data Load] Rendered map sites');
-
-      const mapInfo = document.getElementById('macroMapInfo');
-      if (mapInfo) {
-        const _scopeName = requestedScope === 'NSW' ? 'NSW' : getStateLongName(requestedScope);
-        mapInfo.textContent = `${Object.keys(macroSitesData).length} ${_scopeName} sites loaded. Click a marker to select a site.`;
-      }
+      document.getElementById('sitesLoadedCount').textContent = siteCount;
       loadedDataScope = requestedScope;
       updateQuickTiaStateStatus(`Current database: ${getStateDbLabel(requestedScope)}`);
-      
-      // Hide loading overlay (only if was shown)
+
+      // Unlock the UI as soon as data is searchable — defer heavy map/inference work.
       if (loadingOverlay && isAuthenticated) {
-        setLoadingState('Ready to analyze', 'All systems loaded. You can begin site analysis now.', 100);
+        setLoadingState('Ready to analyze', 'Traffic data loaded. Map markers and direction splits continue in the background.', 100);
         setTimeout(() => {
           loadingOverlay.classList.add('hidden');
           stopLoadingHints();
         }, 350);
-        console.log('[Data Load] Hid loading overlay');
+        console.log('[Data Load] Hid loading overlay (background work continues)');
       }
-      
+
+      populateMacroSitesDatalist();
+
+      initMacroMap();
+      setLoadingState('Rendering map layers...', 'Drawing map tiles and location markers.', 80);
+      console.log('[Data Load] Initialized macro map');
+
+      initDetourMap();
+      console.log('[Data Load] Initialized detour map');
+
+      await yieldToBrowser();
+      renderMacroMapSites({ viewportOnly: true });
+      setLoadingState('Final checks...', 'Finalizing controls and preparing interactions.', 94);
+      console.log('[Data Load] Rendered map sites');
+
+      const mapInfo = document.getElementById('macroMapInfo');
+      if (mapInfo && siteCount > MACRO_MAP_MAX_VIEWPORT_MARKERS) {
+        const _scopeName = requestedScope === 'NSW' ? 'NSW' : getStateLongName(requestedScope);
+        mapInfo.textContent = `${siteCount.toLocaleString()} ${_scopeName} sites loaded. Pan/zoom the map to show nearby markers.`;
+      } else if (mapInfo) {
+        const _scopeName = requestedScope === 'NSW' ? 'NSW' : getStateLongName(requestedScope);
+        mapInfo.textContent = `${siteCount.toLocaleString()} ${_scopeName} sites loaded. Click a marker to select a site.`;
+      }
+
+      scheduleMacroSitesPostProcessing();
+
       console.log('[Data Load] Complete!');
     } catch (error) {
       console.error('[Data Load] Error:', error);
@@ -9754,15 +9907,44 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
   function populateMacroSitesDatalist() {
     const datalist = document.getElementById('macroSitesList');
+    if (!datalist) return;
     datalist.innerHTML = '';
+
+    const totalSites = Object.keys(macroSitesData || {}).length;
+    if (totalSites > MACRO_DATALIST_MAX_OPTIONS) {
+      // Browsers freeze when given hundreds of thousands of <option> nodes.
+      // Quick TIA search and direct site-ID entry remain available.
+      return;
+    }
+
     const filteredEntries = getFilteredMacroSiteEntries();
-    filteredEntries.forEach(([id, data]) => {
+    const fragment = document.createDocumentFragment();
+    const limit = Math.min(filteredEntries.length, MACRO_DATALIST_MAX_OPTIONS);
+    for (let i = 0; i < limit; i += 1) {
+      const [id, data] = filteredEntries[i];
       const option = document.createElement('option');
       option.value = id;
       const sourceTag = data.source ? ` [${data.source}]` : '';
       option.textContent = `${id} - ${data.description}${sourceTag}`;
-      datalist.appendChild(option);
-    });
+      fragment.appendChild(option);
+    }
+    datalist.appendChild(fragment);
+  }
+
+  function scheduleMacroSitesPostProcessing() {
+    if (macroSitesPostProcessPromise) return macroSitesPostProcessPromise;
+
+    macroSitesPostProcessPromise = (async () => {
+      try {
+        await applyDirectionalSplitInferenceToSitesAsync(macroSitesData, { chunkSize: 500 });
+      } catch (err) {
+        console.warn('[Data Load] Background directional inference failed:', err);
+      } finally {
+        macroSitesPostProcessPromise = null;
+      }
+    })();
+
+    return macroSitesPostProcessPromise;
   }
 
   function selectMacroSite(siteId) {
