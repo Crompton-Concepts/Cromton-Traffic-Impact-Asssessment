@@ -1,0 +1,148 @@
+name: Weekly Data Refresh
+
+# Closed-loop weekly refresh: probe every upstream council/state source, and
+# when a publisher has released NEW data, rebuild only the affected datasets,
+# audit them, upload to Firebase Storage (live), and commit the rebuilt files.
+#
+# Complements (and goes one step further than):
+#   - Upstream Freshness Watch  (detect + alert only)
+#   - State Dataset Build       (unconditional weekly state rebuild)
+#
+# Secrets used:
+#   FIREBASE_API_KEY            required for the live upload stage (auto-skipped if absent)
+#   FIREBASE_TOOLS_CONFIG       contents of %APPDATA%\configstore\firebase-tools.json
+#                               (the Firebase CLI login session the uploader authenticates with)
+#   FIREBASE_CLI_CLIENT_SECRET  firebase-tools OAuth client secret, used to refresh the token
+#   TFNSW_API_KEY               optional; enables the NSW rebuild stage
+
+on:
+  schedule:
+    # Weekly, Tuesday 17:00 UTC (~3am AEST Wed) — after Sunday's state build
+    # and Monday's freshness watch have already committed their state.
+    - cron: "0 17 * * 2"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild all default stages even if no upstream change detected"
+        type: boolean
+        required: false
+        default: false
+      no_upload:
+        description: "Skip the Firebase upload (rebuild + commit only)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install script dependencies
+        run: pip install -r requirements-scripts.txt
+
+      # upload_to_firebase.py authenticates from the firebase-tools CLI config
+      # (~/.config/configstore/firebase-tools.json). Restore it from a secret
+      # and refresh the access token so it's valid for this run.
+      - name: Restore Firebase CLI session
+        env:
+          FIREBASE_TOOLS_CONFIG: ${{ secrets.FIREBASE_TOOLS_CONFIG }}
+          FIREBASE_CLI_CLIENT_SECRET: ${{ secrets.FIREBASE_CLI_CLIENT_SECRET }}
+        run: |
+          if [ -z "$FIREBASE_TOOLS_CONFIG" ]; then
+            echo "::warning title=No Firebase session::FIREBASE_TOOLS_CONFIG secret not set - the upload stage will fail if a rebuild is triggered."
+            exit 0
+          fi
+          mkdir -p ~/.config/configstore
+          printf '%s' "$FIREBASE_TOOLS_CONFIG" > ~/.config/configstore/firebase-tools.json
+          python - <<'PYEOF'
+          import json, os, sys, time, urllib.parse, urllib.request
+          from pathlib import Path
+          cfg_path = Path.home() / ".config" / "configstore" / "firebase-tools.json"
+          cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+          tokens = cfg.get("tokens") or {}
+          secret = os.environ.get("FIREBASE_CLI_CLIENT_SECRET", "").strip()
+          refresh = tokens.get("refresh_token")
+          if not (secret and refresh):
+              print("Cannot refresh (missing FIREBASE_CLI_CLIENT_SECRET or refresh_token); relying on stored access_token.")
+              sys.exit(0)
+          payload = urllib.parse.urlencode({
+              "grant_type": "refresh_token",
+              "refresh_token": refresh,
+              "client_id": os.environ.get("FIREBASE_CLI_CLIENT_ID", "563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com"),
+              "client_secret": secret,
+          }).encode()
+          req = urllib.request.Request("https://oauth2.googleapis.com/token", data=payload,
+                                       headers={"Content-Type": "application/x-www-form-urlencoded"})
+          with urllib.request.urlopen(req, timeout=30) as r:
+              data = json.loads(r.read())
+          tokens["access_token"] = data["access_token"]
+          tokens["expires_at"] = int(time.time() * 1000) + int(data.get("expires_in", 3600)) * 1000
+          if data.get("refresh_token"):
+              tokens["refresh_token"] = data["refresh_token"]
+          cfg["tokens"] = tokens
+          cfg_path.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+          print("Firebase CLI access token refreshed for this run.")
+          PYEOF
+
+      - name: Detect changes, rebuild, upload
+        id: refresh
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          TFNSW_API_KEY: ${{ secrets.TFNSW_API_KEY }}
+        run: |
+          set +e
+          ARGS=""
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          if [ "${{ github.event.inputs.no_upload }}" = "true" ]; then ARGS="$ARGS --no-upload"; fi
+          python scripts/weekly_data_refresh.py $ARGS | tee refresh_output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Summarise
+        run: |
+          {
+            echo '## Weekly data refresh'
+            echo '```'
+            cat refresh_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          case "${{ steps.refresh.outputs.exit_code }}" in
+            0) echo "Refresh completed (or nothing to do)." ;;
+            4) echo "::warning title=Upstream unreachable::All upstream sources were unreachable this run; nothing rebuilt." ;;
+            *) echo "::error title=Data refresh failed::A rebuild/upload stage failed. The freshness baseline was restored, so the change will be retried next week. Check the log above." ;;
+          esac
+
+      - name: Commit rebuilt datasets + freshness state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add datasets dataset_manifest.json scripts/upstream_freshness_state.json
+          if git diff --cached --quiet; then
+            echo "No dataset changes to commit."
+          else
+            git commit -m "chore(data): weekly refresh - rebuild datasets from updated upstream sources"
+            git push origin HEAD:main
+          fi
+
+      - name: Fail job if refresh failed
+        if: steps.refresh.outputs.exit_code != '0' && steps.refresh.outputs.exit_code != '4'
+        run: exit 1
