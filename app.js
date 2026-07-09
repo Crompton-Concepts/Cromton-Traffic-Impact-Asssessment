@@ -3590,6 +3590,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         });
         if (!hasRealData) return '';
       }
+      const cellPad = '3px 4px';
+      const cellFont = '8.5px';
+      const headFont = '9px';
       const losPalette = {
         'vcr-los-a': { background: '#2e7d32', color: '#ffffff', border: '#1b5e20' },
         'vcr-los-b': { background: '#8bc34a', color: '#111827', border: '#689f38' },
@@ -3603,9 +3606,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
       clone.querySelectorAll('.formula-inline, .report-remove-x, .report-remove-part-btn').forEach((el) => el.remove());
       clone.querySelectorAll('th, td').forEach((cell) => {
-        cell.style.padding = '8px 10px';
-        cell.style.border = '1.5px solid #64748b';
-        cell.style.fontSize = '12px';
+        cell.style.padding = cellPad;
+        cell.style.border = '1px solid #64748b';
+        cell.style.fontSize = cellFont;
         cell.style.fontWeight = '600';
         cell.style.verticalAlign = 'middle';
         cell.style.backgroundColor = '#ffffff';
@@ -3627,13 +3630,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         cell.style.borderBottom = '2px solid #000000';
         cell.style.borderTop = '1.5px solid #64748b';
         cell.style.opacity = '1';
-        cell.style.fontSize = '13px';
+        cell.style.fontSize = headFont;
       });
       clone.querySelectorAll('tbody th, .rowhead').forEach((cell) => {
         cell.style.fontWeight = '900';
         cell.style.color = '#000000';
         cell.style.backgroundColor = '#ffffff';
-        cell.style.fontSize = '12px';
+        cell.style.fontSize = cellFont;
         cell.style.textAlign = 'center';
       });
       clone.querySelectorAll('tbody td').forEach((cell) => {
@@ -3646,10 +3649,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         badge.style.alignItems = 'center';
         badge.style.justifyContent = 'center';
         badge.style.gap = '4px';
-        badge.style.padding = '5px 8px';
+        badge.style.padding = '3px 5px';
         badge.style.borderRadius = '999px';
         badge.style.fontWeight = '800';
-        badge.style.fontSize = '10px';
+        badge.style.fontSize = '7.5px';
         badge.style.letterSpacing = '0.01em';
         badge.style.lineHeight = '1.15';
 
@@ -3669,7 +3672,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       clone.style.width = '100%';
       clone.style.borderCollapse = 'collapse';
       clone.style.tableLayout = 'auto';
-      clone.style.marginBottom = '10px';
+      clone.style.marginBottom = '4px';
       clone.style.pageBreakInside = 'avoid';
       clone.style.backgroundColor = '#ffffff';
       return clone.outerHTML;
@@ -3935,120 +3938,193 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const vcrRiskText = getValue('vcrRiskBadge') || '-';
     const queueRiskText = getValue('queueRiskBadge') || '-';
 
+    // --- Notes & Application Guidance: derive figures from the tables above ---
+    // Manager spec: the notes must summarise the numbers already shown in the
+    // grouped VCR / Queue tables, and the queue figure must use the "Per 2 min"
+    // row only (not the 5/10/15-minute rows).
+    const parseFirstNumber = (text) => {
+      const m = String(text == null ? '' : text).replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
+      return m ? Number(m[0]) : null;
+    };
+    // Worst (highest) Base VCR across both directional VCR tables.
+    const worstVcrFromTable = (() => {
+      let worst = null;
+      ['vcrGroupedTableD1', 'vcrGroupedTableD2'].forEach((id) => {
+        const tbl = document.getElementById(id);
+        if (!tbl) return;
+        tbl.querySelectorAll('tr').forEach((row) => {
+          const head = row.querySelector('.rowhead');
+          if (!head) return;
+          if (!/base\s*vcr/i.test(head.textContent || '')) return;
+          row.querySelectorAll('.vcr-cell').forEach((cell) => {
+            const v = parseFirstNumber(cell.textContent);
+            if (Number.isFinite(v)) worst = worst === null ? v : Math.max(worst, v);
+          });
+        });
+      });
+      return worst;
+    })();
+    // Peak queue taken ONLY from the "Per 2 min" rows (worst case across every
+    // control mode, period and direction). Values below the 30 m minimum are
+    // reported as the adopted 30 m design length.
+    const per2MinQueueFromTable = (() => {
+      let peak = null;
+      ['queueGroupedTableD1', 'queueGroupedTableD2'].forEach((id) => {
+        const tbl = document.getElementById(id);
+        if (!tbl) return;
+        tbl.querySelectorAll('tr').forEach((row) => {
+          const head = row.querySelector('.rowhead');
+          if (!head) return;
+          if (!/per\s*2\s*min/i.test(head.textContent || '')) return;
+          const cells = row.querySelectorAll('td');
+          if (cells.length < 2) return;
+          const maxCell = cells[cells.length - 1];
+          const cellText = maxCell.textContent || '';
+          let v = parseFirstNumber(cellText);
+          if (Number.isFinite(v) && (/adopt\s*30/i.test(cellText) || v < 30)) v = 30;
+          if (Number.isFinite(v)) peak = peak === null ? v : Math.max(peak, v);
+        });
+      });
+      return peak;
+    })();
+
+    const notesWorstVcr = Number.isFinite(worstVcrFromTable) ? worstVcrFromTable : worstVcr;
+    const notesWorstVcrText = Number.isFinite(notesWorstVcr) ? notesWorstVcr.toFixed(2) : '-';
+    const notesWorstLosText = Number.isFinite(notesWorstVcr) && typeof losLabel === 'function' ? losLabel(notesWorstVcr) : '-';
+    const notesQueuePeakText = Number.isFinite(per2MinQueueFromTable)
+      ? `${Math.round(per2MinQueueFromTable).toLocaleString()} m`
+      : queuePeakText;
+
     const periodTableHtml = `
     <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;">
       <tr>
-        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Period</th>
-        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">From</th>
-        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">To</th>
-        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Hrs</th>
-        <th style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Notes</th>
+        <th style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Period</th>
+        <th style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">From</th>
+        <th style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">To</th>
+        <th style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Hrs</th>
+        <th style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; background:#ffffff; color:#000000; font-weight:900; text-align:center;">Notes</th>
       </tr>
-      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">AM</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Morning peak</td></tr>
-      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">OP</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">7</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Off-peak day</td></tr>
-      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">PM</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Evening peak</td></tr>
-      <tr><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">EV</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">13</td><td style="border:1.5px solid #94a3b8; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Night/off-peak</td></tr>
+      <tr><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">AM</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Morning peak</td></tr>
+      <tr><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">OP</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">09:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">7</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Off-peak day</td></tr>
+      <tr><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">PM</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">16:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">2</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Evening peak</td></tr>
+      <tr><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:800; color:#000000; text-align:center; background:#ffffff;">EV</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">18:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">07:00</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">13</td><td style="border:1px solid #94a3b8; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; text-align:center; background:#ffffff;">Night/off-peak</td></tr>
     </table>`;
 
     const paramsTableHtml = `
     <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#ffffff;"><colgroup><col style="width:62%"><col style="width:38%"></colgroup>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; border-bottom:2px solid #000000; padding:8px 10px; font-weight:900;">Year of Traffic Count</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(baseYear)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Current Year</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(targetYear)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Number of Years</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(yearDelta)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Growth Rate (% p.a.)</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(growthRate)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">HV %</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(hvPercent)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Lanes Direction 1</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(d1Lanes)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Lanes Direction 2</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(d2Lanes)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Worst VCR / LOS</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Peak Queue</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:800; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(queuePeakText)}</td></tr>
-      <tr><th style="text-align:left; font-size:12px; background:#ffffff; color:#000000; border:1.5px solid #64748b; padding:8px 10px; font-weight:900;">Work VCR Assumption</th><td style="border:1.5px solid #64748b; padding:8px 10px; font-size:12px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(laneClosureMode)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; border-bottom:1.5px solid #000000; padding:3px 4px; font-weight:900;">Year of Traffic Count</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(baseYear)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Current Year</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(targetYear)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Number of Years</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(yearDelta)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Growth Rate (% p.a.)</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(growthRate)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">HV %</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(hvPercent)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Lanes Direction 1</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(d1Lanes)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Lanes Direction 2</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(d2Lanes)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Worst VCR / LOS</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:800; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)})</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Peak Queue</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:800; color:#000000; background:#ffffff; text-align:center;">${escapeHtml(queuePeakText)}</td></tr>
+      <tr><th style="text-align:left; font-size:8.5px; background:#ffffff; color:#000000; border:1px solid #64748b; padding:3px 4px; font-weight:900;">Work VCR Assumption</th><td style="border:1px solid #64748b; padding:3px 4px; font-size:8.5px; font-weight:700; color:#000000; background:#f8fafc; text-align:center;">${escapeHtml(laneClosureMode)}</td></tr>
     </table>`;
 
     const legendHtml = `
-        <div style="font-weight:900; font-size:12px; margin-bottom:6px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #334155;">LOS Legend</div>
-        <div style="font-size:11px; border:1px solid #1b5e20; margin-bottom:4px; background:#2e7d32; color:#ffffff; padding:4px 8px; font-weight:800;">LOS A (VCR &lt;= 0.60)</div>
-        <div style="font-size:11px; border:1px solid #689f38; margin-bottom:4px; background:#8bc34a; color:#111827; padding:4px 8px; font-weight:800;">LOS B (0.60 &lt; VCR &lt;= 0.70)</div>
-        <div style="font-size:11px; border:1px solid #f9a825; margin-bottom:4px; background:#ffeb3b; color:#111827; padding:4px 8px; font-weight:800;">LOS C (0.70 &lt; VCR &lt;= 0.80)</div>
-        <div style="font-size:11px; border:1px solid #ef6c00; margin-bottom:4px; background:#ffb300; color:#111827; padding:4px 8px; font-weight:800;">LOS D (0.80 &lt; VCR &lt;= 0.90)</div>
-        <div style="font-size:11px; border:1px solid #d84315; margin-bottom:4px; background:#f57c00; color:#ffffff; padding:4px 8px; font-weight:800;">LOS E (0.90 &lt; VCR &lt;= 1.00)</div>
-        <div style="font-size:11px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:4px 8px; font-weight:800;">LOS F (VCR &gt; 1.00)</div>`;
+        <div style="font-weight:900; font-size:9px; margin-bottom:4px; color:#0f172a; padding-bottom:2px; border-bottom:1.5px solid #334155;">LOS Legend</div>
+        <div style="font-size:7.5px; border:1px solid #1b5e20; margin-bottom:2px; background:#2e7d32; color:#ffffff; padding:2px 5px; font-weight:800;">LOS A (VCR &lt;= 0.60)</div>
+        <div style="font-size:7.5px; border:1px solid #689f38; margin-bottom:2px; background:#8bc34a; color:#111827; padding:2px 5px; font-weight:800;">LOS B (0.60 &lt; VCR &lt;= 0.70)</div>
+        <div style="font-size:7.5px; border:1px solid #f9a825; margin-bottom:2px; background:#ffeb3b; color:#111827; padding:2px 5px; font-weight:800;">LOS C (0.70 &lt; VCR &lt;= 0.80)</div>
+        <div style="font-size:7.5px; border:1px solid #ef6c00; margin-bottom:2px; background:#ffb300; color:#111827; padding:2px 5px; font-weight:800;">LOS D (0.80 &lt; VCR &lt;= 0.90)</div>
+        <div style="font-size:7.5px; border:1px solid #d84315; margin-bottom:2px; background:#f57c00; color:#ffffff; padding:2px 5px; font-weight:800;">LOS E (0.90 &lt; VCR &lt;= 1.00)</div>
+        <div style="font-size:7.5px; border:1px solid #8e0000; background:#c62828; color:#ffffff; padding:2px 5px; font-weight:800;">LOS F (VCR &gt; 1.00)</div>`;
 
     const notesGuidanceHtml = `
-    <div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#0f172a; padding-bottom:4px; border-bottom:2px solid #334155;">Notes &amp; Application Guidance</div>
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px 10px;">
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Use Of Output</div><div style="color:#111827; font-size:11px; line-height:1.45;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Worst Capacity Condition</div><div style="color:#111827; font-size:11px; line-height:1.45;">Current worst case is ${escapeHtml(worstVcrText)} (${escapeHtml(worstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Queue Interpretation</div><div style="color:#111827; font-size:11px; line-height:1.45;">Adopted peak queue is ${escapeHtml(queuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Closure Assumption</div><div style="color:#111827; font-size:11px; line-height:1.45;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.${escapeHtml(closureAssumptionExtra)}</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Assessment Periods</div><div style="color:#111827; font-size:11px; line-height:1.45;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
-      <div style="border:1px solid #64748b; border-left:3px solid #334155; padding:7px 9px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:4px; font-size:11.5px;">Design Check</div><div style="color:#111827; font-size:11px; line-height:1.45;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
+    <div style="font-weight:900; font-size:9px; margin-bottom:5px; color:#0f172a; padding-bottom:2px; border-bottom:1.5px solid #334155;">Notes &amp; Application Guidance</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:4px 6px;">
+      <div style="border:1px solid #64748b; border-left:2px solid #334155; padding:4px 6px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:2px; font-size:8px;">Use Of Output</div><div style="color:#111827; font-size:7.5px; line-height:1.35;">Prepared from live TIA calculator inputs and intended for direct placement in TGS / TMP layout sheets.</div></div>
+      <div style="border:1px solid #64748b; border-left:2px solid #334155; padding:4px 6px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:2px; font-size:8px;">Worst Capacity Condition</div><div style="color:#111827; font-size:7.5px; line-height:1.35;">Worst Base VCR from the table above is ${escapeHtml(notesWorstVcrText)} (${escapeHtml(notesWorstLosText)}). ${escapeHtml(vcrRiskText)}.</div></div>
+      <div style="border:1px solid #64748b; border-left:2px solid #334155; padding:4px 6px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:2px; font-size:8px;">Queue Interpretation</div><div style="color:#111827; font-size:7.5px; line-height:1.35;">Adopted peak queue (Per 2 min row above) is ${escapeHtml(notesQueuePeakText)}. ${escapeHtml(queueRiskText)}.</div></div>
+      <div style="border:1px solid #64748b; border-left:2px solid #334155; padding:4px 6px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:2px; font-size:8px;">Closure Assumption</div><div style="color:#111827; font-size:7.5px; line-height:1.35;">Assessment reflects D1 ${escapeHtml(d1Lanes)} lane(s), D2 ${escapeHtml(d2Lanes)} lane(s), under ${escapeHtml(laneClosureMode)} conditions.${escapeHtml(closureAssumptionExtra)}</div></div>
+      <div style="border:1px solid #64748b; border-left:2px solid #334155; padding:4px 6px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:2px; font-size:8px;">Assessment Periods</div><div style="color:#111827; font-size:7.5px; line-height:1.35;">AM 07:00-09:00, OP 09:00-16:00, PM 16:00-18:00, EV 18:00-07:00. Review staging against the highest-risk period before issue.</div></div>
+      <div style="border:1px solid #64748b; border-left:2px solid #334155; padding:4px 6px; background:#f1f5f9;"><div style="font-weight:900; color:#0f172a; margin-bottom:2px; font-size:8px;">Design Check</div><div style="color:#111827; font-size:7.5px; line-height:1.35;">Use LOS and queue outputs together. Where LOS E/F or extended queues remain, revise staging, timing, or lane management before finalising the sheet.</div></div>
     </div>`;
 
-    const subHeading = (label) => `<div style="font-size:11.5px; font-weight:900; margin-bottom:5px; color:#0f172a; padding-bottom:3px; border-bottom:2px solid #475569; text-transform:uppercase; letter-spacing:0.05em;">${label}</div>`;
-    const dirBadge = (label, accent) => `<div style="font-weight:900; font-size:13px; margin-bottom:8px; color:#ffffff; background:${accent}; padding:6px 10px; border-radius:4px; letter-spacing:0.01em;">${label}</div>`;
+    const subHeading = (label) => `<div style="font-size:8.5px; font-weight:900; margin-bottom:3px; color:#0f172a; padding-bottom:2px; border-bottom:1.5px solid #475569; text-transform:uppercase; letter-spacing:0.04em;">${label}</div>`;
+    const dirBadge = (label, accent) => `<div style="font-weight:900; font-size:9px; margin-bottom:4px; color:#ffffff; background:${accent}; padding:3px 6px; border-radius:2px; letter-spacing:0.01em;">${label}</div>`;
     const D2_ACCENT = '#b91c1c';
     const D1_ACCENT = '#15803d';
 
-    // Landscape layout: content flows in wide horizontal bands so the sheet is
-    // natively wider than tall (fits a landscape TGS/TMP layout sheet).
-    const baseHtml = `
-<div style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; border:2px solid #334155; padding:16px; background:#eef1f6; width:1980px; min-width:1980px; max-width:none; box-sizing:border-box;">
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px; gap:16px;">
-    <div style="font-size:16px; font-weight:900; color:#0f172a; letter-spacing:0.01em; border-left:5px solid #1e293b; padding-left:10px;">Count Location: ${escapeHtml(title)} &mdash; Site ${escapeHtml(siteId)}</div>
-    <div style="font-size:11px; color:#1e293b; font-weight:700; text-align:right; white-space:nowrap;">Generated ${escapeHtml(generatedAt)}</div>
-  </div>
+    // A3 landscape TGS template — 420 × 297 mm (1190.55 × 841.89 pt).
+    // Margins 26.4 pt to frame border; title block 78.1 pt at top (Notes top-right).
+    const TGS_PAGE_W_PT = 1190.55;
+    const TGS_PAGE_H_PT = 841.89;
+    const TGS_MARGIN_PT = 26.4;
+    const TGS_TITLE_BLOCK_H_PT = 78.1;
+    const TGS_FRAME_BORDER = '1.5pt solid #334155';
 
-  <div style="display:grid; grid-template-columns: 1.15fr 1fr 0.85fr; gap:12px; margin-bottom:12px; align-items:start;">
-    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+    const baseHtml = `
+<div class="tgs-a3-sheet" style="font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif; color:#111827; box-sizing:border-box; width:${TGS_PAGE_W_PT}pt; min-width:${TGS_PAGE_W_PT}pt; height:${TGS_PAGE_H_PT}pt; min-height:${TGS_PAGE_H_PT}pt; max-width:none; padding:${TGS_MARGIN_PT}pt; background:#ffffff;">
+  <div style="box-sizing:border-box; width:100%; height:100%; border:${TGS_FRAME_BORDER}; background:#eef1f6; display:flex; flex-direction:column; overflow:hidden;">
+
+    <div style="box-sizing:border-box; height:${TGS_TITLE_BLOCK_H_PT}pt; min-height:${TGS_TITLE_BLOCK_H_PT}pt; max-height:${TGS_TITLE_BLOCK_H_PT}pt; display:flex; flex-direction:row; border-bottom:${TGS_FRAME_BORDER}; background:#ffffff;">
+      <div style="flex:1; box-sizing:border-box; padding:8pt 10pt; display:flex; flex-direction:column; justify-content:center; border-right:${TGS_FRAME_BORDER};">
+        <div style="font-size:11pt; font-weight:900; color:#0f172a; line-height:1.25; letter-spacing:0.01em;">Count Location: ${escapeHtml(title)}</div>
+        <div style="font-size:8pt; font-weight:700; color:#334155; margin-top:3pt;">Site ${escapeHtml(siteId)} &mdash; Generated ${escapeHtml(generatedAt)}</div>
+      </div>
+      <div style="box-sizing:border-box; width:34%; min-width:34%; padding:8pt 10pt; display:flex; flex-direction:column;">
+        <div style="font-size:9pt; font-weight:900; color:#0f172a; margin-bottom:4pt;">Notes:</div>
+        <div style="flex:1; min-height:20pt;"></div>
+      </div>
+    </div>
+
+    <div style="box-sizing:border-box; flex:1; padding:6pt; display:flex; flex-direction:column; gap:5pt; overflow:hidden;">
+
+  <div style="display:grid; grid-template-columns: 1.15fr 1fr; gap:5pt; align-items:start;">
+    <div style="border:1px solid #475569; border-top:3px solid #1e293b; padding:5pt; background:#ffffff;">
       ${subHeading('Assessment Periods')}
       ${periodTableHtml}
-      <div style="margin-top:12px;">
+      <div style="margin-top:5pt;">
         ${legendHtml}
       </div>
     </div>
-    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+    <div style="border:1px solid #475569; border-top:3px solid #1e293b; padding:5pt; background:#ffffff;">
       ${subHeading('Site Parameters')}
       ${paramsTableHtml}
     </div>
-    <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
-      ${subHeading('Notes')}
-    </div>
   </div>
 
-  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px; align-items:start;">
-    <div style="border:1.5px solid #475569; border-top:4px solid ${D2_ACCENT}; padding:10px; background:#ffffff;">
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5pt; align-items:start;">
+    <div style="border:1px solid #475569; border-top:3px solid ${D2_ACCENT}; padding:5pt; background:#ffffff;">
       ${dirBadge('Direction 2, Against Gazettal', D2_ACCENT)}
       ${subHeading('Grouped Directional Summary')}
       ${groupedD2Html}
     </div>
-    <div style="border:1.5px solid #475569; border-top:4px solid ${D1_ACCENT}; padding:10px; background:#ffffff;">
+    <div style="border:1px solid #475569; border-top:3px solid ${D1_ACCENT}; padding:5pt; background:#ffffff;">
       ${dirBadge('Direction 1, Gazettal', D1_ACCENT)}
       ${subHeading('Grouped Directional Summary')}
       ${groupedD1Html}
     </div>
   </div>
 
-  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:12px; align-items:start;">
-    <div style="border:1.5px solid #475569; border-top:4px solid ${D2_ACCENT}; padding:10px; background:#ffffff;">
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:5pt; align-items:start;">
+    <div style="border:1px solid #475569; border-top:3px solid ${D2_ACCENT}; padding:5pt; background:#ffffff;">
       ${subHeading('D2 Queue Length')}
       ${queueD2Html}
     </div>
-    <div style="border:1.5px solid #475569; border-top:4px solid ${D2_ACCENT}; padding:10px; background:#ffffff;">
+    <div style="border:1px solid #475569; border-top:3px solid ${D2_ACCENT}; padding:5pt; background:#ffffff;">
       ${subHeading('D2 VCR / LOS')}
       ${vcrD2Html}
     </div>
-    <div style="border:1.5px solid #475569; border-top:4px solid ${D1_ACCENT}; padding:10px; background:#ffffff;">
+    <div style="border:1px solid #475569; border-top:3px solid ${D1_ACCENT}; padding:5pt; background:#ffffff;">
       ${subHeading('D1 Queue Length')}
       ${queueD1Html}
     </div>
-    <div style="border:1.5px solid #475569; border-top:4px solid ${D1_ACCENT}; padding:10px; background:#ffffff;">
+    <div style="border:1px solid #475569; border-top:3px solid ${D1_ACCENT}; padding:5pt; background:#ffffff;">
       ${subHeading('D1 VCR / LOS')}
       ${vcrD1Html}
     </div>
   </div>
 
-  <div style="border:1.5px solid #475569; border-top:4px solid #1e293b; padding:10px; background:#ffffff;">
+  <div style="border:1px solid #475569; border-top:3px solid #1e293b; padding:5pt; background:#ffffff;">
     ${notesGuidanceHtml}
+  </div>
+
+    </div>
   </div>
 </div>`;
     const detourOnlyMode = !!(options && options.detourOnly);
@@ -4341,22 +4417,30 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       }, 'image/png');
     });
 
-    // Composite the captured content onto a landscape canvas (A4 landscape
-    // aspect ratio). The content is centered at native resolution on a white
-    // background so the downloaded image always reads as landscape.
+    // Composite onto a target page canvas. A3 landscape = 1190.55 × 841.89 pt
+    // (420 × 297 mm). Legacy forceLandscape uses A4 landscape aspect ratio.
     const finalizeCanvas = (sourceCanvas) => {
-      if (!options.forceLandscape || !sourceCanvas || !sourceCanvas.width || !sourceCanvas.height) {
+      const useA3 = options.pageFormat === 'a3-landscape';
+      const useLegacyLandscape = !useA3 && options.forceLandscape;
+      if ((!useA3 && !useLegacyLandscape) || !sourceCanvas || !sourceCanvas.width || !sourceCanvas.height) {
         return blobFromCanvas(sourceCanvas);
       }
 
-      const targetAspect = 297 / 210; // A4 landscape (~1.414)
+      const exportScale = Math.max(1, Math.min(3, Number(options.exportScale) || 2));
       const sw = sourceCanvas.width;
       const sh = sourceCanvas.height;
 
-      let outW = Math.max(sw, Math.ceil(sh * targetAspect));
-      let outH = Math.max(sh, Math.ceil(sw / targetAspect));
+      let outW;
+      let outH;
+      if (useA3) {
+        outW = Math.round(1190.55 * exportScale);
+        outH = Math.round(841.89 * exportScale);
+      } else {
+        const targetAspect = 297 / 210; // A4 landscape (~1.414)
+        outW = Math.max(sw, Math.ceil(sh * targetAspect));
+        outH = Math.max(sh, Math.ceil(sw / targetAspect));
+      }
 
-      // Keep the output within a sane pixel budget to avoid memory spikes.
       const outMaxPixels = 26_000_000;
       const outArea = outW * outH;
       if (outArea > outMaxPixels) {
@@ -4374,7 +4458,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, outW, outH);
 
-      // Scale the content down only if it would overflow the landscape canvas.
       const drawScale = Math.min(1, outW / sw, outH / sh);
       const drawW = Math.round(sw * drawScale);
       const drawH = Math.round(sh * drawScale);
@@ -4512,7 +4595,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     try {
-      const blob = await renderPreviewNodeToPngBlob(previewNode, { backgroundColor: '#ffffff', forceLandscape: true });
+      const blob = await renderPreviewNodeToPngBlob(previewNode, {
+        backgroundColor: '#ffffff',
+        pageFormat: 'a3-landscape',
+        exportScale: 2
+      });
       const scenario = document.getElementById('scenarioNameInput');
       const scenarioSegment = sanitizeExportFileNameSegment(scenario && scenario.value, 'tia');
       const fileName = `tgs_tia_sheet_${scenarioSegment}.png`;
@@ -4942,7 +5029,23 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     let isUnlockStarted = false;
     const DATA_LOAD_UNLOCK_TIMEOUT_MS = 60000;
+
+    function clearAuthSession() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      sessionStorage.removeItem(USER_SESSION_KEY);
+      sessionStorage.removeItem(TIER_SESSION_KEY);
+      sessionStorage.removeItem('IS_ADMIN');
+    }
+
+    function forceHideLoginGate() {
+      document.body.classList.remove('app-locked');
+      loginGate.style.display = 'none';
+      loginGate.style.visibility = 'hidden';
+      loginGate.style.opacity = '0';
+    }
+
     async function unlockApplication(options = {}) {
+      forceHideLoginGate();
       if (isUnlockStarted) return;
       isUnlockStarted = true;
       const useFunnyLoading = !!(options && options.useFunnyLoading);
@@ -4984,7 +5087,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         console.error('[Login] Data loading failed before unlock:', error);
       }
       
-      // Unlock app interface
+      // Unlock app interface (gate already hidden at start of unlockApplication)
       document.body.classList.remove('app-locked');
       loginGate.style.display = 'none';
       
@@ -5065,8 +5168,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         firebase.auth().onAuthStateChanged(async (user) => {
           _authCheckFired = true;
           clearTimeout(_authFallback);
-          if (user && !_formLoginInProgress) {
-            // Persisted Firebase auth — auto-login without requiring form entry
+          if (user) {
+            if (_formLoginInProgress) return;
             if (sessionStorage.getItem(AUTH_SESSION_KEY) !== 'true') {
               sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
               const localDb = getUserDb();
@@ -5079,11 +5182,25 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             }
             unlockApplication().catch(function(err) {
               console.error('[Login] unlockApplication failed, forcing UI unlock:', err);
-              document.body.classList.remove('app-locked');
-              loginGate.style.display = 'none';
+              forceHideLoginGate();
             });
           } else if (!user) {
-            // No authenticated user — reveal login gate
+            if (_formLoginInProgress) return;
+            // Firebase session expired — but honour same-tab sessionStorage auth
+            // (local-password login or Firebase persistence still initialising).
+            if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+              if (document.body.classList.contains('app-locked')) {
+                unlockApplication().catch(function(err) {
+                  console.error('[Login] session restore unlock failed:', err);
+                  clearAuthSession();
+                  isUnlockStarted = false;
+                  _revealLoginGate();
+                });
+              }
+              return;
+            }
+            clearAuthSession();
+            isUnlockStarted = false;
             _revealLoginGate();
           }
         });
@@ -5093,11 +5210,6 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         console.error('[Login] Firebase auth bootstrap failed:', authBootstrapError);
         loginError.textContent = 'Authentication service unavailable. Please refresh and try again.';
         _revealLoginGate();
-      }
-
-      if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-        // Logic handled by onAuthStateChanged
-        return;
       }
     }
 
@@ -5212,6 +5324,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         sessionStorage.setItem('IS_ADMIN', finalRec.isAdmin ? 'true' : 'false');
 
         loginError.textContent = '';
+        forceHideLoginGate();
         _formLoginInProgress = false;
         await unlockApplication({ useFunnyLoading: true });
       } catch (firebaseError) {
@@ -5483,6 +5596,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         console.warn('[Logout] Firebase signOut error:', e);
       }
       sessionStorage.removeItem(AUTH_SESSION_KEY);
+      sessionStorage.removeItem(USER_SESSION_KEY);
+      sessionStorage.removeItem(TIER_SESSION_KEY);
+      sessionStorage.removeItem('IS_ADMIN');
       window.location.reload();
     });
   }
@@ -7562,8 +7678,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       pedaddeddelaysec: 'Added delay (s) = detour walk + crossing delay - existing walk',
       pedaddeddelaymin: 'Added delay (min) = added delay (s) / 60',
       kpidv: 'DV = max(DV_D1, DV_D2), using Austroads adjusted per-lane capacity',
-      kpid1peakqueue: 'D1 Peak Queue (2m) = max(D1 q2 across AM/OP/PM/EV)',
-      kpid2peakqueue: 'D2 Peak Queue (2m) = max(D2 q2 across AM/OP/PM/EV)',
+      kpid1peakqueue: 'D1 Peak Queue (2m hold) = max(D1 q2 across AM/OP/PM/EV)',
+      kpid2peakqueue: 'D2 Peak Queue (2m hold) = max(D2 q2 across AM/OP/PM/EV)',
       kpislrfpeak: 'SLRF Peak = max((D1 + D2)/DV) when both directions are single-lane',
       kpiworstvcr: 'Worst VCR = max(all base/work VCR values across periods and directions)',
       queueriskbadge: 'Queue risk period = argmax(max queue by period)',
@@ -8281,6 +8397,83 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
     console.log('[Data Manifest] Detected dataset release update. Cleared cached datasets:', clearedCount);
     return true;
+  }
+
+  // --- Parsed-site IndexedDB cache -----------------------------------------
+  // Re-downloading and re-parsing ~300 MB of GeoJSON on every visit dominated
+  // startup time. The PARSED site map is cached in IndexedDB keyed by state
+  // scope + dataset manifest signature (+ schema version), so repeat visits
+  // skip both the download and the JSON parse. A dataset release changes the
+  // manifest signature and automatically invalidates the cache entry.
+  const PARSED_SITES_IDB_NAME = 'tia-parsed-sites';
+  const PARSED_SITES_IDB_STORE = 'scopes';
+  const PARSED_SITES_SCHEMA_VERSION = 'v1';
+
+  function openParsedSitesDb() {
+    return new Promise((resolve, reject) => {
+      if (typeof indexedDB === 'undefined') { reject(new Error('IndexedDB unavailable')); return; }
+      const req = indexedDB.open(PARSED_SITES_IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(PARSED_SITES_IDB_STORE)) {
+          db.createObjectStore(PARSED_SITES_IDB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('IndexedDB open failed'));
+    });
+  }
+
+  function getParsedSitesManifestSignature() {
+    try { return String(localStorage.getItem(DATASET_MANIFEST_CACHE_KEY) || ''); } catch (_) { return ''; }
+  }
+
+  function getParsedSitesCacheKey(scope) {
+    return `${PARSED_SITES_SCHEMA_VERSION}|${String(scope || 'QLD').toUpperCase()}|${getParsedSitesManifestSignature()}`;
+  }
+
+  async function readParsedSitesCache(scope) {
+    if (!getParsedSitesManifestSignature()) return null; // cannot validate freshness yet
+    const db = await openParsedSitesDb();
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(PARSED_SITES_IDB_STORE, 'readonly');
+        const req = tx.objectStore(PARSED_SITES_IDB_STORE).get(getParsedSitesCacheKey(scope));
+        req.onsuccess = () => {
+          const row = req.result;
+          resolve(row && row.sites && typeof row.sites === 'object' && Object.keys(row.sites).length > 0 ? row.sites : null);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    } finally { db.close(); }
+  }
+
+  function writeParsedSitesCache(scope, sites) {
+    // Fire-and-forget: a failed write only means the next visit re-parses.
+    (async () => {
+      const signature = getParsedSitesManifestSignature();
+      if (!signature || !sites || typeof sites !== 'object' || Object.keys(sites).length === 0) return;
+      const db = await openParsedSitesDb();
+      try {
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(PARSED_SITES_IDB_STORE, 'readwrite');
+          const store = tx.objectStore(PARSED_SITES_IDB_STORE);
+          // Evict entries from older dataset releases (signature mismatch).
+          const keysReq = store.getAllKeys();
+          keysReq.onsuccess = () => {
+            (keysReq.result || []).forEach((k) => {
+              if (String(k).split('|')[2] !== signature) store.delete(k);
+            });
+            store.put({ savedAt: Date.now(), sites }, getParsedSitesCacheKey(scope));
+          };
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+        console.log('[Data Cache] Parsed sites cached for', scope);
+      } catch (err) {
+        console.warn('[Data Cache] Failed to cache parsed sites:', err && err.message ? err.message : err);
+      } finally { db.close(); }
+    })().catch(() => {});
   }
 
   async function ensureDatasetManifestSynced() {
@@ -9738,6 +9931,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       await ensureLeafletLoaded();
       await ensureDatasetManifestSynced();
       console.log('[Data Load] Leaflet is ready');
+
+      // Fast path: reuse the parsed-site cache when the dataset manifest
+      // signature matches — skips both download and JSON parse entirely.
+      let usedParsedCache = false;
+      try {
+        setLoadingState('Checking device cache...', 'Looking for previously parsed traffic data.', 34);
+        const cachedSites = await readParsedSitesCache(requestedScope);
+        if (cachedSites) {
+          baseMacroSitesData = cachedSites;
+          usedParsedCache = true;
+          console.log('[Data Load] Parsed-site cache hit for', requestedScope, '-', Object.keys(cachedSites).length, 'sites');
+          setLoadingState('Loaded from device cache', 'Reusing previously parsed traffic data for this region.', 66);
+        }
+      } catch (err) {
+        console.warn('[Data Load] Parsed-site cache unavailable:', err && err.message ? err.message : err);
+      }
       
       console.log('[Data Load] Fetching traffic datasets...');
       let tmrData = null;
@@ -9756,7 +9965,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       let ntData = null;
       let qldCensusData = null;
 
-      if (requestedScope === 'NSW') {
+      if (usedParsedCache) {
+        // Download skipped — parsed-site cache hit above.
+      } else if (requestedScope === 'NSW') {
         setLoadingState('Downloading live records...', 'Fetching NSW 2026 traffic feed.', 42);
         [nswData2026, nswDataLegacy] = await Promise.all([
           fetchDatasetWithFallback(FIREBASE_NSW_2026_URL, GITHUB_NSW_2026_URL, ['./datasets/NSW/nsw_2026.geojson'], 'NSW 2026'),
@@ -9826,20 +10037,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       setLoadingState('Processing records...', 'Normalizing dataset schema and deriving direction labels.', 58);
       console.log('[Data Load] Parsed site data');
 
-      baseMacroSitesData = requestedScope === 'NSW'
-        ? mergeMacroSites(nswSites)
-        : requestedScope === 'SA'
-        ? mergeMacroSites(saSites)
-        : requestedScope === 'VIC'
-        ? mergeMacroSites(vicSites)
-        : requestedScope === 'WA'
-        ? mergeMacroSites(waSites)
-        : requestedScope === 'TAS'
-        ? mergeMacroSites(tasSites)
-        : requestedScope === 'NT'
-        ? mergeMacroSites(ntSites)
-        : mergeMacroSites(dedupeTmrAgainstCensus(tmrSites, qldCensusSites), goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites, qldCensusSites);
-      const brisbaneFallbackCount = requestedScope !== 'QLD' ? 0 : applyBrisbaneRoadContextFallbacks(baseMacroSitesData);
+      let brisbaneFallbackCount = 0;
+      if (!usedParsedCache) {
+        baseMacroSitesData = requestedScope === 'NSW'
+          ? mergeMacroSites(nswSites)
+          : requestedScope === 'SA'
+          ? mergeMacroSites(saSites)
+          : requestedScope === 'VIC'
+          ? mergeMacroSites(vicSites)
+          : requestedScope === 'WA'
+          ? mergeMacroSites(waSites)
+          : requestedScope === 'TAS'
+          ? mergeMacroSites(tasSites)
+          : requestedScope === 'NT'
+          ? mergeMacroSites(ntSites)
+          : mergeMacroSites(dedupeTmrAgainstCensus(tmrSites, qldCensusSites), goldCoastSites, brisbaneSites, ipswichSites, loganSites, toowoomSites, tewantinSites, qldCensusSites);
+        brisbaneFallbackCount = requestedScope !== 'QLD' ? 0 : applyBrisbaneRoadContextFallbacks(baseMacroSitesData);
+        // Cache the parsed result for next visit; deferred so the UI unlocks first.
+        const sitesToCache = baseMacroSitesData;
+        setTimeout(() => writeParsedSitesCache(requestedScope, sitesToCache), 4000);
+      }
       macroSitesData = mergeMacroSites(baseMacroSitesData, customUploadedSitesData);
       window.macroSitesData = macroSitesData;
       if (macroSourceFilter !== CUSTOM_SOURCE_NAME) {
@@ -12339,16 +12556,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     return 'See Queue table (all modes shown)';
   }
 
-  // The Lane Closure Mode dropdown was removed; all modes are enumerated in the queue
-  // table. This now only toggles the contraflow closed-carriageway sub-choice, which is
-  // relevant whenever both directions have ≥2 lanes (contraflow is one of the modes shown).
-  function syncLaneClosureModeUi() {
-    const d1 = Math.max(1, num('D1_Lanes'));
-    const d2 = Math.max(1, num('D2_Lanes'));
-    const allowContraflow = d1 >= 2 && d2 >= 2;
-    const contraWrap = document.getElementById('contraflowClosedWrap');
-    if (contraWrap) contraWrap.style.display = allowContraflow ? '' : 'none';
-  }
+  // Lane-closure / contraflow UI removed — all modes are enumerated in the Queue Length table.
+  function syncLaneClosureModeUi() { /* no-op: legacy hook for lane-count listeners */ }
 
   function getDirectionalPercentage(direction, type) {
     const typeUpper = String(type || '').toUpperCase();
@@ -12405,6 +12614,197 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       countNonZeroHours(site.directions_weekday['GAZETTAL']) >= MINIMUM_NONZERO_HOURS ||
       countNonZeroHours(site.directions_weekday['AGAINST GAZETTAL']) >= MINIMUM_NONZERO_HOURS
     );
+  }
+
+  // Design hourly volume K-factor and council peak templates — aligned to
+  // excel calculation templates/ workbooks (see tools/excel_council_audit.md).
+  const DHV_K_FACTOR = 0.85;
+
+  // Calculation style when ≥6 non-zero hourly values exist (isTmrStyleSource).
+  const MEASURED_HOURLY_STYLES = {
+    TMR_DYNAMIC: 'tmr_dynamic',       // TMR / NSW / QLD Census — dynamic AM/PM peak windows
+    MEASURED_PEAK: 'measured_peak',   // Brisbane / Logan — peak hour from count profile
+  };
+
+  const SOURCE_CALC_PROFILES = {
+    TMR: {
+      label: 'TMR (QLD)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      periodFraction: { AM: 0.60, PM: 0.60, OP: 0.15, EV: 0.15 },
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Measured hourly profile; period fractions 60%/15% with K=0.85 when synthesised from AADT',
+    },
+    'QLD CENSUS': {
+      label: 'QLD Census (TMR Traffic Census)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      periodFraction: { AM: 0.60, PM: 0.60, OP: 0.15, EV: 0.15 },
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'TMR-style measured hourly profile scaled to AADT',
+    },
+    NSW: {
+      label: 'NSW (TfNSW / RMS)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      periodFraction: { AM: 0.60, PM: 0.60, OP: 0.15, EV: 0.15 },
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'TMR-style measured hourly profile (24 hr state-road counts)',
+    },
+    SA: {
+      label: 'SA (DIT Traffic Volumes)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Measured hourly when available; otherwise Austroads diurnal + K=0.85',
+    },
+    VIC: {
+      label: 'VIC (DTP Traffic Volume)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Measured hourly when available; otherwise Austroads diurnal + K=0.85',
+    },
+    WA: {
+      label: 'WA (Main Roads counts)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Measured hourly when available; otherwise Austroads diurnal + K=0.85',
+    },
+    TAS: {
+      label: 'TAS (NFDH harmonised counts)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Measured hourly when available; otherwise Austroads diurnal + K=0.85',
+    },
+    BRISBANE: {
+      label: 'Brisbane (BCC)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.MEASURED_PEAK,
+      kFactorSynthetic: 1.0,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Measured count profile (no K-factor); Austroads diurnal when counts unavailable',
+    },
+    LOGAN: {
+      label: 'Logan City Council',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.MEASURED_PEAK,
+      kFactorSynthetic: 1.0,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Peak from count average (no K-factor); off-peak 15% × 42% when synthesised (Logan Excel)',
+    },
+    'GOLD COAST': {
+      label: 'Gold Coast (GCCC)',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.MEASURED_PEAK,
+      aadtTemplate: { peakPeriodPct: 0.15, offPeakRemainderPct: 0.45 },
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Peak = 15% × 85% AADT; off-peak = 15% × 45% of remainder (GCCC Excel)',
+    },
+    IPSWICH: {
+      label: 'Ipswich City Council',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.MEASURED_PEAK,
+      aadtTemplate: { peakPeriodPct: 0.15, offPeakRemainderPct: 0.42 },
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Peak = 15% × 85% AADT; off-peak = 15% × 42% of remainder (Ipswich Excel)',
+    },
+    TOOWOOMBA: {
+      label: 'Toowoomba Regional Council',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.MEASURED_PEAK,
+      aadtTemplate: { peakPeriodPct: 0.15, offPeakRemainderPct: 0.42 },
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Peak = 15% × 85% AADT; off-peak = 15% × 42% of remainder (Toowoomba Excel)',
+    },
+    'CUSTOM UPLOAD': {
+      label: 'Custom Upload',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.TMR_DYNAMIC,
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'TMR-style when 24 hr profile detected; otherwise council AADT template',
+    },
+    DEFAULT: {
+      label: 'Austroads template',
+      measuredHourlyStyle: MEASURED_HOURLY_STYLES.MEASURED_PEAK,
+      aadtTemplate: { peakPeriodPct: 0.15, offPeakRemainderPct: 0.42 },
+      kFactorSynthetic: DHV_K_FACTOR,
+      kFactorMeasured: 1.0,
+      peakVolDesc: 'Peak = 15% × 85% AADT; off-peak = 15% × 42% (generic AADT-only Excel)',
+    },
+  };
+
+  function normalizeSourceKey(site) {
+    const src = String(site && site.source ? site.source : '').trim().toUpperCase();
+    if (!src) return 'DEFAULT';
+    if (src.includes('GOLD COAST')) return 'GOLD COAST';
+    if (src === 'QLD CENSUS') return 'QLD CENSUS';
+    return src;
+  }
+
+  function resolveSourceCalcProfile(site) {
+    const key = normalizeSourceKey(site);
+    const base = SOURCE_CALC_PROFILES[key] || SOURCE_CALC_PROFILES.DEFAULT;
+    const hasMeasuredHourly = isTmrStyleSource(site);
+    const useTmrDynamicPeriods = hasMeasuredHourly
+      && base.measuredHourlyStyle === MEASURED_HOURLY_STYLES.TMR_DYNAMIC;
+    const effectiveKFactor = hasMeasuredHourly
+      ? (base.kFactorMeasured ?? 1.0)
+      : (base.kFactorSynthetic ?? DHV_K_FACTOR);
+    return Object.assign({}, base, {
+      key,
+      hasMeasuredHourly,
+      useTmrDynamicPeriods,
+      effectiveKFactor,
+    });
+  }
+
+  function usesCouncilKFactor(site) {
+    return resolveSourceCalcProfile(site).effectiveKFactor < 1;
+  }
+
+  function getCouncilKFactor(site) {
+    return resolveSourceCalcProfile(site).effectiveKFactor;
+  }
+
+  // Council AADT-only peak/off-peak split (Ipswich, GCCC, Toowoomba, Logan sparse path).
+  // Mirrors Excel: peak = AADT×peakPct×K; off-peak = (AADT−peak)×15%×remainderPct.
+  function calcCouncilAadtPeriodVolumes(dailyVolume, profile, hvPct, rtPct) {
+    const tpl = profile && profile.aadtTemplate;
+    const k = profile ? profile.effectiveKFactor : DHV_K_FACTOR;
+    const peakPct = tpl && tpl.peakPeriodPct ? tpl.peakPeriodPct : 0.15;
+    const offRem = tpl && tpl.offPeakRemainderPct ? tpl.offPeakRemainderPct : 0.42;
+    const daily = Math.max(0, Number(dailyVolume) || 0);
+
+    const peakTotal = numberRoundUp(daily * peakPct * k, 0);
+    const peakHv = numberRoundUp(peakTotal * hvPct, 0);
+    const peakRt = numberRoundUp(peakTotal * rtPct, 0);
+    const peakLv = Math.max(0, peakTotal - peakHv - peakRt);
+
+    const remainder = Math.max(0, daily - peakTotal);
+    const offPeakTotal = numberRoundUp(remainder * 0.15 * offRem, 0);
+    const offHv = numberRoundUp(offPeakTotal * hvPct, 0);
+    const offRt = numberRoundUp(offPeakTotal * rtPct, 0);
+    const offLv = Math.max(0, offPeakTotal - offHv - offRt);
+
+    const mk = (lv, hv, rt) => ({ lv, hv, rt, total: lv + hv + rt });
+    return {
+      AM: mk(peakLv, peakHv, peakRt),
+      PM: mk(peakLv, peakHv, peakRt),
+      OP: mk(offLv, offHv, offRt),
+      EV: mk(offLv, offHv, offRt),
+    };
+  }
+
+  function getSourcePeakVolDescription(site) {
+    const p = resolveSourceCalcProfile(site);
+    if (p.hasMeasuredHourly && p.useTmrDynamicPeriods) {
+      return 'Measured 24 hr profile scaled to AADT — dynamic AM/PM peak windows (TMR/NSW style)';
+    }
+    if (p.hasMeasuredHourly) {
+      return 'Measured count profile — peak hour within each period (Brisbane/Logan/council counts style)';
+    }
+    return p.peakVolDesc || 'Austroads diurnal template';
   }
 
   // --- SOURCE-AWARE DESIGN VOLUME (DV) CALCULATION ---
@@ -12509,6 +12909,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // --- SOURCE-AWARE PEAK/OFF-PEAK CALCULATION ENGINE ---
   function calcDirectionMetrics(direction, dailyVolume, site, totalProjectedAadt) {
     const source = String(site ? site.source : '').toUpperCase();
+    const calcProfile = resolveSourceCalcProfile(site);
     const dirKey = direction === 1 ? 'GAZETTAL' : 'AGAINST GAZETTAL';
     const directionKey = dirKey;
     const isStrictTmr = source === 'TMR';
@@ -12605,12 +13006,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       evVol = evParts.total; evLv = evParts.lv; evHv = evParts.hv; evRt = evParts.rt;
 
       const buildTmrPeriod = (lv, hv, rt, pctHour) => {
-        // Peak-hour per-lane demand = (period volume x peak-hour fraction) / lanes.
-        // No additional reduction factor: the previous x0.85 had no Austroads basis
-        // and systematically under-stated V/C and queue lengths by ~15%.
-        const lvPL = numberRoundUp(lv * pctHour / lanes, 0);
-        const hvPL = numberRoundUp(hv * pctHour / lanes, 0);
-        const rtPL = numberRoundUp(rt * pctHour / lanes, 0);
+        const kf = calcProfile.useTmrDynamicPeriods ? 1 : (calcProfile.effectiveKFactor || 1);
+        const lvPL = numberRoundUp(lv * pctHour * kf / lanes, 0);
+        const hvPL = numberRoundUp(hv * pctHour * kf / lanes, 0);
+        const rtPL = numberRoundUp(rt * pctHour * kf / lanes, 0);
         const hourlyPerLane = lvPL + hvPL + rtPL;
 
         const lv5 = numberRoundUp(lvPL * 5 / 60, 0);
@@ -12618,12 +13017,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         const rt5 = numberRoundUp(rtPL * 5 / 60, 0);
         const per5 = lv5 + hv5 + rt5;
 
-        // Queued-vehicle spacing per Austroads: 7.0 m light vehicle, 20 m heavy,
+        // Canonical queued-vehicle spacing: speed-dependent LV (6/7 m), 20 m heavy,
         // 63 m road-train. q2/q10/q15 scale the 5-minute count to 2/10/15 min.
-        let q2 = lv5*2.8 + hv5*8 + rt5*25.2;
-        let q5 = lv5*7 + hv5*20 + rt5*63;
-        let q10 = lv5*14 + hv5*40 + rt5*126;
-        let q15 = lv5*21 + hv5*60 + rt5*189;
+        const sLv = queueLvSpacingCurrent();
+        let q2 = lv5*(sLv*0.4) + hv5*8 + rt5*25.2;
+        let q5 = lv5*sLv + hv5*20 + rt5*63;
+        let q10 = lv5*(sLv*2) + hv5*40 + rt5*126;
+        let q15 = lv5*(sLv*3) + hv5*60 + rt5*189;
 
         const factor = isRtr ? 1.5 : 1;
 
@@ -12642,10 +13042,91 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
       return {
         lanes,
-        AM: buildTmrPeriod(amLv, amHv, amRt, 0.60),
-        OP: buildTmrPeriod(opLv, opHv, opRt, 0.15),
-        PM: buildTmrPeriod(pmLv, pmHv, pmRt, 0.60),
-        EV: buildTmrPeriod(evLv, evHv, evRt, 0.15)
+        AM: buildTmrPeriod(amLv, amHv, amRt, calcProfile.periodFraction ? calcProfile.periodFraction.AM : 0.60),
+        OP: buildTmrPeriod(opLv, opHv, opRt, calcProfile.periodFraction ? calcProfile.periodFraction.OP : 0.15),
+        PM: buildTmrPeriod(pmLv, pmHv, pmRt, calcProfile.periodFraction ? calcProfile.periodFraction.PM : 0.60),
+        EV: buildTmrPeriod(evLv, evHv, evRt, calcProfile.periodFraction ? calcProfile.periodFraction.EV : 0.15)
+      };
+    }
+    else if (!isTmrStyle && calcProfile.aadtTemplate) {
+      const periods = calcCouncilAadtPeriodVolumes(dailyVolume, calcProfile, hvPct, rtPct);
+      const buildFromCouncilParts = (parts) => {
+        const vol = parts.total;
+        const lv = parts.lv;
+        const hv = parts.hv;
+        const rt = parts.rt;
+        const perLane = vol / lanes;
+        const lvPL = numberRoundUp(lv / lanes, 0);
+        const hvPL = numberRoundUp(hv / lanes, 0);
+        const rtPL = numberRoundUp(rt / lanes, 0);
+        const lv5 = numberRoundUp(lvPL * 5 / 60, 0);
+        const hv5 = numberRoundUp(hvPL * 5 / 60, 0);
+        const rt5 = numberRoundUp(rtPL * 5 / 60, 0);
+        const sLvBp = queueLvSpacingCurrent();
+        let q2 = lv5*(sLvBp*0.4) + hv5*8 + rt5*25.2;
+        let q5 = lv5*sLvBp + hv5*20 + rt5*63;
+        let q10 = lv5*(sLvBp*2) + hv5*40 + rt5*126;
+        let q15 = lv5*(sLvBp*3) + hv5*60 + rt5*189;
+        const factor = isRtr ? 1.5 : 1;
+        return {
+          total: vol, lv, hv, rt,
+          lvPerLane: lvPL, hvPerLane: hvPL, rtPerLane: rtPL,
+          hourlyPerLane: perLane, per5: lv5 + hv5 + rt5,
+          queue: {
+            q2: numberRoundUp(q2 * factor, 0),
+            q5: numberRoundUp(q5 * factor, 0),
+            q10: numberRoundUp(q10 * factor, 0),
+            q15: numberRoundUp(q15 * factor, 0),
+            q30: numberRoundUp(q15 * 2 * factor, 0)
+          }
+        };
+      };
+      return {
+        lanes,
+        AM: buildFromCouncilParts(periods.AM),
+        OP: buildFromCouncilParts(periods.OP),
+        PM: buildFromCouncilParts(periods.PM),
+        EV: buildFromCouncilParts(periods.EV),
+      };
+    }
+    else if (!isTmrStyle && calcProfile.periodFraction && calcProfile.measuredHourlyStyle === MEASURED_HOURLY_STYLES.TMR_DYNAMIC) {
+      const pf = calcProfile.periodFraction;
+      const kf = calcProfile.effectiveKFactor || 1;
+      const hv = numberRoundUp(dailyVolume * hvPct, 0);
+      const rt = numberRoundUp(dailyVolume * rtPct, 0);
+      const lv = Math.max(0, dailyVolume - hv - rt);
+      const buildTmrPeriodSparse = (lvP, hvP, rtP, pctHour) => {
+        const lvPL = numberRoundUp(lvP * pctHour * kf / lanes, 0);
+        const hvPL = numberRoundUp(hvP * pctHour * kf / lanes, 0);
+        const rtPL = numberRoundUp(rtP * pctHour * kf / lanes, 0);
+        const hourlyPerLane = lvPL + hvPL + rtPL;
+        const lv5 = numberRoundUp(lvPL * 5 / 60, 0);
+        const hv5 = numberRoundUp(hvPL * 5 / 60, 0);
+        const rt5 = numberRoundUp(rtPL * 5 / 60, 0);
+        const sLv = queueLvSpacingCurrent();
+        let q2 = lv5*(sLv*0.4) + hv5*8 + rt5*25.2;
+        let q5 = lv5*sLv + hv5*20 + rt5*63;
+        let q10 = lv5*(sLv*2) + hv5*40 + rt5*126;
+        let q15 = lv5*(sLv*3) + hv5*60 + rt5*189;
+        const factor = isRtr ? 1.5 : 1;
+        return {
+          total: lvP + hvP + rtP, lv: lvP, hv: hvP, rt: rtP,
+          lvPerLane: lvPL, hvPerLane: hvPL, rtPerLane: rtPL,
+          hourlyPerLane, per5: lv5 + hv5 + rt5,
+          queue: {
+            q2: numberRoundUp(q2 * factor, 0),
+            q5: numberRoundUp(q5 * factor, 0),
+            q10: numberRoundUp(q10 * factor, 0),
+            q15: numberRoundUp(q15 * factor, 0)
+          }
+        };
+      };
+      return {
+        lanes,
+        AM: buildTmrPeriodSparse(lv, hv, rt, pf.AM),
+        OP: buildTmrPeriodSparse(lv, hv, rt, pf.OP),
+        PM: buildTmrPeriodSparse(lv, hv, rt, pf.PM),
+        EV: buildTmrPeriodSparse(lv, hv, rt, pf.EV),
       };
     }
     else {
@@ -12675,10 +13156,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     const buildPeriod = (vol, presetParts = null) => {
-      const hvPreset = presetParts ? (Number(presetParts.hv) || 0) : numberRoundUp(vol * hvPct, 0);
-      const rtPreset = presetParts ? (Number(presetParts.rt) || 0) : numberRoundUp(vol * rtPct, 0);
-      const lvPreset = presetParts ? Math.max(0, Number(presetParts.lv) || 0) : Math.max(0, vol - hvPreset - rtPreset);
-      const perLane = vol / lanes;
+      const councilK = calcProfile.hasMeasuredHourly ? 1 : calcProfile.effectiveKFactor;
+      const adjustedVol = numberRoundUp((Number(vol) || 0) * councilK, 0);
+      const hvPreset = presetParts ? (Number(presetParts.hv) || 0) : numberRoundUp(adjustedVol * hvPct, 0);
+      const rtPreset = presetParts ? (Number(presetParts.rt) || 0) : numberRoundUp(adjustedVol * rtPct, 0);
+      const lvPreset = presetParts ? Math.max(0, Number(presetParts.lv) || 0) : Math.max(0, adjustedVol - hvPreset - rtPreset);
+      const perLane = adjustedVol / lanes;
       const lv = lvPreset;
       const hv = hvPreset;
       const rt = rtPreset;
@@ -12690,15 +13173,17 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const hv5 = numberRoundUp(hvPL * 5 / 60, 0);
       const rt5 = numberRoundUp(rtPL * 5 / 60, 0);
 
-      let q2 = lv5*2.4 + hv5*8 + rt5*25.2;
-      let q5 = lv5*6 + hv5*20 + rt5*63;
-      let q10 = lv5*12 + hv5*40 + rt5*126;
-      let q15 = lv5*18 + hv5*60 + rt5*189;
+      // Canonical spacing: speed-dependent LV (6/7 m), 20 m HV, 63 m RT.
+      const sLvBp = queueLvSpacingCurrent();
+      let q2 = lv5*(sLvBp*0.4) + hv5*8 + rt5*25.2;
+      let q5 = lv5*sLvBp + hv5*20 + rt5*63;
+      let q10 = lv5*(sLvBp*2) + hv5*40 + rt5*126;
+      let q15 = lv5*(sLvBp*3) + hv5*60 + rt5*189;
 
       const factor = isRtr ? 1.5 : 1;
 
       return {
-        total: vol, lv, hv, rt,
+        total: adjustedVol, lv, hv, rt,
         lvPerLane: lvPL,
         hvPerLane: hvPL,
         rtPerLane: rtPL,
@@ -13703,13 +14188,85 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   // Initialize with default hour buckets before first calculation.
   setRuntimePeriodDefinitions(DEFAULT_PERIOD_DEFS, 'default');
 
+  // Canonical queued-vehicle spacings (client decision 2026-07-09), used by ALL
+  // queue-table paths so grouped/hourly/period figures agree:
+  //   LV: speed-dependent per Austroads band — 6 m at posted <= 60 km/h,
+  //       7 m above (TIACalc.lvQueueSpacing; conservative 7 m if speed unknown)
+  //   HV: 20 m (semi-trailer)
+  //   RT: 63 m (Type 2 triple road train)
+  function queueLvSpacingCurrent() {
+    const el = document.getElementById('srNormSpeed');
+    const s = el ? Number(el.value) : NaN;
+    if (typeof TIACalc !== 'undefined' && TIACalc.lvQueueSpacing) return TIACalc.lvQueueSpacing(s);
+    return (Number.isFinite(s) && s > 0 && s <= 60) ? 6.0 : 7.0;
+  }
+  const QUEUE_SPACE_HV = 20;
+  const QUEUE_SPACE_RT = 63;
+
+  function calcOverflowShare(demand, dvPerLane, openLanes) {
+    const open = Math.max(1, Number(openLanes) || 1);
+    const dv = Math.max(0, Number(dvPerLane) || 0);
+    const d = Math.max(0, Number(demand) || 0);
+    if (!(d > 0)) return 0;
+    return Math.max(0, d - dv * open) / d;
+  }
+
+  function calcLaneClosureNetQueue(holdQueuePerLaneM, demand, dvPerLane, openLanes, laneCount) {
+    // holdQueuePerLaneM is the normal-layout PER-LANE hold queue. In a closure,
+    // all approach demand concentrates into the open lane(s) — multiply by
+    // lanes/open — and only the share above discharge capacity queues:
+    //   net = hold_perLane x (lanes / open) x max(0, demand − DV×open) / demand
+    // (Omitting lanes/open understates the queue by that ratio — fixed 2026-07-09.)
+    const open = Math.max(1, Number(openLanes) || 1);
+    const lanes = Math.max(open, Number(laneCount) || open);
+    return Math.max(0, (Number(holdQueuePerLaneM) || 0) * (lanes / open) * calcOverflowShare(demand, dvPerLane, openLanes));
+  }
+
+  // AGTTM merge-taper design check — advisory only; does not inflate reported queue length.
+  function assessMergeTaperDesign(rawQueueM, taperLengthM, closedLaneCount) {
+    const raw = Math.max(0, Number(rawQueueM) || 0);
+    const closed = Math.max(0, Math.round(Number(closedLaneCount) || 0));
+    if (!(raw > 0) || closed < 1 || !(Number(taperLengthM) > 0)
+        || typeof TIACalc === 'undefined' || !TIACalc.mergeQueueContingency) {
+      return { rawQueueM: raw, taperEnvelopeM: 0, beyondMerge: false, designCheck: null };
+    }
+    const r = TIACalc.mergeQueueContingency(raw, taperLengthM, closed);
+    return { rawQueueM: raw, taperEnvelopeM: r.taperEnvelopeM, beyondMerge: r.beyondMerge, designCheck: r };
+  }
+
+  function mergeTaperDesignNote(assessment) {
+    if (!assessment || !assessment.designCheck || assessment.rawQueueM <= 0) return '';
+    const env = Math.round(assessment.taperEnvelopeM);
+    if (assessment.beyondMerge) {
+      return ` <span style="font-weight:500; color:#b45309;">AGTTM: queue extends past the ${env} m taper envelope — advance warning required</span>`;
+    }
+    return ` <span style="font-weight:500; color:#607d8b;">AGTTM: queue within ${env} m taper envelope</span>`;
+  }
+
+  // Client rule (2026-07-09, corrected): Single Lane Closure operation = the
+  // closed lane's traffic diverts to the remaining lane(s), which are HELD and
+  // RELEASED (stop/go). Queue = per-lane hold arrivals x a LANE-CONCENTRATION
+  // factor applied directly to the per-lane base x — NOT an extra safety factor:
+  //   after merge (queue stored in the open-lane section only) = lanes/open
+  //   incl. merge (queue tail stores across the full approach)  = (1+lanes/open)/2
+  // Both figures are always reported (user decision: show both).
+  function laneClosureFactors(laneCount, openLanes) {
+    const open = Math.max(1, Number(openLanes) || 1);
+    const lanes = Math.max(open, Number(laneCount) || open);
+    if (typeof TIACalc !== 'undefined' && TIACalc.laneClosureConcentrationFactors) {
+      return TIACalc.laneClosureConcentrationFactors(lanes, open);
+    }
+    const afterMerge = lanes / open;
+    return { afterMerge, includingMerge: (1 + afterMerge) / 2 };
+  }
+  function formatFactor(f) { return parseFloat(Number(f).toFixed(2)).toString(); }
+
   function queueFromFiveMinute(total5, hvPct, rtPct, isRtr){
     const hv = total5 * hvPct;
     const rt = total5 * rtPct;
     const lv = Math.max(0, total5 - hv - rt);
 
-    // Australian standard spacings (LV: 6m, HV: 20m semi-trailer, RT: 38m A-Double)
-    const spaceLV = 6, spaceHV = 20, spaceRT = 38;
+    const spaceLV = queueLvSpacingCurrent(), spaceHV = QUEUE_SPACE_HV, spaceRT = QUEUE_SPACE_RT;
 
     // total5 is a 5-minute volume. To get 2-minute volume, multiply by (2/5) = 0.4
     let q2 = (lv * 0.4 * spaceLV) + (hv * 0.4 * spaceHV) + (rt * 0.4 * spaceRT);
@@ -13742,9 +14299,9 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const lv = Math.max(0, netTotal5 - hv - rt);
     const factor = isRtr ? 1.5 : 1;
 
-    // Australian standard spacings (LV: 6m, HV: 20m semi-trailer, RT: 38m A-Double)
+    // Canonical spacings: speed-dependent LV / 20 m HV / 63 m RT (see queueLvSpacingCurrent).
     const minRatio = minutes / 5;
-    const q = ((lv * (6 * minRatio)) + (hv * (20 * minRatio)) + (rt * (38 * minRatio))) * factor;
+    const q = ((lv * (queueLvSpacingCurrent() * minRatio)) + (hv * (QUEUE_SPACE_HV * minRatio)) + (rt * (QUEUE_SPACE_RT * minRatio))) * factor;
     return numberRoundUp(q, 0);
   }
 
@@ -14379,12 +14936,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
   * @param {boolean} isTmr - Whether this is a TMR source with measured hourly data
    * @returns {Object} Period metrics object { lanes, AM, OP, PM, EV } compatible with calcDirectionMetrics output
    */
-  function buildPeriodMetricsFromHourly(hourlyProfile, hvPct, rtPct, lanes, isRtr, isTmr, periodDefsOverride) {
+  function buildPeriodMetricsFromHourly(hourlyProfile, hvPct, rtPct, lanes, isRtr, isTmr, periodDefsOverride, kFactor = 1) {
     const laneCount = Math.max(1, Number(lanes) || 1);
     const hvF = Number(hvPct) || 0;
     const rtF = Number(rtPct) || 0;
     const lvF = Math.max(0, 1 - hvF - rtF);
     const factor = isRtr ? 1.5 : 1;
+    const k = Math.max(0, Math.min(1, Number(kFactor) || 1));
     const out = { lanes: laneCount };
 
     const tmrDerivedDefs = isTmr
@@ -14409,8 +14967,13 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         }
       });
 
+      if (k < 1) {
+        peakTotal = numberRoundUp(peakTotal * k, 0);
+        peakPerLane = peakPerLane * k;
+      }
+
       // VCR/LOS uses average hourly approach volume across the period bucket.
-      const avgTotal = periodHourCount > 0 ? (periodTotalSum / periodHourCount) : 0;
+      const avgTotal = periodHourCount > 0 ? (periodTotalSum / periodHourCount) * k : 0;
       const avgPerLane = laneCount > 0 ? (avgTotal / laneCount) : 0;
 
       const hv = numberRoundUp(peakTotal * hvF, 0);
@@ -14426,6 +14989,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const hv5 = numberRoundUp(per5 * hvF, 0);
       const rt5 = numberRoundUp(per5 * rtF, 0);
 
+      // Canonical spacing: speed-dependent LV (6/7 m), 20 m HV, 63 m RT.
+      const sLvPm = queueLvSpacingCurrent();
       out[key] = {
         total: peakTotal,
         lv, hv, rt,
@@ -14434,10 +14999,10 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
         peakHourlyPerLane: peakPerLane,
         per5: lv5 + hv5 + rt5,
         queue: {
-          q2:  numberRoundUp((lv5 * 2.4  + hv5 * 8  + rt5 * 25.2)  * factor, 0),
-          q5:  numberRoundUp((lv5 * 6    + hv5 * 20 + rt5 * 63)   * factor, 0),
-          q10: numberRoundUp((lv5 * 12   + hv5 * 40 + rt5 * 126)  * factor, 0),
-          q15: numberRoundUp((lv5 * 18   + hv5 * 60 + rt5 * 189)  * factor, 0)
+          q2:  numberRoundUp((lv5 * (sLvPm * 0.4) + hv5 * 8  + rt5 * 25.2)  * factor, 0),
+          q5:  numberRoundUp((lv5 * sLvPm         + hv5 * 20 + rt5 * 63)   * factor, 0),
+          q10: numberRoundUp((lv5 * (sLvPm * 2)   + hv5 * 40 + rt5 * 126)  * factor, 0),
+          q15: numberRoundUp((lv5 * (sLvPm * 3)   + hv5 * 60 + rt5 * 189)  * factor, 0)
         }
       };
     });
@@ -14460,6 +15025,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const el = document.getElementById('hourlyQueueCustomMinutes');
     const value = Number((el && el.value) || 12);
     return Math.max(1, Math.min(60, numberRoundUp(value, 0) || 12));
+  }
+
+  // Optional custom duration for the grouped Queue Length table.
+  // Returns a clamped whole-minute value, or null when the field is blank/invalid
+  // (blank => no extra row is added).
+  function getQueueGroupedCustomMinutes() {
+    const el = document.getElementById('queueGroupedCustomMinutes');
+    if (!el) return null;
+    const raw = String(el.value == null ? '' : el.value).trim();
+    if (raw === '') return null;
+    const n = numberRoundUp(Number(raw), 0);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.max(1, Math.min(240, n));
   }
 
   function getSelectedHourlyQueueDurationMinutes(queueKey) {
@@ -15295,8 +15873,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
 
     setFormulaBelow('kpiDV', 'DV = max(DV_D1, DV_D2)');
-    setFormulaBelow('kpiD1PeakQueue', 'D1 Peak Queue (2m) = max(AM_q2, OP_q2, PM_q2, EV_q2)');
-    setFormulaBelow('kpiD2PeakQueue', 'D2 Peak Queue (2m) = max(AM_q2, OP_q2, PM_q2, EV_q2)');
+    setFormulaBelow('kpiD1PeakQueue', 'D1 Peak Queue (2m hold) = max(AM_q2, OP_q2, PM_q2, EV_q2) — AGTM zero-discharge accumulation');
+    setFormulaBelow('kpiD2PeakQueue', 'D2 Peak Queue (2m hold) = max(AM_q2, OP_q2, PM_q2, EV_q2) — AGTM zero-discharge accumulation');
     setFormulaBelow('kpiSlrfPeak', 'SLRF Peak = max[(D1 + D2) / DV] across AM/OP/PM/EV (single-lane both directions)');
     setFormulaBelow('kpiWorstVcr', 'Worst VCR = max(Base VCR, SLC VCR, SLRF VCR) across directions and periods');
   }
@@ -15413,24 +15991,22 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     }
     focusSelectedSiteOnCalculationMaps({ macro: true, detour: false });
     const sourceUpper = String(site && site.source ? site.source : '').trim().toUpperCase();
+    const calcProfile = resolveSourceCalcProfile(site);
     const kpiModelProfileEl = document.getElementById('kpiModelProfile');
     if (kpiModelProfileEl) {
-      let profileText = 'Template (Austroads Diurnal)';
-      const hasMeasuredHourly = isTmrStyleSource(site);
-      if (sourceUpper === 'TMR') profileText = 'TMR (Measured Hourly + TMR Rules)';
-      else if (sourceUpper === 'GOLD COAST') profileText = 'Gold Coast (CoGC Method)';
-      else if (sourceUpper === 'BRISBANE') profileText = hasMeasuredHourly ? 'Brisbane (Measured Hourly)' : 'Brisbane (Austroads Template)';
-      else if (sourceUpper === 'IPSWICH') profileText = hasMeasuredHourly ? 'Ipswich (Measured Hourly)' : 'Ipswich (Austroads Template)';
-      else if (sourceUpper === 'LOGAN') profileText = hasMeasuredHourly ? 'Logan (Measured Hourly)' : 'Logan (Austroads Template)';
-      else if (sourceUpper === 'TOOWOOMBA') profileText = hasMeasuredHourly ? 'Toowoomba (Measured Hourly)' : 'Toowoomba (Austroads Template)';
-      else if (sourceUpper === 'NSW') profileText = 'NSW (Measured Hourly + State Roads Method)';
-      else if (sourceUpper === 'SA') profileText = 'SA (DIT SA Traffic Volume Estimates)';
-      else if (sourceUpper === 'VIC') profileText = 'VIC (DTP Traffic Volume)';
-      else if (sourceUpper === 'WA') profileText = 'WA (Main Roads WA Traffic Counts)';
-      else if (sourceUpper === 'TAS') profileText = 'TAS (NFDH Harmonised Traffic Counts)';
-      else if (sourceUpper === 'QLD CENSUS') profileText = 'QLD Census (TMR Traffic Census AADT)';
-      else if (sourceUpper === 'CUSTOM UPLOAD') profileText = hasMeasuredHourly ? 'Custom Upload (Measured Hourly)' : 'Custom Upload (Austroads Template)';
-      else if (!sourceUpper && window.selectedTiaData && window.selectedTiaData.type === 'references') profileText = 'Quick Address (Weighted References)';
+      let profileText = calcProfile.label || 'Template (Austroads Diurnal)';
+      if (calcProfile.hasMeasuredHourly) {
+        profileText += calcProfile.useTmrDynamicPeriods
+          ? ' — measured hourly (TMR/NSW dynamic periods)'
+          : ' — measured hourly (council count profile)';
+      } else if (calcProfile.aadtTemplate) {
+        profileText += ' — AADT template';
+      } else if (calcProfile.periodFraction) {
+        profileText += ' — TMR period fractions + K';
+      }
+      if (!sourceUpper && window.selectedTiaData && window.selectedTiaData.type === 'references') {
+        profileText = 'Quick Address (Weighted References)';
+      }
       kpiModelProfileEl.textContent = `Model Profile: ${profileText}`;
     }
     const oneWayMode = txt('roadOperationMode').toUpperCase() === 'ONE-WAY';
@@ -15578,7 +16154,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     // Derive period metrics from the actual hourly distribution (peak single-hour per period).
     // This replaces the flat VADT-formula estimates so Grouped Summary, Queue, and VCR
     // all reflect real directional AM/PM differentiation.
-    const isTmrSource = sourceUpper === 'TMR' || (sourceUpper === 'CUSTOM UPLOAD' && isTmrStyleSource(site));
+    const isTmrSource = calcProfile.useTmrDynamicPeriods;
     const runtimeDefs = isTmrSource
       ? buildTmrPeriodDefinitionsFromHourly(Array.from({ length: 24 }, (_, h) => {
           const d1H = Number((d1HourlyProfile && d1HourlyProfile[h] && d1HourlyProfile[h].total) || 0);
@@ -15588,10 +16164,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       : DEFAULT_PERIOD_DEFS;
     setRuntimePeriodDefinitions(runtimeDefs, isTmrSource ? 'tmr-dynamic' : 'default');
 
-    const d1AdjProfile = buildPeriodMetricsFromHourly(d1HourlyProfile, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs);
-    const d2AdjProfile = buildPeriodMetricsFromHourly(d2HourlyProfile, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs);
-    const d1BaseAdjProfile = buildPeriodMetricsFromHourly(d1BaseHourlyProfile, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs);
-    const d2BaseAdjProfile = buildPeriodMetricsFromHourly(d2BaseHourlyProfile, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs);
+    const councilK = calcProfile.effectiveKFactor;
+    const d1AdjProfile = buildPeriodMetricsFromHourly(d1HourlyProfile, d1HvPct, d1RtPct, d1Metrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs, councilK);
+    const d2AdjProfile = buildPeriodMetricsFromHourly(d2HourlyProfile, d2HvPct, d2RtPct, d2Metrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs, councilK);
+    const d1BaseAdjProfile = buildPeriodMetricsFromHourly(d1BaseHourlyProfile, d1HvPct, d1RtPct, d1BaseMetrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs, councilK);
+    const d2BaseAdjProfile = buildPeriodMetricsFromHourly(d2BaseHourlyProfile, d2HvPct, d2RtPct, d2BaseMetrics.lanes, rtr === 'YES', isTmrSource, runtimeDefs, councilK);
 
     // Override global period profiles so generateWorkWindow() uses the real directional peaks
     lastD1Profile = d1AdjProfile;
@@ -15867,13 +16444,19 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             q2: Number(fallbackQueue.q2) || 0,
             q5: Number(fallbackQueue.q5) || 0,
             q10: Number(fallbackQueue.q10) || 0,
-            q15: Number(fallbackQueue.q15) || 0
+            q15: Number(fallbackQueue.q15) || 0,
+            // Peak single-hour directional demand (vph) — used by the grouped
+            // queue table's net-overflow figure for lane-closure modes.
+            peakTotal: Number(fallbackProfile[period.key].total) || 0
           };
           return;
         }
-        const values = { q2: 0, q5: 0, q10: 0, q15: 0 };
+        const values = { q2: 0, q5: 0, q10: 0, q15: 0, peakTotal: 0 };
         period.hours.forEach(hour => {
-          const queue = (hourlyProfile && hourlyProfile[hour] && hourlyProfile[hour].queue) || null;
+          const entry = (hourlyProfile && hourlyProfile[hour]) || null;
+          if (!entry) return;
+          values.peakTotal = Math.max(values.peakTotal, Number(entry.total) || 0);
+          const queue = entry.queue || null;
           if (!queue) return;
           values.q2 = Math.max(values.q2, Number(queue.q2) || 0);
           values.q5 = Math.max(values.q5, Number(queue.q5) || 0);
@@ -15889,62 +16472,108 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const queuePeriodD2 = derivePeriodQueueFromHourly(d2HourlyProfile, d2AdjProfile);
 
     // Queue formula for all council profiles (including TMR/council-derived paths).
-    const qFormulaStr = 'Q = (Lv_5min * 2.4) + (Hv_5min * 8) + (Rt_5min * 25.2)';
-    const hourlyQueueFormulaInline = 'Q=(Lv_5min*2.4)+(Hv_5min*8)+(Rt_5min*25.2)';
+    // LV coefficient reflects the live speed-dependent spacing (6 or 7 m × 0.4).
+    const qLvCoef2min = numberRoundUp(queueLvSpacingCurrent() * 0.4, 1);
+    const qFormulaStr = `Q = (Lv_5min * ${qLvCoef2min}) + (Hv_5min * 8) + (Rt_5min * 25.2)`;
+    const hourlyQueueFormulaInline = `Q=(Lv_5min*${qLvCoef2min})+(Hv_5min*8)+(Rt_5min*25.2)`;
+
+    // --- Merge-taper design check (AGTTM Part 3) — advisory for TGS/warning placement;
+    // does NOT multiply reported queue length. Shared by grouped queue table, hourly
+    // queue table, KPI footnotes, and calculation trace.
+    const mergeContingencySpeedEl = document.getElementById('agttmSpeed');
+    const mergeContingencyWidthEl = document.getElementById('laneWidth') || document.getElementById('agttmWidth');
+    const mergeContingencyTaperLen = (typeof TIACalc !== 'undefined' && TIACalc.mergeTaperLength)
+      ? TIACalc.mergeTaperLength(
+          Number(mergeContingencySpeedEl && mergeContingencySpeedEl.value) || 60,
+          Number(mergeContingencyWidthEl && mergeContingencyWidthEl.value) || 3.5)
+      : 0;
 
     // Enumerate every work-zone control mode for a direction (dropdown removed).
-    // Queue is pure arrival-accumulation scaled by a per-mode factor `sf`.
     const buildQueueModes = (thisLanes) => {
       const d1L = Math.max(1, d1Metrics.lanes);
       const d2L = Math.max(1, d2Metrics.lanes);
       const lanes = Math.max(1, thisLanes);
       const modes = [
-        { label: 'Full Traffic Hold (Stop/Go)', sf: 1, note: 'Work V/C N/A — queue = arrivals over the hold time' }
+        { label: 'Full Traffic Hold (Stop/Go)', note: 'Zero discharge — Q = arrivals × hold duration (AGTM Part 3)' }
       ];
-      // Lane closure: traffic keeps flowing in the open lane(s); queue from reduced capacity.
+      // Lane closure: net overflow is primary (open lane discharges at DV); worst-case optional.
       if (lanes > 1) {
         for (let c = 1; c <= lanes - 1; c++) {
           const open = lanes - c;
-          modes.push({ label: c === 1 ? `Single Lane Closure (${open} open)` : `${c} Lane Closure (${open} open)`, sf: lanes / open });
+          modes.push({
+            label: c === 1 ? `Single Lane Closure (${open} open)` : `${c} Lane Closure (${open} open)`,
+            closedLanes: c,
+            openLanes: open,
+            note: 'Closed lane diverts to remaining lane(s), held & released — queue = hold arrivals × concentration (after merge ×lanes/open; incl. merge in blue)'
+          });
         }
       }
-      // Mixed flow modes (some lanes flowing + one hold/release) removed 2026-06-08:
-      // not practicable in real-world traffic control, so they are no longer reported.
-      // SLRF (1+1): both directions share one lane, alternating stop/go → real queue.
-      if (d1L === 1 && d2L === 1) modes.push({ label: 'Single Lane Reversible Flow (1 lane)', sf: 1 });
-      // Contraflow intentionally omitted: both directions flow simultaneously (1 lane each)
-      // with no alternating hold, so there is no stop/go queue — it is a capacity/VCR case.
+      if (d1L === 1 && d2L === 1) modes.push({ label: 'Single Lane Reversible Flow (1 lane)', note: 'Alternating stop/go on shared lane' });
       return modes;
     };
 
     const renderModeGroupedQueue = (thisLanes, queuePeriod, laneCap, profile) => {
-      const durations = [
-        { key: 'q2', label: 'Per 2 min' },
-        { key: 'q5', label: 'Per 5 min' },
-        { key: 'q10', label: 'Per 10 min' },
-        { key: 'q15', label: 'Per 15 min' }
+      const baseDurations = [
+        { key: 'q2', label: 'Per 2 min', minutes: 2 },
+        { key: 'q5', label: 'Per 5 min', minutes: 5 },
+        { key: 'q10', label: 'Per 10 min', minutes: 10 },
+        { key: 'q15', label: 'Per 15 min', minutes: 15 }
       ];
+      const customMinutes = (typeof getQueueGroupedCustomMinutes === 'function') ? getQueueGroupedCustomMinutes() : null;
+      const durations = (customMinutes && ![2, 5, 10, 15].includes(customMinutes))
+        ? [...baseDurations, { key: 'custom', label: `Per ${customMinutes} min`, minutes: customMinutes, custom: true }]
+            .sort((a, b) => a.minutes - b.minutes)
+        : baseDurations;
       const fmt = (val) => {
         const r = val > 0 ? Math.max(6, Math.ceil(val)) : 0;
         return r < 30 ? `${r.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : r.toLocaleString();
       };
-      // Per-mode scale factor (mixed-flow per-period logic removed 2026-06-08).
-      const periodFactor = (mode) => mode.sf;
       return buildQueueModes(thisLanes).map(mode => {
         const noteHtml = mode.note ? ` <span style="font-weight:500; color:#607d8b; font-size:0.85em;">— ${mode.note}</span>` : '';
         const header = `<tr style="background:#e8eef2;"><td colspan="6" style="font-weight:800; color:#1f5e63; padding:6px 8px;">${mode.label}${noteHtml}</td></tr>`;
         const rows = durations.map(d => {
-          const vals = ['AM','OP','PM','EV'].map(p => (queuePeriod[p][d.key] || 0) * periodFactor(mode, p));
+          const open = mode.openLanes || Math.max(1, thisLanes);
+          const dvPerLane = Math.max(0, Number(laneCap) || 0);
+          const cellData = ['AM','OP','PM','EV'].map(p => {
+            const periodQueue = queuePeriod[p] || {};
+            const holdBase = d.custom
+              ? ((Number(periodQueue.q2) || 0) * (d.minutes / 2))
+              : (Number(periodQueue[d.key]) || 0);
+            const demand = Number(periodQueue.peakTotal) || 0;
+            let primary = holdBase;
+            let fAfter = null, fIncl = null, inclMerge = null;
+            let taper = null;
+            if (mode.closedLanes) {
+              // SLC = closed lane diverts into remaining lane(s), which are held
+              // & released. Zero discharge during the hold; queue = per-lane hold
+              // arrivals x concentration factor (x2.0 after merge / x1.5 incl.
+              // merge for a 2->1 closure). Both reported.
+              const cf = laneClosureFactors(Math.max(1, thisLanes), open);
+              fAfter = cf.afterMerge; fIncl = cf.includingMerge;
+              primary = holdBase * cf.afterMerge;
+              inclMerge = holdBase * cf.includingMerge;
+              taper = assessMergeTaperDesign(primary, mergeContingencyTaperLen, mode.closedLanes);
+            } else {
+              taper = assessMergeTaperDesign(primary, mergeContingencyTaperLen, mode.closedLanes || 0);
+            }
+            return { primary, holdBase, fAfter, fIncl, inclMerge, taper };
+          });
+          const vals = cellData.map(c => c.primary);
           const mx = Math.max(...vals);
           const mxR = mx > 0 ? Math.max(6, Math.ceil(mx)) : 0;
           const mxOut = mxR < 30 ? `${mxR.toLocaleString()} <span style="color: #d97706; font-weight: 600;">ADOPT 30M</span>` : mxR.toLocaleString();
+          const cellHtml = (c) => `
+              <div>${fmt(c.primary)}${c.fAfter ? ` <span style="font-size:0.8em; color:#607d8b;">after merge ×${formatFactor(c.fAfter)}</span>` : ''}</div>
+              <div class="formula-inline">${mode.closedLanes ? `Q = x(per-lane hold ${Math.max(6, Math.ceil(c.holdBase)).toLocaleString()} m) × factor` : qFormulaStr}</div>
+              ${c.inclMerge !== null && c.inclMerge !== undefined ? `<div class="formula-inline" style="color:#1565c0; font-weight:600;">Incl. merge (×${formatFactor(c.fIncl)}): ${c.inclMerge > 0 ? Math.max(6, Math.ceil(c.inclMerge)).toLocaleString() : '0'} m</div>` : ''}
+              ${mergeTaperDesignNote(c.taper)}`;
           return `
             <tr>
               <td class="rowhead">${d.label}</td>
-              <td><div>${fmt(vals[0])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${fmt(vals[1])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${fmt(vals[2])}</div><div class="formula-inline">${qFormulaStr}</div></td>
-              <td><div>${fmt(vals[3])}</div><div class="formula-inline">${qFormulaStr}</div></td>
+              <td>${cellHtml(cellData[0])}</td>
+              <td>${cellHtml(cellData[1])}</td>
+              <td>${cellHtml(cellData[2])}</td>
+              <td>${cellHtml(cellData[3])}</td>
               <td><strong>${mxOut}</strong><div class="formula-inline">Max = highest period queue</div></td>
             </tr>`;
         }).join('');
@@ -16168,6 +16797,12 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       const lvPct1 = 1 - d1HvPct - d1RtPct;
       const lvPct2 = 1 - d2HvPct - d2RtPct;
 
+      // Merge-taper design check only (no queue inflation) — see grouped queue section.
+      const d1ClosedLanes = Math.max(0, (Number(d1Metrics.lanes) || 1) - getEffectiveOpenLanes(d1Metrics.lanes));
+      const d2ClosedLanes = Math.max(0, (Number(d2Metrics.lanes) || 1) - getEffectiveOpenLanes(d2Metrics.lanes));
+      const d1OpenLanes = Math.max(1, (Number(d1Metrics.lanes) || 1) - d1ClosedLanes);
+      const d2OpenLanes = Math.max(1, (Number(d2Metrics.lanes) || 1) - d2ClosedLanes);
+
       for (let hour = 0; hour < 24; hour += 1) {
         // Get hourly volumes from diurnal profile (dailyTotal * diurnalProfile[hour])
         const d1Hour = d1HourlyProfile[hour] || { queue: { q2: 0, q5: 0, q10: 0, q15: 0 }, total: 0, perLane: 0 };
@@ -16185,17 +16820,51 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
 
         const d1Vol = Number(d1Hour.total) || 0;
         const d2Vol = Number(d2Hour.total) || 0;
+        // Custom duration passes capacity 0 (zero-discharge) so its main figure
+        // uses the SAME model as the preset q2/q5/q10/q15 columns; the blue
+        // "SLC net overflow" line supplies the capacity-discounted figure for
+        // all durations. (Previously custom subtracted DV here while presets
+        // did not — the two duration modes silently used different models.)
         const d1RawQueue = selectedHourlyQueueKey === 'custom'
-          ? queueForDurationMinutes((Number(d1Hour.perLane) || 0) / 12, d1HvPct, d1RtPct, isRtrActive, selectedHourlyQueueCustomMinutes, dv1)
+          ? queueForDurationMinutes((Number(d1Hour.perLane) || 0) / 12, d1HvPct, d1RtPct, isRtrActive, selectedHourlyQueueCustomMinutes, 0)
           : (d1Hour.queue && d1Hour.queue[selectedHourlyQueueKey]);
         const d2RawQueue = selectedHourlyQueueKey === 'custom'
-          ? queueForDurationMinutes((Number(d2Hour.perLane) || 0) / 12, d2HvPct, d2RtPct, isRtrActive, selectedHourlyQueueCustomMinutes, dv2)
+          ? queueForDurationMinutes((Number(d2Hour.perLane) || 0) / 12, d2HvPct, d2RtPct, isRtrActive, selectedHourlyQueueCustomMinutes, 0)
           : (d2Hour.queue && d2Hour.queue[selectedHourlyQueueKey]);
-        const d1MaxQueue = normalizeHourlyQueueToVehicleLength(d1RawQueue, d1Vol, true);
-        const d2MaxQueue = normalizeHourlyQueueToVehicleLength(d2RawQueue, d2Vol, true);
+        const d1BaseMaxQueue = normalizeHourlyQueueToVehicleLength(d1RawQueue, d1Vol, true);
+        const d2BaseMaxQueue = normalizeHourlyQueueToVehicleLength(d2RawQueue, d2Vol, true);
+        // Hourly table: hold queue is base; for multi-lane directions also show SLC net overflow.
+        // SLC (closed lane diverts to remaining held lane): dual concentration
+        // factors applied to the per-lane hold base (client rule 2026-07-09).
+        const hourSlcFigures = (basePerLane, lanes, closed, open) => {
+          if (!(closed >= 1) || !((Number(lanes) || 1) > 1)) return null;
+          const cf = laneClosureFactors(lanes, open);
+          return {
+            fAfter: cf.afterMerge, fIncl: cf.includingMerge,
+            after: basePerLane * cf.afterMerge,
+            incl: basePerLane * cf.includingMerge
+          };
+        };
+        const d1Slc = hourSlcFigures(d1BaseMaxQueue, d1Metrics.lanes, d1ClosedLanes, d1OpenLanes);
+        const d2Slc = hourSlcFigures(d2BaseMaxQueue, d2Metrics.lanes, d2ClosedLanes, d2OpenLanes);
+        const d1SlcNet = d1Slc ? normalizeHourlyQueueToVehicleLength(d1Slc.after, d1Vol, true) : null;
+        const d2SlcNet = d2Slc ? normalizeHourlyQueueToVehicleLength(d2Slc.after, d2Vol, true) : null;
+        const d1TaperCheck = assessMergeTaperDesign(d1SlcNet ?? d1BaseMaxQueue, mergeContingencyTaperLen, d1ClosedLanes);
+        const d2TaperCheck = assessMergeTaperDesign(d2SlcNet ?? d2BaseMaxQueue, mergeContingencyTaperLen, d2ClosedLanes);
+        const hourSlcLine = (slc, taper, hourVol) => {
+          if (slc === null) return mergeTaperDesignNote(taper);
+          const fmtM = (v) => { const n = normalizeHourlyQueueToVehicleLength(v, hourVol, true); return n > 0 ? Math.ceil(n).toLocaleString() : '0'; };
+          return `<div class="formula-inline" style="color:#1565c0; font-weight:600;">SLC (held lane): after merge (×${formatFactor(slc.fAfter)}) ${fmtM(slc.after)} m / incl. merge (×${formatFactor(slc.fIncl)}) ${fmtM(slc.incl)} m</div>${mergeTaperDesignNote(taper)}`;
+        };
+        const d1MaxQueue = Math.ceil(Math.max(0, Number(d1BaseMaxQueue) || 0));
+        const d2MaxQueue = Math.ceil(Math.max(0, Number(d2BaseMaxQueue) || 0));
         const hourlyQueueFormulaInlineActive = selectedHourlyQueueKey === 'custom'
-          ? `Q=(Lv_5min*${numberRoundUp(1.2 * selectedHourlyQueueCustomMinutes, 1)})+(Hv_5min*${numberRoundUp(4 * selectedHourlyQueueCustomMinutes, 1)})+(Rt_5min*${numberRoundUp(12.6 * selectedHourlyQueueCustomMinutes, 1)})`
+          ? `Q=(Lv_5min*${numberRoundUp((queueLvSpacingCurrent() / 5) * selectedHourlyQueueCustomMinutes, 1)})+(Hv_5min*${numberRoundUp(4 * selectedHourlyQueueCustomMinutes, 1)})+(Rt_5min*${numberRoundUp(12.6 * selectedHourlyQueueCustomMinutes, 1)})`
           : hourlyQueueFormulaInline;
+        const d1QueueFormulaInline = `${hourlyQueueFormulaInlineActive}${d1SlcNet !== null ? ' (hold); SLC figures below' : ''}`;
+        const d2QueueFormulaInline = `${hourlyQueueFormulaInlineActive}${d2SlcNet !== null ? ' (hold); SLC figures below' : ''}`;
+        const d1SlcLineHtml = hourSlcLine(d1Slc, d1TaperCheck, d1Vol);
+        const d2SlcLineHtml = hourSlcLine(d2Slc, d2TaperCheck, d2Vol);
         const networkMax = Math.max(d1MaxQueue, d2MaxQueue);
 
         // --- CALC WORK ZONE CAPACITY FOR SWT ---
@@ -16278,11 +16947,11 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
           <td class="rowhead" data-label="Hour">${hourLabel}</td>
           <td data-label="Hour Type"><strong>${hourTypeText}</strong></td>
           <td data-label="${d1Label || 'D1'} Vol (vph)">${Math.ceil(Math.max(0, d1Vol)).toLocaleString()}</td>
-          <td data-label="${d1Label || 'D1'} AGTTM Queue Length (${selectedHourlyQueueMeta.label}) (m)"><div>${Math.ceil(Math.max(0, d1MaxQueue)).toLocaleString()}</div><div class="formula-inline">${hourlyQueueFormulaInlineActive}</div></td>
+          <td data-label="${d1Label || 'D1'} AGTTM Queue Length (${selectedHourlyQueueMeta.label}) (m)"><div>${Math.ceil(Math.max(0, d1MaxQueue)).toLocaleString()}</div><div class="formula-inline">${d1QueueFormulaInline}</div>${d1SlcLineHtml}</td>
           <td data-label="${d1Label || 'D1'} SWT Queue Length (m)" style="color: #bf360c; font-weight: 700; background: ${d1W12Red > 0 ? '#fff3e0' : 'transparent'};"><div>${d1W12Red > 0 ? Math.ceil(Math.max(0, d1W12Red)).toLocaleString() : '-'}</div><div class="formula-inline">w12(m/s) * R(s)</div></td>
           <td data-label="${d1Label || 'D1'} Maximum Physical Reach (m)" style="color: #d84315; font-weight: bold; background: ${d1SwtQueue > 0 ? '#fbe9e7' : 'transparent'};"><div>${d1SwtQueue > 0 ? Math.ceil(Math.max(0, d1SwtQueue)).toLocaleString() : '-'}</div><div class="formula-inline">SWT: L = w12 * w23 * R / (w23 - w12)</div></td>
           <td data-label="${d2Label || 'D2'} Vol (vph)">${Math.ceil(Math.max(0, d2Vol)).toLocaleString()}</td>
-          <td data-label="${d2Label || 'D2'} AGTTM Queue Length (${selectedHourlyQueueMeta.label}) (m)"><div>${Math.ceil(Math.max(0, d2MaxQueue)).toLocaleString()}</div><div class="formula-inline">${hourlyQueueFormulaInlineActive}</div></td>
+          <td data-label="${d2Label || 'D2'} AGTTM Queue Length (${selectedHourlyQueueMeta.label}) (m)"><div>${Math.ceil(Math.max(0, d2MaxQueue)).toLocaleString()}</div><div class="formula-inline">${d2QueueFormulaInline}</div>${d2SlcLineHtml}</td>
           <td data-label="${d2Label || 'D2'} SWT Queue Length (m)" style="color: #bf360c; font-weight: 700; background: ${d2W12Red > 0 ? '#fff3e0' : 'transparent'};"><div>${d2W12Red > 0 ? Math.ceil(Math.max(0, d2W12Red)).toLocaleString() : '-'}</div><div class="formula-inline">w12(m/s) * R(s)</div></td>
           <td data-label="${d2Label || 'D2'} Maximum Physical Reach (m)" style="color: #d84315; font-weight: bold; background: ${d2SwtQueue > 0 ? '#fbe9e7' : 'transparent'};"><div>${d2SwtQueue > 0 ? Math.ceil(Math.max(0, d2SwtQueue)).toLocaleString() : '-'}</div><div class="formula-inline">SWT: L = w12 * w23 * R / (w23 - w12)</div></td>
         `;
@@ -16308,7 +16977,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <td class="rowhead" data-label="Hour">${hourLabel}</td>
             <td data-label="Hour Type"><strong>${hourTypeText}</strong></td>
             <td data-label="Volume (vph)">${Math.ceil(Math.max(0, d1Vol)).toLocaleString()}</td>
-            <td data-label="AGTTM Queue (m)"><div>${Math.ceil(Math.max(0, d1MaxQueue)).toLocaleString()}</div><div class="formula-inline">${hourlyQueueFormulaInlineActive}</div></td>
+            <td data-label="AGTTM Queue (m)"><div>${Math.ceil(Math.max(0, d1MaxQueue)).toLocaleString()}</div><div class="formula-inline">${d1QueueFormulaInline}</div>${d1SlcLineHtml}</td>
             <td data-label="SWT Queue (m)" style="color: #bf360c; font-weight: 700; background: ${d1W12Red > 0 ? '#fff3e0' : 'transparent'};"><div>${d1W12Red > 0 ? Math.ceil(Math.max(0, d1W12Red)).toLocaleString() : '-'}</div><div class="formula-inline">w12(m/s) * R(s)</div></td>
             <td data-label="Max Physical Reach (m)" style="color: #d84315; font-weight: bold; background: ${d1SwtQueue > 0 ? '#fbe9e7' : 'transparent'};"><div>${d1SwtQueue > 0 ? Math.ceil(Math.max(0, d1SwtQueue)).toLocaleString() : '-'}</div><div class="formula-inline">SWT: L = w12 * w23 * R / (w23 - w12)</div></td>
           `;
@@ -16329,7 +16998,7 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
             <td class="rowhead" data-label="Hour">${hourLabel}</td>
             <td data-label="Hour Type"><strong>${hourTypeText}</strong></td>
             <td data-label="Volume (vph)">${Math.ceil(Math.max(0, d2Vol)).toLocaleString()}</td>
-            <td data-label="AGTTM Queue (m)"><div>${Math.ceil(Math.max(0, d2MaxQueue)).toLocaleString()}</div><div class="formula-inline">${hourlyQueueFormulaInlineActive}</div></td>
+            <td data-label="AGTTM Queue (m)"><div>${Math.ceil(Math.max(0, d2MaxQueue)).toLocaleString()}</div><div class="formula-inline">${d2QueueFormulaInline}</div>${d2SlcLineHtml}</td>
             <td data-label="SWT Queue (m)" style="color: #bf360c; font-weight: 700; background: ${d2W12Red > 0 ? '#fff3e0' : 'transparent'};"><div>${d2W12Red > 0 ? Math.ceil(Math.max(0, d2W12Red)).toLocaleString() : '-'}</div><div class="formula-inline">w12(m/s) * R(s)</div></td>
             <td data-label="Max Physical Reach (m)" style="color: #d84315; font-weight: bold; background: ${d2SwtQueue > 0 ? '#fbe9e7' : 'transparent'};"><div>${d2SwtQueue > 0 ? Math.ceil(Math.max(0, d2SwtQueue)).toLocaleString() : '-'}</div><div class="formula-inline">SWT: L = w12 * w23 * R / (w23 - w12)</div></td>
           `;
@@ -16629,6 +17298,26 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       Number(baseD1[k]), Number(baseD2[k]), Number(slcD1[k]), Number(slcD2[k]), Number(slrf[k])
     ]));
 
+    // AGTTM merge-taper design check (advisory — does not inflate KPI queue values).
+    const kpiClosedD1 = Math.max(0, (Number(d1Metrics.lanes) || 1) - getEffectiveOpenLanes(d1Metrics.lanes));
+    const kpiClosedD2 = Math.max(0, (Number(d2Metrics.lanes) || 1) - getEffectiveOpenLanes(d2Metrics.lanes));
+    const d1TaperDesign = Number.isFinite(d1PeakQueueQ2)
+      ? assessMergeTaperDesign(d1PeakQueueQ2, mergeContingencyTaperLen, kpiClosedD1)
+      : null;
+    const d2TaperDesign = Number.isFinite(d2PeakQueueQ2)
+      ? assessMergeTaperDesign(d2PeakQueueQ2, mergeContingencyTaperLen, kpiClosedD2)
+      : null;
+    const mergeTaperTrace = (() => {
+      const parts = [];
+      if (d1TaperDesign && d1TaperDesign.designCheck) {
+        parts.push(`D1: ${Math.round(d1PeakQueueQ2)} m vs ${Math.round(d1TaperDesign.taperEnvelopeM)} m taper${d1TaperDesign.beyondMerge ? ' — advance warning required' : ' — within envelope'}`);
+      }
+      if (d2TaperDesign && d2TaperDesign.designCheck) {
+        parts.push(`D2: ${Math.round(d2PeakQueueQ2)} m vs ${Math.round(d2TaperDesign.taperEnvelopeM)} m taper${d2TaperDesign.beyondMerge ? ' — advance warning required' : ' — within envelope'}`);
+      }
+      return parts.length ? parts.join('; ') : 'N/A (single-lane or no queue)';
+    })();
+
     updateSummaryKpis({
       dv: dvDisplay,
       d1: d1Metrics,
@@ -16645,24 +17334,18 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     const hasRealHourlyData = sourceText === 'CUSTOM UPLOAD' && isTmrStyle;
 
     let dvFormulaStr = '';
-    let peakVolStr = '';
+    const calcProfileTrace = resolveSourceCalcProfile(site);
+    let peakVolStr = getSourcePeakVolDescription(site);
 
     dvFormulaStr = 'Austroads practical per-lane capacity = Base class capacity × terrain factor × lane-width factor × lateral-clearance factor × HV/RT factor (minimum 500 vph/lane)';
 
-    if (isTmrStyle) {
-      peakVolStr = 'Measured hourly profile scaled to target daily volume';
-    } else if (sourceText === 'IPSWICH') {
-      peakVolStr = 'Peak = 12.78% of Daily, Off-Peak = 45% of Peak';
-    } else if (sourceText === 'GOLD COAST') {
-      peakVolStr = 'Peak = 15% * 85% of Daily, Off-Peak = 48.55% of Peak';
-    } else if (sourceText === 'BRISBANE' || sourceText === 'LOGAN' || sourceText === 'TOOWOOMBA' || sourceText === 'NSW') {
-      peakVolStr = 'Peak = 12% * 85% of Daily, Off-Peak = 45% of Peak';
-    } else {
-      peakVolStr = 'Peak = 60% * 85% of Daily, OP/EV = 15% * 85% of Daily';
+    if (calcProfileTrace.aadtTemplate && !calcProfileTrace.hasMeasuredHourly) {
+      const rem = calcProfileTrace.aadtTemplate.offPeakRemainderPct;
+      peakVolStr += rem ? ` — off-peak remainder ${Math.round(rem * 100)}%` : '';
     }
 
-    const displayedSource = (sourceText === 'CUSTOM UPLOAD' && hasRealHourlyData) 
-      ? 'CUSTOM UPLOAD (24HR PROFILES DETECTED)' 
+    const displayedSource = (sourceText === 'CUSTOM UPLOAD' && hasRealHourlyData)
+      ? 'CUSTOM UPLOAD (24HR PROFILES DETECTED)'
       : sourceText;
 
     const traceRows = [
@@ -16675,6 +17358,8 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
       ['DHVPA Path', dhvpa === 'YES' ? 'Directional HV% (D1_HVP / D2_HVP)' : 'HVP applied per direction'],
       ['DRTPA Path', drtpa === 'YES' ? 'Directional RT% (D1_RTP / D2_RTP)' : 'RTP applied per direction'],
       ['RTR Queue Rule', rtr === 'YES' ? 'Road Train applied: queue ×1.5' : 'Standard length queueing applied'],
+      ['Merge Taper Design Check', mergeTaperTrace],
+      ['Queue Method', 'Hold = zero-discharge (AGTM Part 3); Lane closure primary = net overflow (demand − DV×open); AGTTM taper check is advisory only'],
       ['D1 HV% Used', `${numberRoundUp(getHVPercent(1) * 100, 3)}%`],
       ['D2 HV% Used', `${numberRoundUp(getHVPercent(2) * 100, 3)}%`],
       ['D1 RT% Used', `${numberRoundUp(getRTPercent(1) * 100, 3)}%`],
@@ -22197,6 +22882,27 @@ This comprehensive assessment provides a detailed evaluation of traffic impacts 
     };
     hourlyQueueCustomMinutesEl.addEventListener('change', onCustomQueueMinutesChange);
     hourlyQueueCustomMinutesEl.addEventListener('input', onCustomQueueMinutesInput);
+  }
+  // Grouped Queue Length table: user-defined duration row (e.g. 1 min).
+  const queueGroupedCustomMinutesEl = document.getElementById('queueGroupedCustomMinutes');
+  if (queueGroupedCustomMinutesEl) {
+    let queueGroupedCustomTimer = null;
+    const rerunGroupedQueue = () => {
+      const rowsExist = Boolean(document.querySelector('#queueGroupedBodyD1 tr, #queueGroupedBodyD2 tr'));
+      if (!rowsExist || typeof calculateAll !== 'function') return;
+      calculateAll();
+    };
+    queueGroupedCustomMinutesEl.addEventListener('change', () => {
+      if (queueGroupedCustomTimer) { clearTimeout(queueGroupedCustomTimer); queueGroupedCustomTimer = null; }
+      rerunGroupedQueue();
+    });
+    queueGroupedCustomMinutesEl.addEventListener('input', () => {
+      if (queueGroupedCustomTimer) clearTimeout(queueGroupedCustomTimer);
+      queueGroupedCustomTimer = setTimeout(() => {
+        queueGroupedCustomTimer = null;
+        rerunGroupedQueue();
+      }, 350);
+    });
   }
   // Manual calculation only: user clicks Calculate All button.
   try {

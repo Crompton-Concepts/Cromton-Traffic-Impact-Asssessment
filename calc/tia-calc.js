@@ -190,6 +190,69 @@
     return { reactionDist, brakingDist, total: reactionDist + brakingDist, unsafe: false };
   }
 
+  // --- Merge-taper design check (AGTTM Part 3 end-of-queue risk) ------------
+  // Compares calculated queue length to the merge taper storage envelope.
+  // Returns advisory factor/containment flags for TGS advance-warning placement.
+  // Does NOT inflate operational queue length in the main queue tables.
+  // The larger factor applies when the back of queue leaves the taper because
+  // approaching drivers meet the queue tail with less warning and deterministic
+  // estimates under-predict surging most at that point (AGTTM Part 3 s4.8.4
+  // end-of-queue risk).
+  // Multi-lane closures: each closed lane gets its own sequential taper, so the
+  // taper storage envelope available before the queue is "after the merge"
+  // scales with the number of closed lanes (envelope = taper x closedLanes).
+
+  // AGTTM Part 3 merge taper length (m) for 3.5 m lanes, scaled by lane width.
+  // Mirrors app.js calculateAgttmGeometry table.
+  function mergeTaperLength(postedSpeedKmh, laneWidthM) {
+    const speed = Number(postedSpeedKmh) || 60;
+    const width = Number(laneWidthM) > 0 ? Number(laneWidthM) : 3.5;
+    let base;
+    if (speed <= 50) base = 15;
+    else if (speed <= 60) base = 30;
+    else if (speed <= 70) base = 70;
+    else if (speed <= 80) base = 80;
+    else if (speed <= 90) base = 90;
+    else if (speed <= 100) base = 100;
+    else base = 110;
+    return Math.max(15, Math.round(base * (width / 3.5)));
+  }
+
+  // Returns { factor, designQueueM, beyondMerge, taperEnvelopeM }.
+  // rawQueueM: calculated queue (m); taperLengthM: merge taper length (m);
+  // closedLaneCount: lanes closed in this scenario (>= 1).
+  function mergeQueueContingency(rawQueueM, taperLengthM, closedLaneCount) {
+    const q = Math.max(0, Number(rawQueueM) || 0);
+    const taper = Math.max(0, Number(taperLengthM) || 0);
+    const closed = Math.max(1, Math.round(Number(closedLaneCount) || 1));
+    const taperEnvelopeM = taper * closed;
+    if (q <= 0) {
+      return { factor: 1, designQueueM: 0, beyondMerge: false, taperEnvelopeM };
+    }
+    const beyondMerge = q > taperEnvelopeM;
+    const factor = beyondMerge ? 2.0 : 1.5;
+    return { factor, designQueueM: q * factor, beyondMerge, taperEnvelopeM };
+  }
+
+  // --- Lane-closure queue concentration factors (client rule 2026-07-09) ---
+  // The per-lane hold queue x is converted to the single-open-lane closure
+  // queue by a concentration factor chosen by WHERE the queue stores:
+  //   After the merge (single-lane section only): every closed lane's traffic
+  //     stacks into the open lane(s) -> factor = lanes / open
+  //     (2 lanes -> 1 open: x2.0)
+  //   Including the merge (taper length counted): the queue tail stores across
+  //     the full approach where all lanes still exist -> averaged storage
+  //     -> factor = (1 + lanes/open) / 2   (2 lanes -> 1 open: x1.5)
+  // Both figures are reported; the factor multiplies x directly (it is NOT an
+  // additional safety factor on top of a separately-applied concentration).
+  function laneClosureConcentrationFactors(laneCount, openLanes) {
+    const open = Math.max(1, Number(openLanes) || 1);
+    const lanes = Math.max(open, Number(laneCount) || open);
+    const afterMerge = lanes / open;
+    const includingMerge = (1 + afterMerge) / 2;
+    return { afterMerge, includingMerge };
+  }
+
   // --- Reference-site connectivity guardrail -------------------------------
   // A traffic counter that shares the subject address's road NAME can still
   // sit on a physically DISCONNECTED segment when an arterial severs the road
@@ -237,5 +300,8 @@
     isSameRoadReferenceSevered,
     SEVERED_SAME_ROAD_DETOUR_FACTOR,
     SEVERED_ALT_MAX_DISTANCE_RATIO,
+    mergeTaperLength,
+    mergeQueueContingency,
+    laneClosureConcentrationFactors,
   };
 });

@@ -201,3 +201,73 @@ describe('approach sight distance (Austroads-style)', () => {
     assert.equal(r.total, Infinity);
   });
 });
+
+describe('merge taper length (AGTTM Part 3, 3.5 m lane)', () => {
+  it('60 km/h -> 30 m', () => {
+    assert.equal(TIACalc.mergeTaperLength(60, 3.5), 30);
+  });
+  it('80 km/h -> 80 m', () => {
+    assert.equal(TIACalc.mergeTaperLength(80, 3.5), 80);
+  });
+  it('110 km/h -> 110 m', () => {
+    assert.equal(TIACalc.mergeTaperLength(110, 3.5), 110);
+  });
+  it('scales with lane width and floors at 15 m', () => {
+    assert.equal(TIACalc.mergeTaperLength(80, 3.0), Math.round(80 * 3.0 / 3.5));
+    assert.equal(TIACalc.mergeTaperLength(40, 3.0), 15);
+  });
+});
+
+describe('merge queue contingency (1.5 within taper / 2.0 beyond merge)', () => {
+  it('queue including the merge taper -> x1.5', () => {
+    const r = TIACalc.mergeQueueContingency(25, 30, 1);
+    assert.equal(r.factor, 1.5);
+    assert.equal(r.beyondMerge, false);
+    close(r.designQueueM, 37.5);
+  });
+  it('queue after the merge (beyond taper) -> x2.0', () => {
+    const r = TIACalc.mergeQueueContingency(156, 30, 1);
+    assert.equal(r.factor, 2.0);
+    assert.equal(r.beyondMerge, true);
+    close(r.designQueueM, 312);
+  });
+  it('boundary: queue equal to taper envelope stays x1.5', () => {
+    const r = TIACalc.mergeQueueContingency(30, 30, 1);
+    assert.equal(r.factor, 1.5);
+  });
+  it('multi-lane closure scales taper envelope (2 closed lanes)', () => {
+    // 50 m queue vs 30 m taper: beyond merge for 1 closed lane,
+    // contained within the 60 m sequential-taper envelope for 2.
+    assert.equal(TIACalc.mergeQueueContingency(50, 30, 1).factor, 2.0);
+    assert.equal(TIACalc.mergeQueueContingency(50, 30, 2).factor, 1.5);
+    assert.equal(TIACalc.mergeQueueContingency(50, 30, 2).taperEnvelopeM, 60);
+  });
+  it('zero queue -> factor 1, zero design queue', () => {
+    const r = TIACalc.mergeQueueContingency(0, 30, 1);
+    assert.equal(r.factor, 1);
+    assert.equal(r.designQueueM, 0);
+  });
+});
+
+describe('lane-closure concentration factors (x2.0 after merge / x1.5 incl. merge)', () => {
+  it('2 lanes -> 1 open: after merge x2.0, incl. merge x1.5', () => {
+    const f = TIACalc.laneClosureConcentrationFactors(2, 1);
+    assert.equal(f.afterMerge, 2.0);
+    assert.equal(f.includingMerge, 1.5);
+  });
+  it('3 lanes -> 1 open: x3.0 / x2.0', () => {
+    const f = TIACalc.laneClosureConcentrationFactors(3, 1);
+    assert.equal(f.afterMerge, 3.0);
+    assert.equal(f.includingMerge, 2.0);
+  });
+  it('3 lanes -> 2 open: x1.5 / x1.25', () => {
+    const f = TIACalc.laneClosureConcentrationFactors(3, 2);
+    assert.equal(f.afterMerge, 1.5);
+    assert.equal(f.includingMerge, 1.25);
+  });
+  it('applies to the per-lane base directly: x=193 -> 386 / 290 (rounded)', () => {
+    const f = TIACalc.laneClosureConcentrationFactors(2, 1);
+    assert.equal(Math.ceil(193 * f.afterMerge), 386);
+    assert.equal(Math.ceil(193 * f.includingMerge), 290);
+  });
+});
