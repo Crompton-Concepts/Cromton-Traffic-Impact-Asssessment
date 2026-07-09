@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-09T03:24:19Z",
+  "generated_at": "2026-07-09T06:01:25Z",
   "datasets": {
     "tmr": {
       "version": "2026-06-09",
@@ -82,20 +82,20 @@
       "updated_at": "2026-06-18T01:00:12Z"
     },
     "vic": {
-      "version": "2026-07-05",
-      "sha256": "a8c4ea340b418159a5f43558386bc016511fd7d6ec91792f1e094fcb00b8eef7",
+      "version": "2026-07-09",
+      "sha256": "45423e7a65e7e742dcd066bdc1569093f1248262dafc1fce9158fedd5ab47378",
       "feature_count": 72990,
-      "source_url": "https://services2.arcgis.com/18ajPSI0b3ppsmMt/arcgis/rest/services/Traffic_Volume/FeatureServer/0",
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FVIC%2Fvic.geojson?alt=media",
       "local_file": "datasets/VIC/vic.geojson",
-      "updated_at": "2026-07-05T17:10:26Z"
+      "updated_at": "2026-07-09T06:01:25Z"
     },
     "wa": {
-      "version": "2026-07-05",
-      "sha256": "db153d3bad960c1b630f3ee1f0285a48a36dacd64d23dddaa190f913766643e1",
-      "feature_count": 2934,
-      "source_url": "https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/27",
+      "version": "2026-07-09",
+      "sha256": "79c4d03b377a0954cb2ed11297320a833dd62a091210fe74fd558bdf356c68c5",
+      "feature_count": 2779,
+      "source_url": "https://firebasestorage.googleapis.com/v0/b/crompton-apps.firebasestorage.app/o/datasets%2FWA%2Fwa.geojson?alt=media",
       "local_file": "datasets/WA/wa.geojson",
-      "updated_at": "2026-07-05T17:10:33Z"
+      "updated_at": "2026-07-09T06:01:25Z"
     },
     "nt": {
       "version": "2026-06-17",
