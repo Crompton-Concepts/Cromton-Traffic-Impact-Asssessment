@@ -1165,18 +1165,6 @@
               <option value="rural_highway">Rural Highway (1,000 vph/lane)</option>
             </select>
           </div>
-          <div style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
-            <label style="color: #c30000; font-weight: bold;">Work-Zone Control Modes</label>
-            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">All control modes are now compared directly in the <strong>Queue Length Estimation</strong> table below — lane closures, contraflow / single-lane reversible flow, and traffic holds (Full / Single-Direction Stop-Go) — so there is no single mode to select here. For hold modes, work V/C is not applicable (capacity is zero during the hold); the governing metric is the queue accumulated over the hold time.</p>
-          </div>
-          <div id="contraflowClosedWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px; margin-top: 8px;">
-            <label style="color: #c30000; font-weight: bold;">↔️ Contraflow — Closed Carriageway *</label>
-            <select id="contraflowClosedCarriageway" onchange="if (typeof calculateAll === 'function') calculateAll();" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
-              <option value="D1">D1 Carriageway Closed (D2 carriageway used 1+1)</option>
-              <option value="D2" selected>D2 Carriageway Closed (D1 carriageway used 1+1)</option>
-            </select>
-            <p style="font-size: 0.78em; color: #666; margin: 4px 0 0 0;">Both traffic directions (D1 and D2) share the open carriageway in a 1+1 contraflow arrangement. The combined demand VCR applies to both directions, with per-lane capacity reduced to ≈ 85% per Austroads AGTTM Part 8 / HCM Ch. 10.</p>
-          </div>
           <div id="oneWayDirectionWrap" style="display:none; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 10px;">
             <label style="color: #c30000; font-weight: bold;">🧭 Active One-way Direction *</label>
             <select id="oneWayActiveDirection" style="border: 1px solid #e57373; background-color: #fff5f5; color: #b71c1c;">
@@ -1325,11 +1313,18 @@
 
     <div class="card">
       <h2><span style="background:#e8f4f5;border-radius:6px;padding:4px 6px;font-size:0.85em;line-height:1;"><i class="fa-solid fa-car-side section-icon" aria-hidden="true"></i></span>Queue Length Estimation<span class="std-badge" title="Method per Austroads Guide to Traffic Management"><i class="fa-solid fa-book-bookmark" aria-hidden="true"></i>Austroads AGTTM</span></h2>
-      <p class="section-help">Toggle between table and chart views. Queue values are shown by duration window and period for both directions.</p>
+      <p class="section-help">Toggle between table and chart views. <strong>Stop/Go hold</strong> queues use zero-discharge accumulation (AGTM Part 3). <strong>Lane closure</strong> shows net overflow (open lane discharging at design capacity) as the primary figure, with worst-case zero-discharge as a footnote. AGTTM merge-taper checks are advisory for advance-warning placement — they do not inflate queue length.</p>
       <div id="queueRiskBadge" style="display:none; margin: 6px 0 10px 0; padding: 8px 10px; border-radius: 6px; background: #fff3e0; border: 1px solid #ffcc80; color: #e65100; font-weight: 700; font-size: 0.9em;"></div>
-      <div class="table-actions" style="justify-content: flex-end; margin: 0 0 8px 0;">
-        <button type="button" class="queue-toggle-btn" data-view="table" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #c7d4db; background: #e3f2fd; color: #0d47a1; cursor: pointer; font-weight: 600;" onclick="setQueueView('table')">Table</button>
-        <button type="button" class="queue-toggle-btn" data-view="chart" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #c7d4db; background: #f5f5f5; color: #37474f; cursor: pointer; font-weight: 600;" onclick="setQueueView('chart')">Chart</button>
+      <div class="table-actions" style="justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 8px 0;">
+        <div style="display: inline-flex; align-items: center; gap: 6px;">
+          <label for="queueGroupedCustomMinutes" style="margin: 0; color: #1f5e63; font-weight: 700; white-space: nowrap;">Add custom duration</label>
+          <input id="queueGroupedCustomMinutes" type="number" min="1" max="240" step="1" placeholder="min" title="Enter a duration in minutes (e.g. 1) to add an extra 'Per N min' row to the queue tables. Leave blank for the standard 2/5/10/15 rows." style="width: 84px; border: 1px solid #90a4ae; background: #f8fbff;" />
+          <span style="font-size: 0.72em; color: #78909c; white-space: nowrap;">min &mdash; adds a &ldquo;Per N min&rdquo; row</span>
+        </div>
+        <div style="display: inline-flex; gap: 8px;">
+          <button type="button" class="queue-toggle-btn" data-view="table" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #c7d4db; background: #e3f2fd; color: #0d47a1; cursor: pointer; font-weight: 600;" onclick="setQueueView('table')">Table</button>
+          <button type="button" class="queue-toggle-btn" data-view="chart" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #c7d4db; background: #f5f5f5; color: #37474f; cursor: pointer; font-weight: 600;" onclick="setQueueView('chart')">Chart</button>
+        </div>
       </div>
 
       <div id="queueTableView">
@@ -2543,20 +2538,18 @@
      the formula verifier share one tested source (calc/tia-calc.js). -->
 <script src="dist/tia-bundle.f538c9838c60.js"></script>
 <script src="calc/tia-calc.js?v=20260611"></script>
-<script src="app.js?v=20260708-tgslayout"></script>
-<!-- Firebase Realtime Database SDK (compat) -->
+<!-- Firebase SDK must load before app.js (login/auth bootstrap) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
-<!-- TIA Firebase config (fill in with your project credentials) -->
-<script defer src="firebase-config.js"></script>
-<!-- TIA shared user sync module -->
-<script defer src="user-sync.js"></script>
+<script src="firebase-config.js"></script>
+<script src="user-sync.js"></script>
+<script src="app.js?v=20260709-idbcache"></script>
 <script defer src="tia-shared-sync.js"></script>
 <script defer src="formula-agent.js"></script>
+<script defer src="ctmp-integration.js"></script>
 </body>
 </html>
-
 
 

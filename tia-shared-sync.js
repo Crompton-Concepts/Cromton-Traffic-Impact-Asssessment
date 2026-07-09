@@ -125,6 +125,12 @@
   }
 
   function ensureFormulaTraceAlwaysVisible() {
+    document.body.classList.add('formula-mode');
+
+    document.querySelectorAll('.formula-inline, [data-formula-for]').forEach(function (el) {
+      el.style.display = 'block';
+    });
+
     const formulaTrace = document.getElementById('formulaTraceSection');
     if (!formulaTrace) return;
 
@@ -172,6 +178,7 @@
 
     if (/index_formulas\.html$/i.test(String(window.location.pathname || ''))) {
       ensureFormulaTraceAlwaysVisible();
+      refreshFormulaAnnotations();
     }
   }
 

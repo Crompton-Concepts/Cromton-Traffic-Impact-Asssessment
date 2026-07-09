@@ -1760,6 +1760,47 @@
       word-break: break-word;
     }
 
+    /* Formula view: show every calculation step inline for audit users */
+    body.formula-mode .formula-inline,
+    body.formula-mode [data-formula-for] {
+      display: block !important;
+    }
+
+    body.formula-mode td .formula-inline,
+    body.formula-mode td [data-formula-for] {
+      margin-top: 6px;
+      padding: 4px 6px;
+      background: #eef4fb;
+      border-left: 3px solid #1565c0;
+      border-radius: 0 4px 4px 0;
+      color: #1a3a5c;
+      font-size: 0.74rem;
+    }
+
+    body.formula-mode .kpi-value + .formula-inline,
+    body.formula-mode [id^="formula-for-"] {
+      margin-top: 4px;
+      padding: 3px 6px;
+      background: #f4f8fb;
+      border-left: 2px solid #607d8b;
+      border-radius: 0 3px 3px 0;
+    }
+
+    body.formula-mode::before {
+      content: "Formula view — calculation steps shown below each value";
+      display: block;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 6px 12px;
+      background: #e3f2fd;
+      border-bottom: 1px solid #90caf9;
+      color: #0d47a1;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
     .table-wrap {
       overflow-x: auto;
       border: 1px solid var(--line);

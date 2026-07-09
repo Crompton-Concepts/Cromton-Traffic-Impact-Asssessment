@@ -108,8 +108,14 @@ Write-Ok "Firebase login: $authLine"
 # index.html is the single source of truth. Regenerate the Developer and
 # Formula variants from it so the three entry points can never drift.
 Write-Step "Regenerating HTML variants from index.html"
+# Note: ignore the Microsoft Store's fake python.exe alias stub (lives in
+# WindowsApps) — Get-Command finds it, but running it just prints an install
+# prompt and exits nonzero. Also try the real `py` launcher.
 $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+if ($pythonCmd -and $pythonCmd.Source -like '*WindowsApps*') { $pythonCmd = $null }
 if (-not $pythonCmd) { $pythonCmd = Get-Command python3 -ErrorAction SilentlyContinue }
+if ($pythonCmd -and $pythonCmd.Source -like '*WindowsApps*') { $pythonCmd = $null }
+if (-not $pythonCmd) { $pythonCmd = Get-Command py -ErrorAction SilentlyContinue }
 if ($pythonCmd) {
     & $pythonCmd.Source 'scripts/build_html_variants.py'
     if ($LASTEXITCODE -ne 0) {
