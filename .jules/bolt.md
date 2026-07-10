@@ -1,0 +1,3 @@
+## 2024-05-19 - [Haversine Calculation Refactor]
+**Learning:** `haversineDistance` optimization can be safely done by switching from `2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))` to `Math.asin(Math.sqrt(Math.min(1, a)))` when multiplying by the Earth's diameter (instead of the radius). The `Math.min(1, a)` guard is critical because floating-point inaccuracies can cause `a` to slightly exceed 1.0, which leads to `NaN` errors with both methods.
+**Action:** When optimizing trigonometry in JS, precompute constants and use `Math.asin` combined with a `Math.min(1, a)` guard to prevent NaN edge cases. Keep scratch scripts isolated or remove them entirely to avoid CI complaints.
