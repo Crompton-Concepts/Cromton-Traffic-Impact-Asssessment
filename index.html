@@ -280,11 +280,11 @@
             <div class="login-input-wrapper">
               <i class="fa-solid fa-lock input-icon"></i>
               <input id="loginPassword" name="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('loginPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Sign In</span>
           </button>
           <div id="loginError" class="login-error" aria-live="polite"></div>
@@ -320,7 +320,7 @@
             <div class="login-input-wrapper">
               <i class="fa-solid fa-key input-icon"></i>
               <input id="newPassword" name="newPassword" type="password" placeholder="Create a password" autocomplete="new-password" required minlength="8" />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPassword');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
@@ -328,7 +328,7 @@
             <div class="login-input-wrapper">
               <i class="fa-solid fa-key input-icon"></i>
               <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
-              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="toggle-pw-btn" aria-label="Show/hide password" tabindex="-1" onclick="var i=document.getElementById('newPasswordConfirm');i.type=i.type==='password'?'text':'password';this.querySelector('i').className=i.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="login-field-group">
@@ -358,7 +358,7 @@
             <input type="hidden" id="selectedTierInput" value="free" />
           </div>
           <button type="submit" class="login-submit-btn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Create Account</span>
           </button>
           <div id="createError" class="login-error" aria-live="polite"></div>
@@ -378,7 +378,7 @@
             </div>
           </div>
           <button type="submit" class="login-submit-btn" id="resetSubmitBtn">
-            <i class="fa-solid fa-spinner"></i>
+            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
             <span class="btn-text">Send Reset Link</span>
           </button>
           <button type="button" id="backToSignInBtn" class="login-back-link">Back to Sign In</button>
