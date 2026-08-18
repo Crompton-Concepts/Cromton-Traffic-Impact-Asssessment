@@ -1,0 +1,3 @@
+## 2025-02-12 - Reliable testing of :focus-visible via Playwright
+**Learning:** When using Playwright to visually verify `:focus-visible` CSS rules, programmatic focus actions like `element.focus()` might not trigger the pseudo-class (it usually triggers `:focus`). To reliably capture and verify `focus-visible` states, you must simulate actual keyboard interaction, such as clicking a nearby element and pressing 'Tab' using `page.keyboard.press('Tab')`.
+**Action:** When writing Playwright tests to verify keyboard accessibility and focus rings, avoid `element.focus()`. Instead, establish a focus point using `.click()` on an adjacent element and use `.keyboard.press('Tab')` to navigate to the target element.

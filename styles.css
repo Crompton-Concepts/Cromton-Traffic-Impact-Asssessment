@@ -2310,6 +2310,7 @@
     .login-input-wrapper:focus-within > i:not(.toggle-pw-icon) { color:var(--brand); }
     .toggle-pw-btn { position:absolute; right:11px; background:none; border:none; cursor:pointer; color:#94a3b8; padding:5px; font-size:0.82rem; transition:color 0.2s; z-index:1; border-radius:4px; }
     .toggle-pw-btn:hover { color:var(--brand); }
+    .toggle-pw-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
     .login-field-group input, .login-field-group select {
       width:100%; box-sizing:border-box; padding:11px 14px 11px 38px;
       border:1.5px solid #d1dae3; border-radius:10px; font-size:0.92rem;
