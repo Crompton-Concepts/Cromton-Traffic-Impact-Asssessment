@@ -1,0 +1,3 @@
+## $(date +%Y-%m-%d) - Optimize haversineDistance
+**Learning:** In highly iterative spatial operations (like iterating over large GeoJSON datasets), the `haversineDistance` function is a significant bottleneck. Repeated division by 2, redundant sine calculations, and recalculating constant multipliers (`Math.PI / 180`, `2 * R`) waste CPU cycles.
+**Action:** When implementing or optimizing mathematical formulas in hot paths, manually hoist constant expressions and cache intermediate results (like `Math.sin(deltaPhi / 2)` squared) to minimize computational overhead. Replace division by 2 with multiplication by `0.5` where feasible.
