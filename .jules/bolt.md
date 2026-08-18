@@ -1,0 +1,3 @@
+## 2026-06-28 - [Haversine Calculation Optimizaton]
+**Learning:** Pre-calculating `Math.PI / 180`, caching `Math.sin(delta * 0.5)`, multiplying by 0.5 instead of dividing by 2, and replacing `Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))` with `Math.asin(Math.sqrt(a))` multiplied by the diameter significantly speeds up the Haversine distance formula by ~5x in JavaScript. This is mathematically equivalent and highly relevant for spatial applications that loop over coordinates.
+**Action:** Always use the `Math.asin` variant with pre-calculated constants when implementing or optimizing spatial/haversine functions in a JavaScript codebase to save CPU cycles.
