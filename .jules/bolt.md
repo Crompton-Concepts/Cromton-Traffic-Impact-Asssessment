@@ -1,0 +1,1 @@
+## 2024-05-24 - Haversine Distance Calculation\n**Learning:** The `Math.asin(Math.sqrt(Math.min(1, a)))` formula is faster than `Math.atan2` and mathematically equivalent for Haversine distance calculations in tight spatial loops.\n**Action:** Use `Math.asin` over `Math.atan2`, and combine constants (e.g. `2 * R` to `12742000`) in JS geometry/spatial calculations.
